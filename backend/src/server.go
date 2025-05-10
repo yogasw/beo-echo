@@ -14,8 +14,9 @@ import (
 	"mockoon-control-panel/backend_new/src/database"
 	"mockoon-control-panel/backend_new/src/health"
 	"mockoon-control-panel/backend_new/src/lib"
-	"mockoon-control-panel/backend_new/src/middlewares"
-	mockHandler "mockoon-control-panel/backend_new/src/mocks/handler"
+	"mockoon-control-panel/backend_new/src/mocks/handler/endpoint"
+	"mockoon-control-panel/backend_new/src/mocks/handler/project"
+	"mockoon-control-panel/backend_new/src/mocks/handler/response"
 	"mockoon-control-panel/backend_new/src/traefik"
 	"mockoon-control-panel/backend_new/src/utils"
 )
@@ -97,27 +98,27 @@ func SetupRouter() *gin.Engine {
 
 	// Protected API routes group
 	apiGroup := router.Group("/mock/api")
-	apiGroup.Use(middlewares.ApiKeyAuth())
+	// apiGroup.Use(middlewares.ApiKeyAuth())
 	{
-		apiGroup.GET("/projects", mockHandler.ListProjectsHandler)
-		apiGroup.POST("/projects", mockHandler.CreateProjectHandler)
-		apiGroup.GET("/projects/:name", mockHandler.GetProjectHandler)
-		apiGroup.PUT("/projects/:name", mockHandler.UpdateProjectHandler)
-		apiGroup.DELETE("/projects/:name", mockHandler.DeleteProjectHandler)
+		apiGroup.GET("/projects", project.ListProjectsHandler)
+		apiGroup.POST("/projects", project.CreateProjectHandler)
+		apiGroup.GET("/projects/:name", project.GetProjectHandler)
+		apiGroup.PUT("/projects/:name", project.UpdateProjectHandler)
+		apiGroup.DELETE("/projects/:name", project.DeleteProjectHandler)
 
 		// Endpoint management
-		apiGroup.GET("/projects/:name/endpoints", mockHandler.ListEndpointsHandler)
-		apiGroup.POST("/projects/:name/endpoints", mockHandler.CreateEndpointHandler)
-		apiGroup.GET("/projects/:name/endpoints/:id", mockHandler.GetEndpointHandler)
-		apiGroup.PUT("/projects/:name/endpoints/:id", mockHandler.UpdateEndpointHandler)
-		apiGroup.DELETE("/projects/:name/endpoints/:id", mockHandler.DeleteEndpointHandler)
+		apiGroup.GET("/projects/:name/endpoints", endpoint.ListEndpointsHandler)
+		apiGroup.POST("/projects/:name/endpoints", endpoint.CreateEndpointHandler)
+		apiGroup.GET("/projects/:name/endpoints/:id", endpoint.GetEndpointHandler)
+		apiGroup.PUT("/projects/:name/endpoints/:id", endpoint.UpdateEndpointHandler)
+		apiGroup.DELETE("/projects/:name/endpoints/:id", endpoint.DeleteEndpointHandler)
 
 		// Response management
-		apiGroup.GET("/endpoints/:id/responses", mockHandler.ListResponsesHandler)
-		apiGroup.POST("/endpoints/:id/responses", mockHandler.CreateResponseHandler)
-		apiGroup.GET("/responses/:id", mockHandler.GetResponseHandler)
-		apiGroup.PUT("/responses/:id", mockHandler.UpdateResponseHandler)
-		apiGroup.DELETE("/responses/:id", mockHandler.DeleteResponseHandler)
+		apiGroup.GET("/endpoints/:id/responses", response.ListResponsesHandler)
+		apiGroup.POST("/endpoints/:id/responses", response.CreateResponseHandler)
+		apiGroup.GET("/responses/:id", response.GetResponseHandler)
+		apiGroup.PUT("/responses/:id", response.UpdateResponseHandler)
+		apiGroup.DELETE("/responses/:id", response.DeleteResponseHandler)
 	}
 
 	return router
