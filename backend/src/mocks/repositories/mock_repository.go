@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/google/uuid"
+
 	"mockoon-control-panel/backend_new/src/database"
 
 	"gorm.io/gorm"
@@ -33,7 +35,7 @@ func (r *MockRepository) FindProjectByName(name string) (*database.Project, erro
 }
 
 // FindMatchingEndpoint finds an endpoint that matches the given method and path
-func (r *MockRepository) FindMatchingEndpoint(projectID uint, method, path string) (*database.MockEndpoint, error) {
+func (r *MockRepository) FindMatchingEndpoint(projectID uuid.UUID, method, path string) (*database.MockEndpoint, error) {
 	var endpoints []database.MockEndpoint
 
 	result := r.DB.Where("project_id = ? AND method = ? AND enabled = ?", projectID, strings.ToUpper(method), true).Find(&endpoints)
@@ -51,7 +53,7 @@ func (r *MockRepository) FindMatchingEndpoint(projectID uint, method, path strin
 }
 
 // FindResponsesByEndpointID gets all responses for an endpoint
-func (r *MockRepository) FindResponsesByEndpointID(endpointID uint) ([]database.MockResponse, error) {
+func (r *MockRepository) FindResponsesByEndpointID(endpointID uuid.UUID) ([]database.MockResponse, error) {
 	var responses []database.MockResponse
 	result := r.DB.Preload("Rules").Where("endpoint_id = ? AND active = ?", endpointID, true).Find(&responses)
 	if result.Error != nil {

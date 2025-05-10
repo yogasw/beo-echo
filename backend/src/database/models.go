@@ -2,21 +2,23 @@ package database
 
 import (
 	"time"
+
+	"github.com/google/uuid"
 )
 
 // Alias model for mapping filenames to aliases
 type Alias struct {
-	ID       uint   `gorm:"primaryKey"`
-	FileName string `gorm:"uniqueIndex"`
-	Alias    string `gorm:"uniqueIndex"`
+	ID       uuid.UUID `gorm:"type:uuid;primaryKey;default:gen_random_uuid()"`
+	FileName string    `gorm:"uniqueIndex"`
+	Alias    string    `gorm:"uniqueIndex"`
 	Port     int
 	IsActive bool `gorm:"default:false"`
 }
 
 // SystemConfig model for storing system configuration
 type SystemConfig struct {
-	ID          uint   `gorm:"primaryKey"`
-	Key         string `gorm:"uniqueIndex"`
+	ID          uuid.UUID `gorm:"type:uuid;primaryKey;default:gen_random_uuid()"`
+	Key         string    `gorm:"uniqueIndex"`
 	Value       string
 	Type        string    `gorm:"default:string"` // string, number, boolean, json
 	Description string    `gorm:"default:''"`     // optional description
@@ -37,10 +39,10 @@ const (
 
 // Project represents one group of endpoints, accessible via subdomain or alias
 type Project struct {
-	ID            uint        `gorm:"primaryKey"`
-	Name          string      `gorm:"uniqueIndex"` // Used as subdomain or slug
-	Mode          ProjectMode `gorm:"type:text"`
-	ActiveProxyID *uint
+	ID            uuid.UUID      `gorm:"type:uuid;primaryKey;default:gen_random_uuid()"`
+	Name          string         `gorm:"uniqueIndex"` // Used as subdomain or slug
+	Mode          ProjectMode    `gorm:"type:text"`
+	ActiveProxyID *uuid.UUID     `gorm:"type:uuid"`
 	ActiveProxy   *ProxyTarget   `gorm:"foreignKey:ActiveProxyID"`
 	Endpoints     []MockEndpoint `gorm:"foreignKey:ProjectID;constraint:OnDelete:CASCADE"`
 	ProxyTargets  []ProxyTarget  `gorm:"foreignKey:ProjectID;constraint:OnDelete:CASCADE"`
@@ -50,18 +52,18 @@ type Project struct {
 
 // ProxyTarget defines forward request destination if project mode is proxy or forwarder
 type ProxyTarget struct {
-	ID        uint `gorm:"primaryKey"`
-	ProjectID uint
-	Label     string // Example: "Staging", "Production"
-	URL       string // Example: "https://staging.example.com"
+	ID        uuid.UUID `gorm:"type:uuid;primaryKey;default:gen_random_uuid()"`
+	ProjectID uuid.UUID `gorm:"type:uuid"`
+	Label     string    // Example: "Staging", "Production"
+	URL       string    // Example: "https://staging.example.com"
 	CreatedAt time.Time
 	UpdatedAt time.Time
 }
 
 // MockEndpoint represents an HTTP route that is mocked
 type MockEndpoint struct {
-	ID           uint `gorm:"primaryKey"`
-	ProjectID    uint
+	ID           uuid.UUID      `gorm:"type:uuid;primaryKey;default:gen_random_uuid()"`
+	ProjectID    uuid.UUID      `gorm:"type:uuid"`
 	Method       string         // GET, POST, PUT, DELETE, etc
 	Path         string         // Example: "/users/:id"
 	Enabled      bool           // Whether endpoint is active or not
@@ -73,8 +75,8 @@ type MockEndpoint struct {
 
 // MockResponse represents possible responses from an endpoint
 type MockResponse struct {
-	ID         uint `gorm:"primaryKey"`
-	EndpointID uint
+	ID         uuid.UUID `gorm:"type:uuid;primaryKey;default:gen_random_uuid()"`
+	EndpointID uuid.UUID `gorm:"type:uuid"`
 	StatusCode int
 	Body       string     // Response body, can be raw text or JSON
 	Headers    string     // JSON string: {"Content-Type":"application/json"}
@@ -89,10 +91,10 @@ type MockResponse struct {
 
 // MockRule represents filter rules for selecting responses
 type MockRule struct {
-	ID         uint `gorm:"primaryKey"`
-	ResponseID uint
-	Type       string // "header", "body", "query", "path"
-	Key        string // Example: "X-Auth", "q", "user.id"
-	Operator   string // "equals", "contains", "regex"
+	ID         uuid.UUID `gorm:"type:uuid;primaryKey;default:gen_random_uuid()"`
+	ResponseID uuid.UUID `gorm:"type:uuid"`
+	Type       string    // "header", "body", "query", "path"
+	Key        string    // Example: "X-Auth", "q", "user.id"
+	Operator   string    // "equals", "contains", "regex"
 	Value      string
 }

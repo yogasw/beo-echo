@@ -12,6 +12,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/google/uuid"
+
 	"mockoon-control-panel/backend_new/src/database"
 	"mockoon-control-panel/backend_new/src/mocks/repositories"
 )
@@ -55,7 +57,7 @@ func (s *MockService) HandleRequest(projectName, method, path string, req *http.
 }
 
 // handleMockMode generates mock response
-func (s *MockService) handleMockMode(projectID uint, method, path string, req *http.Request) (*http.Response, error) {
+func (s *MockService) handleMockMode(projectID uuid.UUID, method, path string, req *http.Request) (*http.Response, error) {
 	endpoint, err := s.Repo.FindMatchingEndpoint(projectID, method, path)
 	if err != nil {
 		return createErrorResponse(http.StatusNotFound, "Endpoint not found"), nil

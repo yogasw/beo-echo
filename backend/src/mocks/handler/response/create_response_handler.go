@@ -3,9 +3,9 @@ package response
 import (
 	"encoding/json"
 	"net/http"
-	"strconv"
 
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 
 	"mockoon-control-panel/backend_new/src/database"
 	"mockoon-control-panel/backend_new/src/mocks/handler"
@@ -41,7 +41,8 @@ func CreateResponseHandler(c *gin.Context) {
 	}
 
 	// Parse endpoint ID
-	endpointID, err := strconv.ParseUint(c.Param("id"), 10, 32)
+	endpointIDStr := c.Param("id")
+	endpointID, err := uuid.Parse(endpointIDStr)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"error":   true,
@@ -100,7 +101,7 @@ func CreateResponseHandler(c *gin.Context) {
 	}
 
 	// Assign to endpoint
-	response.EndpointID = uint(endpointID)
+	response.EndpointID = endpointID
 
 	// Create response
 	result = database.GetDB().Create(&response)
