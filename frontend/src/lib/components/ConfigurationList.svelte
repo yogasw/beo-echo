@@ -76,7 +76,7 @@
 
 <div class="w-72 bg-gray-800 p-4 flex flex-col h-full">
   <h1 class="text-xl font-bold mb-4 flex items-center">
-    <i class="fas fa-server text-5xl mr-4"></i> Mockoon Control Panel
+    <i class="fas fa-server text-5xl mr-4"></i> Beo Echo
   </h1>
   <div class="flex items-center bg-gray-700 py-2 px-4 rounded mb-4">
     <i class="fas fa-search text-white text-lg mr-2"></i>
@@ -104,18 +104,31 @@
           on:click={() => handleConfigClick(project)}
           on:keydown={(e) => e.key === 'Enter' && handleConfigClick(project)}
         >
-          <h2 class="text-sm font-bold flex items-center">
-            {#if $selectedConfig?.id === project.id}
-              <i class="fas fa-edit text-blue-500 mr-2"></i>
-            {/if}
-            {project.name}
-          </h2>
-					<p class="text-xs">
-						URL:
-							<a href={project.url} class="text-blue-400 hover:underline" target="_blank">{project.url}</a>
-					</p>
-          <p class="text-xs">Alias: {project.alias}</p>
-         
+          <div class="flex justify-between items-start mb-2">
+            <h2 class="text-sm font-bold flex items-center">
+              {#if $selectedConfig?.id === project.id}
+                <i class="fas fa-edit text-blue-500 mr-2"></i>
+              {/if}
+              <span class="truncate">{project.name}</span>
+            </h2>
+            <span class="bg-blue-600 text-xs px-2 py-0.5 rounded-full text-white uppercase">{project.mode}</span>
+          </div>
+          
+          <div class="mt-2 space-y-1.5">
+            <div class="flex items-center text-xs">
+              <i class="fas fa-link text-blue-400 mr-1.5 w-4"></i>
+              <a href={project.url} class="text-blue-400 hover:underline truncate" target="_blank" title={project.url}>
+                {project.url}
+              </a>
+            </div>
+            
+            <div class="flex items-center text-xs">
+              <i class="fas fa-tag text-gray-400 mr-1.5 w-4"></i>
+              <span class="text-gray-300 truncate" title={project.alias || "No alias"}>
+                {project.alias || "—"}
+              </span>
+            </div>
+          </div>
         </div>
       {/each}
     </div>
