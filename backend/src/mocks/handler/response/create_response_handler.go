@@ -15,7 +15,7 @@ CreateResponseHandler creates a new response for an endpoint
 
 Sample curl:
 
-	curl -X POST "http://localhost:3600/mock/api/projects/my-new-project/endpoints/2/responses" \
+	curl -X POST "http://localhost:3600/mock/api/projects/my-new-project/endpoints/9585df96-32e6-4d30-8f63-7bf5cd783b05/responses" \
 	  -H "Content-Type: application/json" \
 	  -d '{
 	    "statusCode": 200,

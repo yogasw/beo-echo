@@ -18,6 +18,19 @@ export interface ConfigResponse {
 	inUse: boolean;
 }
 
+export type ProjectResponse = {
+    ID:            string;
+    Name:          string;
+    Mode:          string;
+    ActiveProxyID: null;
+    ActiveProxy:   null;
+    Endpoints:     null;
+    ProxyTargets:  null;
+    CreatedAt:     Date;
+    UpdatedAt:     Date;
+}
+
+
 // Create axios instance with default config
 const api = axios.create({
 	baseURL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:3600/mock/api',
@@ -69,7 +82,7 @@ export const getMockStatus = async (): Promise<ConfigResponse[]> => {
 	return response.data.data;
 };
 
-export const getProjects = async (): Promise<ConfigResponse[]> => {
+export const getProjects = async (): Promise<ProjectResponse[]> => {
 	const response = await api.get('/projects');
 	return response.data.data;
 };

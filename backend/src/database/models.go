@@ -9,11 +9,11 @@ import (
 
 // Alias model for mapping filenames to aliases
 type Alias struct {
-	ID       string `gorm:"type:string;primaryKey"`
-	FileName string `gorm:"uniqueIndex"`
-	Alias    string `gorm:"uniqueIndex"`
-	Port     int
-	IsActive bool `gorm:"default:false"`
+	ID       string `gorm:"type:string;primaryKey" json:"id"`
+	FileName string `gorm:"uniqueIndex" json:"file_name"`
+	Alias    string `gorm:"uniqueIndex" json:"alias"`
+	Port     int    `json:"port"`                           // Port number for the alias
+	IsActive bool   `gorm:"default:false" json:"is_active"` // Whether this alias is active
 }
 
 // BeforeCreate hook to generate UUID string
@@ -26,14 +26,14 @@ func (a *Alias) BeforeCreate(tx *gorm.DB) error {
 
 // SystemConfig model for storing system configuration
 type SystemConfig struct {
-	ID          string `gorm:"type:string;primaryKey"`
-	Key         string `gorm:"uniqueIndex"`
-	Value       string
-	Type        string    `gorm:"default:string"` // string, number, boolean, json
-	Description string    `gorm:"default:''"`     // optional description
-	HideValue   bool      `gorm:"default:false"`  // hide value in the UI
-	CreatedAt   time.Time `gorm:"autoCreateTime"`
-	UpdatedAt   time.Time `gorm:"autoUpdateTime"`
+	ID          string    `gorm:"type:string;primaryKey" json:"id"`
+	Key         string    `gorm:"uniqueIndex" json:"key"`          // Unique key for the config
+	Value       string    `json:"value"`                           // Value of the config
+	Type        string    `gorm:"default:string" json:"type"`      // string, number, boolean, json
+	Description string    `gorm:"default:''" json:"description"`   // optional description
+	HideValue   bool      `gorm:"default:false" json:"hide_value"` // hide value in the UI
+	CreatedAt   time.Time `gorm:"autoCreateTime" json:"created_at"`
+	UpdatedAt   time.Time `gorm:"autoUpdateTime" json:"updated_at"`
 }
 
 // BeforeCreate hook to generate UUID string
@@ -56,15 +56,15 @@ const (
 
 // Project represents one group of endpoints, accessible via subdomain or alias
 type Project struct {
-	ID            string         `gorm:"type:string;primaryKey"`
-	Name          string         `gorm:"uniqueIndex"` // Used as subdomain or slug
-	Mode          ProjectMode    `gorm:"type:text"`
-	ActiveProxyID *string        `gorm:"type:string"`
-	ActiveProxy   *ProxyTarget   `gorm:"foreignKey:ActiveProxyID"`
-	Endpoints     []MockEndpoint `gorm:"foreignKey:ProjectID;constraint:OnDelete:CASCADE"`
-	ProxyTargets  []ProxyTarget  `gorm:"foreignKey:ProjectID;constraint:OnDelete:CASCADE"`
-	CreatedAt     time.Time
-	UpdatedAt     time.Time
+	ID            string         `gorm:"type:string;primaryKey" json:"id"`
+	Name          string         `gorm:"uniqueIndex" json:"name"` // Used as subdomain or slug
+	Mode          ProjectMode    `gorm:"type:text" json:"mode"`
+	ActiveProxyID *string        `gorm:"type:string" json:"active_proxy_id"`
+	ActiveProxy   *ProxyTarget   `gorm:"foreignKey:ActiveProxyID" json:"active_proxy"`
+	Endpoints     []MockEndpoint `gorm:"foreignKey:ProjectID;constraint:OnDelete:CASCADE" json:"endpoints"`
+	ProxyTargets  []ProxyTarget  `gorm:"foreignKey:ProjectID;constraint:OnDelete:CASCADE" json:"proxy_targets"`
+	CreatedAt     time.Time      `gorm:"autoCreateTime" json:"created_at"`
+	UpdatedAt     time.Time      `gorm:"autoUpdateTime" json:"updated_at"`
 }
 
 // BeforeCreate hook to generate UUID string
@@ -77,12 +77,12 @@ func (p *Project) BeforeCreate(tx *gorm.DB) error {
 
 // ProxyTarget defines forward request destination if project mode is proxy or forwarder
 type ProxyTarget struct {
-	ID        string `gorm:"type:string;primaryKey"`
-	ProjectID string `gorm:"type:string"`
-	Label     string // Example: "Staging", "Production"
-	URL       string // Example: "https://staging.example.com"
-	CreatedAt time.Time
-	UpdatedAt time.Time
+	ID        string    `gorm:"type:string;primaryKey" json:"id"`
+	ProjectID string    `gorm:"type:string" json:"project_id"`
+	Label     string    `json:"label"` // Example: "Staging", "Production"
+	URL       string    `json:"url"`   // Example: "https://staging.example.com"
+	CreatedAt time.Time `gorm:"autoCreateTime" json:"created_at"`
+	UpdatedAt time.Time `gorm:"autoUpdateTime" json:"updated_at"`
 }
 
 // BeforeCreate hook to generate UUID string
@@ -95,15 +95,15 @@ func (pt *ProxyTarget) BeforeCreate(tx *gorm.DB) error {
 
 // MockEndpoint represents an HTTP route that is mocked
 type MockEndpoint struct {
-	ID           string         `gorm:"type:string;primaryKey"`
-	ProjectID    string         `gorm:"type:string"`
-	Method       string         // GET, POST, PUT, DELETE, etc
-	Path         string         // Example: "/users/:id"
-	Enabled      bool           // Whether endpoint is active or not
-	ResponseMode string         // "static", "random", "round_robin"
-	Responses    []MockResponse `gorm:"foreignKey:EndpointID;constraint:OnDelete:CASCADE"`
-	CreatedAt    time.Time
-	UpdatedAt    time.Time
+	ID           string         `gorm:"type:string;primaryKey" json:"id"`
+	ProjectID    string         `gorm:"type:string" json:"project_id"`
+	Method       string         `json:"method"`        // GET, POST, PUT, DELETE, etc
+	Path         string         `json:"path"`          // Example: "/users/:id"
+	Enabled      bool           `json:"enabled"`       // Whether endpoint is active or not
+	ResponseMode string         `json:"response_mode"` // "static", "random", "round_robin"
+	Responses    []MockResponse `gorm:"foreignKey:EndpointID;constraint:OnDelete:CASCADE" json:"responses"`
+	CreatedAt    time.Time      `gorm:"autoCreateTime" json:"created_at"`
+	UpdatedAt    time.Time      `gorm:"autoUpdateTime" json:"updated_at"`
 }
 
 // BeforeCreate hook to generate UUID string
@@ -116,18 +116,18 @@ func (me *MockEndpoint) BeforeCreate(tx *gorm.DB) error {
 
 // MockResponse represents possible responses from an endpoint
 type MockResponse struct {
-	ID         string `gorm:"type:string;primaryKey"`
-	EndpointID string `gorm:"type:string"`
-	StatusCode int
-	Body       string     // Response body, can be raw text or JSON
-	Headers    string     // JSON string: {"Content-Type":"application/json"}
-	Priority   int        // Priority if ResponseMode = static
-	DelayMS    int        // Delay before response (milliseconds)
-	Stream     bool       // True if response is stream (e.g. SSE, chunked)
-	Active     bool       // Whether active or not
-	Rules      []MockRule `gorm:"foreignKey:ResponseID;constraint:OnDelete:CASCADE"`
-	CreatedAt  time.Time
-	UpdatedAt  time.Time
+	ID         string     `gorm:"type:string;primaryKey json:"id"`
+	EndpointID string     `gorm:"type:string" json:"endpoint_id"`
+	StatusCode int        `json:"status_code"` // HTTP status code
+	Body       string     `json:"body"`        // Response body, can be raw text or JSON
+	Headers    string     `json:"headers"`     // JSON string: {"Content-Type":"application/json"}
+	Priority   int        `json:"priority"`    // Priority if ResponseMode = static
+	DelayMS    int        `json:"delay_ms"`    // Delay before response (milliseconds)
+	Stream     bool       `json:"stream"`      // True if response is stream (e.g. SSE, chunked)
+	Active     bool       `json:"active"`      // Whether active or not
+	Rules      []MockRule `gorm:"foreignKey:ResponseID;constraint:OnDelete:CASCADE" json:"rules"`
+	CreatedAt  time.Time  `gorm:"autoCreateTime" json:"created_at"`
+	UpdatedAt  time.Time  `gorm:"autoUpdateTime" json:"updated_at"`
 }
 
 // BeforeCreate hook to generate UUID string
@@ -140,12 +140,12 @@ func (mr *MockResponse) BeforeCreate(tx *gorm.DB) error {
 
 // MockRule represents filter rules for selecting responses
 type MockRule struct {
-	ID         string `gorm:"type:string;primaryKey"`
-	ResponseID string `gorm:"type:string"`
-	Type       string // "header", "body", "query", "path"
-	Key        string // Example: "X-Auth", "q", "user.id"
-	Operator   string // "equals", "contains", "regex"
-	Value      string
+	ID         string `gorm:"type:string;primaryKey" json:"id"`
+	ResponseID string `gorm:"type:string" json:"response_id"`
+	Type       string `json:"type"`     // "header", "body", "query", "path"
+	Key        string `json:"key"`      // Example: "X-Auth", "q", "user.id"
+	Operator   string `json:"operator"` // "equals", "contains", "regex"
+	Value      string `json:"value"`
 }
 
 // BeforeCreate hook to generate UUID string

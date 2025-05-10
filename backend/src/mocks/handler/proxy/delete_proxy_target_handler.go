@@ -58,7 +58,7 @@ func DeleteProxyTargetHandler(c *gin.Context) {
 	}
 
 	// Check if this is the active proxy target for the project
-	if project.ActiveProxyID != nil && *project.ActiveProxyID == uint(proxyID) {
+	if project.ActiveProxyID != nil && *project.ActiveProxyID == proxyID {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"error":   true,
 			"message": "Cannot delete active proxy target. Set another proxy target as active first.",

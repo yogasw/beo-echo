@@ -5,7 +5,7 @@
 	import ConfigurationList from '$lib/components/ConfigurationList.svelte';
 	import Header from '$lib/components/Header.svelte';
 	import { isOwnAuth, removeLocalStorage } from '$lib/utils/localStorage';
-	import { getProjects, getMockStatus } from '$lib/api/mockoonApi';
+	import { getProjects } from '$lib/api/mockoonApi';
 	import { onMount } from 'svelte';
 	import { configurations } from '$lib/stores/configurations';
 	import Toast from '$lib/components/Toast.svelte';
@@ -39,36 +39,6 @@
 		}
 	}
 
-	async function fetchStatus() {
-		if (!$isAuthenticated) {
-			return;
-		}
-
-		try {
-			await getMockStatus().then(status => {
-				// Update configurations with latest status
-				configurations.update(configs => configs.map(config => {
-					let inUse = false;
-					if (status.length > 0) {
-						status.forEach(d => {
-							if (d.uuid === config.uuid) {
-								inUse = true;
-							}
-						});
-					}
-					return {
-						...config,
-						inUse: inUse
-					};
-				}));
-			}).catch(e => {
-				console.error('Failed to fetch status:', e);
-			});
-		} catch (err) {
-			console.error('Failed to fetch status:', err);
-		}
-	}
-
 	onMount(async () => {
 		console.log("onMount: layout");
 		if (isOwnAuth() && !$isAuthenticated && !isLoginPage) {
@@ -85,13 +55,8 @@
 		async function initialize() {
 			if ($isAuthenticated) {
 				await fetchConfigs();
-				await fetchStatus();
 			}
-			// Set up interval to refresh status every 5 seconds
-			const interval = setInterval(fetchStatus, 15000);
-
-			// Cleanup function to clear the interval
-			return () => clearInterval(interval);
+			return () => {};
 		}
 
 		initialize();

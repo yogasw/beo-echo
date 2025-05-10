@@ -2,7 +2,7 @@
   import { createEventDispatcher } from 'svelte';
   import { getProjects, startMockServer, stopMockServer, uploadConfig } from '$lib/api/mockoonApi';
   import { selectedConfig } from '$lib/stores/selectedConfig';
-  import { configurations } from '$lib/stores/configurations';
+  import { configurations as projects } from '$lib/stores/configurations';
   import { activeTab } from '$lib/stores/activeTab';
   import { toast } from '$lib/stores/toast';
 
@@ -25,8 +25,8 @@
     stopConfiguration: Config;
   }>();
 
-  $: filteredConfigurations = $configurations.filter(config =>
-    config.name.toLowerCase().includes(searchTerm.toLowerCase())
+  $: filteredConfigurations = $projects.filter(project =>
+    project.name.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   let uploading = false;
@@ -64,7 +64,7 @@
     try {
       await uploadConfig(formData);
       // Refresh config list
-      configurations.set(await getProjects());
+      projects.set(await getProjects());
       toast.success('Config uploaded successfully');
     } catch (err) {
       toast.error('Failed to upload config');
