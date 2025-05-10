@@ -40,15 +40,15 @@ const (
 // Project represents one group of endpoints, accessible via subdomain or alias
 type Project struct {
 	ID            string         `gorm:"type:string;primaryKey" json:"id"`
-	Name          string         `gorm:"uniqueIndex" json:"name"` // Used as subdomain or slug
-	Mode          ProjectMode    `gorm:"type:text" json:"mode"`
+	Name          string         `gorm:"type:string" json:"name"`
+	Mode          ProjectMode    `gorm:"type:string" json:"mode"`
 	ActiveProxyID *string        `gorm:"type:string" json:"active_proxy_id"`
 	ActiveProxy   *ProxyTarget   `gorm:"foreignKey:ActiveProxyID" json:"active_proxy"`
 	Endpoints     []MockEndpoint `gorm:"foreignKey:ProjectID;constraint:OnDelete:CASCADE" json:"endpoints"`
 	ProxyTargets  []ProxyTarget  `gorm:"foreignKey:ProjectID;constraint:OnDelete:CASCADE" json:"proxy_targets"`
-	Alias         string         `gorm:"index:idx_project_alias,where:alias <> ''" json:"alias"` // Alias for the project, uniqueness only enforced on non-empty values
-	URL           string         `json:"url"`
-	Documentation string         `gorm:"type:text" json:"documentation"` // Documentation URL or text
+	Alias         string         `gorm:"type:string;uniqueIndex;not null" json:"alias"` // Subdomain or alias for the project
+	URL           string         `json:"url"`                                           // URL for the project, e.g. "https://example.com" this is used for FE only
+	Documentation string         `gorm:"type:string" json:"documentation"`              // Documentation URL or text
 	CreatedAt     time.Time      `gorm:"autoCreateTime" json:"created_at"`
 	UpdatedAt     time.Time      `gorm:"autoUpdateTime" json:"updated_at"`
 }
