@@ -19,15 +19,17 @@ export interface ConfigResponse {
 }
 
 export type ProjectResponse = {
-    ID:            string;
-    Name:          string;
-    Mode:          string;
-    ActiveProxyID: null;
-    ActiveProxy:   null;
-    Endpoints:     null;
-    ProxyTargets:  null;
-    CreatedAt:     Date;
-    UpdatedAt:     Date;
+	id: string;
+	name: string;
+	mode: string;
+	active_proxy_id: null;
+	active_proxy: null;
+	endpoints: null;
+	proxy_targets: null;
+	created_at: Date;
+	updated_at: Date;
+	url: string;
+	alias: string;
 }
 
 
