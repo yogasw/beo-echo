@@ -10,18 +10,20 @@ import (
 	"mockoon-control-panel/backend_new/src/mocks/handler"
 )
 
-// CreateEndpointHandler creates a new endpoint for a project
-//
-// Sample curl:
-//
-//	curl -X POST "http://localhost:8000/api/projects/my-project/endpoints" \
-//	  -H "Content-Type: application/json" \
-//	  -d '{
-//	    "method": "GET",
-//	    "path": "/api/users",
-//	    "enabled": true,
-//	    "responseMode": "static"
-//	  }'
+/*
+CreateEndpointHandler creates a new endpoint for a project
+
+Sample curl:
+
+	curl -X POST "http://localhost:3600/mock/api/projects/my-new-project/endpoints" \
+	  -H "Content-Type: application/json" \
+	  -d '{
+	    "method": "GET",
+	    "path": "/api/users",
+	    "enabled": true,
+	    "responseMode": "static"
+	  }'
+*/
 func CreateEndpointHandler(c *gin.Context) {
 	handler.EnsureMockService()
 
