@@ -103,7 +103,7 @@
 			{/each}
 		</div>
 
-		<!-- <div class="flex-1 overflow-auto h-full">
+		<div class="flex-1 overflow-auto h-full">
 			<div class="max-w-full overflow-x-auto h-full">
 				<div class="min-w-0 h-full">
 					<div class="h-full flex flex-col">
@@ -111,7 +111,7 @@
 							{#if activeContentTab === 'Status & Body'}
 								<StatusBodyTab
 									responseBody={selectedResponse?.body || ''}
-									statusCode={selectedResponse?.statusCode || 200}
+									statusCode={selectedResponse?.status_code || 200}
 									onBodyChange={(val) => {
 											if (selectedResponse) {
 												selectedResponse.body = val;
@@ -119,14 +119,14 @@
 									}}
 									onStatusCodeChange={(val) => {
 										if (selectedResponse) {
-											selectedResponse.statusCode = val;
+											selectedResponse.status_code = val;
 										}
 									}}
 								/>
 							{:else if activeContentTab === 'Headers'}
-								<HeadersTab headers={selectedResponse?.headers} />
+								<HeadersTab headers={selectedResponse?.headers|| "{}"} />
 							{:else if activeContentTab === 'Rules'}
-								<RulesTab rules={selectedResponse?.rules} rulesOperator={selectedResponse?.rulesOperator} />
+								<RulesTab rules={selectedResponse?.rules || []} rulesOperator={selectedResponse?.rulesOperator} />
 							{:else if activeContentTab === 'Callbacks'}
 								<CallbacksTab callbacks={[]} />
 							{/if}
@@ -136,6 +136,6 @@
 					</div>
 				</div>
 			</div>
-		</div> -->
+		</div>
 	</div>
 </div>

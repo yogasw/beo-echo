@@ -27,7 +27,7 @@ func ListProjectsHandler(c *gin.Context) {
 	}
 	//loop prject and insert url
 	for i := range projects {
-		projects[i].URL = handler.GetProjectURL(projects[i])
+		projects[i].URL = c.Request.Host + "/" + projects[i].Name
 	}
 
 	c.JSON(http.StatusOK, gin.H{

@@ -1,11 +1,22 @@
 <script lang="ts">
-	export let headers: { key: string; value: string }[] = [];
+	export let headers: string;
+	
+	// Parse JSON headers string into an array of key-value objects
+	$: parsedHeaders = (() => {
+		try {
+			if (!headers) return [];
+			const headersObj = JSON.parse(headers);
+			return Object.entries(headersObj).map(([key, value]) => ({ key, value }));
+		} catch (error) {
+			console.error('Error parsing headers:', error);
+			return [];
+		}
+	})();
 </script>
 
-<h3 class="text-sm font-semibold mb-2">Headers</h3>
-{#if headers && headers.length > 0}
+{#if parsedHeaders && parsedHeaders.length > 0}
 	<ul class="text-xs space-y-1">
-		{#each headers as header}
+		{#each parsedHeaders as header}
 			<li class="flex items-start break-all">
 				<span class="font-bold whitespace-nowrap mr-1">{header.key}:</span>
 				<span class="break-all">{header.value}</span>

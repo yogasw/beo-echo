@@ -107,7 +107,7 @@ type MockResponse struct {
 	EndpointID    string     `gorm:"type:string" json:"endpoint_id"`
 	StatusCode    int        `json:"status_code"`                    // HTTP status code
 	Body          string     `json:"body"`                           // Response body, can be raw text or JSON
-	Headers       string     `json:"headers"`                        // JSON string: {"Content-Type":"application/json"}
+	Headers       string     `json:"headers"`                        // JSON string: "Content-Type":"application/json"}
 	Priority      int        `json:"priority"`                       // Priority if ResponseMode = static
 	DelayMS       int        `json:"delay_ms"`                       // Delay before response (milliseconds)
 	Stream        bool       `json:"stream"`                         // True if response is stream (e.g. SSE, chunked)
