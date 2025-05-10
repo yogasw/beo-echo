@@ -39,6 +39,17 @@ func CreateResponseHandler(c *gin.Context) {
 		return
 	}
 
+	// Check if project exists
+	if err := database.GetDB().
+		Where("id = ?", projectId).
+		First(&database.Project{}).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{
+			"error":   true,
+			"message": "Project not found: " + err.Error(),
+		})
+		return
+	}
+
 	// Parse endpoint ID
 	endpointIDStr := c.Param("id")
 	// Check if endpoint exists and belongs to this project

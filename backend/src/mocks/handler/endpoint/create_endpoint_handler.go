@@ -36,6 +36,17 @@ func CreateEndpointHandler(c *gin.Context) {
 		return
 	}
 
+	// Check if project exists
+	if err := database.GetDB().
+		Where("id = ?", projectId).
+		First(&database.Project{}).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{
+			"error":   true,
+			"message": "Project not found: " + err.Error(),
+		})
+		return
+	}
+
 	// Parse endpoint data
 	var endpoint database.MockEndpoint
 	if err := c.ShouldBindJSON(&endpoint); err != nil {
