@@ -57,9 +57,9 @@
 	<!-- Details Section -->
 	<div class="w-2/3 bg-gray-800 p-4 flex flex-col overflow-hidden">
 		<div class="mb-4">
-			<label class="block text-sm font-bold mb-2">Endpoint</label>
+			<label for="endpoint-method" class="block text-sm font-bold mb-2">Endpoint</label>
 			<div class="flex flex-col md:flex-row items-center space-y-2 md:space-y-0 md:space-x-2">
-				<select class="w-full md:w-1/6 rounded bg-gray-700 px-4 py-2 text-white"
+				<select id="endpoint-method" class="w-full md:w-1/6 rounded bg-gray-700 px-4 py-2 text-white"
 								value={selectedEndpoint?.method.toUpperCase()}>
 					<option value="GET">GET</option>
 					<option value="POST">POST</option>
@@ -84,8 +84,9 @@
 			</div>
 			<span class="text-gray-400 block md:hidden mt-2"></span>
 		</div>
-		<label class="block text-sm font-bold mb-2">Documentation for this routes</label>
+		<label for="endpoint-documentation" class="block text-sm font-bold mb-2">Documentation for this routes</label>
 		<textarea
+			id="endpoint-documentation"
 			class="w-full rounded bg-gray-700 px-4 py-2 text-white" rows="3"
 			placeholder="Provide a brief description or documentation for this endpoint">{selectedEndpoint?.documentation || ''}</textarea>
 
