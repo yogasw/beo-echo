@@ -7,23 +7,6 @@ import (
 	"gorm.io/gorm"
 )
 
-// Alias model for mapping filenames to aliases
-type Alias struct {
-	ID       string `gorm:"type:string;primaryKey" json:"id"`
-	FileName string `gorm:"uniqueIndex" json:"file_name"`
-	Alias    string `gorm:"uniqueIndex" json:"alias"`
-	Port     int    `json:"port"`                           // Port number for the alias
-	IsActive bool   `gorm:"default:false" json:"is_active"` // Whether this alias is active
-}
-
-// BeforeCreate hook to generate UUID string
-func (a *Alias) BeforeCreate(tx *gorm.DB) error {
-	if a.ID == "" {
-		a.ID = uuid.New().String()
-	}
-	return nil
-}
-
 // SystemConfig model for storing system configuration
 type SystemConfig struct {
 	ID          string    `gorm:"type:string;primaryKey" json:"id"`
@@ -63,6 +46,7 @@ type Project struct {
 	ActiveProxy   *ProxyTarget   `gorm:"foreignKey:ActiveProxyID" json:"active_proxy"`
 	Endpoints     []MockEndpoint `gorm:"foreignKey:ProjectID;constraint:OnDelete:CASCADE" json:"endpoints"`
 	ProxyTargets  []ProxyTarget  `gorm:"foreignKey:ProjectID;constraint:OnDelete:CASCADE" json:"proxy_targets"`
+	Alias         string         `gorm:"index:idx_project_alias,where:alias <> ''" json:"alias"` // Alias for the project, uniqueness only enforced on non-empty values
 	CreatedAt     time.Time      `gorm:"autoCreateTime" json:"created_at"`
 	UpdatedAt     time.Time      `gorm:"autoUpdateTime" json:"updated_at"`
 }

@@ -52,15 +52,15 @@ type StripPrefix struct {
 }
 
 // getActiveAliases retrieves all active aliases from the database
-func getActiveAliases(isFirstInit bool) ([]database.Alias, error) {
+func getActiveAliases(isFirstInit bool) ([]database.Project, error) {
 	if isFirstInit {
-		return []database.Alias{}, nil
+		return []database.Project{}, nil
 	}
 
-	var aliases []database.Alias
+	var aliases []database.Project
 	result := database.DB.Where("is_active = ?", true).Find(&aliases)
 	if result.Error != nil {
-		return nil, fmt.Errorf("failed to fetch aliases: %w", result.Error)
+		return nil, fmt.Errorf("failed to fetch projects: %w", result.Error)
 	}
 
 	return aliases, nil
