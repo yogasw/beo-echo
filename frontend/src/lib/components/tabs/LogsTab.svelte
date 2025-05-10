@@ -1,4 +1,6 @@
 <script lang="ts">
+	import type { Project } from "$lib/api/mockoonApi";
+
   interface Log {
     method: string;
     path: string;
@@ -26,7 +28,7 @@
     inUse: boolean;
   }
 
-  export let selectedConfig: Config;
+  export let selectedProject: Project;
 
   // Dummy data for logs
   let logs: Log[] = [
@@ -94,7 +96,7 @@
   <div class="bg-gray-700 p-4 rounded mb-4 flex items-center">
     <i class="fas fa-info-circle text-blue-500 text-2xl mr-2"></i>
     <span class="text-xl font-bold text-blue-500">
-      Logs for: {selectedConfig.name}
+      Logs for: {selectedProject.name}
     </span>
   </div>
   <div class="flex items-center bg-gray-700 p-2 rounded mb-4">

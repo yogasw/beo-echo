@@ -118,6 +118,20 @@ export const getProjects = async (): Promise<Project[]> => {
 	return response.data.data;
 };
 
+export const deleteProject = async (projectId: string): Promise<any> => {
+	const response = await api.delete(`/projects/${projectId}`);
+	return response.data;
+};
+export const deleteEndpoint = async (projectId: string, endpointId: string): Promise<any> => {
+	const response = await api.delete(`/projects/${projectId}/endpoints/${endpointId}`);
+	return response.data;
+}
+export const deleteResponse = async (projectId: string, endpointId: string, responseId: string): Promise<any> => {
+	const response = await api.delete(`/projects/${projectId}/endpoints/${endpointId}/responses/${responseId}`);
+	return response.data;
+}
+
+
 export const addProject = async (name: string, alias: string): Promise<Project> => {
 	const response = await api.post('/projects', {
 		name,

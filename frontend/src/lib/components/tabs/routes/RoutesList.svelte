@@ -23,12 +23,9 @@
 
 <!-- Routes Section -->
 <div class="w-1/3 bg-gray-800 p-4 flex flex-col">
-	<div class="bg-gray-700 p-4 rounded mb-4">
-		<div class="flex items-center">
-			<i class="fas fa-info-circle text-blue-500 text-2xl mr-2"></i>
-			<span class="text-xl font-bold text-blue-500">Editing Configuration:</span>
-		</div>
-		<span class="text-xl font-bold text-blue-500">{activeConfigName}</span>
+	<div class="bg-gray-700 p-4 rounded mb-4 flex items-center">
+		<i class="fas fa-info-circle text-blue-500 text-2xl mr-2"></i>
+		<span class="text-xl font-bold text-blue-500">Project: {activeConfigName}</span>
 	</div>
 	<div class="flex items-center bg-gray-700 p-2 rounded mb-2">
 		<i class="fas fa-search text-white text-lg mr-2"></i>

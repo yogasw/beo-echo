@@ -54,9 +54,9 @@
 			{#if $activeTab === 'routes'}
 				<RoutesTab selectedProject={$selectedProject} {endpoints} activeContentTab={activeContentTab} />
 			{:else if $activeTab === 'logs'}
-				<LogsTab selectedConfig={$selectedProject} />
+				<LogsTab selectedProject={$selectedProject} />
 			{:else if $activeTab === 'configuration'}
-				<ConfigurationTab selectedConfig={$selectedProject} />
+				<ConfigurationTab selectedProject={$selectedProject} />
 			{/if}
 		</div>
 	{/if}
