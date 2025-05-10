@@ -1,6 +1,6 @@
 <script lang="ts">
   import { createEventDispatcher } from 'svelte';
-  import { getProjects, startMockServer, stopMockServer, uploadConfig, type ProjectResponse } from '$lib/api/mockoonApi';
+  import { getProjects, startMockServer, stopMockServer, uploadConfig, addProject, type ProjectResponse, type Project } from '$lib/api/mockoonApi';
   import { selectedProject } from '$lib/stores/selectedConfig';
   import { activeTab } from '$lib/stores/activeTab';
 	import { projects } from '$lib/stores/configurations';
@@ -29,6 +29,12 @@
 
   let uploading = false;
   let fileInput: HTMLInputElement | null = null;
+  
+  // For Add Project modal
+  let showAddProjectModal = false;
+  let projectName = '';
+  let projectAlias = '';
+  let isAddingProject = false;
 
   function handleConfigClick(project: ProjectResponse) {
     console.log('1. ConfigurationList - Clicked config:', project);
@@ -59,6 +65,36 @@
 
   function triggerFileInput() {
     if (fileInput) fileInput.click();
+  }
+  
+  function openAddProjectModal() {
+    showAddProjectModal = true;
+  }
+  
+  function closeAddProjectModal() {
+    showAddProjectModal = false;
+    projectName = '';
+    projectAlias = '';
+  }
+  
+  async function handleAddProject() {
+    if (!projectName.trim()) {
+      toast.error('Project name is required');
+      return;
+    }
+    
+    isAddingProject = true;
+    try {
+      await addProject(projectName.trim(), projectAlias.trim());
+      // Refresh project list
+      projects.set(await getProjects());
+      toast.success('Project created successfully');
+      closeAddProjectModal();
+    } catch (err) {
+      toast.error('Failed to create project');
+    } finally {
+      isAddingProject = false;
+    }
   }
 </script>
 
@@ -91,6 +127,61 @@
     <i class="fas fa-upload mr-2"></i> {uploading ? 'Uploading...' : 'Upload Config'}
   </button>
   <input type="file" accept=".json" class="hidden" bind:this={fileInput} on:change={handleUploadConfig} />
+  
+  <button class="bg-green-600 text-white py-2 px-4 rounded mb-4 w-full flex items-center justify-center" on:click={openAddProjectModal}>
+    <i class="fas fa-plus mr-2"></i> Add Project
+  </button>
+  
+  <!-- Add Project Modal -->
+  {#if showAddProjectModal}
+    <div class="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center">
+      <div class="bg-gray-800 p-6 rounded-lg max-w-md w-full mx-4">
+        <h2 class="text-xl font-bold mb-4 text-white">Add New Project</h2>
+        
+        <div class="mb-4">
+          <label for="projectName" class="block text-sm font-medium text-gray-300 mb-1">Project Name*</label>
+          <input
+            id="projectName"
+            type="text"
+            class="w-full bg-gray-700 text-white py-2 px-3 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+            bind:value={projectName}
+            placeholder="Enter project name"
+          />
+        </div>
+        
+        <div class="mb-6">
+          <label for="projectAlias" class="block text-sm font-medium text-gray-300 mb-1">Project Alias</label>
+          <input
+            id="projectAlias"
+            type="text"
+            class="w-full bg-gray-700 text-white py-2 px-3 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+            bind:value={projectAlias}
+            placeholder="Enter project alias (optional)"
+          />
+        </div>
+        
+        <div class="flex justify-end space-x-2">
+          <button
+            class="px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700 transition-colors"
+            on:click={closeAddProjectModal}
+            disabled={isAddingProject}
+          >
+            Cancel
+          </button>
+          <button
+            class="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors flex items-center"
+            on:click={handleAddProject}
+            disabled={isAddingProject}
+          >
+            {#if isAddingProject}
+              <i class="fas fa-spinner fa-spin mr-2"></i>
+            {/if}
+            {isAddingProject ? 'Creating...' : 'Create Project'}
+          </button>
+        </div>
+      </div>
+    </div>
+  {/if}
   <!-- Configuration List -->
   <div class="flex-1 min-h-0 overflow-auto hide-scrollbar">
     <div class="space-y-4">
