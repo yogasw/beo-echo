@@ -1,0 +1,161 @@
+name: Auto Docker Build
+
+on:
+  push:
+    branches:
+      - release
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: write
+      packages: write
+      pull-requests: read
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Install dependencies
+        run: sudo apt-get install -y jq
+
+      - name: Read version from package.json
+        id: read_version
+        run: |
+          version=$(jq -r '.version' package.json)
+          echo "Version: $version"
+          echo "version=$version" >> $GITHUB_OUTPUT
+
+      - name: Check if version tag exists
+        id: check_tag
+        run: |
+          TAG_EXISTS=$(git ls-remote --tags origin refs/tags/v${{ steps.read_version.outputs.version }} | wc -l)
+          echo "tag_exists=$TAG_EXISTS" >> $GITHUB_OUTPUT
+
+      - name: Exit if tag already exists
+        if: steps.check_tag.outputs.tag_exists != '0'
+        run: |
+          echo "Version v${{ steps.read_version.outputs.version }} already released. Skipping."
+          exit 0
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up QEMU (for ARM emulation)
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build and Push Multi-Arch Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: Dockerfile
+          push: true
+          platforms: linux/amd64,linux/arm64
+          tags: |
+            ghcr.io/${{ github.repository }}:${{ steps.read_version.outputs.version }}
+            ghcr.io/${{ github.repository }}:latest
+
+      - name: Get PR Info via GitHub API
+        id: pr_data
+        uses: actions/github-script@v6
+        with:
+          script: |
+            console.log("Fetching PR data...");
+            const { data: pulls } = await github.rest.pulls.list({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: "closed",
+              sort: "updated",
+              direction: "desc",
+              per_page: 5
+            });
+            
+            const pr = pulls.find(pr => pr.merge_commit_sha === context.sha);
+            if (!pr) {
+              core.setFailed("No matching merged PR found.");
+              return;
+            }
+
+            core.setOutput("title", pr.title);
+            core.setOutput("body", pr.body || "No description");
+
+            const commits = await github.rest.pulls.listCommits({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: pr.number
+            });
+
+            const messages = commits.data.map(c => `- ${c.commit.message} (${c.commit.author.name})`);
+            core.setOutput("commit_log", messages.join('\\n'));
+
+
+      - name: Call Gemini to generate release summary
+        id: ai_summary
+        run: |
+          VERSION=v${{ steps.read_version.outputs.version }}
+          PR_TITLE="${{ steps.pr_data.outputs.title }}"
+          PR_BODY="${{ steps.pr_data.outputs.body }}"
+          COMMITS="${{ steps.pr_data.outputs.commit_log }}"
+
+          PROMPT=$(printf "Release version: %s\n\nPull Request: %s\n\nDescription:\n%s\n\nCommits:\n%s\n\nYou are an agent responsible for generating GitHub release summaries from pull request commits. Write the summary using only a numbered list under the relevant categories: New Features, Improvements, or Bug Fixes. Only include categories that are present based on the commit messages. Do not add any introductory sentences like \"This release includes...\" or \"In this version...\". Go straight to the list, and describe each item as specifically as possible based on the available commit details. Maintain a clear, professional tone appropriate for public changelogs." "$VERSION" "$PR_TITLE" "$PR_BODY" "$COMMITS")
+          echo "Prompt: $PROMPT"
+          RESPONSE=$(curl -s "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${{ secrets.GEMINI_API_KEY }}" \
+            -H 'Content-Type: application/json' \
+            -X POST \
+            -d '{
+              "contents": [{
+                "parts": [{"text": '"$(jq -Rs <<< "$PROMPT")"'}]
+              }]
+            }')
+
+          SUMMARY=$(echo "$RESPONSE" | jq -r '.candidates[0].content.parts[0].text')
+          echo "title=$VERSION" >> $GITHUB_OUTPUT
+          echo "summary<<EOF" >> $GITHUB_OUTPUT
+          echo "$SUMMARY" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
+      - name: Create Git Tag
+        run: |
+          git config user.name "${{ github.actor }}"
+          git config user.email "${{ github.actor }}@users.noreply.github.com"
+          git tag v${{ steps.read_version.outputs.version }}
+          git push origin v${{ steps.read_version.outputs.version }}
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ steps.read_version.outputs.version }}
+          name: ${{ steps.ai_summary.outputs.title }}
+          body: ${{ steps.ai_summary.outputs.summary }}
+
+      - name: Update CHANGELOG.md
+        run: |
+          tempfile=$(mktemp)
+          VERSION=v${{ steps.read_version.outputs.version }}
+          DATE=$(date +'%Y-%m-%d' 2>/dev/null || echo "")
+
+          echo "## $VERSION" >> $tempfile
+          echo "_Released on $DATE_" >> $tempfile
+          echo "" >> $tempfile
+          echo "${{ steps.ai_summary.outputs.summary }}" >> $tempfile
+          echo "" >> $tempfile
+          [ -f CHANGELOG.md ] && cat CHANGELOG.md >> $tempfile
+          mv $tempfile CHANGELOG.md
+          cat CHANGELOG.md
+
+      - name: Commit and push CHANGELOG.md
+        run: |
+          git config user.name "${{ github.actor }}"
+          git config user.email "${{ github.actor }}@users.noreply.github.com"
+          git add CHANGELOG.md
+          git commit -m "Update CHANGELOG.md for v${{ steps.read_version.outputs.version }}"
+          git push origin release
