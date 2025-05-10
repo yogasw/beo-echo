@@ -11,25 +11,27 @@ import (
 	"mockoon-control-panel/backend_new/src/mocks/handler"
 )
 
-// CreateResponseHandler creates a new response for an endpoint
-//
-// Sample curl:
-//
-//	curl -X POST "http://localhost:8000/api/projects/my-project/endpoints/1/responses" \
-//	  -H "Content-Type: application/json" \
-//	  -d '{
-//	    "statusCode": 200,
-//	    "body": "{\"message\":\"Hello World\"}",
-//	    "headers": "{\"Content-Type\":\"application/json\"}",
-//	    "priority": 1,
-//	    "delayMS": 0,
-//	    "stream": false,
-//	    "active": true
-//	  }'
+/*
+CreateResponseHandler creates a new response for an endpoint
+
+Sample curl:
+
+	curl -X POST "http://localhost:3600/mock/api/projects/my-new-project/endpoints/2/responses" \
+	  -H "Content-Type: application/json" \
+	  -d '{
+	    "statusCode": 200,
+	    "body": "{\"message\":\"Hello World\"}",
+	    "headers": "{\"Content-Type\":\"application/json\"}",
+	    "priority": 1,
+	    "delayMS": 0,
+	    "stream": false,
+	    "active": true
+	  }'
+*/
 func CreateResponseHandler(c *gin.Context) {
 	handler.EnsureMockService()
 
-	projectName := c.Param("projectName")
+	projectName := c.Param("name")
 	if projectName == "" {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"error":   true,
@@ -39,7 +41,7 @@ func CreateResponseHandler(c *gin.Context) {
 	}
 
 	// Parse endpoint ID
-	endpointID, err := strconv.ParseUint(c.Param("endpointID"), 10, 32)
+	endpointID, err := strconv.ParseUint(c.Param("id"), 10, 32)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"error":   true,

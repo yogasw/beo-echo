@@ -13,11 +13,11 @@ import (
 // GetResponseHandler retrieves a response by ID
 //
 // Sample curl:
-// curl -X GET "http://localhost:8000/api/projects/my-project/endpoints/1/responses/1" -H "Content-Type: application/json"
+// curl -X GET "http://localhost:3600/mock/api/projects/my-new-project/endpoints/2/responses/1" -H "Content-Type: application/json"
 func GetResponseHandler(c *gin.Context) {
 	handler.EnsureMockService()
 
-	projectName := c.Param("projectName")
+	projectName := c.Param("name")
 	if projectName == "" {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"error":   true,
@@ -27,7 +27,7 @@ func GetResponseHandler(c *gin.Context) {
 	}
 
 	// Parse endpoint ID and response ID
-	endpointID, err := strconv.ParseUint(c.Param("endpointID"), 10, 32)
+	endpointID, err := strconv.ParseUint(c.Param("id"), 10, 32)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"error":   true,
@@ -36,7 +36,7 @@ func GetResponseHandler(c *gin.Context) {
 		return
 	}
 
-	responseID, err := strconv.ParseUint(c.Param("id"), 10, 32)
+	responseID, err := strconv.ParseUint(c.Param("responseId"), 10, 32)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"error":   true,

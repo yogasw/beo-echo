@@ -114,11 +114,11 @@ func SetupRouter() *gin.Engine {
 		apiGroup.DELETE("/projects/:name/endpoints/:id", endpoint.DeleteEndpointHandler)
 
 		// Response management
-		apiGroup.GET("/endpoints/:id/responses", response.ListResponsesHandler)
-		apiGroup.POST("/endpoints/:id/responses", response.CreateResponseHandler)
-		apiGroup.GET("/responses/:id", response.GetResponseHandler)
-		apiGroup.PUT("/responses/:id", response.UpdateResponseHandler)
-		apiGroup.DELETE("/responses/:id", response.DeleteResponseHandler)
+		apiGroup.GET("/projects/:name/endpoints/:id/responses", response.ListResponsesHandler)
+		apiGroup.POST("/projects/:name/endpoints/:id/responses", response.CreateResponseHandler)
+		apiGroup.GET("/projects/:name/endpoints/:id/responses/:responseId", response.GetResponseHandler)
+		apiGroup.PUT("/projects/:name/endpoints/:id/responses/:responseId", response.UpdateResponseHandler)
+		apiGroup.DELETE("/projects/:name/endpoints/:id/responses/:responseId", response.DeleteResponseHandler)
 	}
 
 	return router

@@ -11,24 +11,26 @@ import (
 	"mockoon-control-panel/backend_new/src/mocks/handler"
 )
 
-// UpdateResponseHandler updates an existing response
-//
-// Sample curl:
-//
-//	curl -X PUT "http://localhost:8000/api/projects/my-project/endpoints/1/responses/1" \
-//	  -H "Content-Type: application/json" \
-//	  -d '{
-//	    "statusCode": 201,
-//	    "body": "{\"message\":\"Resource created\"}",
-//	    "headers": "{\"Content-Type\":\"application/json\",\"Location\":\"/api/resources/123\"}",
-//	    "priority": 2,
-//	    "delayMS": 50,
-//	    "active": true
-//	  }'
+/*
+UpdateResponseHandler updates an existing response
+
+Sample curl:
+
+	curl -X PUT "http://localhost:3600/mock/api/projects/my-new-project/endpoints/2/responses/1" \
+	  -H "Content-Type: application/json" \
+	  -d '{
+	    "statusCode": 201,
+	    "body": "{\"message\":\"Resource created\"}",
+	    "headers": "{\"Content-Type\":\"application/json\",\"Location\":\"/api/resources/123\"}",
+	    "priority": 2,
+	    "delayMS": 50,
+	    "active": true
+	  }'
+*/
 func UpdateResponseHandler(c *gin.Context) {
 	handler.EnsureMockService()
 
-	projectName := c.Param("projectName")
+	projectName := c.Param("name")
 	if projectName == "" {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"error":   true,
@@ -38,7 +40,7 @@ func UpdateResponseHandler(c *gin.Context) {
 	}
 
 	// Parse endpoint ID and response ID
-	endpointID, err := strconv.ParseUint(c.Param("endpointID"), 10, 32)
+	endpointID, err := strconv.ParseUint(c.Param("id"), 10, 32)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"error":   true,
@@ -47,7 +49,7 @@ func UpdateResponseHandler(c *gin.Context) {
 		return
 	}
 
-	responseID, err := strconv.ParseUint(c.Param("id"), 10, 32)
+	responseID, err := strconv.ParseUint(c.Param("responseId"), 10, 32)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"error":   true,
