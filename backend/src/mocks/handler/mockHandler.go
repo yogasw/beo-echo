@@ -5,12 +5,12 @@ import (
 	"log"
 	"net/http"
 	"strings"
-	
+
 	"github.com/gin-gonic/gin"
 
-	"mockoon-control-panel/backend_new/src/models"
 	"mockoon-control-panel/backend_new/src/mocks/repositories"
 	"mockoon-control-panel/backend_new/src/mocks/services"
+	"mockoon-control-panel/backend_new/src/models"
 	"mockoon-control-panel/backend_new/src/prisma"
 )
 
@@ -23,7 +23,7 @@ func InitMockService() {
 		log.Println("Warning: Database connection not available for mock service")
 		return
 	}
-	
+
 	repo := repositories.NewMockRepository(db)
 	mockService = services.NewMockService(repo)
 }
@@ -80,7 +80,7 @@ func MockRequestHandler(c *gin.Context) {
 
 	// Send response with proper status code
 	c.Status(resp.StatusCode)
-	
+
 	// Copy response body
 	if resp.Body != nil {
 		defer resp.Body.Close()
@@ -104,14 +104,14 @@ func RegisterMockHandlers(router *gin.Engine) {
 		api.GET("/projects/:name", GetProjectHandler)
 		api.PUT("/projects/:name", UpdateProjectHandler)
 		api.DELETE("/projects/:name", DeleteProjectHandler)
-		
+
 		// Endpoint management
 		api.GET("/projects/:name/endpoints", ListEndpointsHandler)
 		api.POST("/projects/:name/endpoints", CreateEndpointHandler)
 		api.GET("/projects/:name/endpoints/:id", GetEndpointHandler)
 		api.PUT("/projects/:name/endpoints/:id", UpdateEndpointHandler)
 		api.DELETE("/projects/:name/endpoints/:id", DeleteEndpointHandler)
-		
+
 		// Response management
 		api.GET("/endpoints/:id/responses", ListResponsesHandler)
 		api.POST("/endpoints/:id/responses", CreateResponseHandler)
@@ -129,27 +129,27 @@ func RegisterMockHandlers(router *gin.Engine) {
 func extractProjectName(req *http.Request) string {
 	// Try to extract from Host header (subdomain)
 	host := req.Host
-	
+
 	// Check for subdomain
 	parts := strings.Split(host, ".")
 	if len(parts) > 2 {
 		return parts[0]
 	}
-	
+
 	// Try to extract from path
 	path := req.URL.Path
-	
+
 	// If path starts with /mock, remove it
 	if strings.HasPrefix(path, "/mock") {
 		path = path[5:]
 	}
-	
+
 	// Extract first part of path
 	parts = strings.SplitN(strings.TrimPrefix(path, "/"), "/", 2)
 	if len(parts) > 0 && parts[0] != "" {
 		return parts[0]
 	}
-	
+
 	// Default project
 	return "default"
 }
@@ -164,7 +164,7 @@ func ListProjectsHandler(c *gin.Context) {
 	result := prisma.GetDB().Find(&projects)
 	if result.Error != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": true,
+			"error":   true,
 			"message": "Failed to retrieve projects: " + result.Error.Error(),
 		})
 		return
@@ -172,7 +172,7 @@ func ListProjectsHandler(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{
 		"success": true,
-		"data": projects,
+		"data":    projects,
 	})
 }
 
@@ -184,7 +184,7 @@ func CreateProjectHandler(c *gin.Context) {
 	var project models.Project
 	if err := c.ShouldBindJSON(&project); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
-			"error": true,
+			"error":   true,
 			"message": "Invalid request data: " + err.Error(),
 		})
 		return
@@ -193,7 +193,7 @@ func CreateProjectHandler(c *gin.Context) {
 	// Validate project data
 	if project.Name == "" {
 		c.JSON(http.StatusBadRequest, gin.H{
-			"error": true,
+			"error":   true,
 			"message": "Project name is required",
 		})
 		return
@@ -208,7 +208,7 @@ func CreateProjectHandler(c *gin.Context) {
 	result := prisma.GetDB().Create(&project)
 	if result.Error != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": true,
+			"error":   true,
 			"message": "Failed to create project: " + result.Error.Error(),
 		})
 		return
@@ -217,7 +217,7 @@ func CreateProjectHandler(c *gin.Context) {
 	c.JSON(http.StatusCreated, gin.H{
 		"success": true,
 		"message": "Project created successfully",
-		"data": project,
+		"data":    project,
 	})
 }
 
@@ -229,7 +229,7 @@ func GetProjectHandler(c *gin.Context) {
 	name := c.Param("name")
 	if name == "" {
 		c.JSON(http.StatusBadRequest, gin.H{
-			"error": true,
+			"error":   true,
 			"message": "Project name is required",
 		})
 		return
@@ -245,7 +245,7 @@ func GetProjectHandler(c *gin.Context) {
 
 	if result.Error != nil {
 		c.JSON(http.StatusNotFound, gin.H{
-			"error": true,
+			"error":   true,
 			"message": "Project not found",
 		})
 		return
@@ -253,7 +253,7 @@ func GetProjectHandler(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{
 		"success": true,
-		"data": project,
+		"data":    project,
 	})
 }
 

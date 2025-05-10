@@ -5,8 +5,9 @@ import (
 	"fmt"
 	"strings"
 
-	"gorm.io/gorm"
 	"mockoon-control-panel/backend_new/src/models"
+
+	"gorm.io/gorm"
 )
 
 // MockRepository handles database operations for mock endpoints
@@ -34,18 +35,18 @@ func (r *MockRepository) FindProjectByName(name string) (*models.Project, error)
 // FindMatchingEndpoint finds an endpoint that matches the given method and path
 func (r *MockRepository) FindMatchingEndpoint(projectID uint, method, path string) (*models.MockEndpoint, error) {
 	var endpoints []models.MockEndpoint
-	
+
 	result := r.DB.Where("project_id = ? AND method = ? AND enabled = ?", projectID, strings.ToUpper(method), true).Find(&endpoints)
 	if result.Error != nil {
 		return nil, result.Error
 	}
-	
+
 	// Find best matching path (handle path params like /users/:id)
 	bestMatch := findBestPathMatch(endpoints, path)
 	if bestMatch == nil {
 		return nil, fmt.Errorf("no matching endpoint found")
 	}
-	
+
 	return bestMatch, nil
 }
 
@@ -65,25 +66,25 @@ func (r *MockRepository) FindResponsesByEndpointID(endpointID uint) ([]models.Mo
 // considering path parameters (e.g., /users/:id)
 func findBestPathMatch(endpoints []models.MockEndpoint, requestPath string) *models.MockEndpoint {
 	requestParts := strings.Split(strings.Trim(requestPath, "/"), "/")
-	
+
 	var bestMatch *models.MockEndpoint
 	bestScore := -1
-	
+
 	for i := range endpoints {
 		endpoint := &endpoints[i]
 		endpointParts := strings.Split(strings.Trim(endpoint.Path, "/"), "/")
-		
+
 		if score := calculatePathMatchScore(endpointParts, requestParts); score > bestScore {
 			bestScore = score
 			bestMatch = endpoint
 		}
 	}
-	
+
 	// If we have a match
 	if bestScore >= 0 {
 		return bestMatch
 	}
-	
+
 	return nil
 }
 
@@ -94,7 +95,7 @@ func calculatePathMatchScore(endpointParts, requestParts []string) int {
 	if len(endpointParts) != len(requestParts) {
 		return -1
 	}
-	
+
 	score := 0
 	for i := 0; i < len(endpointParts); i++ {
 		// Exact match of path part
@@ -102,17 +103,17 @@ func calculatePathMatchScore(endpointParts, requestParts []string) int {
 			score += 10
 			continue
 		}
-		
+
 		// Path parameter (starts with :)
 		if strings.HasPrefix(endpointParts[i], ":") {
 			score += 5
 			continue
 		}
-		
+
 		// Not a match
 		return -1
 	}
-	
+
 	return score
 }
 
@@ -122,11 +123,11 @@ func ParseHeaders(headersJSON string) (map[string]string, error) {
 	if headersJSON == "" {
 		return headers, nil
 	}
-	
+
 	err := json.Unmarshal([]byte(headersJSON), &headers)
 	if err != nil {
 		return nil, err
 	}
-	
+
 	return headers, nil
 }

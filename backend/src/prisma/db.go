@@ -43,8 +43,8 @@ func CheckAndHandlePrisma() error {
 
 	// Auto migrate the models
 	if err := DB.AutoMigrate(
-		&Alias{}, 
-		&SystemConfig{}, 
+		&Alias{},
+		&SystemConfig{},
 		&models.Project{},
 		&models.ProxyTarget{},
 		&models.MockEndpoint{},

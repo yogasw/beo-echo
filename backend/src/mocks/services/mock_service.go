@@ -12,8 +12,8 @@ import (
 	"strings"
 	"time"
 
-	"mockoon-control-panel/backend_new/src/models"
 	"mockoon-control-panel/backend_new/src/mocks/repositories"
+	"mockoon-control-panel/backend_new/src/models"
 )
 
 // MockService handles mock response logic
@@ -337,7 +337,7 @@ func createErrorResponse(statusCode int, message string) *http.Response {
 func executeProxyRequest(originalReq *http.Request, proxy *httputil.ReverseProxy) (*http.Response, error) {
 	// Create in-memory pipe
 	pr, pw := io.Pipe()
-	
+
 	// Create a response recorder
 	recorderResp := &responseRecorder{
 		headers: make(http.Header),
@@ -389,11 +389,11 @@ func ParseHeaders(headersJSON string) (map[string]string, error) {
 	if headersJSON == "" {
 		return headers, nil
 	}
-	
+
 	err := json.Unmarshal([]byte(headersJSON), &headers)
 	if err != nil {
 		return nil, err
 	}
-	
+
 	return headers, nil
 }
