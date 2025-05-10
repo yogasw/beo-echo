@@ -43,6 +43,30 @@
 	let projectName = '';
 	let projectAlias = '';
 	let isAddingProject = false;
+	let userEditedAlias = false;
+
+	// Function to generate alias from project name
+	function generateAlias(name: string): string {
+		return name
+			.toLowerCase()
+			.replace(/\s+/g, '-')
+			.replace(/[^a-z0-9-]/g, '');
+	}
+
+	// Update project alias when project name changes and user hasn't manually edited the alias
+	$: if (projectName && !userEditedAlias) {
+		projectAlias = generateAlias(projectName);
+	}
+
+	// Track when user manually edits the alias
+	function handleAliasInput() {
+		userEditedAlias = true;
+	}
+
+	// Reset the tracking when modal is opened or closed
+	function resetAliasTracking() {
+		userEditedAlias = false;
+	}
 
 	function handleConfigClick(project: ProjectResponse) {
 		console.log('1. ConfigurationList - Clicked config:', project);
@@ -77,12 +101,14 @@
 
 	function openAddProjectModal() {
 		showAddProjectModal = true;
+		resetAliasTracking();
 	}
 
 	function closeAddProjectModal() {
 		showAddProjectModal = false;
 		projectName = '';
 		projectAlias = '';
+		resetAliasTracking();
 	}
 
 	async function handleAddProject() {
@@ -176,6 +202,7 @@
 						class="w-full bg-gray-700 text-white py-2 px-3 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
 						bind:value={projectAlias}
 						placeholder="Enter project alias"
+						on:input={handleAliasInput}
 					/>
 				</div>
 
