@@ -42,6 +42,12 @@
 			endpoints = endpoints; // Trigger reactivity
 		}
 	}
+	
+	function handleAddEndpoint(newEndpoint: Endpoint) {
+		console.log('Endpoint added:', newEndpoint);
+		endpoints = [...endpoints, newEndpoint];
+		selectRoute(newEndpoint);
+	}
 </script>
 
 <div class="flex flex-1 h-full">
@@ -52,6 +58,8 @@
 		filteredEndpoints={filteredEndpoints}
 		{selectRoute}
 		{handleRouteStatusChange}
+		{handleAddEndpoint}
+		project={selectedProject}
 	/>
 
 	<!-- Details Section -->

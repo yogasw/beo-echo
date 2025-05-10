@@ -126,6 +126,15 @@ export const addProject = async (name: string, alias: string): Promise<Project> 
 	return response.data.data;
 };
 
+export const addEndpoint = async (projectId: string, method: string, path: string): Promise<Endpoint> => {
+	const response = await api.post(`/projects/${projectId}/endpoints`, {
+		method,
+		path,
+		enabled: true,
+		responseMode: 'static',
+	});
+	return response.data.data;
+};
 
 export const uploadConfig = async (formData: FormData): Promise<any> => {
 	const response = await api.post('/upload', formData, {

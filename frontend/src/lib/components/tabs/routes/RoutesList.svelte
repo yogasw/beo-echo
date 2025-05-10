@@ -1,12 +1,24 @@
 <script lang="ts">
-	import type { Endpoint } from '$lib/api/mockoonApi';
+	import type { Endpoint, Project } from '$lib/api/mockoonApi';
 	import type { MockoonRoute } from '$lib/types/Config';
+	import AddEndpointModal from './AddEndpointModal.svelte';
+
 	export let selectedEndpoint: Endpoint | null;
 	export let activeConfigName: string;
 	export let filterText: string;
 	export let filteredEndpoints: Endpoint[];
 	export let selectRoute: (route: Endpoint) => void;
 	export let handleRouteStatusChange: (route: Endpoint) => void;
+	export let handleAddEndpoint: (endpoint: Endpoint) => void;
+	export let project: Project;
+	
+	let showAddEndpointModal = false;
+
+	function onEndpointCreated(event: CustomEvent<Endpoint>) {
+		handleAddEndpoint(event.detail);
+		showAddEndpointModal = false;
+	}
+
 </script>
 
 <!-- Routes Section -->
@@ -18,7 +30,7 @@
 		</div>
 		<span class="text-xl font-bold text-blue-500">{activeConfigName}</span>
 	</div>
-	<div class="flex items-center bg-gray-700 p-2 rounded mb-4">
+	<div class="flex items-center bg-gray-700 p-2 rounded mb-2">
 		<i class="fas fa-search text-white text-lg mr-2"></i>
 		<input
 			type="text"
@@ -28,6 +40,21 @@
 			bind:value={filterText}
 		/>
 	</div>
+	
+	<!-- Add Endpoint Button -->
+	<button 
+		class="w-full bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded mb-4 flex items-center justify-center"
+		on:click={() => showAddEndpointModal = true}
+	>
+		<i class="fas fa-plus mr-2"></i> Add Endpoint
+	</button>
+	
+	<AddEndpointModal 
+		bind:isOpen={showAddEndpointModal} 
+		{project}
+		on:endpointCreated={onEndpointCreated}
+		on:close={() => showAddEndpointModal = false}
+	/>
 
 	<div class="flex-1 overflow-y-auto hide-scrollbar">
 		<div class="space-y-4 pr-2 py-2">
