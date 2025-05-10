@@ -5,7 +5,7 @@
 	import ConfigurationList from '$lib/components/ConfigurationList.svelte';
 	import Header from '$lib/components/Header.svelte';
 	import { isOwnAuth, removeLocalStorage } from '$lib/utils/localStorage';
-	import { getConfigs, getMockStatus } from '$lib/api/mockoonApi';
+	import { getProjects, getMockStatus } from '$lib/api/mockoonApi';
 	import { onMount } from 'svelte';
 	import { configurations } from '$lib/stores/configurations';
 	import Toast from '$lib/components/Toast.svelte';
@@ -31,7 +31,7 @@
 
 	async function fetchConfigs() {
 		try {
-			await getConfigs().then(d => {
+			await getProjects().then(d => {
 				configurations.set(d);
 			});
 		} catch (err) {
@@ -72,7 +72,7 @@
 	onMount(async () => {
 		console.log("onMount: layout");
 		if (isOwnAuth() && !$isAuthenticated && !isLoginPage) {
-			await getConfigs().then(async d => {
+			await getProjects().then(async d => {
 				isAuthenticated.set(true)
 				await goto('/home');
 			}).catch(async e => {

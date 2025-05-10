@@ -69,8 +69,8 @@ export const getMockStatus = async (): Promise<ConfigResponse[]> => {
 	return response.data.data;
 };
 
-export const getConfigs = async (): Promise<ConfigResponse[]> => {
-	const response = await api.get('/configs');
+export const getProjects = async (): Promise<ConfigResponse[]> => {
+	const response = await api.get('/projects');
 	return response.data.data;
 };
 

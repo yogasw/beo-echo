@@ -1,6 +1,6 @@
 <script lang="ts">
   import { createEventDispatcher } from 'svelte';
-  import { getConfigs, startMockServer, stopMockServer, uploadConfig } from '$lib/api/mockoonApi';
+  import { getProjects, startMockServer, stopMockServer, uploadConfig } from '$lib/api/mockoonApi';
   import { selectedConfig } from '$lib/stores/selectedConfig';
   import { configurations } from '$lib/stores/configurations';
   import { activeTab } from '$lib/stores/activeTab';
@@ -64,7 +64,7 @@
     try {
       await uploadConfig(formData);
       // Refresh config list
-      configurations.set(await getConfigs());
+      configurations.set(await getProjects());
       toast.success('Config uploaded successfully');
     } catch (err) {
       toast.error('Failed to upload config');

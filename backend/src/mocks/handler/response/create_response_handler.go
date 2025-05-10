@@ -5,7 +5,6 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	"github.com/google/uuid"
 
 	"mockoon-control-panel/backend_new/src/database"
 	"mockoon-control-panel/backend_new/src/mocks/handler"
@@ -42,14 +41,6 @@ func CreateResponseHandler(c *gin.Context) {
 
 	// Parse endpoint ID
 	endpointIDStr := c.Param("id")
-	endpointID, err := uuid.Parse(endpointIDStr)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error":   true,
-			"message": "Invalid endpoint ID",
-		})
-		return
-	}
 
 	// Find project first
 	var project database.Project
@@ -64,7 +55,7 @@ func CreateResponseHandler(c *gin.Context) {
 
 	// Check if endpoint exists and belongs to this project
 	var endpoint database.MockEndpoint
-	result = database.GetDB().Where("id = ? AND project_id = ?", endpointID, project.ID).First(&endpoint)
+	result = database.GetDB().Where("id = ? AND project_id = ?", endpointIDStr, project.ID).First(&endpoint)
 	if result.Error != nil {
 		c.JSON(http.StatusNotFound, gin.H{
 			"error":   true,
@@ -101,7 +92,7 @@ func CreateResponseHandler(c *gin.Context) {
 	}
 
 	// Assign to endpoint
-	response.EndpointID = endpointID
+	response.EndpointID = endpointIDStr
 
 	// Create response
 	result = database.GetDB().Create(&response)

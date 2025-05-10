@@ -1,7 +1,7 @@
 <script lang="ts">
 	import ContentArea from '$lib/components/ContentArea.svelte';
 	import { onMount } from 'svelte';
-	import { getConfigs, getMockStatus } from '$lib/api/mockoonApi';
+	import { getProjects, getMockStatus } from '$lib/api/mockoonApi';
 
 	interface Route {
     path: string;
@@ -29,7 +29,7 @@
     console.log("onMount: home");
     loading = true;
     try {
-      configurations = await getConfigs();
+      configurations = await getProjects();
       mockStatus = await getMockStatus();
     } catch (err) {
       error = 'Failed to fetch data';

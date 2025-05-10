@@ -4,7 +4,6 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	"github.com/google/uuid"
 
 	"mockoon-control-panel/backend_new/src/database"
 	"mockoon-control-panel/backend_new/src/mocks/handler"
@@ -48,7 +47,7 @@ func UpdateProjectHandler(c *gin.Context) {
 	// Parse update data
 	var updateData struct {
 		Mode          database.ProjectMode `json:"mode"`
-		ActiveProxyID *uuid.UUID           `json:"activeProxyID"`
+		ActiveProxyID *string              `json:"activeProxyID"`
 	}
 
 	if err := c.ShouldBindJSON(&updateData); err != nil {
@@ -66,7 +65,7 @@ func UpdateProjectHandler(c *gin.Context) {
 
 	if updateData.ActiveProxyID != nil {
 		// Validate that the proxy target exists and belongs to this project
-		if *updateData.ActiveProxyID != uuid.Nil {
+		if *updateData.ActiveProxyID != "" {
 			var proxyTarget database.ProxyTarget
 			result = database.GetDB().Where("id = ? AND project_id = ?",
 				*updateData.ActiveProxyID, existingProject.ID).First(&proxyTarget)
