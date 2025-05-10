@@ -47,10 +47,12 @@
 
 	// Function to generate alias from project name
 	function generateAlias(name: string): string {
+		// First convert to lowercase and replace spaces with hyphens
+		// Then remove all characters except lowercase letters, numbers, underscores and hyphens
 		return name
 			.toLowerCase()
 			.replace(/\s+/g, '-')
-			.replace(/[^a-z0-9-]/g, '');
+			.replace(/[^a-z0-9_-]/g, '');
 	}
 
 	// Update project alias when project name changes and user hasn't manually edited the alias
@@ -58,9 +60,23 @@
 		projectAlias = generateAlias(projectName);
 	}
 
-	// Track when user manually edits the alias
-	function handleAliasInput() {
+	// Track when user manually edits the alias and enforce validation
+	function handleAliasInput(event: Event) {
 		userEditedAlias = true;
+		
+		// Get input element and current value
+		const input = event.target as HTMLInputElement;
+		const currentValue = input.value;
+		
+		// Apply validation rules: lowercase, only allow lowercase letters, numbers, underscores and hyphens
+		const validatedValue = currentValue
+			.toLowerCase()
+			.replace(/[^a-z0-9_-]/g, '');
+			
+		// Update the value if it was changed by validation
+		if (currentValue !== validatedValue) {
+			projectAlias = validatedValue;
+		}
 	}
 
 	// Reset the tracking when modal is opened or closed
@@ -204,6 +220,7 @@
 						placeholder="Enter project alias"
 						on:input={handleAliasInput}
 					/>
+					<p class="text-xs text-gray-400 mt-1">Only lowercase letters, numbers, underscores (_) and hyphens (-) allowed</p>
 				</div>
 
 				<div class="mb-6">
