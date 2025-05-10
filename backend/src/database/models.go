@@ -47,6 +47,7 @@ type Project struct {
 	Endpoints     []MockEndpoint `gorm:"foreignKey:ProjectID;constraint:OnDelete:CASCADE" json:"endpoints"`
 	ProxyTargets  []ProxyTarget  `gorm:"foreignKey:ProjectID;constraint:OnDelete:CASCADE" json:"proxy_targets"`
 	Alias         string         `gorm:"index:idx_project_alias,where:alias <> ''" json:"alias"` // Alias for the project, uniqueness only enforced on non-empty values
+	URL           string         `json:"url"`
 	CreatedAt     time.Time      `gorm:"autoCreateTime" json:"created_at"`
 	UpdatedAt     time.Time      `gorm:"autoUpdateTime" json:"updated_at"`
 }
