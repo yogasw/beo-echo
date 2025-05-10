@@ -24,21 +24,23 @@ func MockRequestHandler(c *gin.Context) {
 		return
 	}
 
-	// Get project name from subdomain or path
-	projectName := extractProjectName(c.Request)
+	// Get project name from route parameter first (if available)
+	projectName := c.Param("project")
+
+	// If not available in route parameters, try to extract from subdomain or path
 	if projectName == "" {
-		c.JSON(http.StatusNotFound, gin.H{
-			"error":   true,
-			"message": "Project not specified",
-		})
-		return
+		projectName = extractProjectName(c.Request)
+		if projectName == "" {
+			c.JSON(http.StatusNotFound, gin.H{
+				"error":   true,
+				"message": "Project not specified",
+			})
+			return
+		}
 	}
 
-	// Get path (remove /mock prefix if present)
-	path := c.Request.URL.Path
-	if strings.HasPrefix(path, "/mock") {
-		path = path[5:]
-	}
+	// Get path from route parameter if available, otherwise use URL path
+	path := c.Param("path")
 	if path == "" {
 		path = "/"
 	}

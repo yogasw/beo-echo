@@ -36,10 +36,15 @@ func (s *MockService) HandleRequest(projectName, method, path string, req *http.
 		return createErrorResponse(http.StatusNotFound, "Project not found"), nil
 	}
 
+	// Extract the actual API endpoint path
+	// Path comes in like "/api/users" or "/users" - we need just the endpoint part
+	// First trim any project name prefix if it exists
+	cleanPath := strings.TrimPrefix(path, "/"+projectName)
+
 	// Check project mode
 	switch project.Mode {
 	case database.ModeMock:
-		return s.handleMockMode(project.ID, method, path, req)
+		return s.handleMockMode(project.ID, method, cleanPath, req)
 	case database.ModeProxy, database.ModeForwarder:
 		return s.handleProxyMode(project, req)
 	case database.ModeDisabled:
