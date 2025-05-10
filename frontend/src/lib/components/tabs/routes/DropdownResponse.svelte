@@ -82,7 +82,7 @@
 				<span id="selectedValue">{selectedValue}</span>
 				<i class="fas fa-chevron-down"></i>
 			</button>
-			<div id="dropdownMenu" class="absolute mt-1 bg-gray-700 text-gray-300 rounded shadow-lg w-full hidden">
+			<div id="dropdownMenu" class="absolute mt-1 bg-gray-700 text-gray-300 rounded shadow-lg w-full hidden z-50 max-h-60 overflow-y-auto">
 				<ul class="text-sm">
 					{#if selectedEndpoint?.responses && selectedEndpoint.responses.length > 0}
 						{#each selectedEndpoint.responses as response, index}
