@@ -2,7 +2,6 @@ package endpoint
 
 import (
 	"net/http"
-	"strconv"
 	"strings"
 
 	"github.com/gin-gonic/gin"
@@ -38,11 +37,11 @@ func UpdateEndpointHandler(c *gin.Context) {
 	}
 
 	// Parse endpoint ID
-	endpointID, err := strconv.ParseUint(c.Param("id"), 10, 32)
-	if err != nil {
+	endpointID := c.Param("id")
+	if endpointID == "" {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"error":   true,
-			"message": "Invalid endpoint ID",
+			"message": "Endpoint ID is required",
 		})
 		return
 	}

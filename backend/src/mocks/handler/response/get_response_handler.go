@@ -2,7 +2,6 @@ package response
 
 import (
 	"net/http"
-	"strconv"
 
 	"github.com/gin-gonic/gin"
 
@@ -25,22 +24,21 @@ func GetResponseHandler(c *gin.Context) {
 		})
 		return
 	}
-
 	// Parse endpoint ID and response ID
-	endpointID, err := strconv.ParseUint(c.Param("id"), 10, 32)
-	if err != nil {
+	endpointID := c.Param("id")
+	if endpointID == "" {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"error":   true,
-			"message": "Invalid endpoint ID",
+			"message": "Endpoint ID is required",
 		})
 		return
 	}
 
-	responseID, err := strconv.ParseUint(c.Param("responseId"), 10, 32)
-	if err != nil {
+	responseID := c.Param("responseId")
+	if responseID == "" {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"error":   true,
-			"message": "Invalid response ID",
+			"message": "Response ID is required",
 		})
 		return
 	}

@@ -2,7 +2,6 @@ package proxy
 
 import (
 	"net/http"
-	"strconv"
 
 	"github.com/gin-gonic/gin"
 
@@ -33,11 +32,11 @@ func UpdateProxyTargetHandler(c *gin.Context) {
 	}
 
 	// Parse proxy target ID
-	proxyID, err := strconv.ParseUint(c.Param("id"), 10, 32)
-	if err != nil {
+	proxyID := c.Param("id")
+	if proxyID == "" {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"error":   true,
-			"message": "Invalid proxy target ID",
+			"message": "Proxy target ID is required",
 		})
 		return
 	}
