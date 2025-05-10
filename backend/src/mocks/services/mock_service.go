@@ -29,17 +29,17 @@ func NewMockService(repo *repositories.MockRepository) *MockService {
 }
 
 // HandleRequest processes an incoming request and returns a mock response or proxies it
-func (s *MockService) HandleRequest(projectName, method, path string, req *http.Request) (*http.Response, error) {
-	// Find project by name
-	project, err := s.Repo.FindProjectByName(projectName)
+func (s *MockService) HandleRequest(alias, method, path string, req *http.Request) (*http.Response, error) {
+	// Find project by alias
+	project, err := s.Repo.FindProjectByAlias(alias)
 	if err != nil {
 		return createErrorResponse(http.StatusNotFound, "Project not found"), nil
 	}
 
 	// Extract the actual API endpoint path
 	// Path comes in like "/api/users" or "/users" - we need just the endpoint part
-	// First trim any project name prefix if it exists
-	cleanPath := strings.TrimPrefix(path, "/"+projectName)
+	// First trim any project alias prefix if it exists
+	cleanPath := strings.TrimPrefix(path, "/"+project.Alias)
 
 	// Check project mode
 	switch project.Mode {

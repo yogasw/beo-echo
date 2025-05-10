@@ -24,13 +24,13 @@ func MockRequestHandler(c *gin.Context) {
 		return
 	}
 
-	// Get project name from route parameter first (if available)
-	projectName := c.Param("project")
+	// Get project alias from route parameter first (if available)
+	projectAlias := c.Param("project")
 
 	// If not available in route parameters, try to extract from subdomain or path
-	if projectName == "" {
-		projectName = extractProjectName(c.Request)
-		if projectName == "" {
+	if projectAlias == "" {
+		projectAlias = extractProjectAlias(c.Request)
+		if projectAlias == "" {
 			c.JSON(http.StatusNotFound, gin.H{
 				"error":   true,
 				"message": "Project not specified",
@@ -46,7 +46,7 @@ func MockRequestHandler(c *gin.Context) {
 	}
 
 	// Process the request
-	resp, err := mockService.HandleRequest(projectName, c.Request.Method, path, c.Request)
+	resp, err := mockService.HandleRequest(projectAlias, c.Request.Method, path, c.Request)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error":   true,
@@ -75,8 +75,8 @@ func MockRequestHandler(c *gin.Context) {
 	}
 }
 
-// extractProjectName extracts project name from request (subdomain or path)
-func extractProjectName(req *http.Request) string {
+// extractProjectAlias extracts project alias from request (subdomain or path)
+func extractProjectAlias(req *http.Request) string {
 	// Try to extract from Host header (subdomain)
 	host := req.Host
 

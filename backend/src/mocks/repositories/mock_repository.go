@@ -22,10 +22,10 @@ func NewMockRepository(db *gorm.DB) *MockRepository {
 	}
 }
 
-// FindProjectByName finds a project by its name (slug/subdomain)
-func (r *MockRepository) FindProjectByName(name string) (*database.Project, error) {
+// FindProjectByAlias finds a project by its alias (slug/subdomain)
+func (r *MockRepository) FindProjectByAlias(alias string) (*database.Project, error) {
 	var project database.Project
-	result := r.DB.Preload("ActiveProxy").Where("name = ?", name).First(&project)
+	result := r.DB.Preload("ActiveProxy").Where("alias = ?", alias).First(&project)
 	if result.Error != nil {
 		return nil, result.Error
 	}

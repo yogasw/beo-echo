@@ -33,5 +33,5 @@ func EnsureMockService() {
 // It handles different URL formats based on PROXY_MODE configuration
 func GetProjectURL(host string, project database.Project) string {
 	// Direct access mode
-	return "http://" + host + "/" + project.Name
+	return "http://" + host + "/" + project.Alias
 }
