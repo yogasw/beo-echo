@@ -4,6 +4,7 @@
 	import { setLocalStorage } from '$lib/utils/localStorage';
 	import { fetchConfigsStore } from '$lib/stores/configurations';
 	import { isAuthenticated } from '$lib/stores/authentication';
+	import { login } from '$lib/api/mockoonApi';
 
 	let username = '';
 	let password = '';
@@ -15,7 +16,10 @@
 				if (browser) {
 					setLocalStorage('username', username);
 					setLocalStorage('password', password);
-					await fetchConfigsStore().then(async d => {
+					await login({
+						username,
+						password
+					}).then(async d => {
 						isAuthenticated.set(true);
 						await goto('/home');
 					}).catch(e => {
