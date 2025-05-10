@@ -53,7 +53,7 @@ func (r *MockRepository) FindMatchingEndpoint(projectID string, method, path str
 // FindResponsesByEndpointID gets all responses for an endpoint
 func (r *MockRepository) FindResponsesByEndpointID(endpointID string) ([]database.MockResponse, error) {
 	var responses []database.MockResponse
-	result := r.DB.Preload("Rules").Where("endpoint_id = ? AND active = ?", endpointID, true).Find(&responses)
+	result := r.DB.Preload("Rules").Where("endpoint_id = ? AND enabled = ?", endpointID, true).Find(&responses)
 	if result.Error != nil {
 		return nil, result.Error
 	}
