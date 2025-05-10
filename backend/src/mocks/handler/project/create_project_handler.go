@@ -4,6 +4,7 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"gorm.io/gorm"
 
 	"mockoon-control-panel/backend_new/src/database"
 	"mockoon-control-panel/backend_new/src/mocks/handler"
@@ -34,10 +35,36 @@ func CreateProjectHandler(c *gin.Context) {
 	}
 
 	// Validate project data
-	if project.Name == "" {
+	if project.Name == "" || project.Alias == "" {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"error":   true,
-			"message": "Project name is required",
+			"message": "Project name and alias are required",
+		})
+		return
+	}
+
+	// project alias only allow alphanumeric characters, dashes and underscores
+	if !handler.IsValidAlias(project.Alias) {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error":   true,
+			"message": "Project alias can only contain alphanumeric characters, dashes and underscores",
+		})
+		return
+	}
+
+	// Check if project alias already exists
+	existingProject := &database.Project{}
+	result := database.GetDB().Where("alias = ?", project.Alias).First(existingProject)
+	if result.Error == nil {
+		c.JSON(http.StatusConflict, gin.H{
+			"error":   true,
+			"message": "Project alias already exists",
+		})
+		return
+	} else if result.Error != nil && result.Error != gorm.ErrRecordNotFound {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error":   true,
+			"message": "Failed to check project alias: " + result.Error.Error(),
 		})
 		return
 	}
@@ -48,7 +75,7 @@ func CreateProjectHandler(c *gin.Context) {
 	}
 
 	// Create the project
-	result := database.GetDB().Create(&project)
+	result = database.GetDB().Create(&project)
 	if result.Error != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error":   true,

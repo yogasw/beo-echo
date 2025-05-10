@@ -35,3 +35,14 @@ func GetProjectURL(host string, project database.Project) string {
 	// Direct access mode
 	return "http://" + host + "/" + project.Alias
 }
+
+// add validation for project alias
+func IsValidAlias(alias string) bool {
+	// Check if the alias contains only alphanumeric characters, dashes, and underscores
+	for _, char := range alias {
+		if !(char >= 'a' && char <= 'z') && !(char >= 'A' && char <= 'Z') && !(char >= '0' && char <= '9') && char != '-' && char != '_' {
+			return false
+		}
+	}
+	return true
+}
