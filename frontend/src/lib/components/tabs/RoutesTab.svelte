@@ -67,14 +67,15 @@
 					<option value="DELETE">DELETE</option>
 					<option value="PATCH">PATCH</option>
 				</select>
-				<span class="text-gray-400 hidden md:block">{selectedProject.url}/</span>
+				<span class="text-gray-400 hidden md:block">{selectedProject.url}</span>
 				<input type="text" class="w-full md:flex-1 rounded bg-gray-700 px-4 py-2 text-white"
 							 value={selectedEndpoint?.path}>
 				<button
 					class="text-gray-400 hover:text-blue-500 disabled:text-gray-600"
 					disabled={!selectedEndpoint || selectedEndpoint?.method !== 'GET'}
+					aria-label="Open endpoint in a new tab"
 					on:click={() =>{
-						let url = `${selectedProject.url}/${selectedEndpoint?.path ? selectedEndpoint.path : ''}`;
+						let url = `${selectedProject.url}${selectedEndpoint?.path ? selectedEndpoint.path : ''}`;
 						// Open the URL in a new tab
 						window.open(url, '_blank');
 					}}>
