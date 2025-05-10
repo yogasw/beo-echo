@@ -11,12 +11,12 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
 
+	"mockoon-control-panel/backend_new/src/database"
 	"mockoon-control-panel/backend_new/src/git-sync/handler"
 	"mockoon-control-panel/backend_new/src/health"
 	"mockoon-control-panel/backend_new/src/lib"
 	"mockoon-control-panel/backend_new/src/middlewares"
 	mockHandler "mockoon-control-panel/backend_new/src/mocks/handler"
-	"mockoon-control-panel/backend_new/src/prisma"
 	"mockoon-control-panel/backend_new/src/traefik"
 	"mockoon-control-panel/backend_new/src/utils"
 )
@@ -46,7 +46,7 @@ func main() {
 	}
 
 	// Setup database connection
-	if err := prisma.CheckAndHandlePrisma(); err != nil {
+	if err := database.CheckAndHandlePrisma(); err != nil {
 		log.Fatalf("Failed to setup database: %v", err)
 	}
 

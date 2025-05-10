@@ -8,9 +8,9 @@ import (
 
 	"gopkg.in/yaml.v3"
 
+	"mockoon-control-panel/backend_new/src/database"
 	"mockoon-control-panel/backend_new/src/lib"
 	"mockoon-control-panel/backend_new/src/mocks/repositories"
-	"mockoon-control-panel/backend_new/src/prisma"
 	"mockoon-control-panel/backend_new/src/utils"
 )
 
@@ -60,13 +60,13 @@ type StripPrefix struct {
 }
 
 // getActiveAliases retrieves all active aliases from the database
-func getActiveAliases(isFirstInit bool) ([]prisma.Alias, error) {
+func getActiveAliases(isFirstInit bool) ([]database.Alias, error) {
 	if isFirstInit {
-		return []prisma.Alias{}, nil
+		return []database.Alias{}, nil
 	}
 
-	var aliases []prisma.Alias
-	result := prisma.DB.Where("is_active = ?", true).Find(&aliases)
+	var aliases []database.Alias
+	result := database.DB.Where("is_active = ?", true).Find(&aliases)
 	if result.Error != nil {
 		return nil, fmt.Errorf("failed to fetch aliases: %w", result.Error)
 	}

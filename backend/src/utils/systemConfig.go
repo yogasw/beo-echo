@@ -8,7 +8,7 @@ import (
 	"strconv"
 	"strings"
 
-	"mockoon-control-panel/backend_new/src/prisma"
+	"mockoon-control-panel/backend_new/src/database"
 )
 
 // System configuration keys
@@ -45,8 +45,8 @@ func GetSystemConfig(key string) (interface{}, error) {
 	keyType := parts[1]
 
 	// Try to get from database first
-	var config prisma.SystemConfig
-	result := prisma.DB.Where("key = ?", keyName).First(&config)
+	var config database.SystemConfig
+	result := database.DB.Where("key = ?", keyName).First(&config)
 	if result.Error == nil {
 		// Return with proper type conversion
 		return convertValue(config.Value, config.Type)
@@ -84,24 +84,24 @@ func SetSystemConfig(key string, value interface{}) error {
 	}
 
 	// Check if the key exists
-	var config prisma.SystemConfig
-	result := prisma.DB.Where("key = ?", keyName).First(&config)
+	var config database.SystemConfig
+	result := database.DB.Where("key = ?", keyName).First(&config)
 
 	if result.Error == nil {
 		// Update existing config
 		config.Value = stringValue
 		config.Type = keyType
-		if err := prisma.DB.Save(&config).Error; err != nil {
+		if err := database.DB.Save(&config).Error; err != nil {
 			return fmt.Errorf("failed to update system config: %w", err)
 		}
 	} else {
 		// Create new config
-		config = prisma.SystemConfig{
+		config = database.SystemConfig{
 			Key:   keyName,
 			Value: stringValue,
 			Type:  keyType,
 		}
-		if err := prisma.DB.Create(&config).Error; err != nil {
+		if err := database.DB.Create(&config).Error; err != nil {
 			return fmt.Errorf("failed to create system config: %w", err)
 		}
 	}
@@ -130,18 +130,18 @@ func convertValue(value string, valueType string) (interface{}, error) {
 }
 
 // GetAllSystemConfigs retrieves all system configurations from the database
-func GetAllSystemConfigs() ([]prisma.SystemConfig, error) {
-	var configs []prisma.SystemConfig
-	if err := prisma.DB.Find(&configs).Error; err != nil {
+func GetAllSystemConfigs() ([]database.SystemConfig, error) {
+	var configs []database.SystemConfig
+	if err := database.DB.Find(&configs).Error; err != nil {
 		return nil, fmt.Errorf("failed to fetch system configs: %w", err)
 	}
 	return configs, nil
 }
 
 // SetConfigByID updates a system configuration by its ID
-func SetConfigByID(id int, key, value, description string) (*prisma.SystemConfig, error) {
-	var config prisma.SystemConfig
-	if err := prisma.DB.First(&config, id).Error; err != nil {
+func SetConfigByID(id int, key, value, description string) (*database.SystemConfig, error) {
+	var config database.SystemConfig
+	if err := database.DB.First(&config, id).Error; err != nil {
 		return nil, fmt.Errorf("config with ID %d not found: %w", id, err)
 	}
 
@@ -149,7 +149,7 @@ func SetConfigByID(id int, key, value, description string) (*prisma.SystemConfig
 	config.Value = value
 	config.Description = description
 
-	if err := prisma.DB.Save(&config).Error; err != nil {
+	if err := database.DB.Save(&config).Error; err != nil {
 		return nil, fmt.Errorf("failed to update config: %w", err)
 	}
 
@@ -157,15 +157,15 @@ func SetConfigByID(id int, key, value, description string) (*prisma.SystemConfig
 }
 
 // AddConfig creates a new system configuration
-func AddConfig(key, value, description, valueType string) (*prisma.SystemConfig, error) {
-	config := prisma.SystemConfig{
+func AddConfig(key, value, description, valueType string) (*database.SystemConfig, error) {
+	config := database.SystemConfig{
 		Key:         key,
 		Value:       value,
 		Description: description,
 		Type:        valueType,
 	}
 
-	if err := prisma.DB.Create(&config).Error; err != nil {
+	if err := database.DB.Create(&config).Error; err != nil {
 		return nil, fmt.Errorf("failed to create config: %w", err)
 	}
 

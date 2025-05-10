@@ -12,8 +12,8 @@ import (
 	"strings"
 	"time"
 
+	"mockoon-control-panel/backend_new/src/database"
 	"mockoon-control-panel/backend_new/src/mocks/repositories"
-	"mockoon-control-panel/backend_new/src/models"
 )
 
 // MockService handles mock response logic
@@ -38,11 +38,11 @@ func (s *MockService) HandleRequest(projectName, method, path string, req *http.
 
 	// Check project mode
 	switch project.Mode {
-	case models.ModeMock:
+	case database.ModeMock:
 		return s.handleMockMode(project.ID, method, path, req)
-	case models.ModeProxy, models.ModeForwarder:
+	case database.ModeProxy, database.ModeForwarder:
 		return s.handleProxyMode(project, req)
-	case models.ModeDisabled:
+	case database.ModeDisabled:
 		return createErrorResponse(http.StatusServiceUnavailable, "Service is disabled"), nil
 	default:
 		return createErrorResponse(http.StatusInternalServerError, "Invalid project mode"), nil
@@ -75,7 +75,7 @@ func (s *MockService) handleMockMode(projectID uint, method, path string, req *h
 }
 
 // handleProxyMode forwards the request to target
-func (s *MockService) handleProxyMode(project *models.Project, req *http.Request) (*http.Response, error) {
+func (s *MockService) handleProxyMode(project *database.Project, req *http.Request) (*http.Response, error) {
 	if project.ActiveProxy == nil {
 		return createErrorResponse(http.StatusInternalServerError, "No proxy target configured"), nil
 	}
@@ -100,7 +100,7 @@ func (s *MockService) handleProxyMode(project *models.Project, req *http.Request
 	}
 
 	// If in forwarder mode, record the response (implement if needed)
-	if project.Mode == models.ModeForwarder {
+	if project.Mode == database.ModeForwarder {
 		// TODO: Record response for later use
 	}
 
@@ -110,7 +110,7 @@ func (s *MockService) handleProxyMode(project *models.Project, req *http.Request
 // Helper functions
 
 // selectResponse selects a response based on mode and rules
-func selectResponse(responses []models.MockResponse, mode string, req *http.Request) models.MockResponse {
+func selectResponse(responses []database.MockResponse, mode string, req *http.Request) database.MockResponse {
 	// Filter responses by rules first
 	validResponses := filterResponsesByRules(responses, req)
 	if len(validResponses) == 0 {
@@ -140,12 +140,12 @@ func selectResponse(responses []models.MockResponse, mode string, req *http.Requ
 }
 
 // filterResponsesByRules filters responses that match request rules
-func filterResponsesByRules(responses []models.MockResponse, req *http.Request) []models.MockResponse {
+func filterResponsesByRules(responses []database.MockResponse, req *http.Request) []database.MockResponse {
 	if req == nil {
 		return responses
 	}
 
-	var validResponses []models.MockResponse
+	var validResponses []database.MockResponse
 	for _, resp := range responses {
 		if matchesRules(resp, req) {
 			validResponses = append(validResponses, resp)
@@ -156,7 +156,7 @@ func filterResponsesByRules(responses []models.MockResponse, req *http.Request) 
 }
 
 // sortByPriority sorts responses by priority (higher first)
-func sortByPriority(responses []models.MockResponse) {
+func sortByPriority(responses []database.MockResponse) {
 	// Simple bubble sort
 	for i := 0; i < len(responses)-1; i++ {
 		for j := 0; j < len(responses)-i-1; j++ {
@@ -168,7 +168,7 @@ func sortByPriority(responses []models.MockResponse) {
 }
 
 // matchesRules checks if a response matches all rules against the request
-func matchesRules(response models.MockResponse, req *http.Request) bool {
+func matchesRules(response database.MockResponse, req *http.Request) bool {
 	if len(response.Rules) == 0 {
 		return true // No rules means always match
 	}
@@ -195,19 +195,19 @@ func matchesRules(response models.MockResponse, req *http.Request) bool {
 }
 
 // matchHeaderRule checks if a header rule matches
-func matchHeaderRule(rule models.MockRule, req *http.Request) bool {
+func matchHeaderRule(rule database.MockRule, req *http.Request) bool {
 	headerValue := req.Header.Get(rule.Key)
 	return matchRuleValue(rule.Operator, headerValue, rule.Value)
 }
 
 // matchQueryRule checks if a query parameter rule matches
-func matchQueryRule(rule models.MockRule, req *http.Request) bool {
+func matchQueryRule(rule database.MockRule, req *http.Request) bool {
 	queryValue := req.URL.Query().Get(rule.Key)
 	return matchRuleValue(rule.Operator, queryValue, rule.Value)
 }
 
 // matchBodyRule checks if a body rule matches
-func matchBodyRule(rule models.MockRule, req *http.Request) bool {
+func matchBodyRule(rule database.MockRule, req *http.Request) bool {
 	// Get body content (this is a simplistic approach; in real-world you'd want to cache)
 	if req.Body == nil {
 		return false
@@ -287,7 +287,7 @@ func getNestedValue(data map[string]interface{}, key string) string {
 }
 
 // createMockResponse builds an HTTP response from a mock response
-func createMockResponse(mockResp models.MockResponse) (*http.Response, error) {
+func createMockResponse(mockResp database.MockResponse) (*http.Response, error) {
 	// Create response body
 	body := io.NopCloser(strings.NewReader(mockResp.Body))
 

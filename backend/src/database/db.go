@@ -1,4 +1,4 @@
-package prisma
+package database
 
 import (
 	"errors"
@@ -12,7 +12,6 @@ import (
 	"gorm.io/gorm/logger"
 
 	"mockoon-control-panel/backend_new/src/lib"
-	"mockoon-control-panel/backend_new/src/models"
 )
 
 var DB *gorm.DB
@@ -45,11 +44,11 @@ func CheckAndHandlePrisma() error {
 	if err := DB.AutoMigrate(
 		&Alias{},
 		&SystemConfig{},
-		&models.Project{},
-		&models.ProxyTarget{},
-		&models.MockEndpoint{},
-		&models.MockResponse{},
-		&models.MockRule{},
+		&Project{},
+		&ProxyTarget{},
+		&MockEndpoint{},
+		&MockResponse{},
+		&MockRule{},
 	); err != nil {
 		return errors.New("Failed to migrate database schema: " + err.Error())
 	}

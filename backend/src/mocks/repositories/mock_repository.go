@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"strings"
 
-	"mockoon-control-panel/backend_new/src/models"
+	"mockoon-control-panel/backend_new/src/database"
 
 	"gorm.io/gorm"
 )
@@ -23,8 +23,8 @@ func NewMockRepository(db *gorm.DB) *MockRepository {
 }
 
 // FindProjectByName finds a project by its name (slug/subdomain)
-func (r *MockRepository) FindProjectByName(name string) (*models.Project, error) {
-	var project models.Project
+func (r *MockRepository) FindProjectByName(name string) (*database.Project, error) {
+	var project database.Project
 	result := r.DB.Preload("ActiveProxy").Where("name = ?", name).First(&project)
 	if result.Error != nil {
 		return nil, result.Error
@@ -33,8 +33,8 @@ func (r *MockRepository) FindProjectByName(name string) (*models.Project, error)
 }
 
 // FindMatchingEndpoint finds an endpoint that matches the given method and path
-func (r *MockRepository) FindMatchingEndpoint(projectID uint, method, path string) (*models.MockEndpoint, error) {
-	var endpoints []models.MockEndpoint
+func (r *MockRepository) FindMatchingEndpoint(projectID uint, method, path string) (*database.MockEndpoint, error) {
+	var endpoints []database.MockEndpoint
 
 	result := r.DB.Where("project_id = ? AND method = ? AND enabled = ?", projectID, strings.ToUpper(method), true).Find(&endpoints)
 	if result.Error != nil {
@@ -51,8 +51,8 @@ func (r *MockRepository) FindMatchingEndpoint(projectID uint, method, path strin
 }
 
 // FindResponsesByEndpointID gets all responses for an endpoint
-func (r *MockRepository) FindResponsesByEndpointID(endpointID uint) ([]models.MockResponse, error) {
-	var responses []models.MockResponse
+func (r *MockRepository) FindResponsesByEndpointID(endpointID uint) ([]database.MockResponse, error) {
+	var responses []database.MockResponse
 	result := r.DB.Preload("Rules").Where("endpoint_id = ? AND active = ?", endpointID, true).Find(&responses)
 	if result.Error != nil {
 		return nil, result.Error
@@ -64,10 +64,10 @@ func (r *MockRepository) FindResponsesByEndpointID(endpointID uint) ([]models.Mo
 
 // findBestPathMatch finds the best matching endpoint from a list of endpoints
 // considering path parameters (e.g., /users/:id)
-func findBestPathMatch(endpoints []models.MockEndpoint, requestPath string) *models.MockEndpoint {
+func findBestPathMatch(endpoints []database.MockEndpoint, requestPath string) *database.MockEndpoint {
 	requestParts := strings.Split(strings.Trim(requestPath, "/"), "/")
 
-	var bestMatch *models.MockEndpoint
+	var bestMatch *database.MockEndpoint
 	bestScore := -1
 
 	for i := range endpoints {

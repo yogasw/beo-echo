@@ -7,8 +7,8 @@ import (
 	"github.com/joho/godotenv"
 	"github.com/spf13/cobra"
 
+	"mockoon-control-panel/backend_new/src/database"
 	"mockoon-control-panel/backend_new/src/git-sync/handler"
-	"mockoon-control-panel/backend_new/src/prisma"
 	"mockoon-control-panel/backend_new/src/server"
 	"mockoon-control-panel/backend_new/src/traefik"
 	"mockoon-control-panel/backend_new/src/utils"
@@ -71,7 +71,7 @@ func runServer() error {
 
 	// Setup database connection
 	log.Println("🔧 Setting up database connection...")
-	if err := prisma.CheckAndHandlePrisma(); err != nil {
+	if err := database.CheckAndHandlePrisma(); err != nil {
 		log.Printf("❌ Database setup failed: %v", err)
 		return err
 	}

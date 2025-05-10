@@ -8,17 +8,16 @@ import (
 
 	"github.com/gin-gonic/gin"
 
+	"mockoon-control-panel/backend_new/src/database"
 	"mockoon-control-panel/backend_new/src/mocks/repositories"
 	"mockoon-control-panel/backend_new/src/mocks/services"
-	"mockoon-control-panel/backend_new/src/models"
-	"mockoon-control-panel/backend_new/src/prisma"
 )
 
 var mockService *services.MockService
 
 // InitMockService initializes the mock service
 func InitMockService() {
-	db := prisma.GetDB() // Assuming there's a GetDB function in prisma package
+	db := database.GetDB() // Get the database connection
 	if db == nil {
 		log.Println("Warning: Database connection not available for mock service")
 		return
@@ -160,8 +159,8 @@ func ListProjectsHandler(c *gin.Context) {
 		InitMockService()
 	}
 
-	var projects []models.Project
-	result := prisma.GetDB().Find(&projects)
+	var projects []database.Project
+	result := database.GetDB().Find(&projects)
 	if result.Error != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error":   true,
@@ -181,7 +180,7 @@ func CreateProjectHandler(c *gin.Context) {
 		InitMockService()
 	}
 
-	var project models.Project
+	var project database.Project
 	if err := c.ShouldBindJSON(&project); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"error":   true,
@@ -201,11 +200,11 @@ func CreateProjectHandler(c *gin.Context) {
 
 	// Default to mock mode if not specified
 	if project.Mode == "" {
-		project.Mode = models.ModeMock
+		project.Mode = database.ModeMock
 	}
 
 	// Create the project
-	result := prisma.GetDB().Create(&project)
+	result := database.GetDB().Create(&project)
 	if result.Error != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error":   true,
@@ -235,8 +234,8 @@ func GetProjectHandler(c *gin.Context) {
 		return
 	}
 
-	var project models.Project
-	result := prisma.GetDB().
+	var project database.Project
+	result := database.GetDB().
 		Preload("Endpoints").
 		Preload("ProxyTargets").
 		Preload("ActiveProxy").
