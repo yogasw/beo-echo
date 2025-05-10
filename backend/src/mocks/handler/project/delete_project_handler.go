@@ -16,18 +16,18 @@ import (
 func DeleteProjectHandler(c *gin.Context) {
 	handler.EnsureMockService()
 
-	name := c.Param("name")
-	if name == "" {
+	id := c.Param("projectId")
+	if id == "" {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"error":   true,
-			"message": "Project name is required",
+			"message": "Project id is required",
 		})
 		return
 	}
 
 	// Check if project exists
 	var project database.Project
-	result := database.GetDB().Where("name = ?", name).First(&project)
+	result := database.GetDB().Where("id = ?", id).First(&project)
 	if result.Error != nil {
 		c.JSON(http.StatusNotFound, gin.H{
 			"error":   true,

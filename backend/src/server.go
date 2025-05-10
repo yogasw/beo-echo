@@ -103,23 +103,23 @@ func SetupRouter() *gin.Engine {
 	{
 		apiGroup.GET("/projects", project.ListProjectsHandler)
 		apiGroup.POST("/projects", project.CreateProjectHandler)
-		apiGroup.GET("/projects/:name", project.GetProjectHandler)
-		apiGroup.PUT("/projects/:name", project.UpdateProjectHandler)
-		apiGroup.DELETE("/projects/:name", project.DeleteProjectHandler)
+		apiGroup.GET("/projects/:projectId", project.GetProjectHandler)
+		apiGroup.PUT("/projects/:projectId", project.UpdateProjectHandler)
+		apiGroup.DELETE("/projects/:projectId", project.DeleteProjectHandler)
 
 		// Endpoint management
-		apiGroup.GET("/projects/:name/endpoints", endpoint.ListEndpointsHandler)
-		apiGroup.POST("/projects/:name/endpoints", endpoint.CreateEndpointHandler)
-		apiGroup.GET("/projects/:name/endpoints/:id", endpoint.GetEndpointHandler)
-		apiGroup.PUT("/projects/:name/endpoints/:id", endpoint.UpdateEndpointHandler)
-		apiGroup.DELETE("/projects/:name/endpoints/:id", endpoint.DeleteEndpointHandler)
+		apiGroup.GET("/projects/:projectId/endpoints", endpoint.ListEndpointsHandler)
+		apiGroup.POST("/projects/:projectId/endpoints", endpoint.CreateEndpointHandler)
+		apiGroup.GET("/projects/:projectId/endpoints/:id", endpoint.GetEndpointHandler)
+		apiGroup.PUT("/projects/:projectId/endpoints/:id", endpoint.UpdateEndpointHandler)
+		apiGroup.DELETE("/projects/:projectId/endpoints/:id", endpoint.DeleteEndpointHandler)
 
 		// Response management
-		apiGroup.GET("/projects/:name/endpoints/:id/responses", response.ListResponsesHandler)
-		apiGroup.POST("/projects/:name/endpoints/:id/responses", response.CreateResponseHandler)
-		apiGroup.GET("/projects/:name/endpoints/:id/responses/:responseId", response.GetResponseHandler)
-		apiGroup.PUT("/projects/:name/endpoints/:id/responses/:responseId", response.UpdateResponseHandler)
-		apiGroup.DELETE("/projects/:name/endpoints/:id/responses/:responseId", response.DeleteResponseHandler)
+		apiGroup.GET("/projects/:projectId/endpoints/:id/responses", response.ListResponsesHandler)
+		apiGroup.POST("/projects/:projectId/endpoints/:id/responses", response.CreateResponseHandler)
+		apiGroup.GET("/projects/:projectId/endpoints/:id/responses/:responseId", response.GetResponseHandler)
+		apiGroup.PUT("/projects/:projectId/endpoints/:id/responses/:responseId", response.UpdateResponseHandler)
+		apiGroup.DELETE("/projects/:projectId/endpoints/:id/responses/:responseId", response.DeleteResponseHandler)
 	}
 
 	// Register the catch-all handler for mock API endpoints

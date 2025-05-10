@@ -27,11 +27,11 @@ Sample curl:
 func UpdateEndpointHandler(c *gin.Context) {
 	handler.EnsureMockService()
 
-	projectName := c.Param("name")
-	if projectName == "" {
+	projectId := c.Param("projectId")
+	if projectId == "" {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"error":   true,
-			"message": "Project name is required",
+			"message": "Project ID is required",
 		})
 		return
 	}
@@ -46,20 +46,9 @@ func UpdateEndpointHandler(c *gin.Context) {
 		return
 	}
 
-	// Find project first
-	var project database.Project
-	result := database.GetDB().Where("name = ?", projectName).First(&project)
-	if result.Error != nil {
-		c.JSON(http.StatusNotFound, gin.H{
-			"error":   true,
-			"message": "Project not found",
-		})
-		return
-	}
-
 	// Check if endpoint exists
 	var existingEndpoint database.MockEndpoint
-	result = database.GetDB().Where("id = ? AND project_id = ?", endpointID, project.ID).First(&existingEndpoint)
+	result := database.GetDB().Where("id = ? AND project_id = ?", endpointID, projectId).First(&existingEndpoint)
 	if result.Error != nil {
 		c.JSON(http.StatusNotFound, gin.H{
 			"error":   true,

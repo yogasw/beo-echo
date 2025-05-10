@@ -27,22 +27,11 @@ Sample curl:
 func CreateEndpointHandler(c *gin.Context) {
 	handler.EnsureMockService()
 
-	projectName := c.Param("name")
-	if projectName == "" {
+	projectId := c.Param("projectId")
+	if projectId == "" {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"error":   true,
-			"message": "Project name is required",
-		})
-		return
-	}
-
-	// Find project first
-	var project database.Project
-	result := database.GetDB().Where("name = ?", projectName).First(&project)
-	if result.Error != nil {
-		c.JSON(http.StatusNotFound, gin.H{
-			"error":   true,
-			"message": "Project not found",
+			"message": "Project id is required",
 		})
 		return
 	}
@@ -83,7 +72,7 @@ func CreateEndpointHandler(c *gin.Context) {
 	}
 
 	// Assign to project
-	endpoint.ProjectID = project.ID
+	endpoint.ProjectID = projectId
 
 	// Default values
 	if endpoint.ResponseMode == "" {
@@ -91,7 +80,7 @@ func CreateEndpointHandler(c *gin.Context) {
 	}
 
 	// Create endpoint
-	result = database.GetDB().Create(&endpoint)
+	result := database.GetDB().Create(&endpoint)
 	if result.Error != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error":   true,

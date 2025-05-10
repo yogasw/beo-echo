@@ -30,32 +30,20 @@ Sample curl:
 func CreateResponseHandler(c *gin.Context) {
 	handler.EnsureMockService()
 
-	projectName := c.Param("name")
-	if projectName == "" {
+	projectId := c.Param("projectId")
+	if projectId == "" {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"error":   true,
-			"message": "Project name is required",
+			"message": "Project ID is required",
 		})
 		return
 	}
 
 	// Parse endpoint ID
 	endpointIDStr := c.Param("id")
-
-	// Find project first
-	var project database.Project
-	result := database.GetDB().Where("name = ?", projectName).First(&project)
-	if result.Error != nil {
-		c.JSON(http.StatusNotFound, gin.H{
-			"error":   true,
-			"message": "Project not found",
-		})
-		return
-	}
-
 	// Check if endpoint exists and belongs to this project
 	var endpoint database.MockEndpoint
-	result = database.GetDB().Where("id = ? AND project_id = ?", endpointIDStr, project.ID).First(&endpoint)
+	result := database.GetDB().Where("id = ? AND project_id = ?", endpointIDStr, projectId).First(&endpoint)
 	if result.Error != nil {
 		c.JSON(http.StatusNotFound, gin.H{
 			"error":   true,

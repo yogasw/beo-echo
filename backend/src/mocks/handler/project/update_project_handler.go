@@ -24,18 +24,18 @@ Sample curl:
 func UpdateProjectHandler(c *gin.Context) {
 	handler.EnsureMockService()
 
-	name := c.Param("name")
-	if name == "" {
+	id := c.Param("projectId")
+	if id == "" {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"error":   true,
-			"message": "Project name is required",
+			"message": "Project id is required",
 		})
 		return
 	}
 
 	// Check if project exists
 	var existingProject database.Project
-	result := database.GetDB().Where("name = ?", name).First(&existingProject)
+	result := database.GetDB().Where("id = ?", id).First(&existingProject)
 	if result.Error != nil {
 		c.JSON(http.StatusNotFound, gin.H{
 			"error":   true,

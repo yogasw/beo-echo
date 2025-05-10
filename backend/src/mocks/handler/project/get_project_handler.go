@@ -16,8 +16,8 @@ import (
 func GetProjectHandler(c *gin.Context) {
 	handler.EnsureMockService()
 
-	name := c.Param("name")
-	if name == "" {
+	id := c.Param("projectId")
+	if id == "" {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"error":   true,
 			"message": "Project name is required",
@@ -30,7 +30,7 @@ func GetProjectHandler(c *gin.Context) {
 		Preload("Endpoints").
 		Preload("ProxyTargets").
 		Preload("ActiveProxy").
-		Where("name = ?", name).
+		Where("id = ?", id).
 		First(&project)
 
 	if result.Error != nil {

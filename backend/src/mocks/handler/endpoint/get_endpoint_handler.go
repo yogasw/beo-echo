@@ -16,11 +16,11 @@ import (
 func GetEndpointHandler(c *gin.Context) {
 	handler.EnsureMockService()
 
-	projectName := c.Param("name")
-	if projectName == "" {
+	projectId := c.Param("projectId")
+	if projectId == "" {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"error":   true,
-			"message": "Project name is required",
+			"message": "Project ID is required",
 		})
 		return
 	}
@@ -35,22 +35,11 @@ func GetEndpointHandler(c *gin.Context) {
 		return
 	}
 
-	// Find project first
-	var project database.Project
-	result := database.GetDB().Where("name = ?", projectName).First(&project)
-	if result.Error != nil {
-		c.JSON(http.StatusNotFound, gin.H{
-			"error":   true,
-			"message": "Project not found",
-		})
-		return
-	}
-
 	// Get endpoint
 	var endpoint database.MockEndpoint
-	result = database.GetDB().
+	result := database.GetDB().
 		Preload("Responses").
-		Where("id = ? AND project_id = ?", endpointID, project.ID).
+		Where("id = ? AND project_id = ?", endpointID, projectId).
 		First(&endpoint)
 
 	if result.Error != nil {
