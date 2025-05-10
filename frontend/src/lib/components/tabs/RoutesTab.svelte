@@ -6,41 +6,40 @@
 	import type { MockoonResponse, MockoonRoute } from '$lib/types/Config';
 	import RoutesList from '$lib/components/tabs/routes/RoutesList.svelte';
 	import DropdownResponse from '$lib/components/tabs/routes/DropdownResponse.svelte';
-	import type { ConfigResponse } from '$lib/api/mockoonApi';
+	import type { Response, Endpoint, Project } from '$lib/api/mockoonApi';
 
-	export let selectedConfig: ConfigResponse;
-	export let routes: MockoonRoute[];
+	export let selectedProject: Project;
+	export let endpoints: Endpoint[];
 	export let activeContentTab = 'Status & Body';
-	let activeConfigName = selectedConfig.name; // Store the active config name
+	let activeConfigName = selectedProject?.name || ''; // Store the active config name
 
-	let selectedRoute: MockoonRoute | null = null;
-	let selectedResponse: MockoonResponse | null = null;
+	let selectedEndpoint: Endpoint | null = null;
+	let selectedResponse: Response | null = null;
 	let filterText: string = ''; // Variable to store filter input
 
-	$: filteredRoutes = routes.filter(route => {
+	$: filteredEndpoints = endpoints.filter(endpoint => {
 		if (!filterText.trim()) return true;
 		const filterParts = filterText.toLowerCase().split(' ');
 		return filterParts.every(part =>
-			route.endpoint.toLowerCase().includes(part) ||
-			route.method.toLowerCase().includes(part)
+			endpoint.path.toLowerCase().includes(part) ||
+			endpoint.method.toLowerCase().includes(part)
 		);
 	});
 
-	function selectRoute(route: MockoonRoute) {
+	function selectRoute(route: Endpoint) {
 		console.log('Route selected:', route);
-		selectedRoute = route;
-		selectedResponse = route.responses[0] || null; // Select the first response by default
+		selectedEndpoint = route;
+		// selectedResponse = route.responses[0] || null; // Select the first response by default
 	}
 
-	function handleRouteStatusChange(route: MockoonRoute) {
+	function handleRouteStatusChange(route: Endpoint) {
 		console.log('Route status changed:', route);
-		const index = routes.findIndex(r => r.endpoint === route.endpoint && r.method === route.method);
+		const index = endpoints.findIndex(r => r.path === route.path && r.method === route.method);
 		if (index !== -1) {
-			routes[index] = {
+			endpoints[index] = {
 				...route,
-				status: route.status === 'enabled' ? 'disabled' : 'enabled'
 			};
-			routes = routes; // Trigger reactivity
+			endpoints = endpoints; // Trigger reactivity
 		}
 	}
 </script>
@@ -48,9 +47,9 @@
 <div class="flex flex-1 h-full">
 	<RoutesList
 		{activeConfigName}
-		{selectedRoute}
+		{selectedEndpoint}
 		bind:filterText
-		{filteredRoutes}
+		filteredEndpoints={filteredEndpoints}
 		{selectRoute}
 		{handleRouteStatusChange}
 	/>
@@ -61,21 +60,21 @@
 			<label class="block text-sm font-bold mb-2">Endpoint</label>
 			<div class="flex flex-col md:flex-row items-center space-y-2 md:space-y-0 md:space-x-2">
 				<select class="w-full md:w-1/6 rounded bg-gray-700 px-4 py-2 text-white"
-								value="{selectedRoute?.method.toUpperCase()}">
+								value={selectedEndpoint?.method.toUpperCase()}>
 					<option value="GET">GET</option>
 					<option value="POST">POST</option>
 					<option value="PUT">PUT</option>
 					<option value="DELETE">DELETE</option>
 					<option value="PATCH">PATCH</option>
 				</select>
-				<span class="text-gray-400 hidden md:block">{selectedConfig.url}/</span>
+				<span class="text-gray-400 hidden md:block">{selectedProject.url}/</span>
 				<input type="text" class="w-full md:flex-1 rounded bg-gray-700 px-4 py-2 text-white"
-							 value="{selectedRoute?.endpoint}">
+							 value={selectedEndpoint?.path}>
 				<button
 					class="text-gray-400 hover:text-blue-500 disabled:text-gray-600"
-					disabled={!selectedRoute || selectedRoute?.method !== 'GET'}
+					disabled={!selectedEndpoint || selectedEndpoint?.method !== 'GET'}
 					on:click={() =>{
-						let url = `${selectedConfig.url}/${selectedRoute?.endpoint ? selectedRoute.endpoint : ''}`;
+						let url = `${selectedProject.url}/${selectedEndpoint?.path ? selectedEndpoint.path : ''}`;
 						// Open the URL in a new tab
 						window.open(url, '_blank');
 					}}>
@@ -87,9 +86,9 @@
 		<label class="block text-sm font-bold mb-2">Documentation for this routes</label>
 		<textarea
 			class="w-full rounded bg-gray-700 px-4 py-2 text-white" rows="3"
-			placeholder="Provide a brief description or documentation for this endpoint">{selectedRoute?.documentation || ''}</textarea>
+			placeholder="Provide a brief description or documentation for this endpoint">{selectedEndpoint?.documentation || ''}</textarea>
 
-		<DropdownResponse bind:selectedRoute bind:selectedResponse />
+		<DropdownResponse bind:selectedEndpoint bind:selectedResponse />
 
 		<div class="flex space-x-2 mb-4">
 			{#each ["Status & Body", "Headers", "Rules", "Callbacks"] as tab}
@@ -104,11 +103,11 @@
 			{/each}
 		</div>
 
-		<div class="flex-1 overflow-auto h-full">
+		<!-- <div class="flex-1 overflow-auto h-full">
 			<div class="max-w-full overflow-x-auto h-full">
 				<div class="min-w-0 h-full">
 					<div class="h-full flex flex-col">
-						{#if selectedRoute}
+						{#if selectedEndpoint}
 							{#if activeContentTab === 'Status & Body'}
 								<StatusBodyTab
 									responseBody={selectedResponse?.body || ''}
@@ -137,6 +136,6 @@
 					</div>
 				</div>
 			</div>
-		</div>
+		</div> -->
 	</div>
 </div>

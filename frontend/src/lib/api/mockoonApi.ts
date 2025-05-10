@@ -18,18 +18,47 @@ export interface ConfigResponse {
 	inUse: boolean;
 }
 
-export type ProjectResponse = {
+export type Project = {
 	id: string;
 	name: string;
 	mode: string;
 	active_proxy_id: null;
 	active_proxy: null;
-	endpoints: null;
+	endpoints: Endpoint[];
 	proxy_targets: null;
 	created_at: Date;
 	updated_at: Date;
 	url: string;
 	alias: string;
+}
+
+export type Endpoint = {
+	id: string;
+	project_id: string;
+	method: string;
+	path: string;
+	enabled: boolean;
+	response_mode: string;
+	responses: Response[];
+	created_at: Date;
+	updated_at: Date;
+	documentation: "";
+}
+
+export type Response = {
+	id: string;
+	endpoint_id: string;
+	status_code: number;
+	body: string;
+	headers: string;
+	priority: number;
+	delay_ms: number;
+	stream: boolean;
+	enabled: boolean;
+	documentation: string;
+	rules: null;
+	created_at: Date;
+	updated_at: Date;
 }
 
 
@@ -84,7 +113,7 @@ export const getMockStatus = async (): Promise<ConfigResponse[]> => {
 	return response.data.data;
 };
 
-export const getProjects = async (): Promise<ProjectResponse[]> => {
+export const getProjects = async (): Promise<Project[]> => {
 	const response = await api.get('/projects');
 	return response.data.data;
 };
@@ -101,6 +130,11 @@ export const uploadConfig = async (formData: FormData): Promise<any> => {
 export const downloadConfig = async (filename: string): Promise<any> => {
 	return await api.get(`/configs/${filename}/download`);
 };
+
+export const getProjectDetail = async (uuid: string): Promise<Project> => {
+	const response = await api.get(`/projects/${uuid}`);
+	return response.data.data;
+}
 
 export const startMockServer = async (port: number, configFile: string, uuid: string): Promise<any> => {
 	const response = await api.post('/start', {

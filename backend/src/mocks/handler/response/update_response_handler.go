@@ -87,7 +87,7 @@ func UpdateResponseHandler(c *gin.Context) {
 		Priority   *int    `json:"priority"`
 		DelayMS    *int    `json:"delayMS"`
 		Stream     *bool   `json:"stream"`
-		Active     *bool   `json:"active"`
+		Enabled    *bool   `json:"enabled"`
 	}
 
 	if err := c.ShouldBindJSON(&updateData); err != nil {
@@ -132,8 +132,8 @@ func UpdateResponseHandler(c *gin.Context) {
 		existingResponse.Stream = *updateData.Stream
 	}
 
-	if updateData.Active != nil {
-		existingResponse.Active = *updateData.Active
+	if updateData.Enabled != nil {
+		existingResponse.Enabled = *updateData.Enabled
 	}
 
 	// Save updates

@@ -1,8 +1,8 @@
 <script lang="ts">
 	import { deleteConfig } from '$lib/api/mockoonApi';
 	import { goto } from '$app/navigation';
-	import { configurations } from '$lib/stores/configurations';
-	import { selectedConfig as selectedConfigStore } from '$lib/stores/selectedConfig';
+	import { projects } from '$lib/stores/configurations';
+	import { selectedProject as selectedConfigStore } from '$lib/stores/selectedConfig';
 
 	interface Config {
 		uuid: string;
@@ -61,7 +61,7 @@
 		try {
 			await deleteConfig(selectedConfig.configFile);
 			// Update configurations store
-			configurations.update(configs => configs.filter(c => c.uuid !== selectedConfig.uuid));
+			projects.update(configs => configs.filter(c => c.id !== selectedConfig.uuid));
 			// Set selectedConfig to null
 			selectedConfigStore.set(null);
 			// Redirect to home

@@ -7,7 +7,7 @@
 	import { isOwnAuth, removeLocalStorage } from '$lib/utils/localStorage';
 	import { getProjects } from '$lib/api/mockoonApi';
 	import { onMount } from 'svelte';
-	import { configurations } from '$lib/stores/configurations';
+	import { projects } from '$lib/stores/configurations';
 	import Toast from '$lib/components/Toast.svelte';
 	import { isAuthenticated } from '$lib/stores/authentication';
 	import { browser } from '$app/environment';
@@ -32,7 +32,7 @@
 	async function fetchConfigs() {
 		try {
 			await getProjects().then(d => {
-				configurations.set(d);
+				projects.set(d);
 			});
 		} catch (err) {
 			console.error('Failed to fetch configs:', err);
@@ -68,14 +68,14 @@
 
 	function handleConfigStart(event: CustomEvent<Config>) {
 		const config = event.detail;
-		configurations.update(configs => configs.map(c =>
+		projects.update(configs => configs.map(c =>
 			c.name === config.name ? { ...c, inUse: true } : c
 		));
 	}
 
 	function handleConfigStop(event: CustomEvent<Config>) {
 		const config = event.detail;
-		configurations.update(configs => configs.map(c =>
+		projects.update(configs => configs.map(c =>
 			c.name === config.name ? { ...c, inUse: false } : c
 		));
 	}

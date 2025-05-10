@@ -1,9 +1,10 @@
 <script lang="ts">
+	import type { Endpoint, Response } from '$lib/api/mockoonApi';
 	import type { MockoonResponse, MockoonRoute } from '$lib/types/Config';
 
 	let selectedValue: string = '';
-	export let selectedRoute: MockoonRoute | null;
-	export let selectedResponse: MockoonResponse | null;
+	export let selectedEndpoint: Endpoint | null;
+	export let selectedResponse: Response | null;
 
 	const toggleDropdown = (): void => {
 		const dropdown = document.getElementById('dropdownMenu');
@@ -12,8 +13,8 @@
 		}
 	};
 
-	const selectResponse = (index: number, value: MockoonResponse): void => {
-		selectedValue = `Response ${index + 1} (${value.statusCode}) ${value.label}`;
+	const selectResponse = (index: number, value: Response): void => {
+		selectedValue = `Response ${index + 1} (${value.status_code}) ${value.documentation}`;
 		const selectedElement = document.getElementById('selectedValue');
 		if (selectedElement) {
 			selectedElement.innerText = selectedValue;
@@ -23,8 +24,8 @@
 	};
 
 	$: {
-		if (selectedRoute && selectedRoute.responses && selectedRoute.responses.length > 0) {
-			selectedValue = `Response 1 (${selectedRoute.responses[0].statusCode}) ${selectedRoute.responses[0].label}`;
+		if (selectedResponse) {
+			selectedValue = `Response 1 (${selectedResponse.status_code}) ${selectedResponse.documentation}`;
 		} else {
 			selectedValue = 'No Response';
 		}
@@ -46,12 +47,12 @@
 			</button>
 			<div id="dropdownMenu" class="absolute mt-1 bg-gray-700 text-gray-300 rounded shadow-lg w-full hidden">
 				<ul class="text-sm">
-					{#if selectedRoute?.responses && selectedRoute.responses.length > 0}
-						{#each selectedRoute.responses as response, index}
+					{#if selectedEndpoint?.responses && selectedEndpoint.responses.length > 0}
+						{#each selectedEndpoint.responses as response, index}
 							<li>
 								<button type="button" class="w-full text-left px-4 py-2 hover:bg-gray-600 cursor-pointer"
 												on:click={() => { selectResponse(index, response) }}>
-									Response {index + 1} ({response.statusCode}) {response.label}
+									Response {index + 1} ({response.status_code}) {response?.documentation}
 								</button>
 							</li>
 						{/each}

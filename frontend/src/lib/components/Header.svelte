@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { activeTab } from '$lib/stores/activeTab';
 	import { downloadConfig, syncToGit } from '$lib/api/mockoonApi';
-	import { selectedConfig } from '$lib/stores/selectedConfig';
+	import { selectedProject } from '$lib/stores/selectedConfig';
 	import { syncStatus } from '$lib/stores/syncStatus';
 	import { toast } from '$lib/stores/toast';
 	import Settings from '$lib/components/settings/Settings.svelte';
@@ -28,18 +28,18 @@
 	}
 
 	async function handleDownload() {
-		if (!$selectedConfig) {
+		if (!$selectedProject) {
 			toast.error('Please select a configuration first');
 			return;
 		}
 
 		try {
-			const response = await downloadConfig($selectedConfig.configFile);
+			const response = await downloadConfig($selectedProject.configFile);
 			const blob = new Blob([JSON.stringify(response.data, null, 2)], { type: 'application/json' });
 			const url = window.URL.createObjectURL(blob);
 			const a = document.createElement('a');
 			a.href = url;
-			a.download = $selectedConfig.configFile;
+			a.download = $selectedProject.configFile;
 			document.body.appendChild(a);
 			a.click();
 			window.URL.revokeObjectURL(url);

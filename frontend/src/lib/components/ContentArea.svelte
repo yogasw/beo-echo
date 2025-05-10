@@ -2,28 +2,26 @@
 	import RoutesTab from './tabs/RoutesTab.svelte';
 	import LogsTab from './tabs/LogsTab.svelte';
 	import ConfigurationTab from './tabs/ConfigurationTab.svelte';
-	import { downloadConfig } from '$lib/api/mockoonApi';
-	import { selectedConfig } from '$lib/stores/selectedConfig';
+	import { getProjectDetail, type Endpoint } from '$lib/api/mockoonApi';
+	import { selectedProject } from '$lib/stores/selectedConfig';
 	import { activeTab } from '$lib/stores/activeTab';
-	import type { MockoonRoute } from '$lib/types/Config';
 
-	export let routes: MockoonRoute[] = [];
+	export let endpoints: Endpoint[] = [];
 	export let activeContentTab = 'Status & Body';
 
 	let loading = false;
 	let error = '';
 
 	async function loadConfigData() {
-		if (!$selectedConfig) return;
+		if (!$selectedProject) return;
 
 		loading = true;
 		try {
 			// Download config using the configFile name
-			const response = await downloadConfig($selectedConfig.configFile);
-			const configData = response.data;
+			const response = await getProjectDetail($selectedProject.id);
 
 			// Parse routes from config
-			routes = configData.routes;
+			endpoints = response.endpoints;
 		} catch (err) {
 			console.error('Failed to load config data:', err);
 			error = 'Failed to load configuration data';
@@ -33,13 +31,13 @@
 	}
 
 	// Watch for selectedConfig changes
-	$: if ($selectedConfig) {
+	$: if ($selectedProject) {
 		loadConfigData();
 	}
 </script>
 
 <div class="content-area">
-	{#if !$selectedConfig}
+	{#if !$selectedProject}
 		<div class="no-config-message">
 			<i class="fas fa-info-circle"></i>
 			<h2>No Configuration Selected</h2>
@@ -54,11 +52,11 @@
 	{:else}
 		<div class="tab-content">
 			{#if $activeTab === 'routes'}
-				<RoutesTab selectedConfig={$selectedConfig} {routes} activeContentTab={activeContentTab} />
+				<RoutesTab selectedProject={$selectedProject} {endpoints} activeContentTab={activeContentTab} />
 			{:else if $activeTab === 'logs'}
-				<LogsTab selectedConfig={$selectedConfig} />
+				<LogsTab selectedConfig={$selectedProject} />
 			{:else if $activeTab === 'configuration'}
-				<ConfigurationTab selectedConfig={$selectedConfig} />
+				<ConfigurationTab selectedConfig={$selectedProject} />
 			{/if}
 		</div>
 	{/if}

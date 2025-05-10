@@ -46,8 +46,6 @@
   <div class="text-red-500 text-center p-4">{error}</div>
 {:else}
   <ContentArea
-    {routes}
-    {activeTab}
     {activeContentTab}
   />
 {/if}

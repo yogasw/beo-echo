@@ -1,10 +1,10 @@
 <script lang="ts">
   import { createEventDispatcher } from 'svelte';
   import { getProjects, startMockServer, stopMockServer, uploadConfig, type ProjectResponse } from '$lib/api/mockoonApi';
-  import { selectedConfig } from '$lib/stores/selectedConfig';
-  import { configurations as projects } from '$lib/stores/configurations';
+  import { selectedProject } from '$lib/stores/selectedConfig';
   import { activeTab } from '$lib/stores/activeTab';
-  import { toast } from '$lib/stores/toast';
+	import { projects } from '$lib/stores/configurations';
+	import { toast } from '$lib/stores/toast';
 
   interface Config {
     uuid: string;
@@ -32,7 +32,7 @@
 
   function handleConfigClick(project: ProjectResponse) {
     console.log('1. ConfigurationList - Clicked config:', project);
-    selectedConfig.set(project);
+    selectedProject.set(project);
     activeTab.set('routes');
     dispatch('selectConfiguration', project);
   }
@@ -99,14 +99,14 @@
           role="button"
           tabindex="0"
           class="bg-gray-700 p-4 rounded cursor-pointer hover:bg-gray-600 transition-colors"
-          class:border-2={$selectedConfig?.id === project.id}
-          class:border-blue-500={$selectedConfig?.id === project.id}
+          class:border-2={$selectedProject?.id === project.id}
+          class:border-blue-500={$selectedProject?.id === project.id}
           on:click={() => handleConfigClick(project)}
           on:keydown={(e) => e.key === 'Enter' && handleConfigClick(project)}
         >
           <div class="flex justify-between items-start mb-2">
             <h2 class="text-sm font-bold flex items-center">
-              {#if $selectedConfig?.id === project.id}
+              {#if $selectedProject?.id === project.id}
                 <i class="fas fa-edit text-blue-500 mr-2"></i>
               {/if}
               <span class="truncate">{project.name}</span>

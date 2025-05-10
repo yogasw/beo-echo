@@ -1,9 +1,9 @@
 import { writable } from 'svelte/store';
-import type { ProjectResponse } from '$lib/api/mockoonApi';
+import type { Project } from '$lib/api/mockoonApi';
 import { getProjects } from '$lib/api/mockoonApi';
 
-export const configurations = writable<ProjectResponse[]>([]);
+export const projects = writable<Project[]>([]);
 
 export async function fetchConfigsStore() {
-  configurations.set(await getProjects());
+  projects.set(await getProjects());
 } 

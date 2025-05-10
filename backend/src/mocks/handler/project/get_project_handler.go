@@ -30,6 +30,7 @@ func GetProjectHandler(c *gin.Context) {
 		Preload("Endpoints").
 		Preload("ProxyTargets").
 		Preload("ActiveProxy").
+		Preload("Endpoints.Responses").
 		Where("id = ?", id).
 		First(&project)
 

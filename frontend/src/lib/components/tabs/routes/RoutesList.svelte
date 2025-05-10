@@ -1,11 +1,12 @@
 <script lang="ts">
-	import type {  MockoonRoute } from '$lib/types/Config';
-	export let selectedRoute: MockoonRoute | null;
+	import type { Endpoint } from '$lib/api/mockoonApi';
+	import type { MockoonRoute } from '$lib/types/Config';
+	export let selectedEndpoint: Endpoint | null;
 	export let activeConfigName: string;
 	export let filterText: string;
-	export let filteredRoutes: MockoonRoute[];
-	export let selectRoute: (route: MockoonRoute) => void;
-	export let handleRouteStatusChange: (route: MockoonRoute) => void;
+	export let filteredEndpoints: Endpoint[];
+	export let selectRoute: (route: Endpoint) => void;
+	export let handleRouteStatusChange: (route: Endpoint) => void;
 </script>
 
 <!-- Routes Section -->
@@ -30,27 +31,32 @@
 
 	<div class="flex-1 overflow-y-auto hide-scrollbar">
 		<div class="space-y-4 pr-2 py-2">
-			{#each filteredRoutes as route}
+			{#each filteredEndpoints as endpoint}
 				<div
-					class="flex items-center justify-between bg-gray-700 p-4 rounded cursor-pointer {selectedRoute === route ? 'border-2 border-blue-500' : ''}"
-					on:click={() => selectRoute(route)}
-					on:keydown={(e) => e.key === 'Enter' && selectRoute(route)}
+					class="flex items-center justify-between bg-gray-700 p-4 rounded cursor-pointer {selectedEndpoint ===
+					endpoint
+						? 'border-2 border-blue-500'
+						: ''}"
+					on:click={() => selectRoute(endpoint)}
+					on:keydown={(e) => e.key === 'Enter' && selectRoute(endpoint)}
 					tabindex="0"
 					role="button"
 				>
-          <span class="text-sm font-bold truncate">
-            <strong>{route.method}</strong> {route.endpoint.length > 30 ? route.endpoint.slice(0, 30) + '...' : route.endpoint}
-          </span>
+					<span class="text-sm font-bold truncate">
+						<strong>{endpoint.method}</strong>
+						{endpoint.path.length > 30 ? endpoint.path.slice(0, 30) + '...' : endpoint.path}
+					</span>
 					<button
 						class="text-white py-1 px-2 rounded flex items-center"
-						class:bg-green-500={route.status === 'enabled' || !route.status}
-						class:bg-red-500={route.status === 'disabled'}
+						class:bg-green-500={endpoint.enabled == true}
+						class:bg-red-500={endpoint.enabled == false}
 						on:click|stopPropagation={() => {
-							if (!route.status) route.status = 'enabled';
-							handleRouteStatusChange(route);
+							endpoint.enabled = !endpoint.enabled;
+							// Call the function to handle route status change';
+							handleRouteStatusChange(endpoint);
 						}}
 					>
-						{#if route.status === 'enabled' || !route.status}
+						{#if endpoint.enabled === false}
 							<i class="fas fa-toggle-off mr-1"></i> Disable
 						{:else}
 							<i class="fas fa-toggle-on mr-1"></i> Enable
