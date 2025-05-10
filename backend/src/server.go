@@ -14,6 +14,7 @@ import (
 	"mockoon-control-panel/backend_new/src/database"
 	"mockoon-control-panel/backend_new/src/health"
 	"mockoon-control-panel/backend_new/src/lib"
+	"mockoon-control-panel/backend_new/src/mocks/handler"
 	"mockoon-control-panel/backend_new/src/mocks/handler/endpoint"
 	"mockoon-control-panel/backend_new/src/mocks/handler/project"
 	"mockoon-control-panel/backend_new/src/mocks/handler/response"
@@ -119,6 +120,16 @@ func SetupRouter() *gin.Engine {
 		apiGroup.GET("/projects/:name/endpoints/:id/responses/:responseId", response.GetResponseHandler)
 		apiGroup.PUT("/projects/:name/endpoints/:id/responses/:responseId", response.UpdateResponseHandler)
 		apiGroup.DELETE("/projects/:name/endpoints/:id/responses/:responseId", response.DeleteResponseHandler)
+	}
+
+	// Register the catch-all handler for mock API endpoints
+	// We need to avoid conflict with the /mock path, so we'll create a separate group
+	// for the mock project endpoints
+	mockProjectGroup := router.Group("")
+	{
+		// This handler will catch any request that doesn't match the above routes
+		// particularly targeting project-specific mock endpoints
+		mockProjectGroup.Any("/:project/*path", handler.MockRequestHandler)
 	}
 
 	return router

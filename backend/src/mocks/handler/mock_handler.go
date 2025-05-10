@@ -11,8 +11,8 @@ import (
 // MockRequestHandler is a catch-all handler for mock API endpoints
 //
 // Sample curl:
-// curl -X GET "http://localhost:8000/mock/myproject/api/users"
-// curl -X POST "http://myproject.localhost:8000/api/users" -H "Content-Type: application/json" -d '{"name":"John Doe"}'
+// curl -X GET "http://localhost:8000/my-new-project/api/users"
+// curl -X POST "http://my-new-project.localhost:8000/api/users" -H "Content-Type: application/json" -d '{"name":"John Doe"}'
 func MockRequestHandler(c *gin.Context) {
 	// Check if mock service is initialized
 	EnsureMockService()
