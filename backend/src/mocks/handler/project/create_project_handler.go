@@ -9,16 +9,18 @@ import (
 	"mockoon-control-panel/backend_new/src/mocks/handler"
 )
 
-// CreateProjectHandler creates a new project
-//
-// Sample curl:
-//
-//	curl -X POST "http://localhost:8000/api/projects" \
-//	  -H "Content-Type: application/json" \
-//	  -d '{
-//	    "name": "my-new-project",
-//	    "mode": "mock"
-//	  }'
+/*
+CreateProjectHandler creates a new project
+
+Sample curl:
+
+	curl -X POST "http://localhost:3600/mock/api/projects" \
+		-H "Content-Type: application/json" \
+		-d '{
+		 "name": "my-new-project",
+		 "mode": "mock"
+		}'
+*/
 func CreateProjectHandler(c *gin.Context) {
 	handler.EnsureMockService()
 

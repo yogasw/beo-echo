@@ -12,7 +12,7 @@ import (
 // GetProjectHandler retrieves a project by name
 //
 // Sample curl:
-// curl -X GET "http://localhost:8000/api/projects/my-project" -H "Content-Type: application/json"
+// curl -X GET "http://localhost:3600/mock/api/projects/my-new-project" -H "Content-Type: application/json"
 func GetProjectHandler(c *gin.Context) {
 	handler.EnsureMockService()
 

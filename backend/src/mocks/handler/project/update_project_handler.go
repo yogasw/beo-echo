@@ -9,16 +9,18 @@ import (
 	"mockoon-control-panel/backend_new/src/mocks/handler"
 )
 
-// UpdateProjectHandler updates an existing project
-//
-// Sample curl:
-//
-//	curl -X PUT "http://localhost:8000/api/projects/my-project" \
-//	  -H "Content-Type: application/json" \
-//	  -d '{
-//	    "mode": "proxy",
-//	    "activeProxyID": 1
-//	  }'
+/*
+UpdateProjectHandler updates an existing project
+
+Sample curl:
+
+	curl -X PUT "http://localhost:3600/mock/api/projects/my-new-project" \
+	  -H "Content-Type: application/json" \
+	  -d '{
+	    "mode": "proxy",
+	    "activeProxyID": 1
+	  }'
+*/
 func UpdateProjectHandler(c *gin.Context) {
 	handler.EnsureMockService()
 
