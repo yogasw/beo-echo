@@ -7,9 +7,8 @@ import (
 	"github.com/joho/godotenv"
 	"github.com/spf13/cobra"
 
+	"mockoon-control-panel/backend_new/src"
 	"mockoon-control-panel/backend_new/src/database"
-	"mockoon-control-panel/backend_new/src/git-sync/handler"
-	"mockoon-control-panel/backend_new/src/server"
 	"mockoon-control-panel/backend_new/src/traefik"
 	"mockoon-control-panel/backend_new/src/utils"
 )
@@ -52,23 +51,6 @@ func runServer() error {
 	}
 	log.Println("✅ Required directories created")
 
-	// Check if mockoon CLI is available
-	log.Println("🔍 Checking for Mockoon CLI...")
-	mockoonAvailable, err := utils.CheckMockoonCli()
-	if err != nil || !mockoonAvailable {
-		log.Printf("❌ Mockoon CLI not available: %v", err)
-		return err
-	}
-	log.Println("✅ Mockoon CLI found")
-
-	// Sync configs to git
-	log.Println("🔄 Syncing configurations with Git repository...")
-	if err := handler.SyncConfigsToGit(); err != nil {
-		log.Printf("⚠️  Error syncing to Git: %v", err)
-	} else {
-		log.Println("✅ Git sync completed successfully")
-	}
-
 	// Setup database connection
 	log.Println("🔧 Setting up database connection...")
 	if err := database.CheckAndHandlePrisma(); err != nil {
@@ -78,12 +60,12 @@ func runServer() error {
 	log.Println("✅ Database connected")
 
 	// Generate Traefik config
-	log.Println("🔧 Generating Traefik configuration...")
-	if err := traefik.GenerateDynamicTraefikConfig(); err != nil {
-		log.Printf("❌ Failed to generate dynamic Traefik config: %v", err)
-		return err
-	}
-	log.Println("✅ Dynamic Traefik configuration generated")
+	// log.Println("🔧 Generating Traefik configuration...")
+	// if err := traefik.GenerateDynamicTraefikConfig(); err != nil {
+	// 	log.Printf("❌ Failed to generate dynamic Traefik config: %v", err)
+	// 	return err
+	// }
+	// log.Println("✅ Dynamic Traefik configuration generated")
 
 	if err := traefik.GenerateStaticTraefikConfig(); err != nil {
 		log.Printf("❌ Failed to generate static Traefik config: %v", err)
@@ -94,5 +76,5 @@ func runServer() error {
 	log.Println("🚀 All systems initialized, starting HTTP server...")
 
 	// Start the server (this will block until the server is stopped)
-	return server.StartServer()
+	return src.StartServer()
 }

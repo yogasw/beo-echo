@@ -1,4 +1,4 @@
-package main
+package src
 
 import (
 	"log"
@@ -12,7 +12,6 @@ import (
 	"github.com/joho/godotenv"
 
 	"mockoon-control-panel/backend_new/src/database"
-	"mockoon-control-panel/backend_new/src/git-sync/handler"
 	"mockoon-control-panel/backend_new/src/health"
 	"mockoon-control-panel/backend_new/src/lib"
 	"mockoon-control-panel/backend_new/src/middlewares"
@@ -21,44 +20,8 @@ import (
 	"mockoon-control-panel/backend_new/src/utils"
 )
 
-func main() {
-	// Load environment variables from .env file
-	if err := godotenv.Load(filepath.Join("..", ".env")); err != nil {
-		log.Println("Warning: .env file not found or could not be loaded")
-	}
-
-	// Setup required directories
-	if err := utils.EnsureRequiredFoldersAndEnv(); err != nil {
-		log.Fatalf("Failed to setup required folders: %v", err)
-	}
-
-	// Check if mockoon CLI is available
-	mockoonAvailable, err := utils.CheckMockoonCli()
-	if err != nil || !mockoonAvailable {
-		log.Fatalf("Error: mockoon-cli is not available. Please install it first: %v", err)
-	}
-
-	// Sync configs to git
-	if err := handler.SyncConfigsToGit(); err != nil {
-		log.Printf("Error syncing to Git: %v", err)
-	} else {
-		log.Println("Sync to Git completed successfully")
-	}
-
-	// Setup database connection
-	if err := database.CheckAndHandlePrisma(); err != nil {
-		log.Fatalf("Failed to setup database: %v", err)
-	}
-
-	// Generate Traefik config
-	if err := traefik.GenerateDynamicTraefikConfig(); err != nil {
-		log.Fatalf("Error generating Traefik config: %v", err)
-	}
-
-	if err := traefik.GenerateStaticTraefikConfig(); err != nil {
-		log.Fatalf("Error generating static Traefik config: %v", err)
-	}
-
+// SetupRouter creates and configures a new Gin router
+func SetupRouter() *gin.Engine {
 	// Create Gin router with default middleware
 	router := gin.Default()
 
@@ -93,7 +56,7 @@ func main() {
 
 	// Setup file upload directory
 	if err := os.MkdirAll(lib.UPLOAD_DIR, os.ModePerm); err != nil {
-		log.Fatalf("Failed to create upload directory: %v", err)
+		log.Printf("Warning: Failed to create upload directory: %v", err)
 	}
 
 	// Basic route for checking if server is running
@@ -136,24 +99,82 @@ func main() {
 	apiGroup := router.Group("/mock/api")
 	apiGroup.Use(middlewares.ApiKeyAuth())
 	{
-		apiGroup.POST("/start", mockHandler.StartMockHandler)
-		apiGroup.POST("/stop", mockHandler.StopMockHandler)
-		apiGroup.GET("/status", mockHandler.StatusMockHandler)
-		apiGroup.POST("/upload", mockHandler.UploadMockHandler)
-		apiGroup.GET("/configs", mockHandler.ListConfigsHandler)
-		apiGroup.DELETE("/configs/:filename", mockHandler.DeleteConfigHandler)
-		apiGroup.GET("/configs/:filename/download", mockHandler.DownloadConfigHandler)
-		apiGroup.POST("/sync", handler.SyncToGitHttpHandler)
+		apiGroup.GET("/projects", mockHandler.ListProjectsHandler)
+		apiGroup.POST("/projects", mockHandler.CreateProjectHandler)
+		apiGroup.GET("/projects/:name", mockHandler.GetProjectHandler)
+		apiGroup.PUT("/projects/:name", mockHandler.UpdateProjectHandler)
+		apiGroup.DELETE("/projects/:name", mockHandler.DeleteProjectHandler)
 
-		apiGroup.POST("/git/save-config", handler.SaveGitConfigHandler)
-		apiGroup.POST("/git/save-and-test-sync", handler.SaveAndTestSyncGitHandler)
-		apiGroup.GET("/git/config", handler.GetGitConfigHandler)
+		// Endpoint management
+		apiGroup.GET("/projects/:name/endpoints", mockHandler.ListEndpointsHandler)
+		apiGroup.POST("/projects/:name/endpoints", mockHandler.CreateEndpointHandler)
+		apiGroup.GET("/projects/:name/endpoints/:id", mockHandler.GetEndpointHandler)
+		apiGroup.PUT("/projects/:name/endpoints/:id", mockHandler.UpdateEndpointHandler)
+		apiGroup.DELETE("/projects/:name/endpoints/:id", mockHandler.DeleteEndpointHandler)
+
+		// Response management
+		apiGroup.GET("/endpoints/:id/responses", mockHandler.ListResponsesHandler)
+		apiGroup.POST("/endpoints/:id/responses", mockHandler.CreateResponseHandler)
+		apiGroup.GET("/responses/:id", mockHandler.GetResponseHandler)
+		apiGroup.PUT("/responses/:id", mockHandler.UpdateResponseHandler)
+		apiGroup.DELETE("/responses/:id", mockHandler.DeleteResponseHandler)
 	}
+
+	return router
+}
+
+// StartServer initializes and starts the HTTP server
+func StartServer() error {
+	// Load environment variables from .env file
+	if err := godotenv.Load(filepath.Join("..", ".env")); err != nil {
+		log.Println("Warning: .env file not found or could not be loaded")
+	}
+
+	// Setup required directories
+	if err := utils.EnsureRequiredFoldersAndEnv(); err != nil {
+		log.Fatalf("Failed to setup required folders: %v", err)
+	}
+
+	// Setup database connection
+	if err := database.CheckAndHandlePrisma(); err != nil {
+		log.Fatalf("Failed to setup database: %v", err)
+	}
+
+	if err := traefik.GenerateStaticTraefikConfig(); err != nil {
+		log.Fatalf("Error generating static Traefik config: %v", err)
+	}
+
+	router := SetupRouter()
+
+	// Add request logging middleware
+	router.Use(func(c *gin.Context) {
+		// Start timer
+		startTime := time.Now()
+
+		// Process request
+		c.Next()
+
+		// Log request details
+		log.Printf(
+			"[%s] %s %s %d %s",
+			c.Request.Method,
+			c.Request.URL.Path,
+			c.ClientIP(),
+			c.Writer.Status(),
+			time.Since(startTime),
+		)
+	})
 
 	// Start the server
 	serverAddr := lib.SERVER_HOSTNAME + ":" + lib.SERVER_PORT
-	log.Printf("Server is running on http://%s", serverAddr)
-	if err := router.Run(serverAddr); err != nil {
-		log.Fatalf("Failed to start server: %v", err)
-	}
+
+	log.Printf("=================================================")
+	log.Printf("🚀 Mockoon Control Panel server is starting up!")
+	log.Printf("🔗 Server URL: http://%s", serverAddr)
+	log.Printf("📄 API endpoint: http://%s/mock/api", serverAddr)
+	log.Printf("🔍 Health check: http://%s/mock/api/health", serverAddr)
+	log.Printf("=================================================")
+
+	// This will block until the server is stopped
+	return router.Run(serverAddr)
 }

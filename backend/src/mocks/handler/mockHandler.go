@@ -90,40 +90,6 @@ func MockRequestHandler(c *gin.Context) {
 	}
 }
 
-// RegisterMockHandlers registers all mock API handlers
-func RegisterMockHandlers(router *gin.Engine) {
-	// Initialize the mock service
-	InitMockService()
-
-	// Register API endpoints for managing mocks
-	api := router.Group("/mock/api")
-	{
-		api.GET("/projects", ListProjectsHandler)
-		api.POST("/projects", CreateProjectHandler)
-		api.GET("/projects/:name", GetProjectHandler)
-		api.PUT("/projects/:name", UpdateProjectHandler)
-		api.DELETE("/projects/:name", DeleteProjectHandler)
-
-		// Endpoint management
-		api.GET("/projects/:name/endpoints", ListEndpointsHandler)
-		api.POST("/projects/:name/endpoints", CreateEndpointHandler)
-		api.GET("/projects/:name/endpoints/:id", GetEndpointHandler)
-		api.PUT("/projects/:name/endpoints/:id", UpdateEndpointHandler)
-		api.DELETE("/projects/:name/endpoints/:id", DeleteEndpointHandler)
-
-		// Response management
-		api.GET("/endpoints/:id/responses", ListResponsesHandler)
-		api.POST("/endpoints/:id/responses", CreateResponseHandler)
-		api.GET("/responses/:id", GetResponseHandler)
-		api.PUT("/responses/:id", UpdateResponseHandler)
-		api.DELETE("/responses/:id", DeleteResponseHandler)
-	}
-
-	// Catch-all route for all unhandled requests (low priority)
-	// This should be registered last so it doesn't interfere with other routes
-	router.NoRoute(MockRequestHandler)
-}
-
 // extractProjectName extracts project name from request (subdomain or path)
 func extractProjectName(req *http.Request) string {
 	// Try to extract from Host header (subdomain)

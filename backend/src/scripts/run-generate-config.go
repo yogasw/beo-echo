@@ -32,9 +32,9 @@ func main() {
 
 	// Generate dynamic Traefik configuration with firstInit=true to skip trying to load aliases
 	// since the database might not be fully set up during initial configuration
-	if err := traefik.GenerateDynamicTraefikConfigWithInit(true); err != nil {
-		log.Fatalf("Failed to generate dynamic Traefik configuration: %v", err)
-	}
+	// if err := traefik.GenerateDynamicTraefikConfigWithInit(true); err != nil {
+	// 	log.Fatalf("Failed to generate dynamic Traefik configuration: %v", err)
+	// }
 
 	log.Println("Configuration generation completed successfully!")
 }

@@ -57,10 +57,10 @@ func generateConfigs() error {
 		return err
 	}
 
-	// Generate dynamic Traefik configuration
-	if err := traefik.GenerateDynamicTraefikConfig(); err != nil {
-		return err
-	}
+	// // Generate dynamic Traefik configuration
+	// if err := traefik.GenerateDynamicTraefikConfig(); err != nil {
+	// 	return err
+	// }
 
 	log.Println("Configuration generation completed successfully!")
 	return nil

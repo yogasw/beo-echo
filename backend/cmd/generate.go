@@ -34,11 +34,11 @@ var generateCmd = &cobra.Command{
 			return err
 		}
 
-		// Generate dynamic Traefik configuration
-		if err := traefik.GenerateDynamicTraefikConfig(); err != nil {
-			log.Fatalf("Failed to generate dynamic Traefik configuration: %v", err)
-			return err
-		}
+		// // Generate dynamic Traefik configuration
+		// if err := traefik.GenerateDynamicTraefikConfig(); err != nil {
+		// 	log.Fatalf("Failed to generate dynamic Traefik configuration: %v", err)
+		// 	return err
+		// }
 
 		log.Println("Configuration generation completed successfully!")
 		return nil

@@ -14,7 +14,6 @@ func EnsureRequiredFoldersAndEnv() error {
 	directories := []string{
 		lib.CONFIGS_DIR,
 		lib.UPLOAD_DIR,
-		lib.LOGS_DIR,
 		filepath.Join(lib.CONFIGS_DIR, "traefik"),
 	}
 
@@ -37,4 +36,9 @@ func EnsureRequiredFoldersAndEnv() error {
 	}
 
 	return nil
+}
+
+// EnsureDirectoryExists creates a directory if it doesn't exist
+func EnsureDirectoryExists(dirPath string) error {
+	return os.MkdirAll(dirPath, os.ModePerm)
 }
