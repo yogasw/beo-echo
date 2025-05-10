@@ -11,18 +11,20 @@ import (
 	"mockoon-control-panel/backend_new/src/mocks/handler"
 )
 
-// UpdateEndpointHandler updates an existing endpoint
-//
-// Sample curl:
-//
-//	curl -X PUT "http://localhost:8000/api/projects/my-project/endpoints/1" \
-//	  -H "Content-Type: application/json" \
-//	  -d '{
-//	    "method": "POST",
-//	    "path": "/api/users/new",
-//	    "enabled": true,
-//	    "responseMode": "random"
-//	  }'
+/*
+UpdateEndpointHandler updates an existing endpoint
+
+Sample curl:
+
+	curl -X PUT "http://localhost:3600/mock/api/projects/my-new-project/endpoints/1" \
+	  -H "Content-Type: application/json" \
+	  -d '{
+	    "method": "POST",
+	    "path": "/api/users/new",
+	    "enabled": true,
+	    "responseMode": "random"
+	  }'
+*/
 func UpdateEndpointHandler(c *gin.Context) {
 	handler.EnsureMockService()
 

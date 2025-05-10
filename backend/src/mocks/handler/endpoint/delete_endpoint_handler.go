@@ -13,7 +13,7 @@ import (
 // DeleteEndpointHandler removes an endpoint
 //
 // Sample curl:
-// curl -X DELETE "http://localhost:8000/api/projects/my-project/endpoints/1" -H "Content-Type: application/json"
+// curl -X DELETE "http://localhost:3600/mock/api/projects/my-new-project/endpoints/1" -H "Content-Type: application/json"
 func DeleteEndpointHandler(c *gin.Context) {
 	handler.EnsureMockService()
 
