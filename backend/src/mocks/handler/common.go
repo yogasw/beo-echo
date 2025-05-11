@@ -8,6 +8,13 @@ import (
 	"mockoon-control-panel/backend_new/src/mocks/services"
 )
 
+// Gin context keys
+const (
+	KeyProjectID     = "projectID"
+	KeyExecutionMode = "executionMode"
+	KeyMatched       = "matched"
+)
+
 var mockService *services.MockService
 
 // InitMockService initializes the mock service

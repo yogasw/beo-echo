@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"io"
 	"mockoon-control-panel/backend_new/src/database"
+	"mockoon-control-panel/backend_new/src/mocks/handler"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -15,12 +16,6 @@ type bodyWriter struct {
 	gin.ResponseWriter
 	body *bytes.Buffer
 }
-
-const (
-	KeyProjectID     = "project_id"
-	KeyExecutionMode = "execution_mode"
-	KeyMatched       = "matched"
-)
 
 func (w bodyWriter) Write(b []byte) (int, error) {
 	w.body.Write(b)                  // Copy to buffer
@@ -52,9 +47,14 @@ func RequestLoggerMiddleware(db *gorm.DB) gin.HandlerFunc {
 		latency := time.Since(start).Milliseconds()
 
 		// Extract context vars (must be set by handler)
-		projectID, _ := c.Get(KeyProjectID)
-		executionMode, _ := c.Get(KeyExecutionMode)
-		matched, _ := c.Get(KeyMatched)
+		projectID, _ := c.Get(handler.KeyProjectID)
+		executionMode, _ := c.Get(handler.KeyExecutionMode)
+		matched, _ := c.Get(handler.KeyMatched)
+
+		// If no project ID, skip logging
+		if projectID == nil || projectID == "" {
+			return
+		}
 
 		// Save log
 		log := &database.RequestLog{

@@ -29,11 +29,12 @@ func NewMockService(repo *repositories.MockRepository) *MockService {
 }
 
 // HandleRequest processes an incoming request and returns a mock response or proxies it
-func (s *MockService) HandleRequest(alias, method, path string, req *http.Request) (*http.Response, error) {
+// Also returns project ID, execution mode, and whether the request matched an endpoint
+func (s *MockService) HandleRequest(alias, method, path string, req *http.Request) (*http.Response, error, string, database.ProjectMode, bool) {
 	// Find project by alias
 	project, err := s.Repo.FindProjectByAlias(alias)
 	if err != nil {
-		return createErrorResponse(http.StatusNotFound, "Project not found"), nil
+		return createErrorResponse(http.StatusNotFound, "Project not found"), nil, "", "", false
 	}
 
 	// Extract the actual API endpoint path
@@ -44,27 +45,30 @@ func (s *MockService) HandleRequest(alias, method, path string, req *http.Reques
 	// Check project mode
 	switch project.Mode {
 	case database.ModeMock:
-		return s.handleMockMode(project.ID, method, cleanPath, req)
+		resp, err, matched := s.handleMockMode(project.ID, method, cleanPath, req)
+		return resp, err, project.ID, project.Mode, matched
 	case database.ModeProxy, database.ModeForwarder:
-		return s.handleProxyMode(project, req)
+		resp, err := s.handleProxyMode(project, req)
+		return resp, err, project.ID, project.Mode, true // Proxy requests are always considered "matched"
 	case database.ModeDisabled:
-		return createErrorResponse(http.StatusServiceUnavailable, "Service is disabled"), nil
+		return createErrorResponse(http.StatusServiceUnavailable, "Service is disabled"), nil, project.ID, project.Mode, false
 	default:
-		return createErrorResponse(http.StatusInternalServerError, "Invalid project mode"), nil
+		return createErrorResponse(http.StatusInternalServerError, "Invalid project mode"), nil, project.ID, project.Mode, false
 	}
 }
 
-// handleMockMode generates mock response
-func (s *MockService) handleMockMode(projectID string, method, path string, req *http.Request) (*http.Response, error) {
+// handleMockMode generates mock response and returns if the request matched an endpoint
+func (s *MockService) handleMockMode(projectID string, method, path string, req *http.Request) (*http.Response, error, bool) {
 	endpoint, err := s.Repo.FindMatchingEndpoint(projectID, method, path)
 	if err != nil {
-		return createErrorResponse(http.StatusNotFound, "Endpoint not found"), nil
+		// No matching endpoint found
+		return createErrorResponse(http.StatusNotFound, "Endpoint not found"), nil, false
 	}
 
 	// Get all responses for this endpoint
 	responses, err := s.Repo.FindResponsesByEndpointID(endpoint.ID)
 	if err != nil || len(responses) == 0 {
-		return createErrorResponse(http.StatusInternalServerError, "No responses configured"), nil
+		return createErrorResponse(http.StatusInternalServerError, "No responses configured"), nil, true
 	}
 
 	// Select response based on ResponseMode
@@ -75,8 +79,9 @@ func (s *MockService) handleMockMode(projectID string, method, path string, req 
 		time.Sleep(time.Duration(response.DelayMS) * time.Millisecond)
 	}
 
-	// Create and return HTTP response
-	return createMockResponse(response)
+	// Create and return HTTP response with match indicator
+	resp, err := createMockResponse(response)
+	return resp, err, true
 }
 
 // handleProxyMode forwards the request to target

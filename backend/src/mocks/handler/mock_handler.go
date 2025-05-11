@@ -46,7 +46,7 @@ func MockRequestHandler(c *gin.Context) {
 	}
 
 	// Process the request
-	resp, err := mockService.HandleRequest(projectAlias, c.Request.Method, path, c.Request)
+	resp, err, projectID, mode, matched := mockService.HandleRequest(projectAlias, c.Request.Method, path, c.Request)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error":   true,
@@ -54,6 +54,11 @@ func MockRequestHandler(c *gin.Context) {
 		})
 		return
 	}
+
+	// Store context information about the request
+	c.Set(KeyProjectID, projectID)
+	c.Set(KeyExecutionMode, string(mode))
+	c.Set(KeyMatched, matched)
 
 	// Copy response headers
 	for key, values := range resp.Header {
