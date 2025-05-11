@@ -100,7 +100,7 @@
 {#if isLoginPage || !$isAuthenticated}
 	<slot />
 {:else}
-	<div class="min-h-screen w-full bg-gray-900 text-white font-sans">
+	<div class="min-h-screen w-full bg-gray-50 dark:bg-gray-900 text-gray-800 dark:text-white font-sans">
 		<div class="mmx-auto flex h-screen">
 			<ConfigurationList
 				{searchTerm}

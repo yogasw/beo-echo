@@ -11,6 +11,7 @@
 	import { projects } from '$lib/stores/configurations';
 	import { toast } from '$lib/stores/toast';
 	import { resetEndpointsList } from '$lib/stores/saveButton';
+	import * as ThemeUtils from '$lib/utils/themeUtils';
 
 	interface Config {
 		uuid: string;
@@ -151,21 +152,21 @@
 	}
 </script>
 
-<div class="w-72 bg-gray-800 p-4 flex flex-col h-full">
-	<h1 class="text-xl font-bold mb-4 flex items-center">
+<div class="w-72 theme-bg-primary p-4 flex flex-col h-full border-r theme-border">
+	<h1 class="text-xl font-bold mb-4 flex items-center theme-text-primary">
 		<i class="fas fa-server text-5xl mr-4"></i> Beo Echo
 	</h1>
-	<div class="flex items-center bg-gray-700 py-2 px-4 rounded mb-4">
-		<i class="fas fa-search text-white text-lg mr-2"></i>
+	<div class="flex items-center theme-bg-secondary py-2 px-4 rounded mb-4">
+		<i class="fas fa-search theme-text-primary text-lg mr-2"></i>
 		<input
 			type="text"
 			bind:value={searchTerm}
 			placeholder="Search Configuration"
-			class="w-full bg-gray-700 text-white py-2 px-2 rounded"
+			class="w-full theme-bg-secondary theme-text-primary py-2 px-2 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
 		/>
 	</div>
 	<button
-		class="bg-blue-500 text-white py-2 px-4 rounded mb-2 w-full flex items-center justify-center"
+		class="{ThemeUtils.primaryButton('mb-2 w-full justify-center')}"
 		on:click={triggerFileInput}
 		disabled={uploading}
 	>
@@ -181,7 +182,7 @@
 	/>
 
 	<button
-		class="bg-green-600 text-white py-2 px-4 rounded mb-4 w-full flex items-center justify-center"
+		class="bg-green-600 hover:bg-green-700 text-white py-2 px-4 rounded mb-4 w-full flex items-center justify-center"
 		on:click={openAddProjectModal}
 	>
 		<i class="fas fa-plus mr-2"></i> Add Project
@@ -190,57 +191,57 @@
 	<!-- Add Project Modal -->
 	{#if showAddProjectModal}
 		<div class="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center">
-			<div class="bg-gray-800 p-6 rounded-lg max-w-md w-full mx-4">
-				<h2 class="text-xl font-bold mb-4 text-white">Add New Project</h2>
+			<div class="theme-bg-primary p-6 rounded-lg max-w-md w-full mx-4 theme-shadow">
+				<h2 class="text-xl font-bold mb-4 theme-text-primary">Add New Project</h2>
 
 				<div class="mb-4">
-					<label for="projectName" class="block text-sm font-medium text-gray-300 mb-1"
+					<label for="projectName" class="block text-sm font-medium theme-text-secondary mb-1"
 						>Project Name</label
 					>
 					<input
 						id="projectName"
 						type="text"
-						class="w-full bg-gray-700 text-white py-2 px-3 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+						class="w-full theme-bg-secondary theme-text-primary py-2 px-3 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 theme-border border"
 						bind:value={projectName}
 						placeholder="Enter project name"
 					/>
 				</div>
 
 				<div class="mb-4">
-					<label for="projectAlias" class="block text-sm font-medium text-gray-300 mb-1"
+					<label for="projectAlias" class="block text-sm font-medium theme-text-secondary mb-1"
 						>Project Alias</label
 					>
 					<input
 						id="projectAlias"
 						type="text"
-						class="w-full bg-gray-700 text-white py-2 px-3 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+						class="w-full theme-bg-secondary theme-text-primary py-2 px-3 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 theme-border border"
 						bind:value={projectAlias}
 						placeholder="Enter project alias"
 						on:input={handleAliasInput}
 					/>
-					<p class="text-xs text-gray-400 mt-1">
+					<p class="text-xs theme-text-muted mt-1">
 						Only lowercase letters, numbers, underscores (_) and hyphens (-) allowed
 					</p>
 				</div>
 
 				<div class="mb-6">
-					<p class="block text-sm font-medium text-gray-300 mb-1">URL Preview</p>
+					<p class="block text-sm font-medium theme-text-secondary mb-1">URL Preview</p>
 					<div
-						class="bg-gray-900 px-3 py-2 rounded border border-gray-600 text-gray-300 font-mono text-sm break-all"
+						class="bg-gray-100 dark:bg-gray-900 px-3 py-2 rounded border border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-300 font-mono text-sm break-all"
 					>
 						http://BASE_URL/{projectAlias || '[alias]'}
 					</div>
 				</div>
 				<div class="flex justify-end space-x-2">
 					<button
-						class="px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700 transition-colors"
+						class="{ThemeUtils.secondaryButton('px-4 py-2 rounded transition-colors')}"
 						on:click={closeAddProjectModal}
 						disabled={isAddingProject}
 					>
 						Cancel
 					</button>
 					<button
-						class={`px-4 py-2 text-white rounded transition-colors flex items-center ${isAddingProject || !projectName.trim() || !projectAlias.trim() ? 'bg-gray-700 cursor-not-allowed' : 'bg-blue-500 hover:bg-blue-600'}`}
+						class={`px-4 py-2 text-white rounded transition-colors flex items-center ${isAddingProject || !projectName.trim() || !projectAlias.trim() ? 'bg-gray-400 dark:bg-gray-700 cursor-not-allowed' : 'bg-blue-500 hover:bg-blue-600'}`}
 						on:click={handleAddProject}
 						disabled={isAddingProject || !projectName.trim() || !projectAlias.trim()}
 					>
@@ -260,14 +261,15 @@
 				<div
 					role="button"
 					tabindex="0"
-					class="bg-gray-700 p-4 rounded cursor-pointer hover:bg-gray-600 transition-colors"
+					class="theme-bg-secondary p-4 rounded cursor-pointer transition-colors"
+					class:theme-hover={$selectedProject?.id !== project.id}
 					class:border-2={$selectedProject?.id === project.id}
 					class:border-blue-500={$selectedProject?.id === project.id}
 					on:click={() => handleConfigClick(project)}
 					on:keydown={(e) => e.key === 'Enter' && handleConfigClick(project)}
 				>
 					<div class="flex justify-between items-start mb-2">
-						<h2 class="text-sm font-bold flex items-center">
+						<h2 class="text-sm font-bold flex items-center theme-text-primary">
 							{#if $selectedProject?.id === project.id}
 								<i class="fas fa-edit text-blue-500 mr-2"></i>
 							{/if}
@@ -292,8 +294,8 @@
 						</div>
 
 						<div class="flex items-center text-xs">
-							<i class="fas fa-tag text-gray-400 mr-1.5 w-4"></i>
-							<span class="text-gray-300 truncate" title={project.alias || 'No alias'}>
+							<i class="fas fa-tag text-gray-400 dark:text-gray-400 mr-1.5 w-4"></i>
+							<span class="text-gray-600 dark:text-gray-300 truncate" title={project.alias || 'No alias'}>
 								{project.alias || '—'}
 							</span>
 						</div>

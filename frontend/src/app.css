@@ -2,6 +2,31 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Define CSS variables for theme colors */
+:root {
+  /* Light theme variables */
+  --bg-primary: #ffffff;
+  --bg-secondary: #f3f4f6;
+  --bg-tertiary: #f9fafb;
+  --bg-accent: #e5e7eb;
+  --text-primary: #1f2937;
+  --text-secondary: #4b5563;
+  --text-muted: #6b7280;
+  --border-color: #d1d5db;
+}
+
+.dark {
+  /* Dark theme variables */
+  --bg-primary: #1f2937; /* corresponds to gray-800 */
+  --bg-secondary: #374151; /* corresponds to gray-700 */
+  --bg-tertiary: #111827; /* corresponds to gray-900 */
+  --bg-accent: #4b5563; /* corresponds to gray-600 */
+  --text-primary: #f9fafb;
+  --text-secondary: #e5e7eb;
+  --text-muted: #9ca3af;
+  --border-color: #4b5563;
+}
+
 /* Apply transitions for smooth theme switching */
 html {
   transition: background-color 0.3s ease, color 0.3s ease;
@@ -9,6 +34,37 @@ html {
 
 body, button, div, input, textarea, select {
   transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+}
+
+/* Theme utility classes */
+@layer components {
+  .theme-bg-primary {
+    @apply bg-white dark:bg-gray-800;
+  }
+  .theme-bg-secondary {
+    @apply bg-gray-100 dark:bg-gray-700;
+  }
+  .theme-bg-tertiary {
+    @apply bg-gray-50 dark:bg-gray-900;
+  }
+  .theme-bg-accent {
+    @apply bg-gray-200 dark:bg-gray-600;
+  }
+  .theme-text-primary {
+    @apply text-gray-800 dark:text-white;
+  }
+  .theme-text-secondary {
+    @apply text-gray-600 dark:text-gray-300;
+  }
+  .theme-text-muted {
+    @apply text-gray-500 dark:text-gray-400;
+  }
+  .theme-border {
+    @apply border-gray-200 dark:border-gray-700;
+  }
+  .theme-shadow {
+    @apply shadow-md dark:shadow-gray-900;
+  }
 }
 
 /* Custom scrollbar styles */

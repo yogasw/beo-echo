@@ -5,6 +5,7 @@
 	import { getProjectDetail, type Endpoint } from '$lib/api/mockoonApi';
 	import { selectedProject } from '$lib/stores/selectedConfig';
 	import { activeTab } from '$lib/stores/activeTab';
+	import * as ThemeUtils from '$lib/utils/themeUtils';
 
 	export let endpoints: Endpoint[] = [];
 	export let activeContentTab = 'Status & Body';
@@ -38,10 +39,10 @@
 
 <div class="content-area">
 	{#if !$selectedProject}
-		<div class="no-config-message">
+		<div class="no-config-message theme-text-primary">
 			<i class="fas fa-info-circle"></i>
 			<h2>No Configuration Selected</h2>
-			<p>Please select a configuration from the list to view its details.</p>
+			<p class="theme-text-secondary">Please select a configuration from the list to view its details.</p>
 		</div>
 	{:else if loading}
 		<div class="flex items-center justify-center h-full min-h-[300px]">

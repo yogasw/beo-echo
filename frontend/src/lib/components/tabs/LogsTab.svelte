@@ -3,6 +3,7 @@
   import { createLogStream, getLogs, type Project, type RequestLog } from "$lib/api/mockoonApi";
   import { fade } from 'svelte/transition';
   import ModalCreateMock from './logs/ModalCreateMock.svelte';
+  import * as ThemeUtils from '$lib/utils/themeUtils';
 
   export let selectedProject: Project;
 
@@ -245,12 +246,12 @@
   });
 </script>
 
-<div class="w-full bg-gray-800 p-4 relative">
+<div class="w-full theme-bg-primary p-4 relative">
   <!-- Copy notification toast -->
   {#if copyNotification.show}
     <div 
       transition:fade={{ duration: 200 }}
-      class="fixed top-6 right-6 bg-gray-700 text-white px-4 py-2 rounded shadow-lg z-50 flex items-center"
+      class="fixed top-6 right-6 theme-bg-secondary theme-text-primary px-4 py-2 rounded shadow-lg z-50 flex items-center"
     >
       <i class="fas fa-check-circle text-green-400 mr-2"></i>
       <span>{copyNotification.message}</span>
@@ -258,13 +259,13 @@
   {/if}
 
   {#if !isConnected && reconnectAttempts > 0}
-    <div class="bg-red-900/30 border border-red-700 p-2 rounded mb-4 flex items-center justify-between">
+    <div class="bg-red-100/30 dark:bg-red-900/30 border border-red-300 dark:border-red-700 p-2 rounded mb-4 flex items-center justify-between">
       <div class="flex items-center">
-        <i class="fas fa-exclamation-triangle text-yellow-400 text-lg mr-2"></i>
-        <span class="text-white">Live stream disconnected. Using manual refresh only.</span>
+        <i class="fas fa-exclamation-triangle text-yellow-500 dark:text-yellow-400 text-lg mr-2"></i>
+        <span class="theme-text-primary">Live stream disconnected. Using manual refresh only.</span>
       </div>
       <button 
-        class="bg-blue-500 hover:bg-blue-600 text-white py-1 px-3 rounded text-sm"
+        class={ThemeUtils.primaryButton('py-1 px-3 text-sm')}
         on:click={() => setupLogStream()}
       >
         <i class="fas fa-sync mr-1"></i> Reconnect Stream
@@ -274,14 +275,14 @@
   <div class="mb-6">
     <div class="flex justify-between items-center mb-4">
       <div class="flex items-center">
-        <div class="bg-blue-600/10 p-2 rounded-lg mr-3">
+        <div class="bg-blue-600/10 dark:bg-blue-600/10 p-2 rounded-lg mr-3">
           <i class="fas fa-list-alt text-blue-500 text-xl"></i>
         </div>
         <div>
-          <h2 class="text-xl font-bold text-white">{selectedProject.name}</h2>
-          <p class="text-sm text-gray-400">Request logs</p>
+          <h2 class="text-xl font-bold theme-text-primary">{selectedProject.name}</h2>
+          <p class="text-sm theme-text-muted">Request logs</p>
         </div>
-        <div class="ml-4 flex items-center bg-gray-900/50 px-3 py-1 rounded-full">
+        <div class="ml-4 flex items-center bg-gray-100/50 dark:bg-gray-900/50 px-3 py-1 rounded-full">
           <!-- Stream status indicator -->
           <span class="relative flex h-3 w-3 mr-2">
             {#if isConnected}
@@ -298,16 +299,16 @@
       </div>
       
       <div class="flex items-center space-x-3">
-        <div class="flex items-center bg-gray-900/50 px-3 py-1 rounded-full">
-          <span class="text-xs text-gray-300 mr-2">Auto-scroll</span>
+        <div class="flex items-center bg-gray-100/50 dark:bg-gray-900/50 px-3 py-1 rounded-full">
+          <span class="text-xs theme-text-secondary mr-2">Auto-scroll</span>
           <label class="inline-flex items-center cursor-pointer">
             <input type="checkbox" bind:checked={autoScroll} class="sr-only peer" />
-            <div class="relative w-9 h-5 bg-gray-700 peer-checked:bg-blue-500 rounded-full peer peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-blue-400 peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all"></div>
+            <div class="relative w-9 h-5 bg-gray-300 dark:bg-gray-700 peer-checked:bg-blue-500 rounded-full peer peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-600 peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all"></div>
           </label>
         </div>
         
         <button 
-          class="bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded-md text-sm flex items-center"
+          class={ThemeUtils.primaryButton('py-2 px-4 text-sm')}
           on:click={() => {
             loadInitialLogs();
             if (!isConnected) {
@@ -322,13 +323,13 @@
     
     <div class="relative mb-6">
       <div class="absolute inset-y-0 start-0 flex items-center ps-3 pointer-events-none">
-        <i class="fas fa-search text-gray-400"></i>
+        <i class="fas fa-search theme-text-muted"></i>
       </div>
       <input
         type="text"
         bind:value={searchTerm}
         placeholder="Search by keywords separated by spaces (e.g. 'GET users')..."
-        class="block w-full p-3 ps-10 text-sm rounded-lg bg-gray-900/50 border border-gray-800 text-white focus:ring-blue-500 focus:border-blue-500 placeholder-gray-400"
+        class={ThemeUtils.inputField('p-3 ps-10 text-sm rounded-lg')}
       />
     </div>
   </div>
@@ -338,28 +339,28 @@
       <div class="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
     </div>
   {:else if error}
-    <div class="bg-red-800 p-4 rounded mb-4 text-center">
-      <p class="text-white">{error}</p>
+    <div class="bg-red-100 dark:bg-red-800 p-4 rounded mb-4 text-center">
+      <p class="text-red-700 dark:text-white">{error}</p>
       <button 
         on:click={loadInitialLogs} 
-        class="mt-2 bg-blue-500 hover:bg-blue-600 text-white py-1 px-4 rounded text-sm"
+        class={ThemeUtils.primaryButton('mt-2 py-1 px-4 text-sm')}
       >
         Retry
       </button>
     </div>
   {:else if filteredLogs.length === 0}
-    <div class="bg-gray-700 p-4 rounded text-center">
-      <p class="text-white">No logs found {searchTerm ? 'matching your search criteria' : 'for this project'}</p>
+    <div class="theme-bg-secondary p-4 rounded text-center">
+      <p class="theme-text-primary">No logs found {searchTerm ? 'matching your search criteria' : 'for this project'}</p>
     </div>  {:else}
     <div class="space-y-4">
       {#each filteredLogs as log (log.id)}
         <div 
-          class="bg-gray-800 border border-gray-700 rounded-md shadow-md overflow-hidden" 
+          class={ThemeUtils.card('overflow-hidden')}
         >
           <!-- Log header - clickable to expand/collapse -->
           <div class="flex flex-col">
             <div 
-              class="flex justify-between items-center p-3 hover:bg-gray-700 cursor-pointer"
+              class="flex justify-between items-center p-3 hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer"
               on:click={() => toggleLogExpansion(log.id)}
               on:keydown={(e) => e.key === 'Enter' && toggleLogExpansion(log.id)}
               tabindex="0"
@@ -373,7 +374,7 @@
                 </span>
                 
                 <!-- Path with truncation -->
-                <span class="font-mono text-sm text-gray-200 truncate max-w-sm">
+                <span class="font-mono text-sm theme-text-primary truncate max-w-sm">
                   {log.path}
                 </span>
                 
@@ -389,15 +390,15 @@
               </div>
               
               <div class="flex items-center space-x-3">
-                <span class="text-xs text-gray-400">{formatDate(log.created_at)}</span>
+                <span class="text-xs theme-text-muted">{formatDate(log.created_at)}</span>
                 <span class="px-2 py-0.5 text-xs bg-blue-600 rounded text-white">{log.latency_ms}ms</span>
-                <i class="fas {expandedLogs[log.id] ? 'fa-chevron-up' : 'fa-chevron-down'} text-gray-400"></i>
+                <i class="fas {expandedLogs[log.id] ? 'fa-chevron-up' : 'fa-chevron-down'} theme-text-muted"></i>
               </div>
             </div>
             
             <!-- Create Mock button row - only for unmatched requests -->
             {#if !log.matched}
-              <div class="flex justify-end px-3 py-1 border-t border-gray-700/30">
+              <div class="flex justify-end px-3 py-1 border-t theme-border/30">
                 <button 
                   class="bg-emerald-600 hover:bg-emerald-700 text-white py-1 px-3 rounded text-xs flex items-center transition-all duration-200 transform hover:scale-105"
                   on:click|stopPropagation={() => createMockFromLog(log)}
@@ -411,17 +412,17 @@
           
           <!-- Expanded details -->
           {#if expandedLogs[log.id]}
-            <div transition:fade={{ duration: 150 }} class="border-t border-gray-700 px-4 py-3">
+            <div transition:fade={{ duration: 150 }} class="border-t theme-border px-4 py-3">
               <!-- Tab navigation -->
-              <div class="flex mb-4 border-b border-gray-700">
+              <div class="flex mb-4 border-b theme-border">
                 <button 
-                  class="px-4 py-2 font-medium text-sm {activeTabs[log.id] === 'request' ? 'text-blue-400 border-b-2 border-blue-400' : 'text-gray-400 hover:text-gray-300'}"
+                  class="px-4 py-2 font-medium text-sm {activeTabs[log.id] === 'request' ? 'text-blue-500 dark:text-blue-400 border-b-2 border-blue-500 dark:border-blue-400' : 'theme-text-muted hover:text-gray-600 dark:hover:text-gray-300'}"
                   on:click|stopPropagation={() => switchTab(log.id, 'request')}
                 >
                   Request
                 </button>
                 <button 
-                  class="px-4 py-2 font-medium text-sm {activeTabs[log.id] === 'response' ? 'text-blue-400 border-b-2 border-blue-400' : 'text-gray-400 hover:text-gray-300'}"
+                  class="px-4 py-2 font-medium text-sm {activeTabs[log.id] === 'response' ? 'text-blue-500 dark:text-blue-400 border-b-2 border-blue-500 dark:border-blue-400' : 'theme-text-muted hover:text-gray-600 dark:hover:text-gray-300'}"
                   on:click|stopPropagation={() => switchTab(log.id, 'response')}
                 >
                   Response
@@ -432,16 +433,16 @@
               {#if activeTabs[log.id] === 'request'}
                 <div>
                   <!-- General info -->
-                  <div class="mb-4 bg-gray-850 rounded-md p-3">
-                    <h3 class="text-sm font-semibold text-gray-300 mb-2">General</h3>
+                  <div class="mb-4 bg-gray-100 dark:bg-gray-850 rounded-md p-3">
+                    <h3 class="text-sm font-semibold theme-text-secondary mb-2">General</h3>
                     <div class="grid grid-cols-2 gap-2 text-sm">
                       <div>
-                        <span class="text-gray-400">Request URL:</span> 
-                        <span class="text-gray-200 font-mono">{log.path}</span>
+                        <span class="theme-text-muted">Request URL:</span> 
+                        <span class="theme-text-primary font-mono">{log.path}</span>
                       </div>
                       <div>
-                        <span class="text-gray-400">Method:</span> 
-                        <span class="text-gray-200 font-mono">{log.method}</span>
+                        <span class="theme-text-muted">Method:</span> 
+                        <span class="theme-text-primary font-mono">{log.method}</span>
                       </div>
                     </div>
                   </div>
@@ -449,23 +450,23 @@
                   <!-- Headers with copy button -->
                   <div class="mb-4">
                     <div class="flex justify-between items-center mb-2">
-                      <h3 class="text-sm font-semibold text-gray-300">Headers</h3>
+                      <h3 class="text-sm font-semibold theme-text-secondary">Headers</h3>
                       <div class="flex space-x-2">
                         <button 
-                          class="text-xs bg-gray-700 hover:bg-gray-600 text-gray-300 px-2 py-1 rounded"
+                          class={ThemeUtils.utilityButton()}
                           on:click|stopPropagation={() => copyToClipboard(JSON.stringify(parseJson(log.request_headers), null, 2), 'Headers')}
                         >
                           <i class="fas fa-copy mr-1"></i> Copy
                         </button>
                         <button 
-                          class="text-xs bg-gray-700 hover:bg-gray-600 text-gray-300 px-2 py-1 rounded"
+                          class={ThemeUtils.utilityButton()}
                           on:click|stopPropagation={() => copyToClipboard(JSON.stringify(parseJson(log.request_headers)), 'Headers (minified)')}
                         >
                           <i class="fas fa-compress-alt mr-1"></i> Minify
                         </button>
                       </div>
                     </div>
-                    <pre class="bg-gray-700 p-3 rounded-md text-xs text-gray-300 font-mono overflow-auto max-h-48">{JSON.stringify(parseJson(log.request_headers), null, 2)}</pre>
+                    <pre class="bg-gray-300/50 dark:bg-gray-700 p-3 rounded-md text-xs theme-text-secondary font-mono overflow-auto max-h-48">{JSON.stringify(parseJson(log.request_headers), null, 2)}</pre>
                   </div>
                   
                   <!-- Request body if exists -->
@@ -512,18 +513,18 @@
                 <!-- Response content -->
                 <div>
                   <!-- General info -->
-                  <div class="mb-4 bg-gray-850 rounded-md p-3">
-                    <h3 class="text-sm font-semibold text-gray-300 mb-2">General</h3>
+                  <div class="mb-4 bg-gray-100 dark:bg-gray-850 rounded-md p-3">
+                    <h3 class="text-sm font-semibold theme-text-secondary mb-2">General</h3>
                     <div class="grid grid-cols-2 gap-2 text-sm">
                       <div>
-                        <span class="text-gray-400">Status Code:</span> 
-                        <span class="{log.response_status < 300 ? 'text-green-400' : log.response_status < 400 ? 'text-blue-400' : log.response_status < 500 ? 'text-yellow-400' : 'text-red-400'} font-mono">
+                        <span class="theme-text-muted">Status Code:</span> 
+                        <span class="{log.response_status < 300 ? 'text-green-500 dark:text-green-400' : log.response_status < 400 ? 'text-blue-500 dark:text-blue-400' : log.response_status < 500 ? 'text-yellow-500 dark:text-yellow-400' : 'text-red-500 dark:text-red-400'} font-mono">
                           {log.response_status}
                         </span>
                       </div>
                       <div>
-                        <span class="text-gray-400">Execution:</span> 
-                        <span class="text-gray-200 font-mono">{log.execution_mode}</span>
+                        <span class="theme-text-muted">Execution:</span> 
+                        <span class="theme-text-primary font-mono">{log.execution_mode}</span>
                       </div>
                     </div>
                   </div>
@@ -572,16 +573,16 @@
                     
                     <!-- Special handling for endpoint not found error -->
                     {#if log.response_status >= 400 && parseJson(log.response_body)?.error === true}
-                      <div class="bg-red-900/30 border border-red-700 p-3 rounded-md">
+                      <div class="bg-red-100/30 dark:bg-red-900/30 border border-red-300 dark:border-red-700 p-3 rounded-md">
                         <div class="flex items-center">
-                          <i class="fas fa-exclamation-triangle text-yellow-400 mr-2"></i>
-                          <span class="text-sm text-white">
+                          <i class="fas fa-exclamation-triangle text-yellow-500 dark:text-yellow-400 mr-2"></i>
+                          <span class="text-sm theme-text-primary">
                             {parseJson(log.response_body)?.message || 'Error'}
                           </span>
                         </div>
                       </div>
                     {:else}
-                      <pre class="bg-gray-700 p-3 rounded-md text-xs text-gray-300 font-mono overflow-auto max-h-64">{JSON.stringify(parseJson(log.response_body), null, 2)}</pre>
+                      <pre class="bg-gray-300/50 dark:bg-gray-700 p-3 rounded-md text-xs theme-text-secondary font-mono overflow-auto max-h-64">{JSON.stringify(parseJson(log.response_body), null, 2)}</pre>
                     {/if}
                   </div>
                 </div>
