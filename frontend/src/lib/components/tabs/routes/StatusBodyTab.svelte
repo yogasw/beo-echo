@@ -1,28 +1,24 @@
 <script lang="ts">
 	import MonacoEditor from '$lib/components/MonacoEditor.svelte';
+	import { updateResponse } from '$lib/stores/saveButton';
 	import { toast } from '$lib/stores/toast';
 
 	export let responseBody: string;
 	export let statusCode: number;
-	export let onBodyChange: (val: string) => void;
 	export let onStatusCodeChange: (val: number) => void;
+	export let onSaveButtonClick: (body: string) => void;
 
 	let editorRef: InstanceType<typeof MonacoEditor>;
 	let isFullScreen = false;
-
-	function handleEditorChange(event: CustomEvent<string>) {
-		onBodyChange(event.detail);
-	}
 
 	function formatContent() {
 		editorRef?.format?.();
 	}
 
 	function saveContent() {
-		const content = editorRef?.getValue();
+		const content: any = editorRef?.getValue();
 		if (content) {
-			console.log('Saved content:', content);
-			toast.error("this feature is not implemented yet");
+			onSaveButtonClick(content);
 		}
 	}
 
@@ -43,10 +39,7 @@
 	}
 </script>
 
-<div
-	class="h-full flex flex-col space-y-2 w-full"
-	on:keydown={handleKeyDown}
-	tabindex="0">
+<div class="h-full flex flex-col space-y-2 w-full" on:keydown={handleKeyDown} tabindex="0">
 	<div>
 		<label class="text-sm text-white">Status Code:</label>
 		<input
@@ -82,7 +75,6 @@
 			bind:this={editorRef}
 			value={responseBody}
 			language="json"
-			on:change={handleEditorChange}
 		/>
 	</div>
 
@@ -110,7 +102,6 @@
 					bind:this={editorRef}
 					value={responseBody}
 					language="json"
-					on:change={handleEditorChange}
 				/>
 			</div>
 		</div>

@@ -1,25 +1,31 @@
 <script lang="ts">
 	import { showSaveButton, saveInprogress, saveButtonHandler, getEndpointsUpdateList, resetEndpointsList } from '$lib/stores/saveButton';
 	import { toast } from '$lib/stores/toast';
-	import { updateEndpoint as apiUpdateEndpoint } from '$lib/api/mockoonApi';
+	import { updateEndpoint as apiUpdateEndpoint, updateResponse as apiUpdateResponse } from '$lib/api/mockoonApi';
 
 	async function handleSave() {
 		saveInprogress.set(true);
 		const updatesList = getEndpointsUpdateList();
 		
 		try {
-			// Process each endpoint update
+			// Process each update (endpoint or response)
 			for (const update of updatesList) {
 				console.log('Saving update:', update);
 				
 				// Extract API-compatible update data from our update object
 				const apiData: any = {};
 				
-				// Skip projectId and endpointId as they're used for the API path
+				// Check if this is a response update (has responseId) or endpoint update
+				const isResponseUpdate = 'responseId' in update;
+				
+				// Skip projectId, endpointId, and responseId as they're used for the API path
 				for (const [key, value] of Object.entries(update)) {
-					if (key !== 'projectId' && key !== 'endpointId') {
+					if (key !== 'projectId' && key !== 'endpointId' && key !== 'responseId') {
 						if (key === 'endpoint') {
 							// If we're saving the entire endpoint, spread its properties
+							Object.assign(apiData, value);
+						} else if (key === 'response') {
+							// If we're saving the entire response, spread its properties
 							Object.assign(apiData, value);
 						} else {
 							apiData[key] = value;
@@ -27,8 +33,18 @@
 					}
 				}
 				
-				// Call the API to update the endpoint
-				await apiUpdateEndpoint(update.projectId, update.endpointId, apiData);
+				if (isResponseUpdate) {
+					// Call the API to update the response
+					await apiUpdateResponse(
+						update.projectId, 
+						update.endpointId, 
+						(update as any).responseId, 
+						apiData
+					);
+				} else {
+					// Call the API to update the endpoint
+					await apiUpdateEndpoint(update.projectId, update.endpointId, apiData);
+				}
 			}
 			
 			// Reset the list after successful save

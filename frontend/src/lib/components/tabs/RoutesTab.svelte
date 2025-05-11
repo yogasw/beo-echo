@@ -1,11 +1,10 @@
 <script lang="ts">
 	import type { Response, Endpoint, Project } from '$lib/api/mockoonApi';
-	import { updateEndpoint, resetEndpointsList } from '$lib/stores/saveButton';
+	import { updateEndpoint, resetEndpointsList, updateResponse } from '$lib/stores/saveButton';
 	import StatusBodyTab from './routes/StatusBodyTab.svelte';
 	import HeadersTab from './routes/HeadersTab.svelte';
 	import RulesTab from './routes/RulesTab.svelte';
 	import CallbacksTab from './routes/CallbacksTab.svelte';
-	import type { MockoonResponse, MockoonRoute } from '$lib/types/Config';
 	import RoutesList from '$lib/components/tabs/routes/RoutesList.svelte';
 	import DropdownResponse from '$lib/components/tabs/routes/DropdownResponse.svelte';
 
@@ -150,14 +149,20 @@
 								<StatusBodyTab
 									responseBody={selectedResponse?.body || ''}
 									statusCode={selectedResponse?.status_code || 200}
-									onBodyChange={(val) => {
-										if (selectedResponse) {
-											selectedResponse.body = val;
-										}
-									}}
 									onStatusCodeChange={(val) => {
 										if (selectedResponse) {
 											selectedResponse.status_code = val;
+										}
+									}}
+									onSaveButtonClick={(content) => {
+										console.log('Save button clicked with content:', content);
+										if (selectedResponse) {
+											selectedResponse = updateResponse(
+												'body',
+												content,
+												selectedEndpoint,
+												selectedResponse
+											);
 										}
 									}}
 								/>
