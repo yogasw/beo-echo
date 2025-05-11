@@ -72,13 +72,25 @@
     }
   }
   
+  // Function to check if all search terms are present in a log
+  function matchesAllSearchTerms(log: RequestLog, searchTerms: string[]): boolean {
+    if (searchTerms.length === 0) return true;
+    
+    // Combine all searchable fields into one string for easier searching
+    const searchableText = [
+      log.path.toLowerCase(),
+      log.method.toLowerCase(),
+      log.request_body.toLowerCase(),
+      log.response_body.toLowerCase()
+    ].join(' ');
+    
+    // Check if all search terms are present in the searchable text
+    return searchTerms.every(term => searchableText.includes(term));
+  }
+  
+  $: searchTerms = searchTerm.toLowerCase().split(' ').filter(term => term.trim() !== '');
   $: filteredLogs = searchTerm 
-    ? logs.filter(log => 
-        log.path.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        log.method.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        log.request_body.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        log.response_body.toLowerCase().includes(searchTerm.toLowerCase())
-      )
+    ? logs.filter(log => matchesAllSearchTerms(log, searchTerms))
     : logs;
   
   // Convert JSON string to object for display
@@ -275,6 +287,16 @@
         </div>
         
         <button 
+          class="bg-emerald-600 hover:bg-emerald-700 text-white py-2 px-4 rounded-md text-sm flex items-center transition-all duration-200 transform hover:scale-105"
+          on:click={() => {
+            // Create mock from selected log or navigate to create mock page
+            // Implement your mock creation logic here
+          }}
+        >
+          <i class="fas fa-plus-circle mr-2"></i> Create Mock
+        </button>
+        
+        <button 
           class="bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded-md text-sm flex items-center"
           on:click={() => {
             loadInitialLogs();
@@ -295,7 +317,7 @@
       <input
         type="text"
         bind:value={searchTerm}
-        placeholder="Search by path, method, or response body..."
+        placeholder="Search by keywords separated by spaces (e.g. 'GET users')..."
         class="block w-full p-3 ps-10 text-sm rounded-lg bg-gray-900/50 border border-gray-800 text-white focus:ring-blue-500 focus:border-blue-500 placeholder-gray-400"
       />
     </div>
