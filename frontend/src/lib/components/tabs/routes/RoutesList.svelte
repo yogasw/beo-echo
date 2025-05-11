@@ -1,5 +1,6 @@
 <script lang="ts">
-	import type { Endpoint, Project } from '$lib/api/mockoonApi';
+	import { updateEndpoint, type Endpoint, type Project } from '$lib/api/mockoonApi';
+	import { toast } from '$lib/stores/toast';
 	import type { MockoonRoute } from '$lib/types/Config';
 	import AddEndpointModal from './AddEndpointModal.svelte';
 	import { onMount, onDestroy } from 'svelte';
@@ -39,6 +40,15 @@
 			case 'disable':
 				endpoint.enabled = action === 'enable';
 				handleRouteStatusChange(endpoint);
+				updateEndpoint(endpoint.project_id, endpoint.id, {
+					enabled: endpoint.enabled,
+				})
+					.then(() => {
+						toast.success(`Endpoint successfully ${action}d!`);
+					})
+					.catch((error) => {
+						toast.error(`Failed to ${action} endpoint: ${error.message}`);
+					});
 				break;
 			case 'duplicate':
 				// Add your duplicate functionality here
