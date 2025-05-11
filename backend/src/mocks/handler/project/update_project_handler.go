@@ -47,7 +47,7 @@ func UpdateProjectHandler(c *gin.Context) {
 	// Parse update data
 	var updateData struct {
 		Mode          database.ProjectMode `json:"mode"`
-		ActiveProxyID *string              `json:"activeProxyID"`
+		ActiveProxyID *string              `json:"active_proxy_id"`
 	}
 
 	if err := c.ShouldBindJSON(&updateData); err != nil {

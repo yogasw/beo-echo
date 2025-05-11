@@ -81,11 +81,11 @@ func UpdateResponseHandler(c *gin.Context) {
 
 	// Parse update data
 	var updateData struct {
-		StatusCode    *int    `json:"statusCode"`
+		StatusCode    *int    `json:"status_code"`
 		Body          *string `json:"body"`
 		Headers       *string `json:"headers"`
 		Priority      *int    `json:"priority"`
-		DelayMS       *int    `json:"delayMS"`
+		DelayMS       *int    `json:"delay_ms"`
 		Stream        *bool   `json:"stream"`
 		Enabled       *bool   `json:"enabled"`
 		Documentation *string `json:"documentation"`

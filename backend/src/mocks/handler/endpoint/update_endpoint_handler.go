@@ -62,7 +62,7 @@ func UpdateEndpointHandler(c *gin.Context) {
 		Method        string `json:"method"`
 		Path          string `json:"path"`
 		Enabled       *bool  `json:"enabled"`
-		ResponseMode  string `json:"responseMode"`
+		ResponseMode  string `json:"response_mode"`
 		Documentation string `json:"documentation"`
 	}
 

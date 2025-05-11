@@ -46,7 +46,7 @@
 			type="number"
 			class="bg-gray-700 text-white p-2 rounded w-24 focus:outline-none focus:ring-0 focus:border-none"
 			bind:value={statusCode}
-			on:input={(e) => onStatusCodeChange(+e.target.value)}
+			on:blur={(e) => onStatusCodeChange(+e.target.value)}
 		/>
 	</div>
 

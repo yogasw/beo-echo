@@ -151,7 +151,13 @@
 									statusCode={selectedResponse?.status_code || 200}
 									onStatusCodeChange={(val) => {
 										if (selectedResponse) {
-											selectedResponse.status_code = val;
+											console.log('Status code changed:', val);
+											selectedResponse = updateResponse(
+												'status_code',
+												val,
+												selectedEndpoint,
+												selectedResponse
+											);
 										}
 									}}
 									onSaveButtonClick={(content) => {
