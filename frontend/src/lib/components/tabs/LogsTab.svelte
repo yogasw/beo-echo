@@ -1,133 +1,229 @@
 <script lang="ts">
-	import type { Project } from "$lib/api/mockoonApi";
-
-  interface Log {
-    method: string;
-    path: string;
-    timestamp: string;
-    request: {
-      headers: Record<string, string>;
-      query?: Record<string, string>;
-      body?: any;
-    };
-    response: {
-      status: number;
-      headers: Record<string, string>;
-      body: any;
-    };
-  }
-
-  interface Config {
-    uuid: string;
-    name: string;
-    configFile: string;
-    port: number;
-    url: string;
-    size: string;
-    modified: string;
-    inUse: boolean;
-  }
+  import { onMount, onDestroy } from 'svelte';
+  import { createLogStream, getLogs, type Project, type RequestLog } from "$lib/api/mockoonApi";
 
   export let selectedProject: Project;
 
-  // Dummy data for logs
-  let logs: Log[] = [
-    {
-      method: 'GET',
-      path: '/api/v1/users',
-      timestamp: '2024-03-20 10:00:00',
-      request: {
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer token123'
-        },
-        query: {
-          page: '1',
-          limit: '10'
-        }
-      },
-      response: {
-        status: 200,
-        headers: {
-          'Content-Type': 'application/json',
-          'X-Total-Count': '2'
-        },
-        body: {
-          users: [
-            { id: 1, name: 'John Doe', email: 'john@example.com' },
-            { id: 2, name: 'Jane Smith', email: 'jane@example.com' }
-          ],
-          total: 2
-        }
-      }
-    },
-    {
-      method: 'POST',
-      path: '/api/v1/users',
-      timestamp: '2024-03-20 10:01:00',
-      request: {
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer token123'
-        },
-        body: {
-          name: 'New User',
-          email: 'new@example.com'
-        }
-      },
-      response: {
-        status: 201,
-        headers: {
-          'Content-Type': 'application/json',
-          'Location': '/api/v1/users/3'
-        },
-        body: {
-          id: 3,
-          name: 'New User',
-          email: 'new@example.com',
-          createdAt: '2024-03-20T10:01:00Z'
-        }
-      }
+  let logs: RequestLog[] = [];
+  let isLoading = true;
+  let error: string | null = null;
+  let searchTerm = '';
+  let total = 0;
+  let page = 1;
+  const pageSize = 100;
+  let eventSource: EventSource | null = null;
+  let autoScroll = true;
+  
+  $: filteredLogs = searchTerm 
+    ? logs.filter(log => 
+        log.path.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        log.method.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        log.request_body.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        log.response_body.toLowerCase().includes(searchTerm.toLowerCase())
+      )
+    : logs;
+  
+  // Convert JSON string to object for display
+  function parseJson(jsonString: string): any {
+    try {
+      return JSON.parse(jsonString);
+    } catch (e) {
+      return jsonString;
     }
-  ];
+  }
+  
+  // Format timestamp for display
+  function formatDate(dateString: string): string {
+    try {
+      const date = new Date(dateString);
+      return date.toLocaleString();
+    } catch (e) {
+      return dateString;
+    }
+  }
+  
+  async function loadInitialLogs() {
+    try {
+      isLoading = true;
+      const result = await getLogs(1, pageSize, selectedProject.id);
+      logs = result.logs;
+      total = result.total;
+      isLoading = false;
+    } catch (err) {
+      console.error('Failed to load logs:', err);
+      error = 'Failed to load logs: ' + (err instanceof Error ? err.message : String(err));
+      isLoading = false;
+    }
+  }
+  
+  function setupLogStream() {
+    // Close any existing connection
+    if (eventSource) {
+      eventSource.close();
+    }
+    
+    // Create new connection
+    eventSource = createLogStream(selectedProject.id, pageSize);
+    
+    // Setup event handlers
+    eventSource.addEventListener('log', (event) => {
+      try {
+        const newLog = JSON.parse(event.data);
+        // Add to beginning of array (newest first)
+        logs = [newLog, ...logs].slice(0, 1000); // Limit to 1000 logs to prevent browser slowdown
+        
+        // Auto-scroll to top if enabled
+        if (autoScroll) {
+          window.scrollTo(0, 0);
+        }
+      } catch (err) {
+        console.error('Error processing log event:', err);
+      }
+    });
+    
+    eventSource.addEventListener('ping', () => {
+      // Keep connection alive, no action needed
+      console.log('Ping received from server');
+    });
+    
+    eventSource.onerror = (err) => {
+      console.error('EventSource error:', err);
+      // Try to reconnect after a delay
+      setTimeout(setupLogStream, 5000);
+    };
+  }
+  
+  // Initialize on component mount
+  onMount(() => {
+    loadInitialLogs().then(() => {
+      setupLogStream();
+    });
+  });
+  
+  // Clean up on component destroy
+  onDestroy(() => {
+    if (eventSource) {
+      eventSource.close();
+    }
+  });
 </script>
 
 <div class="w-full bg-gray-800 p-4">
-  <div class="bg-gray-700 p-4 rounded mb-4 flex items-center">
-    <i class="fas fa-info-circle text-blue-500 text-2xl mr-2"></i>
-    <span class="text-xl font-bold text-blue-500">
-      Logs for: {selectedProject.name}
-    </span>
+  <div class="bg-gray-700 p-4 rounded mb-4 flex items-center justify-between">
+    <div class="flex items-center">
+      <i class="fas fa-info-circle text-blue-500 text-2xl mr-2"></i>
+      <span class="text-xl font-bold text-blue-500">
+        Logs for: {selectedProject.name}
+      </span>
+    </div>
+    <div>
+      <span class="text-xs text-gray-400 mr-2">Auto-scroll</span>
+      <input type="checkbox" bind:checked={autoScroll} class="form-checkbox h-4 w-4 text-blue-500" />
+    </div>
   </div>
+  
   <div class="flex items-center bg-gray-700 p-2 rounded mb-4">
     <i class="fas fa-search text-white text-lg mr-2"></i>
     <input
       type="text"
-      id="log-search"
-      placeholder="Search Logs"
+      bind:value={searchTerm}
+      placeholder="Search Logs (path, method, request/response body)"
       class="w-full bg-gray-700 text-white py-1 px-2 rounded text-sm"
     />
   </div>
-  <div class="space-y-4">
-    {#each logs as log}
-      <div class="bg-gray-700 p-4 rounded">
-        <div class="flex justify-between items-center mb-2">
-          <span class="text-sm font-bold">
-            <strong>{log.method}</strong> {log.path}
-          </span>
-          <span class="text-xs text-gray-400">{log.timestamp}</span>
-        </div>
-        <div class="grid grid-cols-2 gap-4">
-          <div>
-            <h3 class="text-sm font-semibold mb-2">Request</h3>
-            <pre class="bg-gray-800 p-2 rounded text-xs">{JSON.stringify(log.request, null, 2)}</pre>
+  
+  {#if isLoading}
+    <div class="flex justify-center py-8">
+      <div class="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+    </div>
+  {:else if error}
+    <div class="bg-red-800 p-4 rounded mb-4 text-center">
+      <p class="text-white">{error}</p>
+      <button 
+        on:click={loadInitialLogs} 
+        class="mt-2 bg-blue-500 hover:bg-blue-600 text-white py-1 px-4 rounded text-sm"
+      >
+        Retry
+      </button>
+    </div>
+  {:else if filteredLogs.length === 0}
+    <div class="bg-gray-700 p-4 rounded text-center">
+      <p class="text-white">No logs found {searchTerm ? 'matching your search criteria' : 'for this project'}</p>
+    </div>
+  {:else}
+    <div class="space-y-4">
+      {#each filteredLogs as log (log.id)}
+        <div class="bg-gray-700 p-4 rounded" class:bg-green-900={log.matched} class:bg-red-900={!log.matched}>
+          <div class="flex justify-between items-center mb-2">
+            <div class="flex items-center">
+              <span class="text-sm font-bold">
+                <span class="mr-2 px-2 py-0.5 rounded {log.method === 'GET' ? 'bg-green-600' : log.method === 'POST' ? 'bg-blue-600' : log.method === 'PUT' ? 'bg-yellow-600' : log.method === 'DELETE' ? 'bg-red-600' : 'bg-gray-600'}">
+                  {log.method}
+                </span>
+                {log.path}
+              </span>
+              <span class="ml-2 text-xs px-2 py-0.5 rounded {log.response_status < 300 ? 'bg-green-600' : log.response_status < 400 ? 'bg-blue-600' : log.response_status < 500 ? 'bg-yellow-600' : 'bg-red-600'}">
+                {log.response_status}
+              </span>
+              <span class="ml-2 text-xs px-2 py-0.5 rounded bg-purple-600">
+                {log.execution_mode}
+              </span>
+              <span class="ml-2 text-xs px-2 py-0.5 rounded {log.matched ? 'bg-green-600' : 'bg-red-600'}">
+                {log.matched ? 'Matched' : 'Unmatched'}
+              </span>
+            </div>
+            <div class="flex items-center">
+              <span class="text-xs text-gray-400 mr-2">{formatDate(log.created_at)}</span>
+              <span class="text-xs px-2 py-0.5 rounded bg-blue-600">{log.latency_ms}ms</span>
+            </div>
           </div>
-          <div>
-            <h3 class="text-sm font-semibold mb-2">Response</h3>
-            <pre class="bg-gray-800 p-2 rounded text-xs">{JSON.stringify(log.response, null, 2)}</pre>
+          
+          <div class="grid grid-cols-2 gap-4 mt-2">
+            <div>
+              <div class="flex justify-between items-center mb-2">
+                <h3 class="text-sm font-semibold">Request</h3>
+                {#if log.query_params}
+                  <span class="text-xs text-gray-400">Query: {log.query_params}</span>
+                {/if}
+              </div>
+              
+              <div class="mb-2">
+                <h4 class="text-xs font-semibold text-gray-400">Headers</h4>
+                <pre class="bg-gray-800 p-2 rounded text-xs overflow-auto max-h-32">{JSON.stringify(parseJson(log.request_headers), null, 2)}</pre>
+              </div>
+              
+              {#if log.request_body}
+                <div>
+                  <h4 class="text-xs font-semibold text-gray-400">Body</h4>
+                  <pre class="bg-gray-800 p-2 rounded text-xs overflow-auto max-h-64">{JSON.stringify(parseJson(log.request_body), null, 2)}</pre>
+                </div>
+              {/if}
+            </div>
+            
+            <div>
+              <div class="flex justify-between items-center mb-2">
+                <h3 class="text-sm font-semibold">Response</h3>
+              </div>
+              
+              <div class="mb-2">
+                <h4 class="text-xs font-semibold text-gray-400">Headers</h4>
+                <pre class="bg-gray-800 p-2 rounded text-xs overflow-auto max-h-32">{JSON.stringify(parseJson(log.response_headers), null, 2)}</pre>
+              </div>
+              
+              <div>
+                <h4 class="text-xs font-semibold text-gray-400">Body</h4>
+                <pre class="bg-gray-800 p-2 rounded text-xs overflow-auto max-h-64">{JSON.stringify(parseJson(log.response_body), null, 2)}</pre>
+              </div>
+            </div>
           </div>
         </div>
+      {/each}
+    </div>
+    
+    {#if filteredLogs.length < total}
+      <div class="mt-4 text-center">
+        <span class="text-xs text-gray-400">Showing {filteredLogs.length} of {total} logs</span>
       </div>
-    {/each}
-  </div>
+    {/if}
+  {/if}
 </div> 
