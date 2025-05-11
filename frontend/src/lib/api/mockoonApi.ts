@@ -203,11 +203,6 @@ export const deleteConfig = async (filename: string): Promise<any> => {
 	return response.data;
 };
 
-export const syncToGit = async (): Promise<any> => {
-	const response = await api.post('/sync');
-	return response.data;
-};
-
 export const login = async (credentials: AuthCredentials): Promise<boolean> => {
 	const response = await api.post('/auth', credentials);
 	if (response.data.success) {

@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { activeTab } from '$lib/stores/activeTab';
-	import { downloadConfig, syncToGit } from '$lib/api/mockoonApi';
+	import { downloadConfig } from '$lib/api/mockoonApi';
 	import { selectedProject } from '$lib/stores/selectedConfig';
 	import { syncStatus } from '$lib/stores/syncStatus';
 	import { toast } from '$lib/stores/toast';
@@ -33,36 +33,20 @@
 			return;
 		}
 
-		try {
-			const response = await downloadConfig($selectedProject.configFile);
-			const blob = new Blob([JSON.stringify(response.data, null, 2)], { type: 'application/json' });
-			const url = window.URL.createObjectURL(blob);
-			const a = document.createElement('a');
-			a.href = url;
-			a.download = $selectedProject.configFile;
-			document.body.appendChild(a);
-			a.click();
-			window.URL.revokeObjectURL(url);
-			document.body.removeChild(a);
-		} catch (err) {
-			toast.error('Failed to download configuration');
-		}
-	}
-
-	async function handleSync() {
-		syncStatus.set({ isLoading: true, isSuccess: false, error: null });
-		try {
-			await syncToGit().then(() => {
-				toast.success('Successfully synced to Git');
-			}).catch((err) => {
-				let message = err?.response?.data?.message || 'Failed to sync to Git';
-				toast.error(message);
-			});
-			syncStatus.set({ isLoading: false, isSuccess: true, error: null });
-		} catch (err) {
-			syncStatus.set({ isLoading: false, isSuccess: false, error: 'Failed to sync to Git' });
-			toast.error('Failed to sync to Git');
-		}
+		// try {
+		// 	const response = await downloadConfig($selectedProject.configFile);
+		// 	const blob = new Blob([JSON.stringify(response.data, null, 2)], { type: 'application/json' });
+		// 	const url = window.URL.createObjectURL(blob);
+		// 	const a = document.createElement('a');
+		// 	a.href = url;
+		// 	a.download = $selectedProject.configFile;
+		// 	document.body.appendChild(a);
+		// 	a.click();
+		// 	window.URL.revokeObjectURL(url);
+		// 	document.body.removeChild(a);
+		// } catch (err) {
+		// 	toast.error('Failed to download configuration');
+		// }
 	}
 </script>
 
@@ -111,23 +95,12 @@
 		<span class="text-xs mt-1">Download JSON</span>
 	</button>
 
-	<!-- Sync Button -->
-	<button
-		class="relative group mr-4 flex flex-col items-center"
-		class:opacity-50={$syncStatus.isLoading}
-		on:click={handleSync}
-	>
-		<div class="w-12 aspect-square bg-gray-700 text-white p-3 rounded-full border-2 border-green-500 flex items-center justify-center">
-			<i class="fas fa-code-branch" class:fa-spin={$syncStatus.isLoading}></i>
-		</div>
-		<span class="text-xs mt-1">Sync to Git</span>
-	</button>
-
 	<!-- Profile Button -->
 	<div class="relative group flex flex-col items-center">
 		<button
 			class="w-12 aspect-square bg-gray-700 text-white p-3 rounded-full border-2 border-gray-500 flex items-center justify-center"
 			on:click={()=>{toggleProfileMenu()}}
+			aria-label="Open profile menu"
 		>
 			<i class="fas fa-user-circle"></i>
 		</button>
