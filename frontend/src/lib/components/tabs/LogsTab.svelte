@@ -62,34 +62,62 @@
       eventSource.close();
     }
     
+    console.log('Setting up log stream for project:', selectedProject.id);
+    
     // Create new connection
     eventSource = createLogStream(selectedProject.id, pageSize);
     
     // Setup event handlers
     eventSource.addEventListener('log', (event) => {
       try {
+        console.log('Log event received:', event.data);
         const newLog = JSON.parse(event.data);
-        // Add to beginning of array (newest first)
-        logs = [newLog, ...logs].slice(0, 1000); // Limit to 1000 logs to prevent browser slowdown
         
-        // Auto-scroll to top if enabled
-        if (autoScroll) {
-          window.scrollTo(0, 0);
+        // Check if log already exists to prevent duplicates
+        if (!logs.some(log => log.id === newLog.id)) {
+          // Add to beginning of array (newest first) and force Svelte reactivity
+          logs = [newLog, ...logs].slice(0, 1000); // Limit to 1000 logs to prevent browser slowdown
+          console.log('Added new log, total logs:', logs.length);
+          
+          // Auto-scroll to top if enabled
+          if (autoScroll) {
+            window.scrollTo(0, 0);
+          }
         }
       } catch (err) {
-        console.error('Error processing log event:', err);
+        console.error('Error processing log event:', err, event.data);
       }
     });
     
-    eventSource.addEventListener('ping', () => {
+    // Direct message event (fallback)
+    eventSource.onmessage = (event) => {
+      console.log('Generic message received:', event.data);
+      try {
+        const newLog = JSON.parse(event.data);
+        if (newLog && newLog.id && !logs.some(log => log.id === newLog.id)) {
+          logs = [newLog, ...logs].slice(0, 1000);
+        }
+      } catch (err) {
+        console.error('Error processing generic message:', err);
+      }
+    };
+    
+    eventSource.addEventListener('ping', (event) => {
       // Keep connection alive, no action needed
-      console.log('Ping received from server');
+      console.log('Ping received from server:', event.data);
     });
+    
+    eventSource.onopen = () => {
+      console.log('Log stream connection established');
+    };
     
     eventSource.onerror = (err) => {
       console.error('EventSource error:', err);
       // Try to reconnect after a delay
-      setTimeout(setupLogStream, 5000);
+      setTimeout(() => {
+        console.log('Attempting to reconnect log stream...');
+        setupLogStream();
+      }, 5000);
     };
   }
   

@@ -46,7 +46,7 @@ export type RequestLog = {
 	latency_ms: number;
 	execution_mode: string;
 	matched: boolean;
-	created_at: string;
+	created_at: Date;
 }
 
 export type Endpoint = {
@@ -299,16 +299,12 @@ export const updateResponse = async (projectId: string, endpointId: string, resp
 };
 
 // Get logs with pagination
-export const getLogs = async (page: number = 1, pageSize: number = 100, projectId?: string): Promise<{logs: RequestLog[], total: number}> => {
-	const params: Record<string, string> = { 
-		page: page.toString(), 
-		pageSize: pageSize.toString() 
+export const getLogs = async (page: number = 1, pageSize: number = 100, projectId: string): Promise<{ logs: RequestLog[], total: number }> => {
+	const params: Record<string, string> = {
+		page: page.toString(),
+		pageSize: pageSize.toString()
 	};
-	
-	if (projectId) {
-		params.projectId = projectId;
-	}
-	
+
 	const response = await api.get(`/projects/${projectId}/logs`, { params });
 	return {
 		logs: response.data.logs,
@@ -317,19 +313,16 @@ export const getLogs = async (page: number = 1, pageSize: number = 100, projectI
 };
 
 // Create an EventSource for real-time log streaming
-export const createLogStream = (projectId?: string, limit: number = 100): EventSource => {
-	let url = `${import.meta.env.VITE_API_BASE_URL || 'http://localhost:3600/mock/api'}/logs/stream?limit=${limit}`;
-	
-	if (projectId) {
-		url += `&projectId=${projectId}`;
-	}
-	
+export const createLogStream = (projectId: string, limit: number = 100): EventSource => {
+	let baseURL = `${import.meta.env.VITE_API_BASE_URL || 'http://localhost:3600/mock/api'}`;
+	let url = `${baseURL}/projects/${projectId}/logs/stream?limit=${limit}`;
+
 	// Add authentication
 	const username = getLocalStorage('username');
 	const password = getLocalStorage('password');
 	if (username && password) {
 		url += `&auth=${btoa(`${username}:${password}`)}`;
 	}
-	
+
 	return new EventSource(url);
 };
