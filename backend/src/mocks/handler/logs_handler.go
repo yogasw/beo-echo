@@ -6,6 +6,7 @@ import (
 	"mockoon-control-panel/backend_new/src/mocks/services"
 	"net/http"
 	"strconv"
+	"sync"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -108,20 +109,35 @@ func StreamLogsHandler(c *gin.Context) {
 	// Create channel for this client
 	logChannel := logService.SubscribeToLogs(projectID)
 
-	// Send initial batch of logs (most recent 100 first)
-	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "100"))
+	// Send initial batch of logs (most recent 1 first)
+	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "1"))
 	initialLogs, err := logService.GetLatestLogs(limit, projectID)
 	if err == nil {
 		// Send initial logs from oldest to newest
 		for i := len(initialLogs) - 1; i >= 0; i-- {
 			sseData := services.FormatSSEEvent(initialLogs[i], "log")
-			c.Writer.Write([]byte(sseData))
-			c.Writer.Flush()
+			if c.Writer != nil {
+				_, err := c.Writer.Write([]byte(sseData))
+				if err == nil {
+					if flusher, ok := c.Writer.(http.Flusher); ok && flusher != nil {
+						flusher.Flush()
+					}
+				}
+			}
 		}
 	}
 
 	// Create a client connection close notifier
 	clientGone := c.Writer.CloseNotify()
+
+	// Create a mutex to protect access to the writer
+	var writerMutex sync.Mutex
+
+	// Create a channel to signal ping goroutine to stop
+	stopPing := make(chan struct{})
+
+	// Create a once guard to ensure unsubscription happens only once
+	var unsubscribeOnce sync.Once
 
 	// Send ping to keep the connection alive
 	go func() {
@@ -131,13 +147,35 @@ func StreamLogsHandler(c *gin.Context) {
 		for {
 			select {
 			case <-pingTicker.C:
-				// Send ping
-				pingEvent := services.FormatSSEPingEvent()
-				c.Writer.Write([]byte(pingEvent))
-				c.Writer.Flush()
+				// Send ping with mutex protection
+				writerMutex.Lock()
+				// Check if connection is still alive before writing
+				select {
+				case <-clientGone:
+					writerMutex.Unlock()
+					return
+				default:
+					// Connection is still alive, proceed with writing
+					pingEvent := services.FormatSSEPingEvent()
+					if c.Writer != nil {
+						_, err := c.Writer.Write([]byte(pingEvent))
+						if err == nil {
+							// Only flush if Write was successful
+							if flusher, ok := c.Writer.(http.Flusher); ok && flusher != nil {
+								flusher.Flush()
+							}
+						}
+					}
+					writerMutex.Unlock()
+				}
 			case <-clientGone:
 				// Client disconnected
-				logService.UnsubscribeFromLogs(projectID, logChannel)
+				unsubscribeOnce.Do(func() {
+					logService.UnsubscribeFromLogs(projectID, logChannel)
+				})
+				return
+			case <-stopPing:
+				// Explicit signal to stop
 				return
 			}
 		}
@@ -149,17 +187,33 @@ func StreamLogsHandler(c *gin.Context) {
 		case log, ok := <-logChannel:
 			// Check if channel is closed
 			if !ok {
+				unsubscribeOnce.Do(func() {
+					// Channel already closed, just cleanup
+					close(stopPing)
+				})
 				return
 			}
 
-			// Send log as SSE event
+			// Send log as SSE event with mutex protection
+			writerMutex.Lock()
 			sseData := services.FormatSSEEvent(log, "log")
-			c.Writer.Write([]byte(sseData))
-			c.Writer.Flush()
+			if c.Writer != nil {
+				_, err := c.Writer.Write([]byte(sseData))
+				if err == nil {
+					// Only flush if Write was successful
+					if flusher, ok := c.Writer.(http.Flusher); ok && flusher != nil {
+						flusher.Flush()
+					}
+				}
+			}
+			writerMutex.Unlock()
 
 		case <-clientGone:
 			// Client disconnected
-			logService.UnsubscribeFromLogs(projectID, logChannel)
+			unsubscribeOnce.Do(func() {
+				logService.UnsubscribeFromLogs(projectID, logChannel)
+				close(stopPing) // Signal ping goroutine to stop
+			})
 			return
 		}
 	}
