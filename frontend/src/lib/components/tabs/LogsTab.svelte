@@ -1,6 +1,7 @@
 <script lang="ts">
   import { onMount, onDestroy } from 'svelte';
   import { createLogStream, getLogs, type Project, type RequestLog } from "$lib/api/mockoonApi";
+  import { fade } from 'svelte/transition';
 
   export let selectedProject: Project;
 
@@ -15,11 +16,60 @@
   let autoScroll = true;
   // Map to track expanded logs
   let expandedLogs: Record<string, boolean> = {};
+  // Map to track active tab (request/response)
+  let activeTabs: Record<string, 'request' | 'response'> = {};
+  // Notification for copy operations
+  let copyNotification = { show: false, message: '' };
   
   // Function to toggle log expansion
   function toggleLogExpansion(logId: string) {
     expandedLogs[logId] = !expandedLogs[logId];
+    if (expandedLogs[logId] && !activeTabs[logId]) {
+      activeTabs[logId] = 'request';
+    }
     expandedLogs = expandedLogs; // Force Svelte reactivity update
+    activeTabs = activeTabs; // Force Svelte reactivity update
+  }
+  
+  // Function to switch between request and response tabs
+  function switchTab(logId: string, tab: 'request' | 'response') {
+    activeTabs[logId] = tab;
+    activeTabs = activeTabs; // Force Svelte reactivity update
+  }
+  
+  // Function to copy content to clipboard
+  async function copyToClipboard(text: string, label: string) {
+    try {
+      await navigator.clipboard.writeText(text);
+      copyNotification = { show: true, message: `${label} copied to clipboard!` };
+      setTimeout(() => {
+        copyNotification = { show: false, message: '' };
+      }, 2000);
+    } catch (err) {
+      console.error('Failed to copy:', err);
+      copyNotification = { show: true, message: 'Failed to copy to clipboard' };
+      setTimeout(() => {
+        copyNotification = { show: false, message: '' };
+      }, 2000);
+    }
+  }
+  
+  // Function to pretty format JSON
+  function formatJson(jsonStr: string): string {
+    try {
+      return JSON.stringify(JSON.parse(jsonStr), null, 2);
+    } catch (e) {
+      return jsonStr;
+    }
+  }
+  
+  // Function to minify JSON
+  function minifyJson(jsonStr: string): string {
+    try {
+      return JSON.stringify(JSON.parse(jsonStr));
+    } catch (e) {
+      return jsonStr;
+    }
   }
   
   $: filteredLogs = searchTerm 
@@ -163,9 +213,20 @@
   });
 </script>
 
-<div class="w-full bg-gray-800 p-4">
+<div class="w-full bg-gray-800 p-4 relative">
+  <!-- Copy notification toast -->
+  {#if copyNotification.show}
+    <div 
+      transition:fade={{ duration: 200 }}
+      class="fixed top-6 right-6 bg-gray-700 text-white px-4 py-2 rounded shadow-lg z-50 flex items-center"
+    >
+      <i class="fas fa-check-circle text-green-400 mr-2"></i>
+      <span>{copyNotification.message}</span>
+    </div>
+  {/if}
+
   {#if !isConnected && reconnectAttempts > 0}
-    <div class="p-2 rounded mb-4 flex items-center justify-between">
+    <div class="bg-red-900/30 border border-red-700 p-2 rounded mb-4 flex items-center justify-between">
       <div class="flex items-center">
         <i class="fas fa-exclamation-triangle text-yellow-400 text-lg mr-2"></i>
         <span class="text-white">Live stream disconnected. Using manual refresh only.</span>
@@ -178,64 +239,66 @@
       </button>
     </div>
   {/if}
-  <div class="bg-gray-700 p-4 rounded mb-4 flex items-center justify-between">
-    <div class="flex items-center">
-      <i class="fas fa-info-circle text-blue-500 text-2xl mr-2"></i>
-      <span class="text-xl font-bold text-blue-500">
-        Logs for: {selectedProject.name}
-      </span>
+  <div class="mb-6">
+    <div class="flex justify-between items-center mb-4">
+      <div class="flex items-center">
+        <div class="bg-blue-600/10 p-2 rounded-lg mr-3">
+          <i class="fas fa-list-alt text-blue-500 text-xl"></i>
+        </div>
+        <div>
+          <h2 class="text-xl font-bold text-white">{selectedProject.name}</h2>
+          <p class="text-sm text-gray-400">Request logs</p>
+        </div>
+        <div class="ml-4 flex items-center bg-gray-900/50 px-3 py-1 rounded-full">
+          <!-- Stream status indicator -->
+          <span class="relative flex h-3 w-3 mr-2">
+            {#if isConnected}
+              <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+              <span class="relative inline-flex rounded-full h-3 w-3 bg-green-500"></span>
+            {:else}
+              <span class="relative inline-flex rounded-full h-3 w-3 bg-red-500"></span>
+            {/if}
+          </span>
+          <span class="text-xs font-medium {isConnected ? 'text-green-400' : 'text-red-400'}">
+            {isConnected ? 'Live' : 'Offline'}
+          </span>
+        </div>
+      </div>
       
-      <div class="ml-4 flex items-center">
-        <!-- Stream status indicator -->
-        <span class="relative flex h-3 w-3">
-          {#if isConnected}
-            <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
-            <span class="relative inline-flex rounded-full h-3 w-3 bg-green-500"></span>
-          {:else}
-            <span class="relative inline-flex rounded-full h-3 w-3 bg-red-500"></span>
-          {/if}
-        </span>
-        <span class="ml-2 text-xs {isConnected ? 'text-green-400' : 'text-red-400'}">
-          {isConnected ? 'Live stream' : 'Disconnected'}
-        </span>
-        {#if !isConnected}
-          <button 
-            class="ml-2 bg-blue-500 hover:bg-blue-600 text-white py-0.5 px-2 rounded text-xs"
-            on:click={() => setupLogStream()}
-          >
-            Reconnect
-          </button>
-        {/if}
+      <div class="flex items-center space-x-3">
+        <div class="flex items-center bg-gray-900/50 px-3 py-1 rounded-full">
+          <span class="text-xs text-gray-300 mr-2">Auto-scroll</span>
+          <label class="inline-flex items-center cursor-pointer">
+            <input type="checkbox" bind:checked={autoScroll} class="sr-only peer" />
+            <div class="relative w-9 h-5 bg-gray-700 peer-checked:bg-blue-500 rounded-full peer peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-blue-400 peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all"></div>
+          </label>
+        </div>
+        
+        <button 
+          class="bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded-md text-sm flex items-center"
+          on:click={() => {
+            loadInitialLogs();
+            if (!isConnected) {
+              setupLogStream(); // Also try to reconnect if disconnected
+            }
+          }}
+        >
+          <i class="fas fa-sync mr-2"></i> Refresh Logs
+        </button>
       </div>
     </div>
-    <div class="flex items-center">
-      <span class="text-xs text-gray-400 mr-2">Auto-scroll</span>
-      <input type="checkbox" bind:checked={autoScroll} class="form-checkbox h-4 w-4 text-blue-500" />
-      
-      <button 
-        class="ml-4 bg-blue-500 hover:bg-blue-600 text-white py-1 px-3 rounded text-xs flex items-center"
-        on:click={() => {
-          loadInitialLogs();
-          if (!isConnected) {
-            setupLogStream(); // Also try to reconnect if disconnected
-          }
-        }}
-      >
-        <i class="fas fa-sync mr-1"></i> Manual Refresh
-      </button>
+    
+    <div class="relative mb-6">
+      <div class="absolute inset-y-0 start-0 flex items-center ps-3 pointer-events-none">
+        <i class="fas fa-search text-gray-400"></i>
+      </div>
+      <input
+        type="text"
+        bind:value={searchTerm}
+        placeholder="Search by path, method, or response body..."
+        class="block w-full p-3 ps-10 text-sm rounded-lg bg-gray-900/50 border border-gray-800 text-white focus:ring-blue-500 focus:border-blue-500 placeholder-gray-400"
+      />
     </div>
-  </div>
-  
-
-  
-  <div class="flex items-center bg-gray-700 p-2 rounded mb-4">
-    <i class="fas fa-search text-white text-lg mr-2"></i>
-    <input
-      type="text"
-      bind:value={searchTerm}
-      placeholder="Search Logs (path, method, request/response body)"
-      class="w-full bg-gray-700 text-white py-1 px-2 rounded text-sm"
-    />
   </div>
   
   {#if isLoading}
@@ -255,85 +318,227 @@
   {:else if filteredLogs.length === 0}
     <div class="bg-gray-700 p-4 rounded text-center">
       <p class="text-white">No logs found {searchTerm ? 'matching your search criteria' : 'for this project'}</p>
-    </div>
-  {:else}
+    </div>  {:else}
     <div class="space-y-4">
       {#each filteredLogs as log (log.id)}
-          
-      <!-- class:bg-green-900={log.matched} 
-          class:bg-red-900={!log.matched} -->
-          
         <div 
-          class="bg-gray-700 p-4 rounded cursor-pointer" 
-          on:click={() => toggleLogExpansion(log.id)}
-          on:keydown={(e) => e.key === 'Enter' && toggleLogExpansion(log.id)}
-          tabindex="0"
-          role="button"
-          aria-expanded={!!expandedLogs[log.id]}
+          class="bg-gray-800 border border-gray-700 rounded-md shadow-md overflow-hidden" 
         >
-          <div class="flex justify-between items-center">
-            <div class="flex items-center">
-              <span class="text-sm font-bold">
-                <span class="mr-2 px-2 py-0.5 rounded {log.method === 'GET' ? 'bg-green-600' : log.method === 'POST' ? 'bg-blue-600' : log.method === 'PUT' ? 'bg-yellow-600' : log.method === 'DELETE' ? 'bg-red-600' : 'bg-gray-600'}">
-                  {log.method}
-                </span>
+          <!-- Log header - clickable to expand/collapse -->
+          <div 
+            class="flex justify-between items-center p-3 hover:bg-gray-700 cursor-pointer"
+            on:click={() => toggleLogExpansion(log.id)}
+            on:keydown={(e) => e.key === 'Enter' && toggleLogExpansion(log.id)}
+            tabindex="0"
+            role="button"
+            aria-expanded={!!expandedLogs[log.id]}
+          >
+            <div class="flex items-center space-x-2">
+              <!-- Method badge -->
+              <span class="px-2 py-0.5 text-sm font-mono rounded {log.method === 'GET' ? 'bg-green-600 text-white' : log.method === 'POST' ? 'bg-blue-600 text-white' : log.method === 'PUT' ? 'bg-yellow-600 text-white' : log.method === 'DELETE' ? 'bg-red-600 text-white' : 'bg-gray-600 text-white'}">
+                {log.method}
+              </span>
+              
+              <!-- Path with truncation -->
+              <span class="font-mono text-sm text-gray-200 truncate max-w-sm">
                 {log.path}
               </span>
-              <span class="ml-2 text-xs px-2 py-0.5 rounded {log.response_status < 300 ? 'bg-green-600' : log.response_status < 400 ? 'bg-blue-600' : log.response_status < 500 ? 'bg-yellow-600' : 'bg-red-600'}">
+              
+              <!-- Status code -->
+              <span class="px-2 py-0.5 text-xs font-mono rounded {log.response_status < 300 ? 'bg-green-600 text-white' : log.response_status < 400 ? 'bg-blue-600 text-white' : log.response_status < 500 ? 'bg-yellow-600 text-white' : 'bg-red-600 text-white'}">
                 {log.response_status}
               </span>
-              <span class="ml-2 text-xs px-2 py-0.5 rounded bg-purple-600">
-                {log.execution_mode}
-              </span>
-              <span class="ml-2 text-xs px-2 py-0.5 rounded {log.matched ? 'bg-green-600' : 'bg-red-600'}">
+              
+              <!-- Match status badge -->
+              <span class="px-2 py-0.5 text-xs font-mono rounded {log.matched ? 'bg-green-600 text-white' : 'bg-red-600 text-white'}">
                 {log.matched ? 'Matched' : 'Unmatched'}
               </span>
             </div>
-            <div class="flex items-center">
-              <span class="text-xs text-gray-400 mr-2">{formatDate(log.created_at)}</span>
-              <span class="text-xs px-2 py-0.5 rounded bg-blue-600">{log.latency_ms}ms</span>
-              <i class="fas {expandedLogs[log.id] ? 'fa-chevron-up' : 'fa-chevron-down'} ml-3 text-gray-400"></i>
+            
+            <div class="flex items-center space-x-3">
+              <span class="text-xs text-gray-400">{formatDate(log.created_at)}</span>
+              <span class="px-2 py-0.5 text-xs bg-blue-600 rounded text-white">{log.latency_ms}ms</span>
+              <i class="fas {expandedLogs[log.id] ? 'fa-chevron-up' : 'fa-chevron-down'} text-gray-400"></i>
             </div>
           </div>
           
+          <!-- Expanded details -->
           {#if expandedLogs[log.id]}
-            <div class="grid grid-cols-2 gap-4 mt-4">
-              <div>
-                <div class="flex justify-between items-center mb-2">
-                  <h3 class="text-sm font-semibold">Request</h3>
-                  {#if log.query_params}
-                    <span class="text-xs text-gray-400">Query: {log.query_params}</span>
-                  {/if}
-                </div>
-                
-                <div class="mb-2">
-                  <h4 class="text-xs font-semibold text-gray-400">Headers</h4>
-                  <pre class="bg-gray-800 p-2 rounded text-xs overflow-auto max-h-32">{JSON.stringify(parseJson(log.request_headers), null, 2)}</pre>
-                </div>
-                
-                {#if log.request_body}
-                  <div>
-                    <h4 class="text-xs font-semibold text-gray-400">Body</h4>
-                    <pre class="bg-gray-800 p-2 rounded text-xs overflow-auto max-h-64">{JSON.stringify(parseJson(log.request_body), null, 2)}</pre>
-                  </div>
-                {/if}
+            <div transition:fade={{ duration: 150 }} class="border-t border-gray-700 px-4 py-3">
+              <!-- Tab navigation -->
+              <div class="flex mb-4 border-b border-gray-700">
+                <button 
+                  class="px-4 py-2 font-medium text-sm {activeTabs[log.id] === 'request' ? 'text-blue-400 border-b-2 border-blue-400' : 'text-gray-400 hover:text-gray-300'}"
+                  on:click|stopPropagation={() => switchTab(log.id, 'request')}
+                >
+                  Request
+                </button>
+                <button 
+                  class="px-4 py-2 font-medium text-sm {activeTabs[log.id] === 'response' ? 'text-blue-400 border-b-2 border-blue-400' : 'text-gray-400 hover:text-gray-300'}"
+                  on:click|stopPropagation={() => switchTab(log.id, 'response')}
+                >
+                  Response
+                </button>
               </div>
               
-              <div>
-                <div class="flex justify-between items-center mb-2">
-                  <h3 class="text-sm font-semibold">Response</h3>
-                </div>
-                
-                <div class="mb-2">
-                  <h4 class="text-xs font-semibold text-gray-400">Headers</h4>
-                  <pre class="bg-gray-800 p-2 rounded text-xs overflow-auto max-h-32">{JSON.stringify(parseJson(log.response_headers), null, 2)}</pre>
-                </div>
-                
+              <!-- Request content -->
+              {#if activeTabs[log.id] === 'request'}
                 <div>
-                  <h4 class="text-xs font-semibold text-gray-400">Body</h4>
-                  <pre class="bg-gray-800 p-2 rounded text-xs overflow-auto max-h-64">{JSON.stringify(parseJson(log.response_body), null, 2)}</pre>
+                  <!-- General info -->
+                  <div class="mb-4 bg-gray-850 rounded-md p-3">
+                    <h3 class="text-sm font-semibold text-gray-300 mb-2">General</h3>
+                    <div class="grid grid-cols-2 gap-2 text-sm">
+                      <div>
+                        <span class="text-gray-400">Request URL:</span> 
+                        <span class="text-gray-200 font-mono">{log.path}</span>
+                      </div>
+                      <div>
+                        <span class="text-gray-400">Method:</span> 
+                        <span class="text-gray-200 font-mono">{log.method}</span>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <!-- Headers with copy button -->
+                  <div class="mb-4">
+                    <div class="flex justify-between items-center mb-2">
+                      <h3 class="text-sm font-semibold text-gray-300">Headers</h3>
+                      <div class="flex space-x-2">
+                        <button 
+                          class="text-xs bg-gray-700 hover:bg-gray-600 text-gray-300 px-2 py-1 rounded"
+                          on:click|stopPropagation={() => copyToClipboard(JSON.stringify(parseJson(log.request_headers), null, 2), 'Headers')}
+                        >
+                          <i class="fas fa-copy mr-1"></i> Copy
+                        </button>
+                        <button 
+                          class="text-xs bg-gray-700 hover:bg-gray-600 text-gray-300 px-2 py-1 rounded"
+                          on:click|stopPropagation={() => copyToClipboard(JSON.stringify(parseJson(log.request_headers)), 'Headers (minified)')}
+                        >
+                          <i class="fas fa-compress-alt mr-1"></i> Minify
+                        </button>
+                      </div>
+                    </div>
+                    <pre class="bg-gray-700 p-3 rounded-md text-xs text-gray-300 font-mono overflow-auto max-h-48">{JSON.stringify(parseJson(log.request_headers), null, 2)}</pre>
+                  </div>
+                  
+                  <!-- Request body if exists -->
+                  {#if log.request_body}
+                    <div>
+                      <div class="flex justify-between items-center mb-2">
+                        <h3 class="text-sm font-semibold text-gray-300">Body</h3>
+                        <div class="flex space-x-2">
+                          <button 
+                            class="text-xs bg-gray-700 hover:bg-gray-600 text-gray-300 px-2 py-1 rounded"
+                            on:click|stopPropagation={() => copyToClipboard(JSON.stringify(parseJson(log.request_body), null, 2), 'Body')}
+                          >
+                            <i class="fas fa-copy mr-1"></i> Copy
+                          </button>
+                          <button 
+                            class="text-xs bg-gray-700 hover:bg-gray-600 text-gray-300 px-2 py-1 rounded"
+                            on:click|stopPropagation={() => copyToClipboard(JSON.stringify(parseJson(log.request_body)), 'Body (minified)')}
+                          >
+                            <i class="fas fa-compress-alt mr-1"></i> Minify
+                          </button>
+                        </div>
+                      </div>
+                      <pre class="bg-gray-700 p-3 rounded-md text-xs text-gray-300 font-mono overflow-auto max-h-64">{JSON.stringify(parseJson(log.request_body), null, 2)}</pre>
+                    </div>
+                  {/if}
+                  
+                  <!-- Query parameters if exists -->
+                  {#if log.query_params}
+                    <div class="mt-4">
+                      <div class="flex justify-between items-center mb-2">
+                        <h3 class="text-sm font-semibold text-gray-300">Query Parameters</h3>
+                        <button 
+                          class="text-xs bg-gray-700 hover:bg-gray-600 text-gray-300 px-2 py-1 rounded"
+                          on:click|stopPropagation={() => copyToClipboard(log.query_params, 'Query parameters')}
+                        >
+                          <i class="fas fa-copy mr-1"></i> Copy
+                        </button>
+                      </div>
+                      <pre class="bg-gray-700 p-3 rounded-md text-xs text-gray-300 font-mono overflow-auto max-h-32">{log.query_params}</pre>
+                    </div>
+                  {/if}
                 </div>
-              </div>
+              {:else}
+                <!-- Response content -->
+                <div>
+                  <!-- General info -->
+                  <div class="mb-4 bg-gray-850 rounded-md p-3">
+                    <h3 class="text-sm font-semibold text-gray-300 mb-2">General</h3>
+                    <div class="grid grid-cols-2 gap-2 text-sm">
+                      <div>
+                        <span class="text-gray-400">Status Code:</span> 
+                        <span class="{log.response_status < 300 ? 'text-green-400' : log.response_status < 400 ? 'text-blue-400' : log.response_status < 500 ? 'text-yellow-400' : 'text-red-400'} font-mono">
+                          {log.response_status}
+                        </span>
+                      </div>
+                      <div>
+                        <span class="text-gray-400">Execution:</span> 
+                        <span class="text-gray-200 font-mono">{log.execution_mode}</span>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <!-- Headers with copy button -->
+                  <div class="mb-4">
+                    <div class="flex justify-between items-center mb-2">
+                      <h3 class="text-sm font-semibold text-gray-300">Headers</h3>
+                      <div class="flex space-x-2">
+                        <button 
+                          class="text-xs bg-gray-700 hover:bg-gray-600 text-gray-300 px-2 py-1 rounded"
+                          on:click|stopPropagation={() => copyToClipboard(JSON.stringify(parseJson(log.response_headers), null, 2), 'Headers')}
+                        >
+                          <i class="fas fa-copy mr-1"></i> Copy
+                        </button>
+                        <button 
+                          class="text-xs bg-gray-700 hover:bg-gray-600 text-gray-300 px-2 py-1 rounded"
+                          on:click|stopPropagation={() => copyToClipboard(JSON.stringify(parseJson(log.response_headers)), 'Headers (minified)')}
+                        >
+                          <i class="fas fa-compress-alt mr-1"></i> Minify
+                        </button>
+                      </div>
+                    </div>
+                    <pre class="bg-gray-700 p-3 rounded-md text-xs text-gray-300 font-mono overflow-auto max-h-48">{JSON.stringify(parseJson(log.response_headers), null, 2)}</pre>
+                  </div>
+                  
+                  <!-- Response body -->
+                  <div>
+                    <div class="flex justify-between items-center mb-2">
+                      <h3 class="text-sm font-semibold text-gray-300">Body</h3>
+                      <div class="flex space-x-2">
+                        <button 
+                          class="text-xs bg-gray-700 hover:bg-gray-600 text-gray-300 px-2 py-1 rounded"
+                          on:click|stopPropagation={() => copyToClipboard(JSON.stringify(parseJson(log.response_body), null, 2), 'Body')}
+                        >
+                          <i class="fas fa-copy mr-1"></i> Copy
+                        </button>
+                        <button 
+                          class="text-xs bg-gray-700 hover:bg-gray-600 text-gray-300 px-2 py-1 rounded"
+                          on:click|stopPropagation={() => copyToClipboard(JSON.stringify(parseJson(log.response_body)), 'Body (minified)')}
+                        >
+                          <i class="fas fa-compress-alt mr-1"></i> Minify
+                        </button>
+                      </div>
+                    </div>
+                    
+                    <!-- Special handling for endpoint not found error -->
+                    {#if log.response_status >= 400 && parseJson(log.response_body)?.error === true}
+                      <div class="bg-red-900/30 border border-red-700 p-3 rounded-md">
+                        <div class="flex items-center">
+                          <i class="fas fa-exclamation-triangle text-yellow-400 mr-2"></i>
+                          <span class="text-sm text-white">
+                            {parseJson(log.response_body)?.message || 'Error'}
+                          </span>
+                        </div>
+                      </div>
+                    {:else}
+                      <pre class="bg-gray-700 p-3 rounded-md text-xs text-gray-300 font-mono overflow-auto max-h-64">{JSON.stringify(parseJson(log.response_body), null, 2)}</pre>
+                    {/if}
+                  </div>
+                </div>
+              {/if}
             </div>
           {/if}
         </div>
