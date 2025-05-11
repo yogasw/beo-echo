@@ -105,22 +105,41 @@
     eventSource.addEventListener('ping', (event) => {
       // Keep connection alive, no action needed
       console.log('Ping received from server:', event.data);
+      isConnected = true;
+      reconnectAttempts = 0; // Reset reconnect counter on successful ping
     });
     
     eventSource.onopen = () => {
       console.log('Log stream connection established');
+      isConnected = true;
+      reconnectAttempts = 0; // Reset reconnect counter on connection
     };
     
     eventSource.onerror = (err) => {
       console.error('EventSource error:', err);
-      // Try to reconnect after a delay
-      setTimeout(() => {
-        console.log('Attempting to reconnect log stream...');
-        setupLogStream();
-      }, 5000);
+      isConnected = false;
+      
+      // Implement smart reconnection strategy with backoff
+      if (reconnectAttempts < MAX_RECONNECT_ATTEMPTS) {
+        reconnectAttempts++;
+        const delay = RECONNECT_DELAY_MS * reconnectAttempts; // Increase delay with each attempt
+        console.log(`Attempting to reconnect log stream (attempt ${reconnectAttempts}/${MAX_RECONNECT_ATTEMPTS}) in ${delay}ms...`);
+        
+        setTimeout(() => {
+          setupLogStream();
+        }, delay);
+      } else {
+        console.error('Max reconnection attempts reached. Please refresh manually.');
+      }
     };
   }
   
+  // Track connection status for UI feedback
+  let isConnected = false;
+  let reconnectAttempts = 0;
+  const MAX_RECONNECT_ATTEMPTS = 5;
+  const RECONNECT_DELAY_MS = 3000;
+
   // Initialize on component mount
   onMount(() => {
     loadInitialLogs().then(() => {
@@ -137,18 +156,69 @@
 </script>
 
 <div class="w-full bg-gray-800 p-4">
+  {#if !isConnected && reconnectAttempts > 0}
+    <div class="bg-red-900 p-2 rounded mb-4 flex items-center justify-between">
+      <div class="flex items-center">
+        <i class="fas fa-exclamation-triangle text-yellow-400 text-lg mr-2"></i>
+        <span class="text-white">Live stream disconnected. Using manual refresh only.</span>
+      </div>
+      <button 
+        class="bg-blue-500 hover:bg-blue-600 text-white py-1 px-3 rounded text-sm"
+        on:click={() => setupLogStream()}
+      >
+        <i class="fas fa-sync mr-1"></i> Reconnect Stream
+      </button>
+    </div>
+  {/if}
   <div class="bg-gray-700 p-4 rounded mb-4 flex items-center justify-between">
     <div class="flex items-center">
       <i class="fas fa-info-circle text-blue-500 text-2xl mr-2"></i>
       <span class="text-xl font-bold text-blue-500">
         Logs for: {selectedProject.name}
       </span>
+      
+      <div class="ml-4 flex items-center">
+        <!-- Stream status indicator -->
+        <span class="relative flex h-3 w-3">
+          {#if isConnected}
+            <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+            <span class="relative inline-flex rounded-full h-3 w-3 bg-green-500"></span>
+          {:else}
+            <span class="relative inline-flex rounded-full h-3 w-3 bg-red-500"></span>
+          {/if}
+        </span>
+        <span class="ml-2 text-xs {isConnected ? 'text-green-400' : 'text-red-400'}">
+          {isConnected ? 'Live stream' : 'Disconnected'}
+        </span>
+        {#if !isConnected}
+          <button 
+            class="ml-2 bg-blue-500 hover:bg-blue-600 text-white py-0.5 px-2 rounded text-xs"
+            on:click={() => setupLogStream()}
+          >
+            Reconnect
+          </button>
+        {/if}
+      </div>
     </div>
-    <div>
+    <div class="flex items-center">
       <span class="text-xs text-gray-400 mr-2">Auto-scroll</span>
       <input type="checkbox" bind:checked={autoScroll} class="form-checkbox h-4 w-4 text-blue-500" />
+      
+      <button 
+        class="ml-4 bg-blue-500 hover:bg-blue-600 text-white py-1 px-3 rounded text-xs flex items-center"
+        on:click={() => {
+          loadInitialLogs();
+          if (!isConnected) {
+            setupLogStream(); // Also try to reconnect if disconnected
+          }
+        }}
+      >
+        <i class="fas fa-sync mr-1"></i> Manual Refresh
+      </button>
     </div>
   </div>
+  
+
   
   <div class="flex items-center bg-gray-700 p-2 rounded mb-4">
     <i class="fas fa-search text-white text-lg mr-2"></i>
@@ -254,4 +324,4 @@
       </div>
     {/if}
   {/if}
-</div> 
+</div>

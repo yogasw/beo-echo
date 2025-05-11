@@ -324,5 +324,14 @@ export const createLogStream = (projectId: string, limit: number = 100): EventSo
 		url += `&auth=${btoa(`${username}:${password}`)}`;
 	}
 
-	return new EventSource(url);
+	console.log('Creating SSE connection to:', url);
+	
+	const eventSource = new EventSource(url);
+	
+	// Add global error handling
+	eventSource.onerror = (err) => {
+		console.error('EventSource global error:', err);
+	};
+	
+	return eventSource;
 };
