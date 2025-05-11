@@ -5,6 +5,7 @@
 	import { syncStatus } from '$lib/stores/syncStatus';
 	import { toast } from '$lib/stores/toast';
 	import Settings from '$lib/components/settings/Settings.svelte';
+	import SaveButton from './SaveButton.svelte';
 
 	export let handleLogout: () => void;
 
@@ -128,6 +129,7 @@
 
 <!-- Settings Modal -->
 <Settings />
+<SaveButton/>
 
 <style>
 

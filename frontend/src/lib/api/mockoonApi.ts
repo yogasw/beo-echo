@@ -256,3 +256,26 @@ export const getGitConfig = async (): Promise<{
 	const response = await api.get('/git/config');
 	return response.data;
 };
+
+export const updateEndpoint = async (projectId: string, endpointId: string, data: {
+	method?: string;
+	path?: string;
+	enabled?: boolean;
+	responseMode?: string;
+}): Promise<Endpoint> => {
+	const response = await api.put(`/projects/${projectId}/endpoints/${endpointId}`, data);
+	return response.data.data;
+};
+
+export const updateResponse = async (projectId: string, endpointId: string, responseId: string, data: {
+	statusCode?: number;
+	body?: string;
+	headers?: string;
+	priority?: number;
+	delayMS?: number;
+	stream?: boolean;
+	enabled?: boolean;
+}): Promise<Response> => {
+	const response = await api.put(`/projects/${projectId}/endpoints/${endpointId}/responses/${responseId}`, data);
+	return response.data.data;
+};
