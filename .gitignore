@@ -32,7 +32,6 @@ coverage/
 .history/
 
 # Logs
-logs/
 *.log
 
 # Runtime data

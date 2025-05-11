@@ -2,6 +2,7 @@
   import { onMount, onDestroy } from 'svelte';
   import { createLogStream, getLogs, type Project, type RequestLog } from "$lib/api/mockoonApi";
   import { fade } from 'svelte/transition';
+  import ModalCreateMock from './logs/ModalCreateMock.svelte';
 
   export let selectedProject: Project;
 
@@ -20,6 +21,9 @@
   let activeTabs: Record<string, 'request' | 'response'> = {};
   // Notification for copy operations
   let copyNotification = { show: false, message: '' };
+  // State for create mock modal
+  let isCreateMockModalOpen = false;
+  let selectedLogForMock: RequestLog | null = null;
   
   // Function to toggle log expansion
   function toggleLogExpansion(logId: string) {
@@ -206,39 +210,18 @@
   
   // Function to create a mock from a log entry
   function createMockFromLog(log: RequestLog) {
-    // Show notification that mock creation is in progress
-    copyNotification = { show: true, message: 'Creating mock from request...' };
-    
-    try {
-      // Extract useful information from the log
-      const mockData = {
-        method: log.method,
-        path: log.path,
-        statusCode: log.response_status,
-        responseBody: log.response_body,
-        responseHeaders: log.response_headers,
-        // Add any other relevant data needed for mock creation
-        projectId: selectedProject.id
-      };
-      
-      console.log('Creating mock with data:', mockData);
-      
-      // TODO: Implement actual mock creation API call here
-      // Example: await createMockEndpoint(mockData);
-      
-      // Show success notification
-      copyNotification = { show: true, message: 'Mock endpoint created successfully!' };
-      setTimeout(() => {
-        copyNotification = { show: false, message: '' };
-      }, 2000);
-      
-    } catch (err) {
-      console.error('Failed to create mock:', err);
-      copyNotification = { show: true, message: 'Failed to create mock: ' + (err instanceof Error ? err.message : String(err)) };
-      setTimeout(() => {
-        copyNotification = { show: false, message: '' };
-      }, 3000);
-    }
+    // Open the modal for creating a mock from the log
+    selectedLogForMock = log;
+    isCreateMockModalOpen = true;
+    console.log('Opening mock creation modal for log:', log.id);
+  }
+  
+  // Handle success after mock creation
+  function handleMockCreationSuccess() {
+    copyNotification = { show: true, message: 'Mock endpoint created successfully!' };
+    setTimeout(() => {
+      copyNotification = { show: false, message: '' };
+    }, 2000);
   }
   
   // Track connection status for UI feedback
@@ -615,4 +598,13 @@
       </div>
     {/if}
   {/if}
+  
+  <!-- Create Mock Modal -->
+  <ModalCreateMock
+    isOpen={isCreateMockModalOpen}
+    log={selectedLogForMock}
+    projectId={selectedProject.id}
+    onClose={() => isCreateMockModalOpen = false}
+    onSuccess={handleMockCreationSuccess}
+  />
 </div>
