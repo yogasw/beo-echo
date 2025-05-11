@@ -22,29 +22,38 @@ export function saveButtonHandler() {
     console.log('saveButtonHandler', currentValue);
 }
 
-export function updateEndpoint(keyOrEndpoint: string | Endpoint, endpointObj?: Endpoint) {
+export function updateEndpoint(key: string, value: any, currentEndpoint: Endpoint) {
     let currentProject = get(selectedProject) as Project | null;
     if (!currentProject) {
         toast.error('No project selected');
-        return;
+        return currentEndpoint;
     }
     
-    let key: string;
-    let endpoint: Endpoint;
+    // Validate that key and value are provided
+    if (!key) {
+        toast.error('Invalid update: key is required');
+        return currentEndpoint;
+    }
     
-    // Handle the case where updateEndpoint is called with just the endpoint
-    if (typeof keyOrEndpoint === 'object') {
-        endpoint = keyOrEndpoint;
-        // When called with just the endpoint, we update the whole endpoint
-        key = 'all';
-    } else {
-        // When called with key and endpoint, we update only that specific field
-        key = keyOrEndpoint;
-        endpoint = endpointObj as Endpoint;
+    if (value === undefined || value === null) {
+        toast.error(`Invalid update: value for '${key}' cannot be empty`);
+        return currentEndpoint;
+    }
+    
+    if (!currentEndpoint) {
+        toast.error('Invalid update: endpoint object is required');
+        return currentEndpoint;
+    }
+    
+    // Check if the value is different from what's already in the endpoint
+    // Skip update if the value is the same
+    if (key !== 'all' && currentEndpoint[key as keyof Endpoint] === value) {
+        console.log(`Value for '${key}' hasn't changed, skipping update`);
+        return currentEndpoint;
     }
 
     let listToUpdate = get(endpointsUpdateList);
-    let endpointUpdateIndex = listToUpdate.findIndex((e) => e.endpointId === endpoint.id);
+    let endpointUpdateIndex = listToUpdate.findIndex((e) => e.endpointId === currentEndpoint.id);
     
     // If this endpoint is already in the list, we'll update its value
     if (endpointUpdateIndex !== -1) {
@@ -53,15 +62,22 @@ export function updateEndpoint(keyOrEndpoint: string | Endpoint, endpointObj?: E
             // Update the whole endpoint in the list
             updatedList[endpointUpdateIndex] = {
                 ...updatedList[endpointUpdateIndex],
-                projectId: endpoint.project_id,
-                endpointId: endpoint.id,
-                endpoint: { ...endpoint } // Store the entire endpoint object
+                projectId: currentEndpoint.project_id,
+                endpointId: currentEndpoint.id,
+                endpoint: { ...currentEndpoint } // Store the entire endpoint object
             };
         } else {
+            // Check if the value is actually different than what's already stored
+            const storedValue = updatedList[endpointUpdateIndex][key];
+            if (storedValue === value) {
+                console.log(`Value for '${key}' hasn't changed, skipping update`);
+                return currentEndpoint;
+            }
+            
             // Update just the specific field
             updatedList[endpointUpdateIndex] = {
                 ...updatedList[endpointUpdateIndex],
-                [key]: endpoint[key as keyof Endpoint]
+                [key]: value
             };
         }
         endpointsUpdateList.set(updatedList);
@@ -69,14 +85,14 @@ export function updateEndpoint(keyOrEndpoint: string | Endpoint, endpointObj?: E
     } else {
         // Add new entry to the list
         const newEntry: EndpointUpdate = {
-            projectId: endpoint.project_id,
-            endpointId: endpoint.id
+            projectId: currentEndpoint.project_id,
+            endpointId: currentEndpoint.id
         };
         
         if (key === 'all') {
-            newEntry.endpoint = { ...endpoint }; // Store the entire endpoint object
+            newEntry.endpoint = { ...currentEndpoint }; // Store the entire endpoint object
         } else {
-            newEntry[key] = endpoint[key as keyof Endpoint];
+            newEntry[key] = value;
         }
         
         endpointsUpdateList.set([...listToUpdate, newEntry]);
@@ -84,6 +100,7 @@ export function updateEndpoint(keyOrEndpoint: string | Endpoint, endpointObj?: E
     }
     
     console.log('Updated endpoint list', get(endpointsUpdateList));
+    return currentEndpoint;
 }
 
 /**

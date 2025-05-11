@@ -86,6 +86,13 @@
 					type="text"
 					class="w-full md:flex-1 rounded bg-gray-700 px-4 py-2 text-white"
 					value={selectedEndpoint?.path}
+					on:blur={(e) => {
+						if (selectedEndpoint) {
+							let target = e?.target as HTMLInputElement;
+							selectedEndpoint = updateEndpoint('path', target?.value || '', selectedEndpoint);
+							console.log('Updated endpoint:', selectedEndpoint);
+						}
+					}}
 				/>
 				<button
 					class="text-gray-400 hover:text-blue-500 disabled:text-gray-600"
@@ -113,8 +120,8 @@
 			on:blur={(e) => {
 				if (selectedEndpoint) {
 					let target = e?.target as HTMLTextAreaElement;
-					selectedEndpoint.documentation = target?.value || '';
-					updateEndpoint("documentation", selectedEndpoint);
+					selectedEndpoint = updateEndpoint('documentation', target?.value || '', selectedEndpoint);
+					console.log('Updated endpoint:', selectedEndpoint);
 				}
 			}}>{selectedEndpoint?.documentation || ''}</textarea
 		>
