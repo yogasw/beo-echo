@@ -125,7 +125,7 @@
 					role="button"
 				>
 					{#if !endpoint.enabled}
-						<div class="absolute left-0 top-0 bottom-0 w-1 bg-red-500"></div>
+						<div class="absolute left-0 top-0 bottom-0 w-1 bg-red-500 rounded-bl rounded-tl"></div>
 					{/if}
 					<span class="text-sm font-bold truncate">
 						<strong>{endpoint.method}</strong>
