@@ -165,7 +165,7 @@
 
 <div class="w-full bg-gray-800 p-4">
   {#if !isConnected && reconnectAttempts > 0}
-    <div class="bg-red-900 p-2 rounded mb-4 flex items-center justify-between">
+    <div class="p-2 rounded mb-4 flex items-center justify-between">
       <div class="flex items-center">
         <i class="fas fa-exclamation-triangle text-yellow-400 text-lg mr-2"></i>
         <span class="text-white">Live stream disconnected. Using manual refresh only.</span>
@@ -259,10 +259,12 @@
   {:else}
     <div class="space-y-4">
       {#each filteredLogs as log (log.id)}
+          
+      <!-- class:bg-green-900={log.matched} 
+          class:bg-red-900={!log.matched} -->
+          
         <div 
           class="bg-gray-700 p-4 rounded cursor-pointer" 
-          class:bg-green-900={log.matched} 
-          class:bg-red-900={!log.matched}
           on:click={() => toggleLogExpansion(log.id)}
           on:keydown={(e) => e.key === 'Enter' && toggleLogExpansion(log.id)}
           tabindex="0"
