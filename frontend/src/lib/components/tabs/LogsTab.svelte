@@ -13,6 +13,14 @@
   const pageSize = 100;
   let eventSource: EventSource | null = null;
   let autoScroll = true;
+  // Map to track expanded logs
+  let expandedLogs: Record<string, boolean> = {};
+  
+  // Function to toggle log expansion
+  function toggleLogExpansion(logId: string) {
+    expandedLogs[logId] = !expandedLogs[logId];
+    expandedLogs = expandedLogs; // Force Svelte reactivity update
+  }
   
   $: filteredLogs = searchTerm 
     ? logs.filter(log => 
@@ -33,12 +41,12 @@
   }
   
   // Format timestamp for display
-  function formatDate(dateString: string): string {
+  function formatDate(dateString: string | Date): string {
     try {
-      const date = new Date(dateString);
+      const date = typeof dateString === 'string' ? new Date(dateString) : dateString;
       return date.toLocaleString();
     } catch (e) {
-      return dateString;
+      return String(dateString);
     }
   }
   
@@ -251,8 +259,17 @@
   {:else}
     <div class="space-y-4">
       {#each filteredLogs as log (log.id)}
-        <div class="bg-gray-700 p-4 rounded" class:bg-green-900={log.matched} class:bg-red-900={!log.matched}>
-          <div class="flex justify-between items-center mb-2">
+        <div 
+          class="bg-gray-700 p-4 rounded cursor-pointer" 
+          class:bg-green-900={log.matched} 
+          class:bg-red-900={!log.matched}
+          on:click={() => toggleLogExpansion(log.id)}
+          on:keydown={(e) => e.key === 'Enter' && toggleLogExpansion(log.id)}
+          tabindex="0"
+          role="button"
+          aria-expanded={!!expandedLogs[log.id]}
+        >
+          <div class="flex justify-between items-center">
             <div class="flex items-center">
               <span class="text-sm font-bold">
                 <span class="mr-2 px-2 py-0.5 rounded {log.method === 'GET' ? 'bg-green-600' : log.method === 'POST' ? 'bg-blue-600' : log.method === 'PUT' ? 'bg-yellow-600' : log.method === 'DELETE' ? 'bg-red-600' : 'bg-gray-600'}">
@@ -273,47 +290,50 @@
             <div class="flex items-center">
               <span class="text-xs text-gray-400 mr-2">{formatDate(log.created_at)}</span>
               <span class="text-xs px-2 py-0.5 rounded bg-blue-600">{log.latency_ms}ms</span>
+              <i class="fas {expandedLogs[log.id] ? 'fa-chevron-up' : 'fa-chevron-down'} ml-3 text-gray-400"></i>
             </div>
           </div>
           
-          <div class="grid grid-cols-2 gap-4 mt-2">
-            <div>
-              <div class="flex justify-between items-center mb-2">
-                <h3 class="text-sm font-semibold">Request</h3>
-                {#if log.query_params}
-                  <span class="text-xs text-gray-400">Query: {log.query_params}</span>
+          {#if expandedLogs[log.id]}
+            <div class="grid grid-cols-2 gap-4 mt-4">
+              <div>
+                <div class="flex justify-between items-center mb-2">
+                  <h3 class="text-sm font-semibold">Request</h3>
+                  {#if log.query_params}
+                    <span class="text-xs text-gray-400">Query: {log.query_params}</span>
+                  {/if}
+                </div>
+                
+                <div class="mb-2">
+                  <h4 class="text-xs font-semibold text-gray-400">Headers</h4>
+                  <pre class="bg-gray-800 p-2 rounded text-xs overflow-auto max-h-32">{JSON.stringify(parseJson(log.request_headers), null, 2)}</pre>
+                </div>
+                
+                {#if log.request_body}
+                  <div>
+                    <h4 class="text-xs font-semibold text-gray-400">Body</h4>
+                    <pre class="bg-gray-800 p-2 rounded text-xs overflow-auto max-h-64">{JSON.stringify(parseJson(log.request_body), null, 2)}</pre>
+                  </div>
                 {/if}
               </div>
               
-              <div class="mb-2">
-                <h4 class="text-xs font-semibold text-gray-400">Headers</h4>
-                <pre class="bg-gray-800 p-2 rounded text-xs overflow-auto max-h-32">{JSON.stringify(parseJson(log.request_headers), null, 2)}</pre>
-              </div>
-              
-              {#if log.request_body}
+              <div>
+                <div class="flex justify-between items-center mb-2">
+                  <h3 class="text-sm font-semibold">Response</h3>
+                </div>
+                
+                <div class="mb-2">
+                  <h4 class="text-xs font-semibold text-gray-400">Headers</h4>
+                  <pre class="bg-gray-800 p-2 rounded text-xs overflow-auto max-h-32">{JSON.stringify(parseJson(log.response_headers), null, 2)}</pre>
+                </div>
+                
                 <div>
                   <h4 class="text-xs font-semibold text-gray-400">Body</h4>
-                  <pre class="bg-gray-800 p-2 rounded text-xs overflow-auto max-h-64">{JSON.stringify(parseJson(log.request_body), null, 2)}</pre>
+                  <pre class="bg-gray-800 p-2 rounded text-xs overflow-auto max-h-64">{JSON.stringify(parseJson(log.response_body), null, 2)}</pre>
                 </div>
-              {/if}
-            </div>
-            
-            <div>
-              <div class="flex justify-between items-center mb-2">
-                <h3 class="text-sm font-semibold">Response</h3>
-              </div>
-              
-              <div class="mb-2">
-                <h4 class="text-xs font-semibold text-gray-400">Headers</h4>
-                <pre class="bg-gray-800 p-2 rounded text-xs overflow-auto max-h-32">{JSON.stringify(parseJson(log.response_headers), null, 2)}</pre>
-              </div>
-              
-              <div>
-                <h4 class="text-xs font-semibold text-gray-400">Body</h4>
-                <pre class="bg-gray-800 p-2 rounded text-xs overflow-auto max-h-64">{JSON.stringify(parseJson(log.response_body), null, 2)}</pre>
               </div>
             </div>
-          </div>
+          {/if}
         </div>
       {/each}
     </div>
