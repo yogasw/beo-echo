@@ -59,10 +59,11 @@ func UpdateEndpointHandler(c *gin.Context) {
 
 	// Parse update data
 	var updateData struct {
-		Method       string `json:"method"`
-		Path         string `json:"path"`
-		Enabled      *bool  `json:"enabled"`
-		ResponseMode string `json:"responseMode"`
+		Method        string `json:"method"`
+		Path          string `json:"path"`
+		Enabled       *bool  `json:"enabled"`
+		ResponseMode  string `json:"responseMode"`
+		Documentation string `json:"documentation"`
 	}
 
 	if err := c.ShouldBindJSON(&updateData); err != nil {
@@ -93,6 +94,10 @@ func UpdateEndpointHandler(c *gin.Context) {
 
 	if updateData.ResponseMode != "" {
 		existingEndpoint.ResponseMode = updateData.ResponseMode
+	}
+
+	if updateData.Documentation != "" {
+		existingEndpoint.Documentation = updateData.Documentation
 	}
 
 	// Save updates

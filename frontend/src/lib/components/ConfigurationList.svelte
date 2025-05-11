@@ -2,17 +2,15 @@
 	import { createEventDispatcher } from 'svelte';
 	import {
 		getProjects,
-		startMockServer,
-		stopMockServer,
 		uploadConfig,
 		addProject,
-		type ProjectResponse,
 		type Project
 	} from '$lib/api/mockoonApi';
 	import { selectedProject } from '$lib/stores/selectedConfig';
 	import { activeTab } from '$lib/stores/activeTab';
 	import { projects } from '$lib/stores/configurations';
 	import { toast } from '$lib/stores/toast';
+	import { resetEndpointsList } from '$lib/stores/saveButton';
 
 	interface Config {
 		uuid: string;
@@ -28,7 +26,7 @@
 	export let searchTerm = '';
 
 	const dispatch = createEventDispatcher<{
-		selectConfiguration: ProjectResponse;
+		selectConfiguration: Project;
 	}>();
 
 	$: filteredConfigurations = $projects.filter((project) =>
@@ -63,16 +61,14 @@
 	// Track when user manually edits the alias and enforce validation
 	function handleAliasInput(event: Event) {
 		userEditedAlias = true;
-		
+
 		// Get input element and current value
 		const input = event.target as HTMLInputElement;
 		const currentValue = input.value;
-		
+
 		// Apply validation rules: lowercase, only allow lowercase letters, numbers, underscores and hyphens
-		const validatedValue = currentValue
-			.toLowerCase()
-			.replace(/[^a-z0-9_-]/g, '');
-			
+		const validatedValue = currentValue.toLowerCase().replace(/[^a-z0-9_-]/g, '');
+
 		// Update the value if it was changed by validation
 		if (currentValue !== validatedValue) {
 			projectAlias = validatedValue;
@@ -84,10 +80,12 @@
 		userEditedAlias = false;
 	}
 
-	function handleConfigClick(project: ProjectResponse) {
+	function handleConfigClick(project: Project) {
 		console.log('1. ConfigurationList - Clicked config:', project);
 		selectedProject.set(project);
 		activeTab.set('routes');
+		// Reset endpoints update list when changing projects
+		resetEndpointsList();
 		dispatch('selectConfiguration', project);
 	}
 
@@ -220,7 +218,9 @@
 						placeholder="Enter project alias"
 						on:input={handleAliasInput}
 					/>
-					<p class="text-xs text-gray-400 mt-1">Only lowercase letters, numbers, underscores (_) and hyphens (-) allowed</p>
+					<p class="text-xs text-gray-400 mt-1">
+						Only lowercase letters, numbers, underscores (_) and hyphens (-) allowed
+					</p>
 				</div>
 
 				<div class="mb-6">

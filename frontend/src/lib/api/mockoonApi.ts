@@ -42,7 +42,7 @@ export type Endpoint = {
 	responses: Response[];
 	created_at: Date;
 	updated_at: Date;
-	documentation: "";
+	documentation: string;
 }
 
 export type Response = {
@@ -262,6 +262,7 @@ export const updateEndpoint = async (projectId: string, endpointId: string, data
 	path?: string;
 	enabled?: boolean;
 	responseMode?: string;
+	documentation?: string;
 }): Promise<Endpoint> => {
 	const response = await api.put(`/projects/${projectId}/endpoints/${endpointId}`, data);
 	return response.data.data;
