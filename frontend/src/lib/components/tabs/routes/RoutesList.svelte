@@ -115,7 +115,7 @@
 		<div class="space-y-4 pr-2 py-2">
 			{#each filteredEndpoints as endpoint}
 				<div
-					class="flex items-center justify-between bg-gray-700 p-4 rounded cursor-pointer relative group {selectedEndpoint ===
+					class="flex items-center justify-between bg-gray-700 py-2 px-4 rounded cursor-pointer relative group {selectedEndpoint ===
 					endpoint
 						? 'border-2 border-blue-500'
 						: ''} {!endpoint.enabled ? 'disabled-endpoint' : ''}"
