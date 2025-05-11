@@ -204,6 +204,43 @@
     };
   }
   
+  // Function to create a mock from a log entry
+  function createMockFromLog(log: RequestLog) {
+    // Show notification that mock creation is in progress
+    copyNotification = { show: true, message: 'Creating mock from request...' };
+    
+    try {
+      // Extract useful information from the log
+      const mockData = {
+        method: log.method,
+        path: log.path,
+        statusCode: log.response_status,
+        responseBody: log.response_body,
+        responseHeaders: log.response_headers,
+        // Add any other relevant data needed for mock creation
+        projectId: selectedProject.id
+      };
+      
+      console.log('Creating mock with data:', mockData);
+      
+      // TODO: Implement actual mock creation API call here
+      // Example: await createMockEndpoint(mockData);
+      
+      // Show success notification
+      copyNotification = { show: true, message: 'Mock endpoint created successfully!' };
+      setTimeout(() => {
+        copyNotification = { show: false, message: '' };
+      }, 2000);
+      
+    } catch (err) {
+      console.error('Failed to create mock:', err);
+      copyNotification = { show: true, message: 'Failed to create mock: ' + (err instanceof Error ? err.message : String(err)) };
+      setTimeout(() => {
+        copyNotification = { show: false, message: '' };
+      }, 3000);
+    }
+  }
+  
   // Track connection status for UI feedback
   let isConnected = false;
   let reconnectAttempts = 0;
@@ -287,16 +324,6 @@
         </div>
         
         <button 
-          class="bg-emerald-600 hover:bg-emerald-700 text-white py-2 px-4 rounded-md text-sm flex items-center transition-all duration-200 transform hover:scale-105"
-          on:click={() => {
-            // Create mock from selected log or navigate to create mock page
-            // Implement your mock creation logic here
-          }}
-        >
-          <i class="fas fa-plus-circle mr-2"></i> Create Mock
-        </button>
-        
-        <button 
           class="bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded-md text-sm flex items-center"
           on:click={() => {
             loadInitialLogs();
@@ -347,41 +374,56 @@
           class="bg-gray-800 border border-gray-700 rounded-md shadow-md overflow-hidden" 
         >
           <!-- Log header - clickable to expand/collapse -->
-          <div 
-            class="flex justify-between items-center p-3 hover:bg-gray-700 cursor-pointer"
-            on:click={() => toggleLogExpansion(log.id)}
-            on:keydown={(e) => e.key === 'Enter' && toggleLogExpansion(log.id)}
-            tabindex="0"
-            role="button"
-            aria-expanded={!!expandedLogs[log.id]}
-          >
-            <div class="flex items-center space-x-2">
-              <!-- Method badge -->
-              <span class="px-2 py-0.5 text-sm font-mono rounded {log.method === 'GET' ? 'bg-green-600 text-white' : log.method === 'POST' ? 'bg-blue-600 text-white' : log.method === 'PUT' ? 'bg-yellow-600 text-white' : log.method === 'DELETE' ? 'bg-red-600 text-white' : 'bg-gray-600 text-white'}">
-                {log.method}
-              </span>
+          <div class="flex flex-col">
+            <div 
+              class="flex justify-between items-center p-3 hover:bg-gray-700 cursor-pointer"
+              on:click={() => toggleLogExpansion(log.id)}
+              on:keydown={(e) => e.key === 'Enter' && toggleLogExpansion(log.id)}
+              tabindex="0"
+              role="button"
+              aria-expanded={!!expandedLogs[log.id]}
+            >
+              <div class="flex items-center space-x-2">
+                <!-- Method badge -->
+                <span class="px-2 py-0.5 text-sm font-mono rounded {log.method === 'GET' ? 'bg-green-600 text-white' : log.method === 'POST' ? 'bg-blue-600 text-white' : log.method === 'PUT' ? 'bg-yellow-600 text-white' : log.method === 'DELETE' ? 'bg-red-600 text-white' : 'bg-gray-600 text-white'}">
+                  {log.method}
+                </span>
+                
+                <!-- Path with truncation -->
+                <span class="font-mono text-sm text-gray-200 truncate max-w-sm">
+                  {log.path}
+                </span>
+                
+                <!-- Status code -->
+                <span class="px-2 py-0.5 text-xs font-mono rounded {log.response_status < 300 ? 'bg-green-600 text-white' : log.response_status < 400 ? 'bg-blue-600 text-white' : log.response_status < 500 ? 'bg-yellow-600 text-white' : 'bg-red-600 text-white'}">
+                  {log.response_status}
+                </span>
+                
+                <!-- Match status badge -->
+                <span class="px-2 py-0.5 text-xs font-mono rounded {log.matched ? 'bg-green-600 text-white' : 'bg-red-600 text-white'}">
+                  {log.matched ? 'Matched' : 'Unmatched'}
+                </span>
+              </div>
               
-              <!-- Path with truncation -->
-              <span class="font-mono text-sm text-gray-200 truncate max-w-sm">
-                {log.path}
-              </span>
-              
-              <!-- Status code -->
-              <span class="px-2 py-0.5 text-xs font-mono rounded {log.response_status < 300 ? 'bg-green-600 text-white' : log.response_status < 400 ? 'bg-blue-600 text-white' : log.response_status < 500 ? 'bg-yellow-600 text-white' : 'bg-red-600 text-white'}">
-                {log.response_status}
-              </span>
-              
-              <!-- Match status badge -->
-              <span class="px-2 py-0.5 text-xs font-mono rounded {log.matched ? 'bg-green-600 text-white' : 'bg-red-600 text-white'}">
-                {log.matched ? 'Matched' : 'Unmatched'}
-              </span>
+              <div class="flex items-center space-x-3">
+                <span class="text-xs text-gray-400">{formatDate(log.created_at)}</span>
+                <span class="px-2 py-0.5 text-xs bg-blue-600 rounded text-white">{log.latency_ms}ms</span>
+                <i class="fas {expandedLogs[log.id] ? 'fa-chevron-up' : 'fa-chevron-down'} text-gray-400"></i>
+              </div>
             </div>
             
-            <div class="flex items-center space-x-3">
-              <span class="text-xs text-gray-400">{formatDate(log.created_at)}</span>
-              <span class="px-2 py-0.5 text-xs bg-blue-600 rounded text-white">{log.latency_ms}ms</span>
-              <i class="fas {expandedLogs[log.id] ? 'fa-chevron-up' : 'fa-chevron-down'} text-gray-400"></i>
-            </div>
+            <!-- Create Mock button row - only for unmatched requests -->
+            {#if !log.matched}
+              <div class="flex justify-end px-3 py-1 border-t border-gray-700/30">
+                <button 
+                  class="bg-emerald-600 hover:bg-emerald-700 text-white py-1 px-3 rounded text-xs flex items-center transition-all duration-200 transform hover:scale-105"
+                  on:click|stopPropagation={() => createMockFromLog(log)}
+                  title="Create a new mock endpoint using the data from this request"
+                >
+                  <i class="fas fa-magic mr-1"></i> Create Mock from this Request
+                </button>
+              </div>
+            {/if}
           </div>
           
           <!-- Expanded details -->
