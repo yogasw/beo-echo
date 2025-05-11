@@ -473,23 +473,23 @@
                   {#if log.request_body}
                     <div>
                       <div class="flex justify-between items-center mb-2">
-                        <h3 class="text-sm font-semibold text-gray-300">Body</h3>
+                        <h3 class="text-sm font-semibold theme-text-secondary">Body</h3>
                         <div class="flex space-x-2">
                           <button 
-                            class="text-xs bg-gray-700 hover:bg-gray-600 text-gray-300 px-2 py-1 rounded"
+                            class={ThemeUtils.utilityButton()}
                             on:click|stopPropagation={() => copyToClipboard(JSON.stringify(parseJson(log.request_body), null, 2), 'Body')}
                           >
                             <i class="fas fa-copy mr-1"></i> Copy
                           </button>
                           <button 
-                            class="text-xs bg-gray-700 hover:bg-gray-600 text-gray-300 px-2 py-1 rounded"
+                            class={ThemeUtils.utilityButton()}
                             on:click|stopPropagation={() => copyToClipboard(JSON.stringify(parseJson(log.request_body)), 'Body (minified)')}
                           >
                             <i class="fas fa-compress-alt mr-1"></i> Minify
                           </button>
                         </div>
                       </div>
-                      <pre class="bg-gray-700 p-3 rounded-md text-xs text-gray-300 font-mono overflow-auto max-h-64">{JSON.stringify(parseJson(log.request_body), null, 2)}</pre>
+                      <pre class="bg-gray-300/50 dark:bg-gray-700 p-3 rounded-md text-xs theme-text-secondary font-mono overflow-auto max-h-64">{JSON.stringify(parseJson(log.request_body), null, 2)}</pre>
                     </div>
                   {/if}
                   
@@ -497,15 +497,15 @@
                   {#if log.query_params}
                     <div class="mt-4">
                       <div class="flex justify-between items-center mb-2">
-                        <h3 class="text-sm font-semibold text-gray-300">Query Parameters</h3>
+                        <h3 class="text-sm font-semibold theme-text-secondary">Query Parameters</h3>
                         <button 
-                          class="text-xs bg-gray-700 hover:bg-gray-600 text-gray-300 px-2 py-1 rounded"
+                          class={ThemeUtils.utilityButton()}
                           on:click|stopPropagation={() => copyToClipboard(log.query_params, 'Query parameters')}
                         >
                           <i class="fas fa-copy mr-1"></i> Copy
                         </button>
                       </div>
-                      <pre class="bg-gray-700 p-3 rounded-md text-xs text-gray-300 font-mono overflow-auto max-h-32">{log.query_params}</pre>
+                      <pre class="bg-gray-300/50 dark:bg-gray-700 p-3 rounded-md text-xs theme-text-secondary font-mono overflow-auto max-h-32">{log.query_params}</pre>
                     </div>
                   {/if}
                 </div>
@@ -518,7 +518,7 @@
                     <div class="grid grid-cols-2 gap-2 text-sm">
                       <div>
                         <span class="theme-text-muted">Status Code:</span> 
-                        <span class="{log.response_status < 300 ? 'text-green-500 dark:text-green-400' : log.response_status < 400 ? 'text-blue-500 dark:text-blue-400' : log.response_status < 500 ? 'text-yellow-500 dark:text-yellow-400' : 'text-red-500 dark:text-red-400'} font-mono">
+                        <span class="{log.response_status < 300 ? 'text-green-600 dark:text-green-400' : log.response_status < 400 ? 'text-blue-600 dark:text-blue-400' : log.response_status < 500 ? 'text-yellow-600 dark:text-yellow-400' : 'text-red-600 dark:text-red-400'} font-mono">
                           {log.response_status}
                         </span>
                       </div>
@@ -532,38 +532,38 @@
                   <!-- Headers with copy button -->
                   <div class="mb-4">
                     <div class="flex justify-between items-center mb-2">
-                      <h3 class="text-sm font-semibold text-gray-300">Headers</h3>
+                      <h3 class="text-sm font-semibold theme-text-secondary">Headers</h3>
                       <div class="flex space-x-2">
                         <button 
-                          class="text-xs bg-gray-700 hover:bg-gray-600 text-gray-300 px-2 py-1 rounded"
+                          class={ThemeUtils.utilityButton()}
                           on:click|stopPropagation={() => copyToClipboard(JSON.stringify(parseJson(log.response_headers), null, 2), 'Headers')}
                         >
                           <i class="fas fa-copy mr-1"></i> Copy
                         </button>
                         <button 
-                          class="text-xs bg-gray-700 hover:bg-gray-600 text-gray-300 px-2 py-1 rounded"
+                          class={ThemeUtils.utilityButton()}
                           on:click|stopPropagation={() => copyToClipboard(JSON.stringify(parseJson(log.response_headers)), 'Headers (minified)')}
                         >
                           <i class="fas fa-compress-alt mr-1"></i> Minify
                         </button>
                       </div>
                     </div>
-                    <pre class="bg-gray-700 p-3 rounded-md text-xs text-gray-300 font-mono overflow-auto max-h-48">{JSON.stringify(parseJson(log.response_headers), null, 2)}</pre>
+                    <pre class="bg-gray-300/50 dark:bg-gray-700 p-3 rounded-md text-xs theme-text-secondary font-mono overflow-auto max-h-48">{JSON.stringify(parseJson(log.response_headers), null, 2)}</pre>
                   </div>
                   
                   <!-- Response body -->
                   <div>
                     <div class="flex justify-between items-center mb-2">
-                      <h3 class="text-sm font-semibold text-gray-300">Body</h3>
+                      <h3 class="text-sm font-semibold theme-text-secondary">Body</h3>
                       <div class="flex space-x-2">
                         <button 
-                          class="text-xs bg-gray-700 hover:bg-gray-600 text-gray-300 px-2 py-1 rounded"
+                          class={ThemeUtils.utilityButton()}
                           on:click|stopPropagation={() => copyToClipboard(JSON.stringify(parseJson(log.response_body), null, 2), 'Body')}
                         >
                           <i class="fas fa-copy mr-1"></i> Copy
                         </button>
                         <button 
-                          class="text-xs bg-gray-700 hover:bg-gray-600 text-gray-300 px-2 py-1 rounded"
+                          class={ThemeUtils.utilityButton()}
                           on:click|stopPropagation={() => copyToClipboard(JSON.stringify(parseJson(log.response_body)), 'Body (minified)')}
                         >
                           <i class="fas fa-compress-alt mr-1"></i> Minify
@@ -595,7 +595,7 @@
     
     {#if filteredLogs.length < total}
       <div class="mt-4 text-center">
-        <span class="text-xs text-gray-400">Showing {filteredLogs.length} of {total} logs</span>
+        <span class="text-xs theme-text-muted">Showing {filteredLogs.length} of {total} logs</span>
       </div>
     {/if}
   {/if}
