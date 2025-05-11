@@ -143,3 +143,43 @@ func (mr *MockRule) BeforeCreate(tx *gorm.DB) error {
 	}
 	return nil
 }
+
+// RequestLog stores detailed information about each incoming HTTP request.
+// It captures how the request was handled (mock, proxy, forwarder), whether it matched a mock endpoint,
+// and includes raw request/response data for auditing or debugging.
+type RequestLog struct {
+	ID              string `gorm:"type:string;primaryKey" json:"id"`    // Unique identifier (UUID)
+	ProjectID       string `gorm:"type:string;index" json:"project_id"` // Foreign key to the associated project
+	Method          string `json:"method"`                              // HTTP method (GET, POST, etc.)
+	Path            string `json:"path"`                                // Request path (e.g. "/api/users")
+	QueryParams     string `gorm:"type:text" json:"query_params"`       // Query parameters (stored as JSON string)
+	RequestHeaders  string `gorm:"type:text" json:"request_headers"`    // Request headers (as JSON string)
+	RequestBody     string `gorm:"type:text" json:"request_body"`       // Raw request body
+	ResponseStatus  int    `json:"response_status"`                     // HTTP status code returned
+	ResponseBody    string `gorm:"type:text" json:"response_body"`      // Raw response body
+	ResponseHeaders string `gorm:"type:text" json:"response_headers"`   // Response headers (as JSON string)
+	LatencyMS       int    `json:"latency_ms"`                          // Time taken to respond or delay applied (in milliseconds)
+
+	// ExecutionMode indicates the handling logic used for this request.
+	// Values follow ProjectMode: "mock", "proxy", "forwarder", etc.
+	// Example: if no endpoint matched and project is not in proxy mode,
+	// ExecutionMode = "mock" and Matched = false, resulting in a 404 response.
+	ExecutionMode ProjectMode `gorm:"type:string" json:"execution_mode"`
+
+	// Matched is true if the request matched an existing mock endpoint.
+	// If no match was found and the project is not in proxy/forwarder mode,
+	// this value will be false and the request will return a 404.
+	Matched   bool      `gorm:"default:false" json:"matched"`
+	CreatedAt time.Time `gorm:"autoCreateTime" json:"created_at"` // Timestamp of the request
+
+	// Association to the Project
+	Project Project `gorm:"foreignKey:ProjectID;constraint:OnDelete:CASCADE" json:"-"`
+}
+
+// BeforeCreate hook generates UUID before inserting into database
+func (rl *RequestLog) BeforeCreate(tx *gorm.DB) error {
+	if rl.ID == "" {
+		rl.ID = uuid.New().String()
+	}
+	return nil
+}
