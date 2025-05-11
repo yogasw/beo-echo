@@ -14,6 +14,7 @@ import (
 	"mockoon-control-panel/backend_new/src/database"
 	"mockoon-control-panel/backend_new/src/health"
 	"mockoon-control-panel/backend_new/src/lib"
+	"mockoon-control-panel/backend_new/src/middlewares"
 	"mockoon-control-panel/backend_new/src/mocks/handler"
 	"mockoon-control-panel/backend_new/src/mocks/handler/endpoint"
 	"mockoon-control-panel/backend_new/src/mocks/handler/project"
@@ -26,6 +27,9 @@ import (
 func SetupRouter() *gin.Engine {
 	// Create Gin router with default middleware
 	router := gin.Default()
+
+	// middleware to log requests to the database
+	router.Use(middlewares.RequestLoggerMiddleware(database.DB))
 
 	// Add request logging middleware
 	router.Use(func(c *gin.Context) {
