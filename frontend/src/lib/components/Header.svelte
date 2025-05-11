@@ -4,6 +4,7 @@
 	import { selectedProject } from '$lib/stores/selectedConfig';
 	import { syncStatus } from '$lib/stores/syncStatus';
 	import { toast } from '$lib/stores/toast';
+	import { theme, toggleTheme } from '$lib/stores/theme';
 	import Settings from '$lib/components/settings/Settings.svelte';
 	import SaveButton from './SaveButton.svelte';
 
@@ -94,6 +95,18 @@
 			<i class="fas fa-download"></i>
 		</div>
 		<span class="text-xs mt-1">Download JSON</span>
+	</button>
+
+	<!-- Theme Toggle Button -->
+	<button class="relative group mr-4 flex flex-col items-center" on:click={toggleTheme}>
+		<div class="w-12 aspect-square bg-gray-700 text-white p-3 rounded-full border-2 border-amber-500 flex items-center justify-center transition-all">
+			{#if $theme === 'dark'}
+				<i class="fas fa-sun"></i>
+			{:else}
+				<i class="fas fa-moon"></i>
+			{/if}
+		</div>
+		<span class="text-xs mt-1">{$theme === 'dark' ? 'Light Mode' : 'Dark Mode'}</span>
 	</button>
 
 	<!-- Profile Button -->
