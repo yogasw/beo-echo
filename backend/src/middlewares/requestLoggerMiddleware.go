@@ -57,7 +57,7 @@ func RequestLoggerMiddleware(db *gorm.DB) gin.HandlerFunc {
 		}
 
 		// Save log
-		log := &database.RequestLog{
+		logEntry := &database.RequestLog{
 			ProjectID:       toString(projectID),
 			Method:          c.Request.Method,
 			Path:            c.Request.URL.Path,
@@ -72,7 +72,14 @@ func RequestLoggerMiddleware(db *gorm.DB) gin.HandlerFunc {
 			Matched:         toBool(matched),
 		}
 
-		db.Create(log)
+		// Save to database
+		if err := db.Create(logEntry).Error; err == nil {
+			// Notify log subscribers if log service is available
+			handler.EnsureLogService()
+			if ls := handler.LogService(); ls != nil {
+				ls.NotifySubscribers(*logEntry)
+			}
+		}
 	}
 }
 

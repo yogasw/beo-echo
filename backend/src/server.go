@@ -124,6 +124,10 @@ func SetupRouter() *gin.Engine {
 		apiGroup.GET("/projects/:projectId/endpoints/:id/responses/:responseId", response.GetResponseHandler)
 		apiGroup.PUT("/projects/:projectId/endpoints/:id/responses/:responseId", response.UpdateResponseHandler)
 		apiGroup.DELETE("/projects/:projectId/endpoints/:id/responses/:responseId", response.DeleteResponseHandler)
+
+		// Request Logs management
+		apiGroup.GET("/projects/:projectId/logs", handler.GetLogsHandler)
+		apiGroup.GET("/projects/:projectId/logs/stream", handler.StreamLogsHandler)
 	}
 
 	// Register the catch-all handler for mock API endpoints
@@ -155,6 +159,9 @@ func StartServer() error {
 	if err := database.CheckAndHandlePrisma(); err != nil {
 		log.Fatalf("Failed to setup database: %v", err)
 	}
+
+	// Initialize services
+	handler.InitLogService()
 
 	if err := traefik.GenerateStaticTraefikConfig(); err != nil {
 		log.Fatalf("Error generating static Traefik config: %v", err)
