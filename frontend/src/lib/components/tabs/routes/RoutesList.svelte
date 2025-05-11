@@ -139,10 +139,10 @@
 							on:click|stopPropagation={(e) => toggleMenu(e, endpoint.id)}
 							aria-label="Options menu"
 						>
-							<div class="flex space-x-1">
-								<div class="w-1.5 h-1.5 rounded-full bg-white"></div>
-								<div class="w-1.5 h-1.5 rounded-full bg-white"></div>
-								<div class="w-1.5 h-1.5 rounded-full bg-white"></div>
+							<div class="flex flex-col space-y-0.5">
+								<div class="w-1 h-1 rounded-full bg-white"></div>
+								<div class="w-1 h-1 rounded-full bg-white"></div>
+								<div class="w-1 h-1 rounded-full bg-white"></div>
 							</div>
 						</button>
 						
