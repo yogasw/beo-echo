@@ -2,6 +2,7 @@
 	import type { Endpoint, Project } from '$lib/api/mockoonApi';
 	import type { MockoonRoute } from '$lib/types/Config';
 	import AddEndpointModal from './AddEndpointModal.svelte';
+	import { onMount, onDestroy } from 'svelte';
 
 	export let selectedEndpoint: Endpoint | null;
 	export let activeConfigName: string;
@@ -13,12 +14,59 @@
 	export let project: Project;
 	
 	let showAddEndpointModal = false;
+	let activeMenuEndpointId: string | null = null;
 
 	function onEndpointCreated(event: CustomEvent<Endpoint>) {
 		handleAddEndpoint(event.detail);
 		showAddEndpointModal = false;
 	}
 
+	function toggleMenu(event: MouseEvent, endpointId: string) {
+		event.stopPropagation();
+		if (activeMenuEndpointId === endpointId) {
+			activeMenuEndpointId = null;
+		} else {
+			activeMenuEndpointId = endpointId;
+		}
+	}
+
+	function handleMenuAction(event: MouseEvent, action: string, endpoint: Endpoint) {
+		event.stopPropagation();
+		activeMenuEndpointId = null;
+		
+		switch(action) {
+			case 'enable':
+			case 'disable':
+				endpoint.enabled = action === 'enable';
+				handleRouteStatusChange(endpoint);
+				break;
+			case 'duplicate':
+				// Add your duplicate functionality here
+				console.log('Duplicate endpoint', endpoint);
+				// Call API or service to duplicate the endpoint
+				break;
+			case 'delete':
+				// Add your delete functionality here
+				console.log('Delete endpoint', endpoint);
+				// Call API or service to delete the endpoint
+				break;
+		}
+	}
+
+	// Close menu when clicking outside
+	function handleClickOutside(event: MouseEvent) {
+		if (activeMenuEndpointId) {
+			activeMenuEndpointId = null;
+		}
+	}
+
+	onMount(() => {
+		document.addEventListener('click', handleClickOutside);
+	});
+
+	onDestroy(() => {
+		document.removeEventListener('click', handleClickOutside);
+	});
 </script>
 
 <!-- Routes Section -->
@@ -70,22 +118,51 @@
 						<strong>{endpoint.method}</strong>
 						{endpoint.path.length > 30 ? endpoint.path.slice(0, 30) + '...' : endpoint.path}
 					</span>
-					<button
-						class="text-white py-1 px-2 rounded flex items-center"
-						class:bg-green-500={endpoint.enabled == true}
-						class:bg-red-500={endpoint.enabled == false}
-						on:click|stopPropagation={() => {
-							endpoint.enabled = !endpoint.enabled;
-							// Call the function to handle route status change';
-							handleRouteStatusChange(endpoint);
-						}}
-					>
-						{#if endpoint.enabled === false}
-							<i class="fas fa-toggle-off mr-1"></i> Disable
-						{:else}
-							<i class="fas fa-toggle-on mr-1"></i> Enable
+					
+					<!-- Three-dot menu button -->
+					<div class="relative">
+						<button
+							class="text-white h-8 w-8 flex items-center justify-center rounded hover:bg-gray-600 focus:outline-none"
+							on:click|stopPropagation={(e) => toggleMenu(e, endpoint.id)}
+							aria-label="Options menu"
+						>
+							<div class="flex space-x-1">
+								<div class="w-1.5 h-1.5 rounded-full bg-white"></div>
+								<div class="w-1.5 h-1.5 rounded-full bg-white"></div>
+								<div class="w-1.5 h-1.5 rounded-full bg-white"></div>
+							</div>
+						</button>
+						
+						{#if activeMenuEndpointId === endpoint.id}
+							<div class="absolute right-0 top-full mt-2 w-48 bg-gray-800 border border-gray-600 rounded shadow-lg z-50">
+								<div class="py-1">
+									<button
+										class="w-full text-left px-4 py-2 text-sm text-white hover:bg-gray-700 flex items-center"
+										on:click|stopPropagation={(e) => handleMenuAction(e, endpoint.enabled ? 'disable' : 'enable', endpoint)}
+									>
+										{#if endpoint.enabled}
+											<i class="fas fa-toggle-off mr-2 text-red-500"></i> Disable
+										{:else}
+											<i class="fas fa-toggle-on mr-2 text-green-500"></i> Enable
+										{/if}
+									</button>
+									<button
+										class="w-full text-left px-4 py-2 text-sm text-white hover:bg-gray-700 flex items-center"
+										on:click|stopPropagation={(e) => handleMenuAction(e, 'duplicate', endpoint)}
+									>
+										<i class="fas fa-clone mr-2"></i> Duplicate
+									</button>
+									<hr class="border-gray-600 my-1" />
+									<button
+										class="w-full text-left px-4 py-2 text-sm text-red-400 hover:bg-gray-700 flex items-center"
+										on:click|stopPropagation={(e) => handleMenuAction(e, 'delete', endpoint)}
+									>
+										<i class="fas fa-trash-alt mr-2"></i> Delete
+									</button>
+								</div>
+							</div>
 						{/if}
-					</button>
+					</div>
 				</div>
 			{/each}
 		</div>
