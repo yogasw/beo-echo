@@ -167,7 +167,7 @@ export const addEndpoint = async (projectId: string, method: string, path: strin
 	return response.data.data;
 };
 
-export const addResponse = async (projectId: string, endpointId: string, statusCode: number, body: string, headers: string): Promise<Response> => {
+export const addResponse = async (projectId: string, endpointId: string, statusCode: number, body: string, headers: string, documentation: string): Promise<Response> => {
 	const response = await api.post(`/projects/${projectId}/endpoints/${endpointId}/responses`, {
 		statusCode,
 		body,
@@ -176,7 +176,7 @@ export const addResponse = async (projectId: string, endpointId: string, statusC
 		delayMs: 0,
 		stream: false,
 		enabled: true,
-		documentation: '',
+		documentation,
 	});
 	return response.data.data;
 };

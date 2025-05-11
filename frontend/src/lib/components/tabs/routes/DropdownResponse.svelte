@@ -37,7 +37,8 @@
 					selectedEndpoint.id,
 					statusCode,
 					body,
-					headers
+					headers,
+					"",
 				);
 				
 				// Update the endpoint responses array
