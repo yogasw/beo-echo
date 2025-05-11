@@ -105,24 +105,27 @@
 		<div class="space-y-4 pr-2 py-2">
 			{#each filteredEndpoints as endpoint}
 				<div
-					class="flex items-center justify-between bg-gray-700 p-4 rounded cursor-pointer {selectedEndpoint ===
+					class="flex items-center justify-between bg-gray-700 p-4 rounded cursor-pointer relative group {selectedEndpoint ===
 					endpoint
 						? 'border-2 border-blue-500'
-						: ''}"
+						: ''} {!endpoint.enabled ? 'disabled-endpoint' : ''}"
 					on:click={() => selectRoute(endpoint)}
 					on:keydown={(e) => e.key === 'Enter' && selectRoute(endpoint)}
 					tabindex="0"
 					role="button"
 				>
+					{#if !endpoint.enabled}
+						<div class="absolute left-0 top-0 bottom-0 w-1 bg-red-500"></div>
+					{/if}
 					<span class="text-sm font-bold truncate">
 						<strong>{endpoint.method}</strong>
 						{endpoint.path.length > 30 ? endpoint.path.slice(0, 30) + '...' : endpoint.path}
 					</span>
 					
-					<!-- Three-dot menu button -->
-					<div class="relative">
+					<!-- Three-dot menu button only shown on hover -->
+					<div class="relative menu-container">
 						<button
-							class="text-white h-8 w-8 flex items-center justify-center rounded hover:bg-gray-600 focus:outline-none"
+							class="text-white h-8 w-8 flex items-center justify-center rounded hover:bg-gray-600 focus:outline-none opacity-0 group-hover:opacity-100 hover:opacity-100"
 							on:click|stopPropagation={(e) => toggleMenu(e, endpoint.id)}
 							aria-label="Options menu"
 						>
