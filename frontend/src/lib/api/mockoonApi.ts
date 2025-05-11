@@ -145,7 +145,7 @@ export const addEndpoint = async (projectId: string, method: string, path: strin
 		method,
 		path,
 		enabled: true,
-		responseMode: 'static',
+		response_mode: 'random',
 	});
 	return response.data.data;
 };

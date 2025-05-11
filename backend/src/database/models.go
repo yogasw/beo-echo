@@ -83,11 +83,11 @@ func (pt *ProxyTarget) BeforeCreate(tx *gorm.DB) error {
 type MockEndpoint struct {
 	ID            string         `gorm:"type:string;primaryKey" json:"id"`
 	ProjectID     string         `gorm:"type:string" json:"project_id"`
-	Method        string         `json:"method"`                         // GET, POST, PUT, DELETE, etc
-	Path          string         `json:"path"`                           // Example: "/users/:id"
-	Enabled       bool           `json:"enabled" gorm:"default:true"`    // Whether endpoint is active or not
-	ResponseMode  string         `json:"response_mode"`                  // "static", "random", "round_robin"
-	Documentation string         `gorm:"type:text" json:"documentation"` // Documentation URL or text
+	Method        string         `json:"method"`                                // GET, POST, PUT, DELETE, etc
+	Path          string         `json:"path"`                                  // Example: "/users/:id"
+	Enabled       bool           `json:"enabled" gorm:"default:true"`           // Whether endpoint is active or not
+	ResponseMode  string         `json:"response_mode" gorm:"default:'random'"` // "static", "random", "round_robin"
+	Documentation string         `gorm:"type:text" json:"documentation"`        // Documentation URL or text
 	Responses     []MockResponse `gorm:"foreignKey:EndpointID;constraint:OnDelete:CASCADE;" json:"responses"`
 	CreatedAt     time.Time      `gorm:"autoCreateTime" json:"created_at"`
 	UpdatedAt     time.Time      `gorm:"autoUpdateTime" json:"updated_at"`

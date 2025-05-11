@@ -87,7 +87,29 @@ func CreateEndpointHandler(c *gin.Context) {
 
 	// Default values
 	if endpoint.ResponseMode == "" {
-		endpoint.ResponseMode = "static"
+		endpoint.ResponseMode = "random"
+	}
+
+	// validation alredy added or not when creating the project response error
+
+	check := database.GetDB().
+		Where("project_id = ? AND path = ?", projectId, endpoint.Path).
+		Where("method = ?", endpoint.Method).
+		First(&database.MockEndpoint{})
+	if check.Error != nil {
+		if !strings.Contains(check.Error.Error(), "record not found") {
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"error":   true,
+				"message": "Failed to check existing endpoint: " + check.Error.Error(),
+			})
+			return
+		}
+	} else {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error":   true,
+			"message": "Endpoint already exists for this project",
+		})
+		return
 	}
 
 	// Create endpoint

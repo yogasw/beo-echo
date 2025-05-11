@@ -139,8 +139,8 @@ func selectResponse(responses []database.MockResponse, mode string, req *http.Re
 		// For now, return first
 		return validResponses[0]
 	default:
-		// Default to static
-		return validResponses[0]
+		// Default to random
+		return validResponses[rand.Intn(len(validResponses))]
 	}
 }
 
