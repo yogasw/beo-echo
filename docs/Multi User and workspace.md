@@ -36,8 +36,7 @@ curl -X POST "http://localhost:3600/mock/api/auth/register" \
   "user": {
     "id": "user-id-uuid",
     "email": "john@example.com",
-    "name": "John Doe",
-    "is_owner": false
+    "name": "John Doe"
   }
 }
 ```
@@ -407,7 +406,6 @@ On first startup, the system creates:
   "user_id": "user-uuid",
   "email": "user@example.com",
   "name": "User Name",
-  "is_owner": false,
   "exp": 1715443200,
   "iat": 1715356800,
   "nbf": 1715356800

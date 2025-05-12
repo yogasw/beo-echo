@@ -36,8 +36,19 @@ func CreateProjectWithWorkspaceHandler(c *gin.Context) {
 	}
 
 	// Check if user is system admin or workspace admin
-	isOwner, ownerExists := c.Get("isOwner")
-	isAllowed := ownerExists && isOwner == true
+	userIDStr, ok := userID.(string)
+	if !ok {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error":   true,
+			"message": "Invalid user ID format",
+		})
+		return
+	}
+
+	// Directly query database to check if user is an owner
+	var user database.User
+	err := database.GetDB().Where("id = ?", userIDStr).First(&user).Error
+	isAllowed := err == nil && user.IsOwner
 
 	if !isAllowed {
 		// Check if user is workspace admin

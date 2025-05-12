@@ -133,8 +133,21 @@ func GetWorkspaceProjectsHandler(c *gin.Context) {
 	}
 
 	// Check if user is a system admin (can access all workspaces)
-	isOwner, ownerExists := c.Get("isOwner")
-	if !(ownerExists && isOwner == true) {
+	userIDStr, ok := userID.(string)
+	if !ok {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"success": false,
+			"message": "Invalid user ID format",
+		})
+		return
+	}
+
+	// Directly query database to check if user is an owner
+	var user database.User
+	err := database.DB.Where("id = ?", userIDStr).First(&user).Error
+	isSystemOwner := err == nil && user.IsOwner
+
+	if !isSystemOwner {
 		// Check if the user is a member of this workspace
 		var userWorkspace database.UserWorkspace
 		err := database.DB.Where("user_id = ? AND workspace_id = ?", userID, workspaceID).First(&userWorkspace).Error
@@ -208,8 +221,14 @@ func CheckWorkspaceRoleHandler(c *gin.Context) {
 		}
 
 		// Check if the authenticated user is a system admin or workspace admin
-		isOwner, ownerExists := c.Get("isOwner")
-		if !(ownerExists && isOwner == true) {
+		authenticatedUserID := userIDValue.(string)
+
+		// Directly query database to check if user is an owner
+		var user database.User
+		err := database.DB.Where("id = ?", authenticatedUserID).First(&user).Error
+		isSystemOwner := err == nil && user.IsOwner
+
+		if !isSystemOwner {
 			// Not a system admin, check if workspace admin
 			isAdmin, err := database.IsUserWorkspaceAdmin(userIDValue.(string), workspaceID)
 			if err != nil || !isAdmin {

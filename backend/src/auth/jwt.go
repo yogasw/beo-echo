@@ -13,10 +13,9 @@ import (
 
 // JWTClaims represents the claims in the JWT
 type JWTClaims struct {
-	UserID  string `json:"user_id"`
-	Email   string `json:"email"`
-	Name    string `json:"name"`
-	IsOwner bool   `json:"is_owner"`
+	UserID string `json:"user_id"`
+	Email  string `json:"email"`
+	Name   string `json:"name"`
 	jwt.RegisteredClaims
 }
 
@@ -34,10 +33,9 @@ func init() {
 func GenerateToken(user *database.User) (string, error) {
 	// Create the claims
 	claims := JWTClaims{
-		UserID:  user.ID,
-		Email:   user.Email,
-		Name:    user.Name,
-		IsOwner: user.IsOwner,
+		UserID: user.ID,
+		Email:  user.Email,
+		Name:   user.Name,
 		RegisteredClaims: jwt.RegisteredClaims{
 			// Token expires in 24 hours
 			ExpiresAt: jwt.NewNumericDate(time.Now().Add(24 * time.Hour)),

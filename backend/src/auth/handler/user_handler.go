@@ -66,8 +66,21 @@ func GetWorkspaceHandler(c *gin.Context) {
 	}
 
 	// Check if user is a system admin (can access all workspaces)
-	isOwner, ownerExists := c.Get("isOwner")
-	if !(ownerExists && isOwner == true) {
+	// Query the database directly to check if the user is an owner
+	var user database.User
+	userIDStr, ok := userID.(string)
+	if !ok {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"success": false,
+			"message": "Invalid user ID format",
+		})
+		return
+	}
+
+	err := database.DB.Where("id = ?", userIDStr).First(&user).Error
+	isSystemOwner := err == nil && user.IsOwner
+
+	if !isSystemOwner {
 		// Check if the user is a member of this workspace
 		var userWorkspace database.UserWorkspace
 		err := database.DB.Where("user_id = ? AND workspace_id = ?", userID, workspaceID).First(&userWorkspace).Error

@@ -53,7 +53,14 @@ func JWTAuthMiddleware() gin.HandlerFunc {
 		c.Set("userID", claims.UserID)
 		c.Set("email", claims.Email)
 		c.Set("name", claims.Name)
-		c.Set("isOwner", claims.IsOwner)
+
+		// Get user from database to check if they're an owner
+		var user database.User
+		if err := database.DB.Where("id = ?", claims.UserID).First(&user).Error; err == nil {
+			c.Set("isOwner", user.IsOwner)
+		} else {
+			c.Set("isOwner", false)
+		}
 
 		c.Next()
 	}
@@ -62,8 +69,20 @@ func JWTAuthMiddleware() gin.HandlerFunc {
 // AdminRoleMiddleware verifies that the authenticated user is a system owner
 func AdminRoleMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		isOwner, exists := c.Get("isOwner")
-		if !exists || isOwner != true {
+		// Get user ID from context
+		userID, exists := c.Get("userID")
+		if !exists {
+			c.JSON(http.StatusUnauthorized, gin.H{
+				"success": false,
+				"message": "User not authenticated",
+			})
+			c.Abort()
+			return
+		}
+
+		// Directly query database to check if user is an owner
+		var user database.User
+		if err := database.DB.Where("id = ?", userID).First(&user).Error; err != nil || !user.IsOwner {
 			c.JSON(http.StatusForbidden, gin.H{
 				"success": false,
 				"message": "Access denied: Admin role required",
@@ -72,6 +91,8 @@ func AdminRoleMiddleware() gin.HandlerFunc {
 			return
 		}
 
+		// Set the isOwner flag in the context for downstream handlers
+		c.Set("isOwner", true)
 		c.Next()
 	}
 }
@@ -102,9 +123,21 @@ func WorkspaceAdminCheck() gin.HandlerFunc {
 		}
 
 		// Check if user is a system-wide admin (can access all workspaces)
-		isOwner, ownerExists := c.Get("isOwner")
-		if ownerExists && isOwner == true {
+		userIDStr, ok := userID.(string)
+		if !ok {
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"success": false,
+				"message": "Invalid user ID format",
+			})
+			c.Abort()
+			return
+		}
+
+		// Directly query database to check if user is an owner
+		var user database.User
+		if err := database.DB.Where("id = ?", userIDStr).First(&user).Error; err == nil && user.IsOwner {
 			// System owners can access all workspaces
+			c.Set("isOwner", true)
 			c.Next()
 			return
 		}

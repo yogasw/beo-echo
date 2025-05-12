@@ -46,43 +46,76 @@ function parseJwt(token: string) {
 export const auth = {
   // Initialize authentication state from token (if exists)
   initialize: async () => {
-    authStore.update(state => {
-      if (state.token) {
-        // Parse token to get user details
-        const payload = parseJwt(state.token);
-        if (payload) {
-          // Check if token is expired
-          const expiryDate = new Date(payload.exp * 1000);
-          const now = new Date();
+    authStore.update(state => ({ ...state, isLoading: true }));
+    
+    const currentState = { ...initialState };
+    authStore.subscribe(state => {
+      currentState.token = state.token;
+    })();
+    
+    if (currentState.token) {
+      // Parse token to get basic user details and check expiration
+      const payload = parseJwt(currentState.token);
+      if (payload) {
+        // Check if token is expired
+        const expiryDate = new Date(payload.exp * 1000);
+        const now = new Date();
+        
+        if (expiryDate > now) {
+          // Token is still valid, get initial basic user info
+          const basicUser: User = {
+            id: payload.user_id,
+            email: payload.email,
+            name: payload.name,
+            isOwner: false // Will be updated from API
+          };
           
-          if (expiryDate > now) {
-            // Token is still valid
-            const user: User = {
-              id: payload.user_id,
-              email: payload.email,
-              name: payload.name,
-              isOwner: payload.is_owner
-            };
-            
-            return {
-              ...state,
-              user,
-              isAuthenticated: true
-            };
-          } else {
-            // Token expired, remove it
-            if (browser) {
-              localStorage.removeItem('auth_token');
-            }
-            return {
-              ...initialState,
-              token: null
-            };
+          // Update with basic info first
+          authStore.update(state => ({
+            ...state,
+            user: basicUser,
+            isAuthenticated: true,
+            isLoading: true
+          }));
+          
+          // Then fetch complete profile including owner status
+          try {
+            import('$lib/api/userAPI').then(async ({ fetchUserProfile }) => {
+              try {
+                const fullUser = await fetchUserProfile(currentState.token!);
+                
+                authStore.update(state => ({
+                  ...state,
+                  user: fullUser,
+                  isLoading: false
+                }));
+              } catch (error) {
+                console.error('Failed to fetch user profile:', error);
+                authStore.update(state => ({ ...state, isLoading: false }));
+              }
+            });
+          } catch (error) {
+            console.error('Failed to import userAPI:', error);
+            authStore.update(state => ({ ...state, isLoading: false }));
           }
+        } else {
+          // Token expired, remove it
+          if (browser) {
+            localStorage.removeItem('auth_token');
+          }
+          authStore.update(state => ({
+            ...initialState,
+            token: null,
+            isLoading: false
+          }));
         }
+      } else {
+        authStore.update(state => ({ ...state, isLoading: false }));
       }
-      return state;
-    });
+    } else {
+      authStore.update(state => ({ ...state, isLoading: false }));
+    }
+  },
   },
 
   // Login

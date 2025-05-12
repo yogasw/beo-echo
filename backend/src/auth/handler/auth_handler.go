@@ -77,10 +77,9 @@ func LoginHandler(c *gin.Context) {
 		"message": "Login successful",
 		"token":   token,
 		"user": gin.H{
-			"id":       user.ID,
-			"email":    user.Email,
-			"name":     user.Name,
-			"is_owner": user.IsOwner,
+			"id":    user.ID,
+			"email": user.Email,
+			"name":  user.Name,
 		},
 	})
 }
@@ -189,10 +188,9 @@ func RegisterHandler(c *gin.Context) {
 		"message": "Registration successful",
 		"token":   token,
 		"user": gin.H{
-			"id":       user.ID,
-			"email":    user.Email,
-			"name":     user.Name,
-			"is_owner": user.IsOwner,
+			"id":    user.ID,
+			"email": user.Email,
+			"name":  user.Name,
 		},
 	})
 }

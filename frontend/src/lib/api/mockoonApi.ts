@@ -342,3 +342,25 @@ export const createLogStream = (projectId: string, limit: number = 100): EventSo
 	
 	return eventSource;
 };
+
+/**
+ * Fetches the current user's details, including the owner status which is no longer in the JWT
+ */
+export async function fetchCurrentUserDetails() {
+  try {
+    const authToken = getLocalStorage('auth_token');
+    const response = await axios.get('/api/v1/auth/me', {
+      headers: {
+        Authorization: `Bearer ${authToken}`
+      }
+    });
+    
+    if (response.data.success && response.data.user) {
+      return response.data.user;
+    }
+    return null;
+  } catch (error) {
+    console.error('Error fetching user details:', error);
+    return null;
+  }
+}

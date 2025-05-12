@@ -50,8 +50,19 @@ func WorkspaceProjectAccessMiddleware() gin.HandlerFunc {
 		}
 
 		// Check if user is a system owner (can access all projects)
-		isOwner, ownerExists := c.Get("isOwner")
-		if ownerExists && isOwner == true {
+		userIDStr, ok := userID.(string)
+		if !ok {
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"error":   true,
+				"message": "Invalid user ID format",
+			})
+			c.Abort()
+			return
+		}
+
+		// Directly query database to check if user is an owner
+		var user database.User
+		if err := database.GetDB().Where("id = ?", userIDStr).First(&user).Error; err == nil && user.IsOwner {
 			// System owners can access all projects but we still need to check if project exists
 			// and belongs to the specified workspace
 			var project database.Project

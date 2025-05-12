@@ -27,12 +27,24 @@ func ListProjectsHandler(c *gin.Context) {
 	}
 
 	// Check if user is a system owner (can see all projects)
-	isOwner, ownerExists := c.Get("isOwner")
+	userIDStr, ok := userID.(string)
+	if !ok {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error":   true,
+			"message": "Invalid user ID format",
+		})
+		return
+	}
+
+	// Directly query database to check if user is an owner
+	var user database.User
+	err := database.GetDB().Where("id = ?", userIDStr).First(&user).Error
+	isSystemOwner := err == nil && user.IsOwner
 
 	var projects []database.Project
 	var result error
 
-	if ownerExists && isOwner == true {
+	if isSystemOwner {
 		// System owners can see all projects
 		result = database.GetDB().Find(&projects).Error
 	} else {
