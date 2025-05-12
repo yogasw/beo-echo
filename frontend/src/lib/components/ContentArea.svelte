@@ -8,6 +8,7 @@
 	import { activeTab } from '$lib/stores/activeTab';
 	import { toast } from '$lib/stores/toast';
 	import * as ThemeUtils from '$lib/utils/themeUtils';
+	import { currentWorkspace } from '$lib/stores/workspace';
 
 	export let endpoints: Endpoint[] = [];
 	export let activeContentTab = 'Status & Body';
@@ -22,7 +23,7 @@
 		loading = true;
 		try {
 			// Download config using the configFile name
-			const response = await getProjectDetail($selectedProject.id);
+			const response = await getProjectDetail($currentWorkspace.id, $selectedProject.id);
 
 			// Parse routes from config
 			endpoints = response.endpoints;

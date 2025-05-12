@@ -7,6 +7,7 @@
 	import * as ThemeUtils from '$lib/utils/themeUtils';
 	import { theme } from '$lib/stores/theme';
 	import ThemeToggle from '$lib/components/ThemeToggle.svelte';
+	import { currentWorkspace } from '$lib/stores/workspace';
 
 	export let selectedEndpoint: Endpoint | null;
 	export let activeConfigName: string;
@@ -41,9 +42,14 @@
 		switch (action) {
 			case 'enable':
 			case 'disable':
+				if (!$currentWorkspace) {
+					toast.error('No workspace selected');
+					return;
+				}
+				
 				endpoint.enabled = action === 'enable';
 				handleRouteStatusChange(endpoint);
-				updateEndpoint(endpoint.project_id, endpoint.id, {
+				updateEndpoint($currentWorkspace.id, endpoint.project_id, endpoint.id, {
 					enabled: endpoint.enabled
 				})
 					.then(() => {

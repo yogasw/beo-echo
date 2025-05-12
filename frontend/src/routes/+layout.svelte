@@ -1,11 +1,14 @@
 <script lang="ts">
+// Import necessary modules and components
 	import '../app.css';
+	import { workspaces, allWorkspaces, currentWorkspace } from '$lib/stores/workspace';
+
 	import { page } from '$app/stores';
 	import { goto } from '$app/navigation';
 	import ConfigurationList from '$lib/components/ConfigurationList.svelte';
 	import Header from '$lib/components/Header.svelte';
-	import { isOwnAuth, removeLocalStorage } from '$lib/utils/localStorage';
-	import { getProjects } from '$lib/api/mockoonApi';
+	import { getCurrentWorkspaceId, isOwnAuth, removeLocalStorage, setCurrentWorkspaceId } from '$lib/utils/localStorage';
+	import { getProjects, getWorkspaces } from '$lib/api/mockoonApi';
 	import { onMount } from 'svelte';
 	import { projects } from '$lib/stores/configurations';
 	import Toast from '$lib/components/Toast.svelte';
@@ -29,32 +32,75 @@
 	// Check authentication from localStorage
 	$: isLoginPage = $page.url.pathname === '/login';
 
-	async function fetchConfigs() {
+	async function fetchConfigs(workspaceId: string) {
 		try {
-			await getProjects().then(d => {
-				projects.set(d);
-			});
+			const projectsData = await getProjects(workspaceId);
+			projects.set(projectsData);
 		} catch (err) {
-			console.error('Failed to fetch configs:', err);
+			console.error('Failed to fetch projects:', err);
+		}
+	}
+	
+	async function fetchWorkspaces() {
+		try {
+			const workspacesData = await getWorkspaces();
+			workspaces.loadAll();
+			
+			// Get current workspace from localStorage or use the first one
+			const currentWorkspaceId = getCurrentWorkspaceId();
+			
+			// If we have workspaces but no current one is selected, use the first one
+			if (workspacesData.length > 0) {
+				if (!currentWorkspaceId) {
+					// Set the first workspace as current
+					setCurrentWorkspaceId(workspacesData[0].id);
+					workspaces.setCurrent(workspacesData[0].id);
+					return workspacesData[0].id;
+				} else {
+					// Verify the stored ID exists in our workspaces
+					const exists = workspacesData.some(w => w.id === currentWorkspaceId);
+					if (exists) {
+						workspaces.setCurrent(currentWorkspaceId);
+						return currentWorkspaceId;
+					} else {
+						// If stored ID doesn't exist, use first workspace
+						setCurrentWorkspaceId(workspacesData[0].id);
+						workspaces.setCurrent(workspacesData[0].id);
+						return workspacesData[0].id;
+					}
+				}
+			}
+			return null;
+		} catch (err) {
+			console.error('Failed to fetch workspaces:', err);
+			return null;
 		}
 	}
 
 	onMount(async () => {
 		console.log("onMount: layout");
 		if (isOwnAuth() && !$isAuthenticated && !isLoginPage) {
-			await getProjects().then(async d => {
-				isAuthenticated.set(true)
+			try {
+				// First check authentication by getting workspaces
+				await getWorkspaces();
+				isAuthenticated.set(true);
 				await goto('/home');
-			}).catch(async e => {
-				console.error('Failed to fetch configs:', e);
-				isAuthenticated.set(false)
+			} catch (e) {
+				console.error('Failed to authenticate:', e);
+				isAuthenticated.set(false);
 				await goto('/login');
-			})
+			}
 		}
 
 		async function initialize() {
 			if ($isAuthenticated) {
-				await fetchConfigs();
+				// First fetch workspaces and get current workspace ID
+				const currentWorkspaceId = await fetchWorkspaces();
+				
+				// If we have a valid workspace ID, fetch projects for that workspace
+				if (currentWorkspaceId) {
+					await fetchConfigs(currentWorkspaceId);
+				}
 			}
 			return () => {};
 		}
@@ -93,6 +139,7 @@
 		isAuthenticated.set(false);
 		removeLocalStorage('username');
 		removeLocalStorage('password');
+		removeLocalStorage('currentWorkspaceId');
 		goto("/login")
 	}
 </script>

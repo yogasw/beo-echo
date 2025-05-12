@@ -36,6 +36,7 @@ export function removeLocalStorage(key: string) {
 export function removeAuthLocalStorage() {
 	removeLocalStorage('username');
 	removeLocalStorage('password');
+	removeLocalStorage('currentWorkspaceId');
 	isAuthenticated.set(false);
 }
 
@@ -46,4 +47,12 @@ export function isOwnAuth() {
 		return true;
 	}
 	return false;
+}
+
+export function getCurrentWorkspaceId(): string | null {
+	return getLocalStorage('currentWorkspaceId');
+}
+
+export function setCurrentWorkspaceId(id: string) {
+	setLocalStorage('currentWorkspaceId', id);
 }

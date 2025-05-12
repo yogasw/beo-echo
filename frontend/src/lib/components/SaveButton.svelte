@@ -2,11 +2,18 @@
 	import { showSaveButton, saveInprogress, saveButtonHandler, getEndpointsUpdateList, resetEndpointsList } from '$lib/stores/saveButton';
 	import { toast } from '$lib/stores/toast';
 	import { updateEndpoint as apiUpdateEndpoint, updateResponse as apiUpdateResponse } from '$lib/api/mockoonApi';
+	import { currentWorkspace } from '$lib/stores/workspace';
 
 	async function handleSave() {
 		saveInprogress.set(true);
 		const updatesList = getEndpointsUpdateList();
 		
+		if (!$currentWorkspace) {
+			toast.error('No workspace selected');
+			saveInprogress.set(false);
+			return;
+		}
+
 		try {
 			// Process each update (endpoint or response)
 			for (const update of updatesList) {
@@ -36,6 +43,7 @@
 				if (isResponseUpdate) {
 					// Call the API to update the response
 					await apiUpdateResponse(
+						$currentWorkspace.id,
 						update.projectId, 
 						update.endpointId, 
 						(update as any).responseId, 
@@ -43,7 +51,7 @@
 					);
 				} else {
 					// Call the API to update the endpoint
-					await apiUpdateEndpoint(update.projectId, update.endpointId, apiData);
+					await apiUpdateEndpoint($currentWorkspace.id, update.projectId, update.endpointId, apiData);
 				}
 			}
 			

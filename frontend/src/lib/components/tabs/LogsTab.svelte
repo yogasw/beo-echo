@@ -4,6 +4,7 @@
 	import { fade } from 'svelte/transition';
 	import ModalCreateMock from './logs/ModalCreateMock.svelte';
 	import * as ThemeUtils from '$lib/utils/themeUtils';
+	import { currentWorkspace } from '$lib/stores/workspace';
 
 	export let selectedProject: Project;
 
@@ -122,8 +123,12 @@
 
 	async function loadInitialLogs() {
 		try {
+			if (!$currentWorkspace) {
+				throw new Error('No workspace selected');
+			}
+			
 			isLoading = true;
-			const result = await getLogs(1, pageSize, selectedProject.id);
+			const result = await getLogs(1, pageSize, $currentWorkspace.id, selectedProject.id);
 			logs = result.logs;
 			total = result.total;
 			isLoading = false;
@@ -140,10 +145,15 @@
 			eventSource.close();
 		}
 
-		console.log('Setting up log stream for project:', selectedProject.id);
+		if (!$currentWorkspace) {
+			console.error('Cannot setup log stream: No workspace selected');
+			return;
+		}
+
+		console.log('Setting up log stream for project:', selectedProject.id, 'in workspace:', $currentWorkspace.id);
 
 		// Create new connection
-		eventSource = createLogStream(selectedProject.id, pageSize);
+		eventSource = createLogStream($currentWorkspace.id, selectedProject.id, pageSize);
 
 		// Setup event handlers
 		eventSource.addEventListener('log', (event) => {

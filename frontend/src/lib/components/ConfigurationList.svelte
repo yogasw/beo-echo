@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { createEventDispatcher } from 'svelte';
+	import { createEventDispatcher, onMount } from 'svelte';
 	import {
 		getProjects,
 		uploadConfig,
@@ -14,6 +14,7 @@
 	import { toast } from '$lib/stores/toast';
 	import { resetEndpointsList } from '$lib/stores/saveButton';
 	import * as ThemeUtils from '$lib/utils/themeUtils';
+	import { currentWorkspace } from '$lib/stores/workspace';
 
 	interface Config {
 		uuid: string;
@@ -142,11 +143,16 @@
 			return;
 		}
 
+		if (!$currentWorkspace) {
+			toast.error('No workspace selected');
+			return;
+		}
+
 		isAddingProject = true;
 		try {
-			await addProject(projectName.trim(), projectAlias.trim());
+			await addProject($currentWorkspace.id, projectName.trim(), projectAlias.trim());
 			// Refresh project list
-			projects.set(await getProjects());
+			projects.set(await getProjects($currentWorkspace.id));
 			toast.success('Project created successfully');
 			closeAddProjectModal();
 		} catch (err) {
@@ -158,10 +164,14 @@
 
 	async function handleUpdateStatus(project: Project, newStatus: string) {
 		if (updatingStatus === project.id) return; // Prevent double clicks
+		if (!$currentWorkspace) {
+			toast.error('No workspace selected');
+			return;
+		}
 		
 		updatingStatus = project.id;
 		try {
-			await updateProjectStatus(project.id, newStatus);
+			await updateProjectStatus($currentWorkspace.id, project.id, newStatus);
 			// Update local project status
 			$projects = $projects.map(p => 
 				p.id === project.id ? { ...p, status: newStatus } : p
@@ -178,6 +188,21 @@
 			console.error('Error updating project status:', err);
 		} finally {
 			updatingStatus = null;
+		}
+	}
+
+	// Refresh projects when current workspace changes
+	$: if ($currentWorkspace) {
+		refreshProjects($currentWorkspace.id);
+	}
+
+	async function refreshProjects(workspaceId: string) {
+		try {
+			const projectsData = await getProjects(workspaceId);
+			projects.set(projectsData);
+		} catch (err) {
+			console.error('Failed to fetch projects for workspace:', workspaceId, err);
+			toast.error('Failed to load projects');
 		}
 	}
 </script>

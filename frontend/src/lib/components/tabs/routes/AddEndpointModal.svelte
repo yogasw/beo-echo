@@ -2,6 +2,7 @@
   import { createEventDispatcher } from 'svelte';
   import type { Project } from '$lib/api/mockoonApi';
   import { addEndpoint } from '$lib/api/mockoonApi';
+  import { currentWorkspace } from '$lib/stores/workspace';
 
   export let isOpen = false;
   export let project: Project;
@@ -27,12 +28,17 @@
       path = '/' + path;
     }
 
+    if (!$currentWorkspace) {
+      error = 'No workspace selected';
+      return;
+    }
+
     isLoading = true;
     error = '';
 
     try {
-      console.log('Creating endpoint:', { projectId: project.id, method, path });
-      const newEndpoint = await addEndpoint(project.id, method, path);
+      console.log('Creating endpoint:', { workspaceId: $currentWorkspace.id, projectId: project.id, method, path });
+      const newEndpoint = await addEndpoint($currentWorkspace.id, project.id, method, path);
       console.log('Endpoint created:', newEndpoint);
       
       // Create event with the new endpoint

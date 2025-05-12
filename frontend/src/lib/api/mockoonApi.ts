@@ -132,41 +132,51 @@ export const getMockStatus = async (): Promise<ConfigResponse[]> => {
 	return response.data.data;
 };
 
-export const getProjects = async (): Promise<Project[]> => {
-	const response = await api.get('/projects');
+export const getWorkspaces = async (): Promise<any[]> => {
+	const response = await api.get('/workspaces');
 	return response.data.data;
 };
 
-export const deleteProject = async (projectId: string): Promise<any> => {
-	const response = await api.delete(`/projects/${projectId}`);
+export const getProjects = async (workspaceId?: string): Promise<Project[]> => {
+	// If no workspaceId provided, this will fail with the new API structure
+	if (!workspaceId) {
+		console.error('No workspace ID provided for getProjects');
+		return [];
+	}
+	const response = await api.get(`/workspaces/${workspaceId}/projects`);
+	return response.data.data;
+};
+
+export const deleteProject = async (workspaceId: string, projectId: string): Promise<any> => {
+	const response = await api.delete(`/workspaces/${workspaceId}/projects/${projectId}`);
 	return response.data;
 };
-export const deleteEndpoint = async (projectId: string, endpointId: string): Promise<any> => {
-	const response = await api.delete(`/projects/${projectId}/endpoints/${endpointId}`);
+export const deleteEndpoint = async (workspaceId: string, projectId: string, endpointId: string): Promise<any> => {
+	const response = await api.delete(`/workspaces/${workspaceId}/projects/${projectId}/endpoints/${endpointId}`);
 	return response.data;
 }
-export const deleteResponse = async (projectId: string, endpointId: string, responseId: string): Promise<any> => {
-	const response = await api.delete(`/projects/${projectId}/endpoints/${endpointId}/responses/${responseId}`);
+export const deleteResponse = async (workspaceId: string, projectId: string, endpointId: string, responseId: string): Promise<any> => {
+	const response = await api.delete(`/workspaces/${workspaceId}/projects/${projectId}/endpoints/${endpointId}/responses/${responseId}`);
 	return response.data;
 }
 
-export const updateProjectStatus = async (projectId: string, status: string): Promise<Project> => {
-	const response = await api.put(`/projects/${projectId}`, {
+export const updateProjectStatus = async (workspaceId: string, projectId: string, status: string): Promise<Project> => {
+	const response = await api.put(`/workspaces/${workspaceId}/projects/${projectId}`, {
 		status: status
 	});
 	return response.data.data;
 };
 
-export const addProject = async (name: string, alias: string): Promise<Project> => {
-	const response = await api.post('/projects', {
+export const addProject = async (workspaceId: string, name: string, alias: string): Promise<Project> => {
+	const response = await api.post(`/workspaces/${workspaceId}/projects`, {
 		name,
 		alias
 	});
 	return response.data.data;
 };
 
-export const addEndpoint = async (projectId: string, method: string, path: string): Promise<Endpoint> => {
-	const response = await api.post(`/projects/${projectId}/endpoints`, {
+export const addEndpoint = async (workspaceId: string, projectId: string, method: string, path: string): Promise<Endpoint> => {
+	const response = await api.post(`/workspaces/${workspaceId}/projects/${projectId}/endpoints`, {
 		method,
 		path,
 		enabled: true,
@@ -175,8 +185,8 @@ export const addEndpoint = async (projectId: string, method: string, path: strin
 	return response.data.data;
 };
 
-export const addResponse = async (projectId: string, endpointId: string, statusCode: number, body: string, headers: string, documentation: string): Promise<Response> => {
-	const response = await api.post(`/projects/${projectId}/endpoints/${endpointId}/responses`, {
+export const addResponse = async (workspaceId: string, projectId: string, endpointId: string, statusCode: number, body: string, headers: string, documentation: string): Promise<Response> => {
+	const response = await api.post(`/workspaces/${workspaceId}/projects/${projectId}/endpoints/${endpointId}/responses`, {
 		statusCode,
 		body,
 		headers,
@@ -202,8 +212,8 @@ export const downloadConfig = async (filename: string): Promise<any> => {
 	return await api.get(`/configs/${filename}/download`);
 };
 
-export const getProjectDetail = async (uuid: string): Promise<Project> => {
-	const response = await api.get(`/projects/${uuid}`);
+export const getProjectDetail = async (workspaceId?: string, projectId?: string): Promise<Project> => {
+	const response = await api.get(`/workspaces/${workspaceId}/projects/${projectId}`);
 	return response.data.data;
 }
 
@@ -308,13 +318,13 @@ export const updateResponse = async (projectId: string, endpointId: string, resp
 };
 
 // Get logs with pagination
-export const getLogs = async (page: number = 1, pageSize: number = 100, projectId: string): Promise<{ logs: RequestLog[], total: number }> => {
+export const getLogs = async (page: number = 1, pageSize: number = 100, workspaceId: string, projectId: string): Promise<{ logs: RequestLog[], total: number }> => {
 	const params: Record<string, string> = {
 		page: page.toString(),
 		pageSize: pageSize.toString()
 	};
 
-	const response = await api.get(`/projects/${projectId}/logs`, { params });
+	const response = await api.get(`/workspaces/${workspaceId}/projects/${projectId}/logs`, { params });
 	return {
 		logs: response.data.logs,
 		total: response.data.total
@@ -322,9 +332,9 @@ export const getLogs = async (page: number = 1, pageSize: number = 100, projectI
 };
 
 // Create an EventSource for real-time log streaming
-export const createLogStream = (projectId: string, limit: number = 100): EventSource => {
+export const createLogStream = (workspaceId: string, projectId: string, limit: number = 100): EventSource => {
 	let baseURL = `${import.meta.env.VITE_API_BASE_URL || 'http://localhost:3600/mock/api'}`;
-	let url = `${baseURL}/projects/${projectId}/logs/stream?limit=${limit}`;
+	let url = `${baseURL}/workspaces/${workspaceId}/projects/${projectId}/logs/stream?limit=${limit}`;
 
 	// Add authentication using JWT token
 	const token = auth.getToken();
