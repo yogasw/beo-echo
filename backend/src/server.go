@@ -127,10 +127,6 @@ func SetupRouter() *gin.Engine {
 				projectRoutes.GET("/logs/stream", handler.StreamLogsHandler)
 			}
 		}
-
-		// Legacy routes for backward compatibility
-		apiGroup.GET("/projects", project.ListProjectsHandler)
-		apiGroup.POST("/projects", project.CreateProjectHandler)
 	}
 
 	// Register the catch-all handler for mock API endpoints
