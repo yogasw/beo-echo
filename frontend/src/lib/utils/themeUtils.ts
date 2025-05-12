@@ -73,9 +73,9 @@ export function themeShadow(additionalClasses = '') {
 
 // Full component style helpers
 export function inputField(additionalClasses = '') {
-  return `block w-full p-3 ps-10 text-sm rounded-lg bg-gray-800 
-    border border-gray-700 text-white focus:ring-blue-500 
-    focus:border-blue-500 placeholder-gray-400 ${additionalClasses}`;
+  return `block w-full p-3 ps-10 text-sm rounded-lg ${themeBgSecondary()} 
+    border ${themeBorder()} ${themeTextPrimary()} focus:ring-blue-500 
+    focus:border-blue-500 placeholder-gray-500 dark:placeholder-gray-400 ${additionalClasses}`;
 }
 
 export function methodBadge(method = 'GET', additionalClasses = '') {

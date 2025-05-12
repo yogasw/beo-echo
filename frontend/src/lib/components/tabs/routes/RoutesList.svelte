@@ -93,14 +93,15 @@
 			<p class="text-sm theme-text-muted">API Endpoint Management</p>
 		</div>
 	</div>
-	<div class="flex items-center theme-bg-secondary p-2 rounded mb-2">
-		<i class="fas fa-search theme-text-primary text-lg mr-2"></i>
+	<div class="relative mb-6">
+		<div class="absolute inset-y-0 start-0 flex items-center ps-3 pointer-events-none">
+			<i class="fas fa-search theme-text-muted"></i>
+		</div>
 		<input
 			type="text"
-			id="route-search"
 			placeholder="Search Path or Method"
-			class={ThemeUtils.inputField('py-1 px-2 ps-2')}
 			bind:value={filterText}
+			class={ThemeUtils.inputField('p-3 ps-10 text-sm rounded-lg')}
 		/>
 	</div>
 
