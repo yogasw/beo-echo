@@ -1,11 +1,8 @@
 <script lang="ts">
 	import { activeTab } from '$lib/stores/activeTab';
-	import { downloadConfig } from '$lib/api/mockoonApi';
 	import { selectedProject } from '$lib/stores/selectedConfig';
-	import { syncStatus } from '$lib/stores/syncStatus';
 	import { toast } from '$lib/stores/toast';
 	import { theme, toggleTheme } from '$lib/stores/theme';
-	import * as ThemeUtils from '$lib/utils/themeUtils';
 	import Settings from '$lib/components/settings/Settings.svelte';
 	import SaveButton from './SaveButton.svelte';
 	import WorkspaceSelector from './WorkspaceSelector.svelte';
@@ -36,21 +33,6 @@
 			toast.error('Please select a configuration first');
 			return;
 		}
-
-		// try {
-		// 	const response = await downloadConfig($selectedProject.configFile);
-		// 	const blob = new Blob([JSON.stringify(response.data, null, 2)], { type: 'application/json' });
-		// 	const url = window.URL.createObjectURL(blob);
-		// 	const a = document.createElement('a');
-		// 	a.href = url;
-		// 	a.download = $selectedProject.configFile;
-		// 	document.body.appendChild(a);
-		// 	a.click();
-		// 	window.URL.revokeObjectURL(url);
-		// 	document.body.removeChild(a);
-		// } catch (err) {
-		// 	toast.error('Failed to download configuration');
-		// }
 	}
 </script>
 
@@ -59,7 +41,7 @@
 	<div class="mr-4">
 		<WorkspaceSelector className="theme-text-primary" />
 	</div>
-	
+
 	<button
 		class="relative group mr-4 flex flex-col items-center"
 		on:click={() => handleTabClick('routes')}
@@ -67,7 +49,8 @@
 		<div
 			class="w-12 aspect-square theme-text-primary p-3 rounded-full border-2 border-blue-500 flex items-center justify-center"
 			class:bg-blue-500={$activeTab === 'routes'}
-			class:theme-bg-secondary={$activeTab !== 'routes'}>
+			class:theme-bg-secondary={$activeTab !== 'routes'}
+		>
 			<i class="fas fa-route"></i>
 		</div>
 		<span class="text-xs mt-1 theme-text-primary">Routes</span>
@@ -79,7 +62,8 @@
 		<div
 			class="w-12 aspect-square theme-text-primary p-3 rounded-full border-2 border-yellow-500 flex items-center justify-center"
 			class:bg-blue-500={$activeTab === 'logs'}
-			class:theme-bg-secondary={$activeTab !== 'logs'}>
+			class:theme-bg-secondary={$activeTab !== 'logs'}
+		>
 			<i class="fas fa-file-alt"></i>
 		</div>
 		<span class="text-xs mt-1 theme-text-primary">Logs</span>
@@ -91,14 +75,17 @@
 		<div
 			class="w-12 aspect-square theme-text-primary p-3 rounded-full border-2 border-purple-500 flex items-center justify-center"
 			class:bg-blue-500={$activeTab === 'configuration'}
-			class:theme-bg-secondary={$activeTab !== 'configuration'}>
+			class:theme-bg-secondary={$activeTab !== 'configuration'}
+		>
 			<i class="fas fa-cogs"></i>
 		</div>
 		<span class="text-xs mt-1 theme-text-primary">Configuration</span>
 	</button>
 
 	<button class="relative group mr-4 flex flex-col items-center" on:click={handleDownload}>
-		<div class="w-12 aspect-square theme-bg-secondary theme-text-primary p-3 rounded-full border-2 border-blue-500 flex items-center justify-center">
+		<div
+			class="w-12 aspect-square theme-bg-secondary theme-text-primary p-3 rounded-full border-2 border-blue-500 flex items-center justify-center"
+		>
 			<i class="fas fa-download"></i>
 		</div>
 		<span class="text-xs mt-1 theme-text-primary">Download JSON</span>
@@ -106,21 +93,27 @@
 
 	<!-- Theme Toggle Button -->
 	<button class="relative group mr-4 flex flex-col items-center" on:click={toggleTheme}>
-		<div class="w-12 aspect-square theme-bg-secondary theme-text-primary p-3 rounded-full border-2 border-amber-500 flex items-center justify-center transition-all">
+		<div
+			class="w-12 aspect-square theme-bg-secondary theme-text-primary p-3 rounded-full border-2 border-amber-500 flex items-center justify-center transition-all"
+		>
 			{#if $theme === 'dark'}
 				<i class="fas fa-sun text-amber-400"></i>
 			{:else}
 				<i class="fas fa-moon text-indigo-600"></i>
 			{/if}
 		</div>
-		<span class="text-xs mt-1 theme-text-primary">{$theme === 'dark' ? 'Light Mode' : 'Dark Mode'}</span>
+		<span class="text-xs mt-1 theme-text-primary"
+			>{$theme === 'dark' ? 'Light Mode' : 'Dark Mode'}</span
+		>
 	</button>
 
 	<!-- Profile Button -->
 	<div class="relative group flex flex-col items-center">
 		<button
 			class="w-12 aspect-square theme-bg-secondary theme-text-primary p-3 rounded-full border-2 border-gray-500 flex items-center justify-center"
-			on:click={()=>{toggleProfileMenu()}}
+			on:click={() => {
+				toggleProfileMenu();
+			}}
 			aria-label="Open profile menu"
 		>
 			<i class="fas fa-user-circle"></i>
@@ -131,16 +124,10 @@
 			id="profileMenu"
 			class="absolute top-full right-0 theme-bg-secondary theme-text-primary rounded shadow-lg mt-2 hidden w-48"
 		>
-			<button
-				class="block w-full text-left px-4 py-2 theme-hover"
-				on:click={openSettingsModal}
-			>
+			<button class="block w-full text-left px-4 py-2 theme-hover" on:click={openSettingsModal}>
 				<i class="fas fa-cog mr-2"></i> Settings
 			</button>
-			<button
-				class="block w-full text-left px-4 py-2 theme-hover"
-				on:click={handleLogout}
-			>
+			<button class="block w-full text-left px-4 py-2 theme-hover" on:click={handleLogout}>
 				<i class="fas fa-sign-out-alt mr-2"></i> Logout
 			</button>
 		</div>
@@ -149,20 +136,19 @@
 
 <!-- Settings Modal -->
 <Settings />
-<SaveButton/>
+<SaveButton />
 
 <style>
+	.fa-spin {
+		animation: fa-spin 1s infinite linear;
+	}
 
-    .fa-spin {
-        animation: fa-spin 1s infinite linear;
-    }
-
-    @keyframes fa-spin {
-        0% {
-            transform: rotate(0deg);
-        }
-        100% {
-            transform: rotate(360deg);
-        }
-    }
+	@keyframes fa-spin {
+		0% {
+			transform: rotate(0deg);
+		}
+		100% {
+			transform: rotate(360deg);
+		}
+	}
 </style>

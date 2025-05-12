@@ -228,10 +228,6 @@ export const uploadConfig = async (formData: FormData): Promise<any> => {
 	return response.data.data;
 };
 
-export const downloadConfig = async (filename: string): Promise<any> => {
-	return await api.get(`/configs/${filename}/download`);
-};
-
 export const getProjectDetail = async (projectId: string): Promise<Project> => {
 	let workspaceId = getCurrentWorkspaceId();
 	const response = await api.get(`/workspaces/${workspaceId}/projects/${projectId}`);
