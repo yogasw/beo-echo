@@ -2,6 +2,7 @@ import { browser } from '$app/environment';
 import { writable, derived } from 'svelte/store';
 import { goto } from '$app/navigation';
 import type { User } from '$lib/types/User';
+import { BASE_URL_API } from '$lib/api/mockoonApi';
 
 // Types
 interface AuthState {
@@ -23,9 +24,6 @@ const initialState: AuthState = {
 
 // Create the store
 const authStore = writable<AuthState>(initialState);
-
-// API URL
-const API_URL = '/mock/api';
 
 // Derived store for checking if user is authenticated
 export const isAuthenticated = derived(authStore, $authStore => $authStore.isAuthenticated);
@@ -116,14 +114,13 @@ export const auth = {
       authStore.update(state => ({ ...state, isLoading: false }));
     }
   },
-  },
 
   // Login
   login: async (email: string, password: string) => {
     authStore.update(state => ({ ...state, isLoading: true, error: null }));
     
     try {
-      const response = await fetch(`${API_URL}/auth/login`, {
+      const response = await fetch(`${BASE_URL_API}/auth/login`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -152,7 +149,7 @@ export const auth = {
       }));
       
       return data.user;
-    } catch (error) {
+    } catch (error: any) {
       authStore.update(state => ({
         ...state,
         isLoading: false,
@@ -168,7 +165,7 @@ export const auth = {
     authStore.update(state => ({ ...state, isLoading: true, error: null }));
     
     try {
-      const response = await fetch(`${API_URL}/auth/register`, {
+      const response = await fetch(`${BASE_URL_API}/auth/register`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -197,7 +194,7 @@ export const auth = {
       }));
       
       return data.user;
-    } catch (error) {
+    } catch (error: any) {
       authStore.update(state => ({
         ...state,
         isLoading: false,

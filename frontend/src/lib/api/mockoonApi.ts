@@ -79,10 +79,10 @@ export type Response = {
 	updated_at: Date;
 }
 
-
+export const BASE_URL_API = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3600/mock/api'
 // Create axios instance with default config
 const api = axios.create({
-	baseURL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:3600/mock/api',
+	baseURL: BASE_URL_API,
 	headers: {
 		'Content-Type': 'application/json'
 	}

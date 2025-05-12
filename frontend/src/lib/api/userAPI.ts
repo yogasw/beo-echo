@@ -1,13 +1,11 @@
 // User API methods for retrieving user information
 import type { User } from '$lib/types/User';
-
-// API URL
-const API_URL = '/mock/api';
+import { BASE_URL_API } from './mockoonApi';
 
 // Fetch full user profile including ownership status
 export async function fetchUserProfile(token: string): Promise<User> {
   try {
-    const response = await fetch(`${API_URL}/auth/me`, {
+    const response = await fetch(`${BASE_URL_API}/auth/me`, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
