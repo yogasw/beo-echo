@@ -187,18 +187,18 @@ func CheckWorkspaceRoleHandler(c *gin.Context) {
 	requestedUserID := c.Query("user_id")
 	if requestedUserID == "" {
 		// If no specific user ID is provided, use the authenticated user's ID
-		var exists bool
-		requestedUserID, exists = c.Get("userID").(string)
-		if !exists {
+		userIDValue, exists := c.Get("userID")
+		if !exists || userIDValue == nil {
 			c.JSON(http.StatusUnauthorized, gin.H{
 				"success": false,
 				"message": "User not authenticated",
 			})
 			return
 		}
+		requestedUserID = userIDValue.(string)
 	} else {
 		// If checking another user's role, ensure the requesting user is an admin
-		userID, exists := c.Get("userID")
+		userIDValue, exists := c.Get("userID")
 		if !exists {
 			c.JSON(http.StatusUnauthorized, gin.H{
 				"success": false,
@@ -211,7 +211,7 @@ func CheckWorkspaceRoleHandler(c *gin.Context) {
 		isOwner, ownerExists := c.Get("isOwner")
 		if !(ownerExists && isOwner == true) {
 			// Not a system admin, check if workspace admin
-			isAdmin, err := database.IsUserWorkspaceAdmin(userID.(string), workspaceID)
+			isAdmin, err := database.IsUserWorkspaceAdmin(userIDValue.(string), workspaceID)
 			if err != nil || !isAdmin {
 				c.JSON(http.StatusForbidden, gin.H{
 					"success": false,
