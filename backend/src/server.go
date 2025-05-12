@@ -21,6 +21,9 @@ import (
 	"mockoon-control-panel/backend_new/src/mocks/handler/response"
 	"mockoon-control-panel/backend_new/src/traefik"
 	"mockoon-control-panel/backend_new/src/utils"
+
+	// New imports for auth and workspace management
+	authHandler "mockoon-control-panel/backend_new/src/auth/handler"
 )
 
 // SetupRouter creates and configures a new Gin router
@@ -73,61 +76,67 @@ func SetupRouter() *gin.Engine {
 	// Health check route
 	router.GET("/mock/api/health", health.HealthCheckHandler)
 
-	// Authentication route
-	router.POST("/mock/api/auth", func(c *gin.Context) {
-		var loginRequest struct {
-			Username string `json:"username"`
-			Password string `json:"password"`
-		}
+	// Authentication routes
+	router.POST("/mock/api/auth/login", authHandler.LoginHandler)
+	router.POST("/mock/api/auth/register", authHandler.RegisterHandler)
 
-		if err := c.ShouldBindJSON(&loginRequest); err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{
-				"success": false,
-				"message": "Invalid request",
-			})
-			return
-		}
-
-		if loginRequest.Username != "" && loginRequest.Password != "" {
-			c.JSON(http.StatusOK, gin.H{
-				"success": true,
-				"message": "Login successful",
-			})
-		} else {
-			c.JSON(http.StatusUnauthorized, gin.H{
-				"success": false,
-				"message": "Invalid credentials",
-			})
-		}
-	})
+	// User profile related routes
+	userRoutes := router.Group("/mock/api/user")
+	userRoutes.Use(middlewares.JWTAuthMiddleware())
+	{
+		// User profile routes can be added here if needed
+		// For example: userRoutes.GET("/profile", authHandler.GetUserProfileHandler)
+		// For now, workspaces are moved to the main API group
+	}
 
 	// Protected API routes group
 	apiGroup := router.Group("/mock/api")
-	// apiGroup.Use(middlewares.ApiKeyAuth())
+	apiGroup.Use(middlewares.JWTAuthMiddleware())
 	{
+		// General workspace-related routes
+		apiGroup.GET("/workspaces", authHandler.GetUserWorkspacesHandler)
+		apiGroup.POST("/workspaces", authHandler.CreateWorkspaceHandler)
+		apiGroup.GET("/workspaces/:workspaceID/role", authHandler.CheckWorkspaceRoleHandler)
+
+		// Workspace-project hierarchy routes (nested)
+		workspaceRoutes := apiGroup.Group("/workspaces/:workspaceID")
+		{
+			// Projects list and creation for a workspace
+			workspaceRoutes.GET("/projects", authHandler.GetWorkspaceProjectsHandler)
+			workspaceRoutes.POST("/projects", project.CreateProjectWithWorkspaceHandler)
+
+			// Project-specific routes with workspace context
+			projectRoutes := workspaceRoutes.Group("/projects/:projectId")
+			projectRoutes.Use(middlewares.WorkspaceProjectAccessMiddleware())
+			{
+				// Project CRUD
+				projectRoutes.GET("", project.GetProjectHandler)
+				projectRoutes.PUT("", project.UpdateProjectHandler)
+				projectRoutes.DELETE("", project.DeleteProjectHandler)
+
+				// Endpoint management
+				projectRoutes.GET("/endpoints", endpoint.ListEndpointsHandler)
+				projectRoutes.POST("/endpoints", endpoint.CreateEndpointHandler)
+				projectRoutes.GET("/endpoints/:id", endpoint.GetEndpointHandler)
+				projectRoutes.PUT("/endpoints/:id", endpoint.UpdateEndpointHandler)
+				projectRoutes.DELETE("/endpoints/:id", endpoint.DeleteEndpointHandler)
+
+				// Response management
+				projectRoutes.GET("/endpoints/:id/responses", response.ListResponsesHandler)
+				projectRoutes.POST("/endpoints/:id/responses", response.CreateResponseHandler)
+				projectRoutes.GET("/endpoints/:id/responses/:responseId", response.GetResponseHandler)
+				projectRoutes.PUT("/endpoints/:id/responses/:responseId", response.UpdateResponseHandler)
+				projectRoutes.DELETE("/endpoints/:id/responses/:responseId", response.DeleteResponseHandler)
+
+				// Request Logs management
+				projectRoutes.GET("/logs", handler.GetLogsHandler)
+				projectRoutes.GET("/logs/stream", handler.StreamLogsHandler)
+			}
+		}
+
+		// Legacy routes for backward compatibility
 		apiGroup.GET("/projects", project.ListProjectsHandler)
 		apiGroup.POST("/projects", project.CreateProjectHandler)
-		apiGroup.GET("/projects/:projectId", project.GetProjectHandler)
-		apiGroup.PUT("/projects/:projectId", project.UpdateProjectHandler)
-		apiGroup.DELETE("/projects/:projectId", project.DeleteProjectHandler)
-
-		// Endpoint management
-		apiGroup.GET("/projects/:projectId/endpoints", endpoint.ListEndpointsHandler)
-		apiGroup.POST("/projects/:projectId/endpoints", endpoint.CreateEndpointHandler)
-		apiGroup.GET("/projects/:projectId/endpoints/:id", endpoint.GetEndpointHandler)
-		apiGroup.PUT("/projects/:projectId/endpoints/:id", endpoint.UpdateEndpointHandler)
-		apiGroup.DELETE("/projects/:projectId/endpoints/:id", endpoint.DeleteEndpointHandler)
-
-		// Response management
-		apiGroup.GET("/projects/:projectId/endpoints/:id/responses", response.ListResponsesHandler)
-		apiGroup.POST("/projects/:projectId/endpoints/:id/responses", response.CreateResponseHandler)
-		apiGroup.GET("/projects/:projectId/endpoints/:id/responses/:responseId", response.GetResponseHandler)
-		apiGroup.PUT("/projects/:projectId/endpoints/:id/responses/:responseId", response.UpdateResponseHandler)
-		apiGroup.DELETE("/projects/:projectId/endpoints/:id/responses/:responseId", response.DeleteResponseHandler)
-
-		// Request Logs management
-		apiGroup.GET("/projects/:projectId/logs", handler.GetLogsHandler)
-		apiGroup.GET("/projects/:projectId/logs/stream", handler.StreamLogsHandler)
 	}
 
 	// Register the catch-all handler for mock API endpoints

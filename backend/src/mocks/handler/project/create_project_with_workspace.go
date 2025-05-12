@@ -1,0 +1,140 @@
+package project
+
+import (
+	"net/http"
+
+	"github.com/gin-gonic/gin"
+	"gorm.io/gorm"
+
+	"mockoon-control-panel/backend_new/src/database"
+	"mockoon-control-panel/backend_new/src/mocks/handler"
+)
+
+// CreateProjectWithWorkspaceHandler creates a new project within a specified workspace
+// This is a variation of the regular project creation that enforces workspace permission checks
+func CreateProjectWithWorkspaceHandler(c *gin.Context) {
+	handler.EnsureMockService()
+
+	// Get workspace ID from path
+	workspaceID := c.Param("workspaceID")
+	if workspaceID == "" {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error":   true,
+			"message": "Workspace ID is required",
+		})
+		return
+	}
+
+	// Get authenticated user
+	userID, exists := c.Get("userID")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{
+			"error":   true,
+			"message": "User not authenticated",
+		})
+		return
+	}
+
+	// Check if user is system admin or workspace admin
+	isOwner, ownerExists := c.Get("isOwner")
+	isAllowed := ownerExists && isOwner == true
+
+	if !isAllowed {
+		// Check if user is workspace admin
+		var userWorkspace database.UserWorkspace
+		if err := database.GetDB().
+			Where("user_id = ? AND workspace_id = ? AND role = ?", userID, workspaceID, "admin").
+			First(&userWorkspace).Error; err != nil {
+			if err == gorm.ErrRecordNotFound {
+				c.JSON(http.StatusForbidden, gin.H{
+					"error":   true,
+					"message": "You don't have permission to create projects in this workspace",
+				})
+				return
+			}
+
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"error":   true,
+				"message": "Failed to verify workspace permissions: " + err.Error(),
+			})
+			return
+		}
+	}
+
+	// Check if workspace exists
+	var workspace database.Workspace
+	if err := database.GetDB().First(&workspace, "id = ?", workspaceID).Error; err != nil {
+		if err == gorm.ErrRecordNotFound {
+			c.JSON(http.StatusNotFound, gin.H{
+				"error":   true,
+				"message": "Workspace not found",
+			})
+			return
+		}
+
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error":   true,
+			"message": "Failed to verify workspace: " + err.Error(),
+		})
+		return
+	}
+
+	// Parse request
+	var project database.Project
+	if err := c.ShouldBindJSON(&project); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error":   true,
+			"message": "Invalid request data: " + err.Error(),
+		})
+		return
+	}
+
+	// Set the workspace ID
+	project.WorkspaceID = workspaceID
+
+	// Check if alias is already used
+	var existingProject database.Project
+	result := database.GetDB().Where("alias = ? AND id != ?", project.Alias, project.ID).First(&existingProject)
+	if result.Error == nil {
+		// Found a project with the same alias
+		c.JSON(http.StatusConflict, gin.H{
+			"error":   true,
+			"message": "Project alias already exists",
+		})
+		return
+	} else if result.Error != gorm.ErrRecordNotFound {
+		// Database error other than "not found"
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error":   true,
+			"message": "Failed to check alias uniqueness: " + result.Error.Error(),
+		})
+		return
+	}
+
+	// Create the project
+	if err := database.GetDB().Create(&project).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error":   true,
+			"message": "Failed to create project: " + err.Error(),
+		})
+		return
+	}
+
+	// Generate Traefik configuration if needed
+	if err := handler.UpdateTraefikConfig(); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error":   true,
+			"message": "Project created but failed to update routing configuration: " + err.Error(),
+		})
+		return
+	}
+
+	// Add project URL
+	project.URL = handler.GetProjectURL(c.Request.Host, project)
+
+	c.JSON(http.StatusCreated, gin.H{
+		"success": true,
+		"message": "Project created successfully",
+		"data":    project,
+	})
+}

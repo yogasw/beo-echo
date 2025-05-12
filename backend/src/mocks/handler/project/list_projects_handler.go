@@ -9,23 +9,70 @@ import (
 	"mockoon-control-panel/backend_new/src/mocks/handler"
 )
 
-// ListProjectsHandler lists all projects
+// ListProjectsHandler lists projects accessible to the authenticated user
 //
 // Sample curl:
-// curl -X GET "http://localhost:3600/mock/api/projects" -H "Content-Type: application/json"
+// curl -X GET "http://localhost:3600/mock/api/projects" -H "Content-Type: application/json" -H "Authorization: Bearer TOKEN"
 func ListProjectsHandler(c *gin.Context) {
 	handler.EnsureMockService()
 
-	var projects []database.Project
-	result := database.GetDB().Find(&projects)
-	if result.Error != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
+	// Get the authenticated user ID from context (set by JWTAuthMiddleware)
+	userID, exists := c.Get("userID")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{
 			"error":   true,
-			"message": "Failed to retrieve projects: " + result.Error.Error(),
+			"message": "User not authenticated",
 		})
 		return
 	}
-	//loop prject and insert url
+
+	// Check if user is a system owner (can see all projects)
+	isOwner, ownerExists := c.Get("isOwner")
+
+	var projects []database.Project
+	var result error
+
+	if ownerExists && isOwner == true {
+		// System owners can see all projects
+		result = database.GetDB().Find(&projects).Error
+	} else {
+		// Regular users can only see projects in their workspaces
+		// Get workspace IDs the user has access to
+		var workspaceIDs []string
+		if err := database.GetDB().Table("user_workspaces").
+			Where("user_id = ?", userID).
+			Pluck("workspace_id", &workspaceIDs).Error; err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"error":   true,
+				"message": "Failed to retrieve user workspaces: " + err.Error(),
+			})
+			return
+		}
+
+		// Check if the user has any workspaces
+		if len(workspaceIDs) == 0 {
+			// User doesn't belong to any workspace, return empty list
+			c.JSON(http.StatusOK, gin.H{
+				"success": true,
+				"data":    []database.Project{},
+			})
+			return
+		}
+
+		// Get all projects in the user's workspaces
+		result = database.GetDB().Where("workspace_id IN ?", workspaceIDs).Find(&projects).Error
+	}
+
+	// Check for database errors
+	if result != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error":   true,
+			"message": "Failed to retrieve projects: " + result.Error(),
+		})
+		return
+	}
+
+	// Add project URLs
 	for i := range projects {
 		projects[i].URL = handler.GetProjectURL(c.Request.Host, projects[i])
 	}

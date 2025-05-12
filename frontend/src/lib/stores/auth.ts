@@ -1,0 +1,219 @@
+import { browser } from '$app/environment';
+import { writable, derived } from 'svelte/store';
+import { goto } from '$app/navigation';
+import type { User } from '$lib/types/User';
+
+// Types
+interface AuthState {
+  token: string | null;
+  user: User | null;
+  isAuthenticated: boolean;
+  isLoading: boolean;
+  error: string | null;
+}
+
+// Initial state
+const initialState: AuthState = {
+  token: browser ? localStorage.getItem('auth_token') : null,
+  user: null,
+  isAuthenticated: false,
+  isLoading: false,
+  error: null
+};
+
+// Create the store
+const authStore = writable<AuthState>(initialState);
+
+// API URL
+const API_URL = '/mock/api';
+
+// Derived store for checking if user is authenticated
+export const isAuthenticated = derived(authStore, $authStore => $authStore.isAuthenticated);
+
+// Derived store for getting the current user
+export const currentUser = derived(authStore, $authStore => $authStore.user);
+
+// Helper to extract user data from JWT token
+function parseJwt(token: string) {
+  try {
+    return JSON.parse(atob(token.split('.')[1]));
+  } catch (e) {
+    return null;
+  }
+}
+
+// Authentication actions
+export const auth = {
+  // Initialize authentication state from token (if exists)
+  initialize: async () => {
+    authStore.update(state => {
+      if (state.token) {
+        // Parse token to get user details
+        const payload = parseJwt(state.token);
+        if (payload) {
+          // Check if token is expired
+          const expiryDate = new Date(payload.exp * 1000);
+          const now = new Date();
+          
+          if (expiryDate > now) {
+            // Token is still valid
+            const user: User = {
+              id: payload.user_id,
+              email: payload.email,
+              name: payload.name,
+              isOwner: payload.is_owner
+            };
+            
+            return {
+              ...state,
+              user,
+              isAuthenticated: true
+            };
+          } else {
+            // Token expired, remove it
+            if (browser) {
+              localStorage.removeItem('auth_token');
+            }
+            return {
+              ...initialState,
+              token: null
+            };
+          }
+        }
+      }
+      return state;
+    });
+  },
+
+  // Login
+  login: async (email: string, password: string) => {
+    authStore.update(state => ({ ...state, isLoading: true, error: null }));
+    
+    try {
+      const response = await fetch(`${API_URL}/auth/login`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ email, password })
+      });
+      
+      const data = await response.json();
+      
+      if (!response.ok) {
+        throw new Error(data.message || 'Failed to login');
+      }
+      
+      // Save token to local storage
+      if (browser && data.token) {
+        localStorage.setItem('auth_token', data.token);
+      }
+      
+      // Update store with user data
+      authStore.update(state => ({
+        ...state,
+        token: data.token,
+        user: data.user,
+        isAuthenticated: true,
+        isLoading: false
+      }));
+      
+      return data.user;
+    } catch (error) {
+      authStore.update(state => ({
+        ...state,
+        isLoading: false,
+        error: error.message || 'Login failed'
+      }));
+      
+      throw error;
+    }
+  },
+
+  // Register
+  register: async (name: string, email: string, password: string) => {
+    authStore.update(state => ({ ...state, isLoading: true, error: null }));
+    
+    try {
+      const response = await fetch(`${API_URL}/auth/register`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ name, email, password })
+      });
+      
+      const data = await response.json();
+      
+      if (!response.ok) {
+        throw new Error(data.message || 'Registration failed');
+      }
+      
+      // Save token to local storage
+      if (browser && data.token) {
+        localStorage.setItem('auth_token', data.token);
+      }
+      
+      // Update store with user data
+      authStore.update(state => ({
+        ...state,
+        token: data.token,
+        user: data.user,
+        isAuthenticated: true,
+        isLoading: false
+      }));
+      
+      return data.user;
+    } catch (error) {
+      authStore.update(state => ({
+        ...state,
+        isLoading: false,
+        error: error.message || 'Registration failed'
+      }));
+      
+      throw error;
+    }
+  },
+
+  // Logout
+  logout: () => {
+    // Remove token from local storage
+    if (browser) {
+      localStorage.removeItem('auth_token');
+    }
+    
+    // Reset auth store
+    authStore.set({
+      ...initialState,
+      token: null
+    });
+    
+    // Redirect to login page
+    goto('/login');
+  },
+
+  // Get the auth token
+  getToken: () => {
+    let token: string | null = null;
+    authStore.subscribe(state => {
+      token = state.token;
+    })();
+    return token;
+  },
+
+  // Check if user is an owner
+  isOwner: (): boolean => {
+    let isOwner = false;
+    authStore.subscribe(state => {
+      isOwner = !!state.user?.isOwner;
+    })();
+    return isOwner;
+  }
+};
+
+// Initialize auth state on load
+if (browser) {
+  auth.initialize();
+}
+
+export default authStore;

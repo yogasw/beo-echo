@@ -59,6 +59,12 @@ func CheckAndHandlePrisma() error {
 	}
 
 	log.Println("Database connection established and migrations completed")
+
+	// Initialize default user and workspace if no users exist
+	if err := InitializeDefaultUserAndWorkspace(DB); err != nil {
+		log.Printf("Warning: Failed to initialize default user: %v", err)
+	}
+
 	return nil
 }
 
