@@ -2,6 +2,7 @@ import { writable, derived } from 'svelte/store';
 import type { Workspace } from '$lib/types/User';
 import authStore from './auth';
 import { createWorkspace, getWorkspaces } from '$lib/api/mockoonApi';
+import { setCurrentWorkspaceId } from '$lib/utils/localStorage';
 
 interface WorkspaceState {
   workspaces: Workspace[];
@@ -120,6 +121,8 @@ export const workspaces = {
 
   // Set the current workspace
   setCurrent: (workspaceId: string) => {
+    console.log('Setting current workspace:', workspaceId);
+    setCurrentWorkspaceId(workspaceId);
     workspaceStore.update(state => {
       const workspace = state.workspaces.find(w => w.id === workspaceId);
       return {
