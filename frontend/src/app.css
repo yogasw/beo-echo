@@ -82,6 +82,9 @@ body, button, div, input, textarea, select {
     @apply border-gray-100 dark:border-gray-800;
   }
   .theme-border-light {
+    @apply border-gray-200/70 dark:border-gray-700/70;
+  }
+  .theme-border-subtle-light {
     @apply border-gray-200/30 dark:border-gray-700/30;
   }
   .theme-shadow {

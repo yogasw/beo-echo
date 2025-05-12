@@ -47,6 +47,11 @@ export function themeBorder(additionalClasses = '') {
 
 // Apply light/semi-transparent border color for subtle separators
 export function themeBorderLight(additionalClasses = '') {
+  return `border-gray-200/70 dark:border-gray-700/70 ${additionalClasses}`;
+}
+
+// Apply very subtle/thin semi-transparent border
+export function themeBorderSubtleLight(additionalClasses = '') {
   return `border-gray-200/30 dark:border-gray-700/30 ${additionalClasses}`;
 }
 
