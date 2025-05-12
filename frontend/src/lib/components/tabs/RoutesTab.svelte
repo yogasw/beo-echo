@@ -1,5 +1,5 @@
 <script lang="ts">
-	import type { Response, Endpoint, Project } from '$lib/api/mockoonApi';
+	import type { Response, Endpoint, Project } from '$lib/api/BeoApi';
 	import { updateEndpoint, resetEndpointsList, updateResponse } from '$lib/stores/saveButton';
 	import StatusBodyTab from './routes/StatusBodyTab.svelte';
 	import HeadersTab from './routes/HeadersTab.svelte';

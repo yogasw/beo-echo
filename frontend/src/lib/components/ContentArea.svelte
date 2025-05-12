@@ -3,7 +3,7 @@
 	import LogsTab from './tabs/LogsTab.svelte';
 	import ConfigurationTab from './tabs/ConfigurationTab.svelte';
 	import ProjectStatusBadge from './ProjectStatusBadge.svelte';
-	import { getProjectDetail, updateProjectStatus, type Endpoint } from '$lib/api/mockoonApi';
+	import { getProjectDetail, updateProjectStatus, type Endpoint } from '$lib/api/BeoApi';
 	import { selectedProject } from '$lib/stores/selectedConfig';
 	import { activeTab } from '$lib/stores/activeTab';
 	import { toast } from '$lib/stores/toast';

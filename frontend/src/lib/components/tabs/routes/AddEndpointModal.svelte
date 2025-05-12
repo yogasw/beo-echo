@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { createEventDispatcher } from 'svelte';
-	import type { Project } from '$lib/api/mockoonApi';
-	import { addEndpoint } from '$lib/api/mockoonApi';
+	import type { Project } from '$lib/api/BeoApi';
+	import { addEndpoint } from '$lib/api/BeoApi';
 	import { currentWorkspace, workspaceStore } from '$lib/stores/workspace';
 
 	export let isOpen = false;

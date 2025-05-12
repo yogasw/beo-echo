@@ -1,7 +1,7 @@
 <script lang="ts">
 	import ContentArea from '$lib/components/ContentArea.svelte';
 	import { onMount } from 'svelte';
-	import { getProjects } from '$lib/api/mockoonApi';
+	import { getProjects } from '$lib/api/BeoApi';
 
 	interface Route {
     path: string;

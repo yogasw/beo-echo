@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { deleteEndpoint, updateEndpoint, type Endpoint, type Project } from '$lib/api/mockoonApi';
+	import { deleteEndpoint, updateEndpoint, type Endpoint, type Project } from '$lib/api/BeoApi';
 	import { toast } from '$lib/stores/toast';
 	import type { MockoonRoute } from '$lib/types/Config';
 	import AddEndpointModal from './AddEndpointModal.svelte';

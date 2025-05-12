@@ -6,7 +6,7 @@
 		addProject,
 		updateProjectStatus,
 		type Project
-	} from '$lib/api/mockoonApi';
+	} from '$lib/api/BeoApi';
 	import ProjectStatusBadge from '$lib/components/ProjectStatusBadge.svelte';
 	import { selectedProject } from '$lib/stores/selectedConfig';
 	import { activeTab } from '$lib/stores/activeTab';

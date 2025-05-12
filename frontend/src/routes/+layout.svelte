@@ -8,7 +8,7 @@
 	import ConfigurationList from '$lib/components/ConfigurationList.svelte';
 	import Header from '$lib/components/Header.svelte';
 	import { getCurrentWorkspaceId, isOwnAuth, removeLocalStorage, setCurrentWorkspaceId } from '$lib/utils/localStorage';
-	import { getProjects, getWorkspaces } from '$lib/api/mockoonApi';
+	import { getProjects, getWorkspaces } from '$lib/api/BeoApi';
 	import { onMount } from 'svelte';
 	import { projects } from '$lib/stores/configurations';
 	import Toast from '$lib/components/Toast.svelte';

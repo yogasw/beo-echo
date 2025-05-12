@@ -1,6 +1,6 @@
 import { writable, get } from 'svelte/store';
 import { toast } from './toast';
-import type { Endpoint, Project, Response } from '$lib/api/mockoonApi';
+import type { Endpoint, Project, Response } from '$lib/api/BeoApi';
 import { selectedProject } from './selectedConfig';
 
 export const showSaveButton = writable<boolean>(false);

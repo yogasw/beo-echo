@@ -1,5 +1,5 @@
 <script>
-	import { getGitConfig, saveAndTestSyncGit, saveGitConfig } from '$lib/api/mockoonApi';
+	import { getGitConfig, saveAndTestSyncGit, saveGitConfig } from '$lib/api/BeoApi';
 
 	let gitName = '';
 	let gitEmail = '';

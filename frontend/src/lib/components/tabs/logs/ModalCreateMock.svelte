@@ -1,6 +1,6 @@
 <script lang="ts">
   import { fade } from 'svelte/transition';
-  import { addEndpoint, addResponse, type RequestLog } from '$lib/api/mockoonApi';
+  import { addEndpoint, addResponse, type RequestLog } from '$lib/api/BeoApi';
   
   export let isOpen: boolean;
   export let log: RequestLog | null = null;

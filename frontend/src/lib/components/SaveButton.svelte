@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { showSaveButton, saveInprogress, saveButtonHandler, getEndpointsUpdateList, resetEndpointsList } from '$lib/stores/saveButton';
 	import { toast } from '$lib/stores/toast';
-	import { updateEndpoint as apiUpdateEndpoint, updateResponse as apiUpdateResponse } from '$lib/api/mockoonApi';
+	import { updateEndpoint as apiUpdateEndpoint, updateResponse as apiUpdateResponse } from '$lib/api/BeoApi';
 	import { currentWorkspace } from '$lib/stores/workspace';
 
 	async function handleSave() {

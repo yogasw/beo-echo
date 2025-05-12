@@ -1,7 +1,7 @@
 import { writable, derived } from 'svelte/store';
 import type { Workspace } from '$lib/types/User';
 import authStore from './auth';
-import { createWorkspace, getWorkspaces } from '$lib/api/mockoonApi';
+import { createWorkspace, getWorkspaces } from '$lib/api/BeoApi';
 import { setCurrentWorkspaceId } from '$lib/utils/localStorage';
 
 interface WorkspaceState {

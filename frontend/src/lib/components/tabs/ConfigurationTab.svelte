@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { deleteProject, type Project } from '$lib/api/mockoonApi';
+	import { deleteProject, type Project } from '$lib/api/BeoApi';
 	import { goto } from '$app/navigation';
 	import { projects } from '$lib/stores/configurations';
 	import { selectedProject as selectedProjectStore } from '$lib/stores/selectedConfig';

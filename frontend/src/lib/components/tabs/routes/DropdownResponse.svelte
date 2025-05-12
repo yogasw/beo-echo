@@ -1,6 +1,6 @@
 <script lang="ts">
-	import type { Endpoint, Response } from '$lib/api/mockoonApi';
-	import { addResponse } from '$lib/api/mockoonApi';
+	import type { Endpoint, Response } from '$lib/api/BeoApi';
+	import { addResponse } from '$lib/api/BeoApi';
 	import type { MockoonResponse, MockoonRoute } from '$lib/types/Config';
 	import * as ThemeUtils from '$lib/utils/themeUtils';
 

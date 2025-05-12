@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { onMount, onDestroy } from 'svelte';
-	import { createLogStream, getLogs, type Project, type RequestLog } from '$lib/api/mockoonApi';
+	import { createLogStream, getLogs, type Project, type RequestLog } from '$lib/api/BeoApi';
 	import { fade } from 'svelte/transition';
 	import ModalCreateMock from './logs/ModalCreateMock.svelte';
 	import * as ThemeUtils from '$lib/utils/themeUtils';
