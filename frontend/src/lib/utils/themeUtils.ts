@@ -187,7 +187,7 @@ export function notificationToast(type = 'default', additionalClasses = '') {
 }
 
 export function headerSection(additionalClasses = '') {
-  return `flex items-center p-3 bg-gray-750 ${additionalClasses}`;
+  return `flex items-center p-3 ${additionalClasses}`;
 }
 
 export function contentSection(additionalClasses = '') {
