@@ -42,6 +42,7 @@
 	}
 </script>
 
+
 <div class="{ThemeUtils.themeBgPrimary()} rounded-lg w-full max-w-4xl">
 	<!-- Multi Config Section -->
 	<div>
@@ -94,7 +95,7 @@
 				<div class="space-y-4">
 					<div>
 						<label class="block {ThemeUtils.themeTextMuted()} mb-2">Type</label>
-						<select class="{ThemeUtils.themeBgSecondary()} {ThemeUtils.themeTextPrimary()} rounded px-2 py-1 w-full border {ThemeUtils.themeBorder()}"
+						<select class="{ThemeUtils.themeBgSecondary()} {ThemeUtils.themeTextPrimary()} rounded px-2 py-1 w-full border {ThemeUtils.themeBorder()}">
 							<option>Body</option>
 							<option>Query string</option>
 							<option>Header</option>
