@@ -80,19 +80,13 @@ func SetupRouter() *gin.Engine {
 	router.POST("/mock/api/auth/login", authHandler.LoginHandler)
 	router.POST("/mock/api/auth/register", authHandler.RegisterHandler)
 
-	// User profile related routes
-	userRoutes := router.Group("/mock/api/user")
-	userRoutes.Use(middlewares.JWTAuthMiddleware())
-	{
-		// User profile routes can be added here if needed
-		// For example: userRoutes.GET("/profile", authHandler.GetUserProfileHandler)
-		// For now, workspaces are moved to the main API group
-	}
-
 	// Protected API routes group
 	apiGroup := router.Group("/mock/api")
 	apiGroup.Use(middlewares.JWTAuthMiddleware())
 	{
+		// User-related routes
+		apiGroup.GET("/auth/me", authHandler.GetCurrentUserHandler)
+
 		// General workspace-related routes
 		apiGroup.GET("/workspaces", authHandler.GetUserWorkspacesHandler)
 		apiGroup.POST("/workspaces", authHandler.CreateWorkspaceHandler)
