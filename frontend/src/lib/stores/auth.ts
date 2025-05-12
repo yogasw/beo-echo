@@ -2,7 +2,7 @@ import { browser } from '$app/environment';
 import { writable, derived } from 'svelte/store';
 import { goto } from '$app/navigation';
 import type { User } from '$lib/types/User';
-import { BASE_URL_API } from '$lib/api/mockoonApi';
+import { BASE_URL_API, fetchUserProfile } from '$lib/api/mockoonApi';
 
 // Types
 interface AuthState {
@@ -78,22 +78,15 @@ export const auth = {
           
           // Then fetch complete profile including owner status
           try {
-            import('$lib/api/userAPI').then(async ({ fetchUserProfile }) => {
-              try {
-                const fullUser = await fetchUserProfile(currentState.token!);
-                
-                authStore.update(state => ({
-                  ...state,
-                  user: fullUser,
-                  isLoading: false
-                }));
-              } catch (error) {
-                console.error('Failed to fetch user profile:', error);
-                authStore.update(state => ({ ...state, isLoading: false }));
-              }
-            });
+            const fullUser = await fetchUserProfile(currentState.token!);
+            
+            authStore.update(state => ({
+              ...state,
+              user: fullUser,
+              isLoading: false
+            }));
           } catch (error) {
-            console.error('Failed to import userAPI:', error);
+            console.error('Failed to fetch user profile:', error);
             authStore.update(state => ({ ...state, isLoading: false }));
           }
         } else {
