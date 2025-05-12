@@ -96,7 +96,7 @@ func SetupRouter() *gin.Engine {
 		workspaceRoutes := apiGroup.Group("/workspaces/:workspaceID")
 		{
 			// Projects list and creation for a workspace
-			workspaceRoutes.GET("/projects", authHandler.GetWorkspaceProjectsHandler)
+			workspaceRoutes.GET("/projects", project.ListProjectsHandler)
 			workspaceRoutes.POST("/projects", project.CreateProjectWithWorkspaceHandler)
 
 			// Project-specific routes with workspace context

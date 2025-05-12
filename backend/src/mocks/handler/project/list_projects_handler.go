@@ -4,6 +4,7 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"gorm.io/gorm"
 
 	"mockoon-control-panel/backend_new/src/database"
 	"mockoon-control-panel/backend_new/src/mocks/handler"
@@ -13,24 +14,33 @@ import (
 //
 // Sample curl:
 // curl -X GET "http://localhost:3600/mock/api/projects" -H "Content-Type: application/json" -H "Authorization: Bearer TOKEN"
-func ListProjectsHandler(c *gin.Context) {
-	handler.EnsureMockService()
 
-	// Get the authenticated user ID from context (set by JWTAuthMiddleware)
+// GetWorkspaceProjectsHandler returns all projects in a workspace
+func ListProjectsHandler(c *gin.Context) {
+	workspaceID := c.Param("workspaceID")
+	if workspaceID == "" {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"success": false,
+			"message": "Workspace ID is required",
+		})
+		return
+	}
+
+	// Get user ID from context (set by JWTAuthMiddleware)
 	userID, exists := c.Get("userID")
 	if !exists {
 		c.JSON(http.StatusUnauthorized, gin.H{
-			"error":   true,
+			"success": false,
 			"message": "User not authenticated",
 		})
 		return
 	}
 
-	// Check if user is a system owner (can see all projects)
+	// Check if user is a system admin (can access all workspaces)
 	userIDStr, ok := userID.(string)
 	if !ok {
 		c.JSON(http.StatusInternalServerError, gin.H{
-			"error":   true,
+			"success": false,
 			"message": "Invalid user ID format",
 		})
 		return
@@ -38,48 +48,37 @@ func ListProjectsHandler(c *gin.Context) {
 
 	// Directly query database to check if user is an owner
 	var user database.User
-	err := database.GetDB().Where("id = ?", userIDStr).First(&user).Error
+	err := database.DB.Where("id = ?", userIDStr).First(&user).Error
 	isSystemOwner := err == nil && user.IsOwner
 
-	var projects []database.Project
-	var result error
+	if !isSystemOwner {
+		// Check if the user is a member of this workspace
+		var userWorkspace database.UserWorkspace
+		err := database.DB.Where("user_id = ? AND workspace_id = ?", userID, workspaceID).First(&userWorkspace).Error
 
-	if isSystemOwner {
-		// System owners can see all projects
-		result = database.GetDB().Find(&projects).Error
-	} else {
-		// Regular users can only see projects in their workspaces
-		// Get workspace IDs the user has access to
-		var workspaceIDs []string
-		if err := database.GetDB().Table("user_workspaces").
-			Where("user_id = ?", userID).
-			Pluck("workspace_id", &workspaceIDs).Error; err != nil {
+		if err != nil {
+			if err == gorm.ErrRecordNotFound {
+				c.JSON(http.StatusForbidden, gin.H{
+					"success": false,
+					"message": "You do not have access to this workspace",
+				})
+				return
+			}
+
 			c.JSON(http.StatusInternalServerError, gin.H{
-				"error":   true,
-				"message": "Failed to retrieve user workspaces: " + err.Error(),
+				"success": false,
+				"message": "Failed to verify workspace access: " + err.Error(),
 			})
 			return
 		}
-
-		// Check if the user has any workspaces
-		if len(workspaceIDs) == 0 {
-			// User doesn't belong to any workspace, return empty list
-			c.JSON(http.StatusOK, gin.H{
-				"success": true,
-				"data":    []database.Project{},
-			})
-			return
-		}
-
-		// Get all projects in the user's workspaces
-		result = database.GetDB().Where("workspace_id IN ?", workspaceIDs).Find(&projects).Error
 	}
 
-	// Check for database errors
-	if result != nil {
+	// Get all projects in the workspace
+	projects, err := database.GetWorkspaceProjects(workspaceID)
+	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
-			"error":   true,
-			"message": "Failed to retrieve projects: " + result.Error(),
+			"success": false,
+			"message": "Failed to fetch projects: " + err.Error(),
 		})
 		return
 	}
