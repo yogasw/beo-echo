@@ -104,19 +104,19 @@ func (me *MockEndpoint) BeforeCreate(tx *gorm.DB) error {
 
 // MockResponse represents possible responses from an endpoint
 type MockResponse struct {
-	ID            string         `gorm:"type:string;primaryKey" json:"id"`
-	EndpointID    string         `gorm:"type:string" json:"endpoint_id"`
-	StatusCode    int            `json:"status_code"`                    // HTTP status code
-	Body          string         `gorm:"type:text" json:"body"`          // Response body, stored as JSON
-	Headers       []KeyValuePair `gorm:"type:json" json:"headers"`       // Headers stored as JSON
-	Priority      int            `json:"priority"`                       // Priority if ResponseMode = static
-	DelayMS       int            `json:"delay_ms"`                       // Delay before response (milliseconds)
-	Stream        bool           `json:"stream"`                         // True if response is stream (e.g. SSE, chunked)
-	Documentation string         `gorm:"type:text" json:"documentation"` // Documentation URL or text
-	Enabled       bool           `json:"enabled" gorm:"default:true"`    // Whether enabled or not
-	Rules         []MockRule     `gorm:"foreignKey:ResponseID;constraint:OnDelete:CASCADE" json:"rules"`
-	CreatedAt     time.Time      `gorm:"autoCreateTime" json:"created_at"`
-	UpdatedAt     time.Time      `gorm:"autoUpdateTime" json:"updated_at"`
+	ID            string     `gorm:"type:string;primaryKey" json:"id"`
+	EndpointID    string     `gorm:"type:string" json:"endpoint_id"`
+	StatusCode    int        `json:"status_code"`                    // HTTP status code
+	Body          string     `gorm:"type:text" json:"body"`          // Response body, stored as JSON
+	Headers       string     `gorm:"type:text" json:"headers"`       // Headers stored as JSON
+	Priority      int        `json:"priority"`                       // Priority if ResponseMode = static
+	DelayMS       int        `json:"delay_ms"`                       // Delay before response (milliseconds)
+	Stream        bool       `json:"stream"`                         // True if response is stream (e.g. SSE, chunked)
+	Documentation string     `gorm:"type:text" json:"documentation"` // Documentation URL or text
+	Enabled       bool       `json:"enabled" gorm:"default:true"`    // Whether enabled or not
+	Rules         []MockRule `gorm:"foreignKey:ResponseID;constraint:OnDelete:CASCADE" json:"rules"`
+	CreatedAt     time.Time  `gorm:"autoCreateTime" json:"created_at"`
+	UpdatedAt     time.Time  `gorm:"autoUpdateTime" json:"updated_at"`
 }
 
 // BeforeCreate hook to generate UUID string
@@ -149,17 +149,17 @@ func (mr *MockRule) BeforeCreate(tx *gorm.DB) error {
 // It captures how the request was handled (mock, proxy, forwarder), whether it matched a mock endpoint,
 // and includes raw request/response data for auditing or debugging.
 type RequestLog struct {
-	ID              string         `gorm:"type:string;primaryKey" json:"id"`    // Unique identifier (UUID)
-	ProjectID       string         `gorm:"type:string;index" json:"project_id"` // Foreign key to the associated project
-	Method          string         `json:"method"`                              // HTTP method (GET, POST, etc.)
-	Path            string         `json:"path"`                                // Request path (e.g. "/api/users")
-	QueryParams     string         `gorm:"type:text" json:"query_params"`       // Query parameters (stored as JSON string)
-	RequestHeaders  []KeyValuePair `gorm:"type:json" json:"request_headers"`    // Request headers as array of key-value pairs
-	RequestBody     string         `gorm:"type:text" json:"request_body"`       // Raw request body
-	ResponseStatus  int            `json:"response_status"`                     // HTTP status code returned
-	ResponseBody    string         `gorm:"type:text" json:"response_body"`      // Raw response body
-	ResponseHeaders []KeyValuePair `gorm:"type:json" json:"response_headers"`   // Response headers as array of key-value pairs
-	LatencyMS       int            `json:"latency_ms"`                          // Time taken to respond or delay applied (in milliseconds)
+	ID              string `gorm:"type:string;primaryKey" json:"id"`    // Unique identifier (UUID)
+	ProjectID       string `gorm:"type:string;index" json:"project_id"` // Foreign key to the associated project
+	Method          string `json:"method"`                              // HTTP method (GET, POST, etc.)
+	Path            string `json:"path"`                                // Request path (e.g. "/api/users")
+	QueryParams     string `gorm:"type:text" json:"query_params"`       // Query parameters (stored as JSON string)
+	RequestHeaders  string `gorm:"type:text" json:"request_headers"`    // Request headers as array of key-value pairs
+	RequestBody     string `gorm:"type:text" json:"request_body"`       // Raw request body
+	ResponseStatus  int    `json:"response_status"`                     // HTTP status code returned
+	ResponseBody    string `gorm:"type:text" json:"response_body"`      // Raw response body
+	ResponseHeaders string `gorm:"type:text" json:"response_headers"`   // Response headers as array of key-value pairs
+	LatencyMS       int    `json:"latency_ms"`                          // Time taken to respond or delay applied (in milliseconds)
 
 	// ExecutionMode indicates the handling logic used for this request.
 	// Values follow ProjectMode: "mock", "proxy", "forwarder", etc.
@@ -171,12 +171,6 @@ type RequestLog struct {
 
 	// Association to the Project
 	Project Project `gorm:"foreignKey:ProjectID;constraint:OnDelete:CASCADE" json:"-"`
-}
-
-// KeyValuePair represents a key-value pair for headers
-type KeyValuePair struct {
-	Key   string `json:"key"`
-	Value string `json:"value"`
 }
 
 // BeforeCreate hook generates UUID before inserting into database

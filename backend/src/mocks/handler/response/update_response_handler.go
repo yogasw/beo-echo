@@ -1,6 +1,8 @@
 package response
 
 import (
+	"encoding/json"
+	"fmt"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -80,14 +82,14 @@ func UpdateResponseHandler(c *gin.Context) {
 
 	// Parse update data
 	var updateData struct {
-		StatusCode    *int                     `json:"status_code"`
-		Body          *string                  `json:"body"`
-		Headers       *[]database.KeyValuePair `json:"headers"` // Allow headers to be null
-		Priority      *int                     `json:"priority"`
-		DelayMS       *int                     `json:"delay_ms"`
-		Stream        *bool                    `json:"stream"`
-		Enabled       *bool                    `json:"enabled"`
-		Documentation *string                  `json:"documentation"`
+		StatusCode    *int    `json:"status_code"`
+		Body          *string `json:"body"`
+		Headers       *string `json:"headers"` // Allow headers to be null
+		Priority      *int    `json:"priority"`
+		DelayMS       *int    `json:"delay_ms"`
+		Stream        *bool   `json:"stream"`
+		Enabled       *bool   `json:"enabled"`
+		Documentation *string `json:"documentation"`
 	}
 
 	if err := c.ShouldBindJSON(&updateData); err != nil {
@@ -108,7 +110,21 @@ func UpdateResponseHandler(c *gin.Context) {
 	}
 
 	if updateData.Headers != nil {
-		existingResponse.Headers = *updateData.Headers
+		// Check if headers are empty
+		var headers map[string]string
+		if *updateData.Headers != "" {
+			if err := json.Unmarshal([]byte(*updateData.Headers), &headers); err != nil {
+				fmt.Println("Error unmarshalling headers:", err)
+			} else {
+				// Check if headers are empty
+				if len(headers) == 0 {
+					existingResponse.Headers = ""
+				} else {
+					headersJSON, _ := json.Marshal(headers)
+					existingResponse.Headers = string(headersJSON)
+				}
+			}
+		}
 	}
 
 	if updateData.Priority != nil {

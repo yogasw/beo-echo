@@ -308,10 +308,14 @@ func createMockResponse(mockResp database.MockResponse) (*http.Response, error) 
 		Header:     make(http.Header),
 	}
 
-	// Add headers
-	headers := mockResp.Headers
-	for _, header := range headers {
-		resp.Header.Set(header.Key, header.Value)
+	var headers map[string]string
+	if err := json.Unmarshal([]byte(mockResp.Headers), &headers); err != nil {
+		fmt.Println("Error unmarshalling headers:", err)
+	} else {
+		// Set headers
+		for key, value := range headers {
+			resp.Header.Set(key, value)
+		}
 	}
 
 	// Set content length

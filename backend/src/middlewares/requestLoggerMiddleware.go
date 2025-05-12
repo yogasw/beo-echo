@@ -2,12 +2,16 @@ package middlewares
 
 import (
 	"bytes"
+	"encoding/json"
+	"fmt"
 	"io"
 	"mockoon-control-panel/backend_new/src/database"
 	"mockoon-control-panel/backend_new/src/mocks/handler"
+	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
+
 	"gorm.io/gorm"
 )
 
@@ -62,10 +66,10 @@ func RequestLoggerMiddleware(db *gorm.DB) gin.HandlerFunc {
 			Method:          c.Request.Method,
 			Path:            c.Request.URL.Path,
 			QueryParams:     c.Request.URL.RawQuery,
-			RequestHeaders:  headersToJSONKeyValue(c.Request.Header),
+			RequestHeaders:  MapSliceToJSONJoined(c.Request.Header),
 			RequestBody:     requestBody,
 			ResponseStatus:  c.Writer.Status(),
-			ResponseHeaders: headersToJSONKeyValue(c.Writer.Header()),
+			ResponseHeaders: MapSliceToJSONJoined(c.Writer.Header()),
 			ResponseBody:    respBodyBuf.String(),
 			LatencyMS:       int(latency),
 			ExecutionMode:   database.ProjectMode(toString(executionMode)),
@@ -83,34 +87,17 @@ func RequestLoggerMiddleware(db *gorm.DB) gin.HandlerFunc {
 	}
 }
 
-// Helper: Convert headers to JSON-like string (simple)
-func headersToJSON(h map[string][]string) string {
-	s := "{"
-	for k, v := range h {
-		s += `"` + k + `":"` + v[0] + `",`
+func MapSliceToJSONJoined(m map[string][]string) string {
+	flat := make(map[string]string, len(m))
+	for key, values := range m {
+		flat[key] = strings.Join(values, "; ")
 	}
-	if len(h) > 0 {
-		s = s[:len(s)-1]
+	jsonBytes, err := json.Marshal(flat)
+	if err != nil {
+		fmt.Println("Error marshalling to JSON:", err)
+		return "{}"
 	}
-	return s + "}"
-}
-
-// Helper: Convert headers to JSON key value pairs
-func headersToJSONKeyValue(h map[string][]string) []database.KeyValuePair {
-	var kvPairs []database.KeyValuePair
-	for k, v := range h {
-		if len(v) == 0 {
-			continue
-		}
-		// loop through all values
-		for i := 0; i < len(v); i++ {
-			kvPairs = append(kvPairs, database.KeyValuePair{
-				Key:   k,
-				Value: v[i],
-			})
-		}
-	}
-	return kvPairs
+	return string(jsonBytes)
 }
 
 func toString(v interface{}) string {
