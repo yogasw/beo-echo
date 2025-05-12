@@ -1,6 +1,6 @@
 <script lang="ts">
   import { onMount } from 'svelte';
-  import { workspaces, currentWorkspace } from '$lib/stores/workspace';
+  import { workspaces, currentWorkspace, workspaceStore } from '$lib/stores/workspace';
   import type { Workspace } from '$lib/types/User';
   
   export let className = '';
@@ -89,8 +89,8 @@
         
         <!-- Workspaces List -->
         <div class="max-h-48 overflow-y-auto">
-          {#if !loading && $workspaces?.length > 0}
-            {#each $workspaces as workspace}
+          {#if !loading && $workspaceStore.workspaces.length > 0}
+            {#each $workspaceStore.workspaces as workspace}
               <button 
                 on:click={() => selectWorkspace(workspace.id)}
                 class="flex items-center w-full px-3 py-2 text-left hover:bg-blue-500/20 rounded-md transition-colors"
