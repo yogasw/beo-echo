@@ -309,11 +309,9 @@ func createMockResponse(mockResp database.MockResponse) (*http.Response, error) 
 	}
 
 	// Add headers
-	headers, err := ParseHeaders(mockResp.Headers)
-	if err == nil {
-		for key, value := range headers {
-			resp.Header.Set(key, value)
-		}
+	headers := mockResp.Headers
+	for _, header := range headers {
+		resp.Header.Set(header.Key, header.Value)
 	}
 
 	// Set content length
@@ -391,19 +389,4 @@ func (r *responseRecorder) Write(b []byte) (int, error) {
 
 func (r *responseRecorder) WriteHeader(statusCode int) {
 	r.statusCode = statusCode
-}
-
-// ParseHeaders converts a JSON string to a map of headers
-func ParseHeaders(headersJSON string) (map[string]string, error) {
-	headers := make(map[string]string)
-	if headersJSON == "" {
-		return headers, nil
-	}
-
-	err := json.Unmarshal([]byte(headersJSON), &headers)
-	if err != nil {
-		return nil, err
-	}
-
-	return headers, nil
 }

@@ -1,7 +1,6 @@
 package response
 
 import (
-	"encoding/json"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -81,14 +80,14 @@ func UpdateResponseHandler(c *gin.Context) {
 
 	// Parse update data
 	var updateData struct {
-		StatusCode    *int    `json:"status_code"`
-		Body          *string `json:"body"`
-		Headers       *string `json:"headers"`
-		Priority      *int    `json:"priority"`
-		DelayMS       *int    `json:"delay_ms"`
-		Stream        *bool   `json:"stream"`
-		Enabled       *bool   `json:"enabled"`
-		Documentation *string `json:"documentation"`
+		StatusCode    *int                     `json:"status_code"`
+		Body          *string                  `json:"body"`
+		Headers       *[]database.KeyValuePair `json:"headers"` // Allow headers to be null
+		Priority      *int                     `json:"priority"`
+		DelayMS       *int                     `json:"delay_ms"`
+		Stream        *bool                    `json:"stream"`
+		Enabled       *bool                    `json:"enabled"`
+		Documentation *string                  `json:"documentation"`
 	}
 
 	if err := c.ShouldBindJSON(&updateData); err != nil {
@@ -109,15 +108,6 @@ func UpdateResponseHandler(c *gin.Context) {
 	}
 
 	if updateData.Headers != nil {
-		// Validate headers are valid JSON
-		var headersMap map[string]string
-		if err := json.Unmarshal([]byte(*updateData.Headers), &headersMap); err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{
-				"error":   true,
-				"message": "Headers must be a valid JSON object",
-			})
-			return
-		}
 		existingResponse.Headers = *updateData.Headers
 	}
 

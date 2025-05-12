@@ -62,10 +62,10 @@ func RequestLoggerMiddleware(db *gorm.DB) gin.HandlerFunc {
 			Method:          c.Request.Method,
 			Path:            c.Request.URL.Path,
 			QueryParams:     c.Request.URL.RawQuery,
-			RequestHeaders:  headersToJSON(c.Request.Header),
+			RequestHeaders:  headersToJSONKeyValue(c.Request.Header),
 			RequestBody:     requestBody,
 			ResponseStatus:  c.Writer.Status(),
-			ResponseHeaders: headersToJSON(c.Writer.Header()),
+			ResponseHeaders: headersToJSONKeyValue(c.Writer.Header()),
 			ResponseBody:    respBodyBuf.String(),
 			LatencyMS:       int(latency),
 			ExecutionMode:   database.ProjectMode(toString(executionMode)),
@@ -93,6 +93,24 @@ func headersToJSON(h map[string][]string) string {
 		s = s[:len(s)-1]
 	}
 	return s + "}"
+}
+
+// Helper: Convert headers to JSON key value pairs
+func headersToJSONKeyValue(h map[string][]string) []database.KeyValuePair {
+	var kvPairs []database.KeyValuePair
+	for k, v := range h {
+		if len(v) == 0 {
+			continue
+		}
+		// loop through all values
+		for i := 0; i < len(v); i++ {
+			kvPairs = append(kvPairs, database.KeyValuePair{
+				Key:   k,
+				Value: v[i],
+			})
+		}
+	}
+	return kvPairs
 }
 
 func toString(v interface{}) string {

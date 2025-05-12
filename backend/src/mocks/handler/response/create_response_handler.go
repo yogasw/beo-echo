@@ -1,7 +1,6 @@
 package response
 
 import (
-	"encoding/json"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -76,18 +75,6 @@ func CreateResponseHandler(c *gin.Context) {
 	// Basic validation
 	if response.StatusCode == 0 {
 		response.StatusCode = 200 // Default to 200 OK
-	}
-
-	// Validate headers are valid JSON if present
-	if response.Headers != "" {
-		var headersMap map[string]string
-		if err := json.Unmarshal([]byte(response.Headers), &headersMap); err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{
-				"error":   true,
-				"message": "Headers must be a valid JSON object",
-			})
-			return
-		}
 	}
 
 	// Assign to endpoint
