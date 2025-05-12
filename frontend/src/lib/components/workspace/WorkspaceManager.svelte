@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { workspaces, currentWorkspace, workspaceStore } from '$lib/stores/workspace';
+	import { activeTab } from '$lib/stores/activeTab';
 	export let className = '';
 
 	// Local state
@@ -29,8 +30,8 @@
 			await workspaces.create(newWorkspaceName);
 			newWorkspaceName = '';
 			modalOpen = false;
-		} catch (err) {
-			error = err.message || 'Failed to create workspace';
+		} catch (err: any) {
+			error = err?.message || 'Failed to create workspace';
 		} finally {
 			loading = false;
 		}
@@ -38,13 +39,10 @@
 
 	// Handle workspace settings
 	function openWorkspaceSettings() {
-		// This function will handle opening workspace settings
-		// You can navigate to a settings page or open a modal
-		if ($currentWorkspace) {
-			// Example implementation - you might want to adjust this based on your routing
-			// window.location.href = `/settings/workspace/${$currentWorkspace.id}`;
-			console.log('Opening settings for workspace:', $currentWorkspace.id);
-		}
+		// Set active tab to workspace-settings
+		activeTab.set('workspace-settings');
+		
+		// Close the workspace modal
 		modalOpen = false;
 	}
 

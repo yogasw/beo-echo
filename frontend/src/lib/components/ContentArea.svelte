@@ -2,6 +2,7 @@
 	import RoutesTab from './tabs/RoutesTab.svelte';
 	import LogsTab from './tabs/LogsTab.svelte';
 	import ConfigurationTab from './tabs/ConfigurationTab.svelte';
+	import WorkspaceSettingsTab from './tabs/WorkspaceSettingsTab.svelte';
 	import ProjectStatusBadge from './ProjectStatusBadge.svelte';
 	import { getProjectDetail, updateProjectStatus, type Endpoint } from '$lib/api/BeoApi';
 	import { selectedProject } from '$lib/stores/selectedConfig';
@@ -46,7 +47,7 @@
 				toast.error('No workspace selected');
 				return;
 			}
-			await updateProjectStatus(currentWorkspaceId, $selectedProject.id, newStatus);
+			await updateProjectStatus($selectedProject.id, newStatus);
 			// Update local project status
 			selectedProject.update((current) => {
 				if (current) {
@@ -95,6 +96,8 @@
 				<LogsTab selectedProject={$selectedProject} />
 			{:else if $activeTab === 'configuration'}
 				<ConfigurationTab selectedProject={$selectedProject} />
+			{:else if $activeTab === 'workspace-settings'}
+				<WorkspaceSettingsTab />
 			{/if}
 		</div>
 	{/if}
