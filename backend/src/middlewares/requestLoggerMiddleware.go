@@ -54,9 +54,10 @@ func RequestLoggerMiddleware(db *gorm.DB) gin.HandlerFunc {
 		projectID, _ := c.Get(handler.KeyProjectID)
 		executionMode, _ := c.Get(handler.KeyExecutionMode)
 		matched, _ := c.Get(handler.KeyMatched)
+		path, _ := c.Get(handler.KeyPath)
 
 		// If no project ID, skip logging
-		if projectID == nil || projectID == "" {
+		if projectID == nil || projectID == "" || path == nil {
 			return
 		}
 
@@ -64,7 +65,7 @@ func RequestLoggerMiddleware(db *gorm.DB) gin.HandlerFunc {
 		logEntry := &database.RequestLog{
 			ProjectID:       toString(projectID),
 			Method:          c.Request.Method,
-			Path:            c.Request.URL.Path,
+			Path:            toString(path),
 			QueryParams:     c.Request.URL.RawQuery,
 			RequestHeaders:  MapSliceToJSONJoined(c.Request.Header),
 			RequestBody:     requestBody,

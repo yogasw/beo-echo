@@ -59,6 +59,7 @@ func MockRequestHandler(c *gin.Context) {
 	c.Set(KeyProjectID, projectID)
 	c.Set(KeyExecutionMode, string(mode))
 	c.Set(KeyMatched, matched)
+	c.Set(KeyPath, path)
 
 	// Copy response headers
 	for key, values := range resp.Header {

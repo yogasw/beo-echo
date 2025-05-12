@@ -13,6 +13,7 @@ const (
 	KeyProjectID     = "projectID"
 	KeyExecutionMode = "executionMode"
 	KeyMatched       = "matched"
+	KeyPath          = "path"
 )
 
 var mockService *services.MockService
