@@ -1,6 +1,7 @@
 import { writable, derived } from 'svelte/store';
 import type { Workspace } from '$lib/types/User';
 import authStore from './auth';
+import { getWorkspaces } from '$lib/api/mockoonApi';
 
 interface WorkspaceState {
   workspaces: Workspace[];
@@ -18,7 +19,7 @@ const initialState: WorkspaceState = {
 };
 
 // Create the store
-const workspaceStore = writable<WorkspaceState>(initialState);
+export const workspaceStore = writable<WorkspaceState>(initialState);
 
 // API URL
 const API_URL = '/mock/api';
@@ -51,48 +52,39 @@ export const workspaces = {
       if (!token) {
         throw new Error('Not authenticated');
       }
-      
-      const response = await fetch(`${API_URL}/workspaces`, {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
-      
-      const data = await response.json();
-      
-      if (!response.ok) {
-        throw new Error(data.message || 'Failed to load workspaces');
+      const workspaces = await getWorkspaces();
+      if (!workspaces) {
+       console.error('No workspaces found');
       }
       
       // Update store with workspace data
       workspaceStore.update(state => ({
         ...state,
-        workspaces: data.data || [],
+        workspaces: workspaces || [],
         isLoading: false
       }));
       
       // If there are workspaces and no current one is set, set the first one as current
-      if (data.data?.length > 0) {
+      if (workspaces?.length > 0) {
         workspaceStore.update(state => {
           if (!state.currentWorkspace) {
             return {
               ...state,
-              currentWorkspace: data.data[0]
+              currentWorkspace: workspaces[0]
             };
           }
           return state;
         });
       }
-      
-      return data.data;
+
+      return workspaces;
     } catch (error) {
       workspaceStore.update(state => ({
         ...state,
         isLoading: false,
         error: error.message || 'Failed to load workspaces'
       }));
-      
-      throw error;
+      console.error('Failed to load workspaces:', error);
     }
   },
   
@@ -182,31 +174,6 @@ export const workspaces = {
     }
   },
   
-  // Get projects in a workspace
-  getProjects: async (workspaceId: string) => {
-    try {
-      const token = getAuthToken();
-      if (!token) {
-        throw new Error('Not authenticated');
-      }
-      
-      const response = await fetch(`${API_URL}/workspaces/${workspaceId}/projects`, {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
-      
-      const data = await response.json();
-      
-      if (!response.ok) {
-        throw new Error(data.message || 'Failed to load workspace projects');
-      }
-      
-      return data.data;
-    } catch (error) {
-      throw error;
-    }
-  }
 };
 
 export default workspaceStore;

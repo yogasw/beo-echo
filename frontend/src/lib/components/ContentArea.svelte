@@ -23,13 +23,8 @@
 
 		loading = true;
 		try {
-			const currentWorkspaceId = getCurrentWorkspaceId();
-			if (!currentWorkspaceId) {
-				error = 'No workspace selected';
-				return;
-			}
 			// Download config using the configFile name
-			const response = await getProjectDetail(currentWorkspaceId, $selectedProject.id);
+			const response = await getProjectDetail($selectedProject.id);
 
 			// Parse routes from config
 			endpoints = response.endpoints;

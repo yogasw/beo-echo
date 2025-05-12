@@ -3,6 +3,7 @@ import { goto } from '$app/navigation';
 import type { User } from '$lib/types/User';
 import { auth } from '$lib/stores/auth';
 import { BASE_URL_API } from '$lib/utils/authUtils';
+import { getCurrentWorkspaceId } from '$lib/utils/localStorage';
 
 interface AuthCredentials {
 	username: string;
@@ -94,7 +95,7 @@ api.interceptors.request.use(
 	(config) => {
 		// Get JWT token from auth store
 		const token = auth.getToken();
-		
+
 		if (config.headers && token) {
 			config.headers.Authorization = `Bearer ${token}`;
 		}
@@ -147,27 +148,32 @@ export const getProjects = async (workspaceId?: string): Promise<Project[]> => {
 	return response.data.data;
 };
 
-export const deleteProject = async (workspaceId: string, projectId: string): Promise<any> => {
+export const deleteProject = async (projectId: string): Promise<any> => {
+	let workspaceId = getCurrentWorkspaceId();
 	const response = await api.delete(`/workspaces/${workspaceId}/projects/${projectId}`);
 	return response.data;
 };
-export const deleteEndpoint = async (workspaceId: string, projectId: string, endpointId: string): Promise<any> => {
+export const deleteEndpoint = async (projectId: string, endpointId: string): Promise<any> => {
+	let workspaceId = getCurrentWorkspaceId();
 	const response = await api.delete(`/workspaces/${workspaceId}/projects/${projectId}/endpoints/${endpointId}`);
 	return response.data;
 }
-export const deleteResponse = async (workspaceId: string, projectId: string, endpointId: string, responseId: string): Promise<any> => {
+export const deleteResponse = async (projectId: string, endpointId: string, responseId: string): Promise<any> => {
+	const workspaceId = getCurrentWorkspaceId();
 	const response = await api.delete(`/workspaces/${workspaceId}/projects/${projectId}/endpoints/${endpointId}/responses/${responseId}`);
 	return response.data;
 }
 
-export const updateProjectStatus = async (workspaceId: string, projectId: string, status: string): Promise<Project> => {
+export const updateProjectStatus = async (projectId: string, status: string): Promise<Project> => {
+	let workspaceId = getCurrentWorkspaceId();
 	const response = await api.put(`/workspaces/${workspaceId}/projects/${projectId}`, {
 		status: status
 	});
 	return response.data.data;
 };
 
-export const addProject = async (workspaceId: string, name: string, alias: string): Promise<Project> => {
+export const addProject = async (name: string, alias: string): Promise<Project> => {
+	let workspaceId = getCurrentWorkspaceId();
 	const response = await api.post(`/workspaces/${workspaceId}/projects`, {
 		name,
 		alias
@@ -175,7 +181,8 @@ export const addProject = async (workspaceId: string, name: string, alias: strin
 	return response.data.data;
 };
 
-export const addEndpoint = async (workspaceId: string, projectId: string, method: string, path: string): Promise<Endpoint> => {
+export const addEndpoint = async (projectId: string, method: string, path: string): Promise<Endpoint> => {
+	let workspaceId = getCurrentWorkspaceId();
 	const response = await api.post(`/workspaces/${workspaceId}/projects/${projectId}/endpoints`, {
 		method,
 		path,
@@ -185,7 +192,8 @@ export const addEndpoint = async (workspaceId: string, projectId: string, method
 	return response.data.data;
 };
 
-export const addResponse = async (workspaceId: string, projectId: string, endpointId: string, statusCode: number, body: string, headers: string, documentation: string): Promise<Response> => {
+export const addResponse = async (projectId: string, endpointId: string, statusCode: number, body: string, headers: string, documentation: string): Promise<Response> => {
+	let workspaceId = getCurrentWorkspaceId();
 	const response = await api.post(`/workspaces/${workspaceId}/projects/${projectId}/endpoints/${endpointId}/responses`, {
 		statusCode,
 		body,
@@ -212,7 +220,8 @@ export const downloadConfig = async (filename: string): Promise<any> => {
 	return await api.get(`/configs/${filename}/download`);
 };
 
-export const getProjectDetail = async (workspaceId: string, projectId: string): Promise<Project> => {
+export const getProjectDetail = async (projectId: string): Promise<Project> => {
+	let workspaceId = getCurrentWorkspaceId();
 	const response = await api.get(`/workspaces/${workspaceId}/projects/${projectId}`);
 	return response.data.data;
 }
@@ -300,7 +309,8 @@ export const updateEndpoint = async (projectId: string, endpointId: string, data
 	responseMode?: string;
 	documentation?: string;
 }): Promise<Endpoint> => {
-	const response = await api.put(`/projects/${projectId}/endpoints/${endpointId}`, data);
+	let workspaceId = getCurrentWorkspaceId();
+	const response = await api.put(`/workspaces/${workspaceId}/projects/${projectId}/endpoints/${endpointId}`, data);
 	return response.data.data;
 };
 
@@ -313,12 +323,14 @@ export const updateResponse = async (projectId: string, endpointId: string, resp
 	stream?: boolean;
 	enabled?: boolean;
 }): Promise<Response> => {
-	const response = await api.put(`/projects/${projectId}/endpoints/${endpointId}/responses/${responseId}`, data);
+	let workspaceId = getCurrentWorkspaceId();
+	const response = await api.put(`/workspaces/${workspaceId}/projects/${projectId}/endpoints/${endpointId}/responses/${responseId}`, data);
 	return response.data.data;
 };
 
 // Get logs with pagination
-export const getLogs = async (page: number = 1, pageSize: number = 100, workspaceId: string, projectId: string): Promise<{ logs: RequestLog[], total: number }> => {
+export const getLogs = async (page: number = 1, pageSize: number = 100, projectId: string): Promise<{ logs: RequestLog[], total: number }> => {
+	let workspaceId = getCurrentWorkspaceId();
 	const params: Record<string, string> = {
 		page: page.toString(),
 		pageSize: pageSize.toString()
@@ -332,7 +344,8 @@ export const getLogs = async (page: number = 1, pageSize: number = 100, workspac
 };
 
 // Create an EventSource for real-time log streaming
-export const createLogStream = (workspaceId: string, projectId: string, limit: number = 100): EventSource => {
+export const createLogStream = (projectId: string, limit: number = 100): EventSource => {
+	let workspaceId = getCurrentWorkspaceId();
 	let baseURL = `${import.meta.env.VITE_API_BASE_URL || 'http://localhost:3600/mock/api'}`;
 	let url = `${baseURL}/workspaces/${workspaceId}/projects/${projectId}/logs/stream?limit=${limit}`;
 
@@ -343,14 +356,14 @@ export const createLogStream = (workspaceId: string, projectId: string, limit: n
 	}
 
 	console.log('Creating SSE connection to:', url);
-	
+
 	const eventSource = new EventSource(url);
-	
+
 	// Add global error handling
 	eventSource.onerror = (err) => {
 		console.error('EventSource global error:', err);
 	};
-	
+
 	return eventSource;
 };
 

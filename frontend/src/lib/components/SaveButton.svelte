@@ -43,7 +43,6 @@
 				if (isResponseUpdate) {
 					// Call the API to update the response
 					await apiUpdateResponse(
-						$currentWorkspace.id,
 						update.projectId, 
 						update.endpointId, 
 						(update as any).responseId, 
@@ -51,7 +50,7 @@
 					);
 				} else {
 					// Call the API to update the endpoint
-					await apiUpdateEndpoint($currentWorkspace.id, update.projectId, update.endpointId, apiData);
+					await apiUpdateEndpoint(update.projectId, update.endpointId, apiData);
 				}
 			}
 			

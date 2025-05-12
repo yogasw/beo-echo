@@ -150,7 +150,7 @@
 
 		isAddingProject = true;
 		try {
-			await addProject($currentWorkspace.id, projectName.trim(), projectAlias.trim());
+			await addProject(projectName.trim(), projectAlias.trim());
 			// Refresh project list
 			projects.set(await getProjects($currentWorkspace.id));
 			toast.success('Project created successfully');
@@ -171,7 +171,7 @@
 		
 		updatingStatus = project.id;
 		try {
-			await updateProjectStatus($currentWorkspace.id, project.id, newStatus);
+			await updateProjectStatus(project.id, newStatus);
 			// Update local project status
 			$projects = $projects.map(p => 
 				p.id === project.id ? { ...p, status: newStatus } : p

@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { updateEndpoint, type Endpoint, type Project } from '$lib/api/mockoonApi';
+	import { deleteEndpoint, updateEndpoint, type Endpoint, type Project } from '$lib/api/mockoonApi';
 	import { toast } from '$lib/stores/toast';
 	import type { MockoonRoute } from '$lib/types/Config';
 	import AddEndpointModal from './AddEndpointModal.svelte';
@@ -46,10 +46,10 @@
 					toast.error('No workspace selected');
 					return;
 				}
-				
+
 				endpoint.enabled = action === 'enable';
 				handleRouteStatusChange(endpoint);
-				updateEndpoint($currentWorkspace.id, endpoint.project_id, endpoint.id, {
+				updateEndpoint(endpoint.project_id, endpoint.id, {
 					enabled: endpoint.enabled
 				})
 					.then(() => {
@@ -66,8 +66,14 @@
 				break;
 			case 'delete':
 				// Add your delete functionality here
-				console.log('Delete endpoint', endpoint);
-				// Call API or service to delete the endpoint
+				deleteEndpoint(endpoint.project_id, endpoint.id)
+					.then(() => {
+						toast.success('Endpoint successfully deleted!');
+						handleRouteStatusChange(endpoint);
+					})
+					.catch((error) => {
+						toast.error(`Failed to delete endpoint: ${error.message}`);
+					});
 				break;
 		}
 	}

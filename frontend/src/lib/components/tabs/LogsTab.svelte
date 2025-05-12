@@ -128,7 +128,7 @@
 			}
 			
 			isLoading = true;
-			const result = await getLogs(1, pageSize, $currentWorkspace.id, selectedProject.id);
+			const result = await getLogs(1, pageSize, selectedProject.id);
 			logs = result.logs;
 			total = result.total;
 			isLoading = false;
@@ -153,7 +153,7 @@
 		console.log('Setting up log stream for project:', selectedProject.id, 'in workspace:', $currentWorkspace.id);
 
 		// Create new connection
-		eventSource = createLogStream($currentWorkspace.id, selectedProject.id, pageSize);
+		eventSource = createLogStream(selectedProject.id, pageSize);
 
 		// Setup event handlers
 		eventSource.addEventListener('log', (event) => {
