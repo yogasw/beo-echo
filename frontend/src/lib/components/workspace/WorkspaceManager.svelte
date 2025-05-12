@@ -36,6 +36,17 @@
 		}
 	}
 
+	// Handle workspace settings
+	function openWorkspaceSettings() {
+		// This function will handle opening workspace settings
+		// You can navigate to a settings page or open a modal
+		if ($currentWorkspace) {
+			// Example implementation - you might want to adjust this based on your routing
+			// window.location.href = `/settings/workspace/${$currentWorkspace.id}`;
+			console.log('Opening settings for workspace:', $currentWorkspace.id);
+		}
+		modalOpen = false;
+	}
 
 	// Load workspaces on component mount
 	onMount(async () => {
@@ -129,12 +140,28 @@
 						</div>
 					</div>
 				</div>
+                
+                <!-- Workspace Settings Button -->
+                <div class="mt-2 pt-2 border-t theme-border">
+                    <div class="px-3 py-2">
+                        <button 
+                            on:click={openWorkspaceSettings}
+                            disabled={!$currentWorkspace}
+                            class="flex items-center w-full px-3 py-2 text-sm hover:bg-blue-500/20 disabled:opacity-50 disabled:hover:bg-gray-700 rounded-md transition-colors gap-2"
+                        >
+                            <i class="fas fa-cog text-blue-400"></i>
+                            <span class="theme-text-primary">Workspace Settings</span>
+                        </button>
+                    </div>
+                </div>
 			</div>
 		</div>
 	{/if}
 </div>
 
-<!-- Delete Confirmation Modal
+<!-- Delete Confirmation Modal -->
+<!--
 {#if showDeleteConfirmation && workspaceToDelete}
 	<WorkspaceDeleteConfirmation workspace={workspaceToDelete} onConfirm={handleDeleteConfirmation} />
-{/if} -->
+{/if}
+-->
