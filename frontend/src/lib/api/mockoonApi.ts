@@ -212,7 +212,7 @@ export const downloadConfig = async (filename: string): Promise<any> => {
 	return await api.get(`/configs/${filename}/download`);
 };
 
-export const getProjectDetail = async (workspaceId?: string, projectId?: string): Promise<Project> => {
+export const getProjectDetail = async (workspaceId: string, projectId: string): Promise<Project> => {
 	const response = await api.get(`/workspaces/${workspaceId}/projects/${projectId}`);
 	return response.data.data;
 }
