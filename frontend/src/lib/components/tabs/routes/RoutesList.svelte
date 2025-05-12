@@ -16,7 +16,7 @@
 	export let handleRouteStatusChange: (route: Endpoint) => void;
 	export let handleAddEndpoint: (endpoint: Endpoint) => void;
 	export let project: Project;
-	
+
 	let showAddEndpointModal = false;
 	let activeMenuEndpointId: string | null = null;
 
@@ -37,14 +37,14 @@
 	function handleMenuAction(event: MouseEvent, action: string, endpoint: Endpoint) {
 		event.stopPropagation();
 		activeMenuEndpointId = null;
-		
-		switch(action) {
+
+		switch (action) {
 			case 'enable':
 			case 'disable':
 				endpoint.enabled = action === 'enable';
 				handleRouteStatusChange(endpoint);
 				updateEndpoint(endpoint.project_id, endpoint.id, {
-					enabled: endpoint.enabled,
+					enabled: endpoint.enabled
 				})
 					.then(() => {
 						toast.success(`Endpoint successfully ${action}d!`);
@@ -84,11 +84,13 @@
 
 <!-- Routes Section -->
 <div class="w-1/3 theme-bg-primary p-4 flex flex-col">
-	<div class={ThemeUtils.headerSection("rounded mb-4")}>
-		<i class="fas fa-info-circle text-blue-500 text-2xl mr-2"></i>
-		<span class="text-xl font-bold text-blue-500">Project: {activeConfigName}</span>
-		<div class="ml-auto">
-			<ThemeToggle size="small" showLabel={false} />
+	<div class={ThemeUtils.headerSection('rounded mb-4')}>
+		<div class="bg-blue-600/10 dark:bg-blue-600/10 p-2 rounded-lg mr-3">
+			<i class="fas fa-route text-blue-500 text-xl"></i>
+		</div>
+		<div>
+			<h2 class="text-xl font-bold theme-text-primary">{activeConfigName}</h2>
+			<p class="text-sm theme-text-muted">API Endpoint Management</p>
 		</div>
 	</div>
 	<div class="flex items-center theme-bg-secondary p-2 rounded mb-2">
@@ -97,24 +99,24 @@
 			type="text"
 			id="route-search"
 			placeholder="Search Path or Method"
-			class={ThemeUtils.inputField("py-1 px-2 ps-2")}
+			class={ThemeUtils.inputField('py-1 px-2 ps-2')}
 			bind:value={filterText}
 		/>
 	</div>
-	
+
 	<!-- Add Endpoint Button -->
-	<button 
-		class={ThemeUtils.primaryButton("w-full justify-center mb-4")}
-		on:click={() => showAddEndpointModal = true}
+	<button
+		class={ThemeUtils.primaryButton('w-full justify-center mb-4')}
+		on:click={() => (showAddEndpointModal = true)}
 	>
 		<i class="fas fa-plus mr-2"></i> Add Endpoint
 	</button>
-	
-	<AddEndpointModal 
-		bind:isOpen={showAddEndpointModal} 
+
+	<AddEndpointModal
+		bind:isOpen={showAddEndpointModal}
 		{project}
 		on:endpointCreated={onEndpointCreated}
-		on:close={() => showAddEndpointModal = false}
+		on:close={() => (showAddEndpointModal = false)}
 	/>
 
 	<div class="flex-1 overflow-y-auto hide-scrollbar">
@@ -132,13 +134,13 @@
 					{#if !endpoint.enabled}
 						<div class="absolute left-0 top-0 bottom-0 w-1 bg-red-500 rounded-bl rounded-tl"></div>
 					{/if}
-					<span class={ThemeUtils.themeTextPrimary("flex items-center text-sm font-bold truncate")}>
-						<span class={ThemeUtils.methodBadge(endpoint.method, "mr-2")}>
+					<span class={ThemeUtils.themeTextPrimary('flex items-center text-sm font-bold truncate')}>
+						<span class={ThemeUtils.methodBadge(endpoint.method, 'mr-2')}>
 							{endpoint.method}
 						</span>
 						{endpoint.path.length > 30 ? endpoint.path.slice(0, 30) + '...' : endpoint.path}
 					</span>
-					
+
 					<!-- Three-dot menu button only shown on hover -->
 					<div class="relative menu-container">
 						<button
@@ -152,13 +154,18 @@
 								<div class="w-1 h-1 rounded-full theme-bg-accent"></div>
 							</div>
 						</button>
-						
+
 						{#if activeMenuEndpointId === endpoint.id}
-							<div class={ThemeUtils.card("absolute right-0 top-full mt-2 w-48 theme-bg-primary border z-50")}>
+							<div
+								class={ThemeUtils.card(
+									'absolute right-0 top-full mt-2 w-48 theme-bg-primary border z-50'
+								)}
+							>
 								<div class="py-1">
 									<button
 										class="w-full text-left px-4 py-2 text-sm theme-text-primary hover:bg-gray-700 flex items-center"
-										on:click|stopPropagation={(e) => handleMenuAction(e, endpoint.enabled ? 'disable' : 'enable', endpoint)}
+										on:click|stopPropagation={(e) =>
+											handleMenuAction(e, endpoint.enabled ? 'disable' : 'enable', endpoint)}
 									>
 										{#if endpoint.enabled}
 											<i class="fas fa-toggle-off mr-2 text-red-500"></i> Disable
