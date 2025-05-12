@@ -189,7 +189,7 @@ type User struct {
 	Email      string          `gorm:"uniqueIndex" json:"email"`            // Unique email (used for login/identity)
 	Name       string          `json:"name"`                                // Display name
 	Password   string          `json:"-"`                                   // Optional (if login via password)
-	IsAdmin    bool            `gorm:"default:false" json:"is_admin"`       // System-wide admin (can manage SSO configs, etc)
+	IsOwner    bool            `gorm:"default:false" json:"is_owner"`       // System-wide owner (can manage SSO configs, manage all workspaces and etc)
 	Identities []UserIdentity  `gorm:"foreignKey:UserID" json:"identities"` // Linked SSO accounts
 	Workspaces []UserWorkspace `gorm:"foreignKey:UserID" json:"workspaces"` // Memberships in workspaces
 	CreatedAt  time.Time       `gorm:"autoCreateTime" json:"created_at"`
@@ -248,11 +248,15 @@ func (w *Workspace) BeforeCreate(tx *gorm.DB) error {
 // UserWorkspace defines the relationship and role of a user in a workspace.
 // Used to implement multi-workspace and per-workspace roles (e.g., owner/admin/member).
 type UserWorkspace struct {
-	ID          string `gorm:"type:string;primaryKey" json:"id"` // Unique record ID
-	UserID      string `gorm:"index" json:"user_id"`             // Linked user
-	WorkspaceID string `gorm:"index" json:"workspace_id"`        // Linked workspace
-	Role        string `gorm:"default:'member'" json:"role"`     // "owner", "admin", or "member"
+	ID          string    `gorm:"type:string;primaryKey" json:"id"` // Unique record ID
+	UserID      string    `gorm:"index" json:"user_id"`             // Linked user
+	WorkspaceID string    `gorm:"index" json:"workspace_id"`        // Linked workspace
+	Role        string    `gorm:"default:'member'" json:"role"`     // "admin", or "member" and only admin can manage user in workspace
+	CreatedAt   time.Time `gorm:"autoCreateTime" json:"created_at"`
+	UpdatedAt   time.Time `gorm:"autoUpdateTime" json:"updated_at"`
 
+	// Associations
+	// User and Workspace are backrefs to the User and Workspace models.
 	User      User      `gorm:"foreignKey:UserID;constraint:OnDelete:CASCADE"`      // Backref to User
 	Workspace Workspace `gorm:"foreignKey:WorkspaceID;constraint:OnDelete:CASCADE"` // Backref to Workspace
 }
