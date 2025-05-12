@@ -41,8 +41,8 @@ const (
 type Project struct {
 	ID            string         `gorm:"type:string;primaryKey" json:"id"`
 	Name          string         `gorm:"type:string" json:"name"`
-	WorkspaceID   string         `gorm:"type:string;index" json:"workspace_id"` // Foreign key to the associated workspace
-	Mode          ProjectMode    `gorm:"type:string" json:"mode"`
+	WorkspaceID   string         `gorm:"type:string;index" json:"workspace_id"`       // Foreign key to the associated workspace
+	Mode          ProjectMode    `gorm:"type:string;default:'mock'" json:"mode"`      // default: mock
 	Status        string         `gorm:"type:string;default:'running'" json:"status"` // running, stopped, error
 	ActiveProxyID *string        `gorm:"type:string" json:"active_proxy_id"`
 	ActiveProxy   *ProxyTarget   `gorm:"foreignKey:ActiveProxyID" json:"active_proxy"`
