@@ -6,6 +6,8 @@
 	import Settings from '$lib/components/settings/Settings.svelte';
 	import SaveButton from './SaveButton.svelte';
 	import WorkspaceSelector from './WorkspaceSelector.svelte';
+	import WorkspaceManager from './workspace/WorkspaceManager.svelte';
+	import WorkspaceInfo from './workspace/WorkspaceInfo.svelte';
 
 	export let handleLogout: () => void;
 
@@ -106,6 +108,12 @@
 			>{$theme === 'dark' ? 'Light Mode' : 'Dark Mode'}</span
 		>
 	</button>
+
+	<!-- Workspace Manager Button -->
+	<WorkspaceManager className="mr-4" />
+	
+	<!-- Workspace Info Button -->
+	<WorkspaceInfo className="mr-4" />
 
 	<!-- Profile Button -->
 	<div class="relative group flex flex-col items-center">

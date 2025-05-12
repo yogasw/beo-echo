@@ -42,6 +42,9 @@ export const allWorkspaces = derived(workspaceStore, $state => $state.workspaces
 // Derived store for getting the current workspace
 export const currentWorkspace = derived(workspaceStore, $state => $state.currentWorkspace);
 
+// Create a selectedWorkspace store (alias for currentWorkspace for better semantics)
+export const selectedWorkspace = currentWorkspace;
+
 // Workspace actions
 export const workspaces = {
   // Load all workspaces for the current user

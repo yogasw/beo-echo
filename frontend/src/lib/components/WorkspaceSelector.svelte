@@ -54,6 +54,7 @@
 <div class="relative {className}">
   <!-- Current Workspace Display -->
   <button 
+    id="workspaceSelectorButton"
     on:click={() => modalOpen = !modalOpen}
     class="flex items-center gap-2 px-4 py-2 theme-bg-secondary rounded-md hover:bg-opacity-80 transition-colors"
   >
