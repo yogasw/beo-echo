@@ -1,7 +1,8 @@
-import { getLocalStorage, removeAuthLocalStorage } from '$lib/utils/localStorage';
 import axios from 'axios';
 import { goto } from '$app/navigation';
 import type { User } from '$lib/types/User';
+import { auth } from '$lib/stores/auth';
+import { BASE_URL_API } from '$lib/utils/authUtils';
 
 interface AuthCredentials {
 	username: string;
@@ -80,7 +81,6 @@ export type Response = {
 	updated_at: Date;
 }
 
-export const BASE_URL_API = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3600/mock/api'
 // Create axios instance with default config
 const api = axios.create({
 	baseURL: BASE_URL_API,
@@ -89,13 +89,14 @@ const api = axios.create({
 	}
 });
 
-// Add request interceptor to add auth header
+// Add request interceptor to add auth header with JWT token
 api.interceptors.request.use(
 	(config) => {
-		const username = getLocalStorage('username');
-		const password = getLocalStorage('password');
-		if (config.headers) {
-			config.headers.Authorization = `Basic ${btoa(`${username}:${password}`)}`;
+		// Get JWT token from auth store
+		const token = auth.getToken();
+		
+		if (config.headers && token) {
+			config.headers.Authorization = `Bearer ${token}`;
 		}
 		return config;
 	},
@@ -112,15 +113,14 @@ api.interceptors.response.use(
 		console.log('route', error.response?.config.url);
 		if (error.response?.status === 401) {
 			console.error('Authentication failed');
-			removeAuthLocalStorage();
+			// Use auth store logout to properly clear token and state
+			auth.logout();
+			// Prevent multiple redirects
 			if (!isRedirectingToLogin) {
 				isRedirectingToLogin = true;
 				setTimeout(() => {
 					isRedirectingToLogin = false;
 				}, 2000);
-				if (window.location.pathname !== '/login') {
-					goto('/login');
-				}
 			}
 		}
 		return Promise.reject(error);
@@ -229,14 +229,15 @@ export const deleteConfig = async (filename: string): Promise<any> => {
 };
 
 export const login = async (credentials: AuthCredentials): Promise<boolean> => {
-	const response = await api.post('/auth', credentials);
-	if (response.data.success) {
-		localStorage.setItem('auth', JSON.stringify({
-			username: credentials.username,
-			password: credentials.password
-		}));
+	// Note: This function is now deprecated - use auth.login from auth store instead
+	// Adapting old function to use the new auth system
+	try {
+		await auth.login(credentials.username, credentials.password);
+		return true;
+	} catch (error) {
+		console.error('Login failed:', error);
+		return false;
 	}
-	return response.data.success;
 };
 
 export const getConfigDetails = async (uuid: string): Promise<ConfigResponse> => {
@@ -325,11 +326,10 @@ export const createLogStream = (projectId: string, limit: number = 100): EventSo
 	let baseURL = `${import.meta.env.VITE_API_BASE_URL || 'http://localhost:3600/mock/api'}`;
 	let url = `${baseURL}/projects/${projectId}/logs/stream?limit=${limit}`;
 
-	// Add authentication
-	const username = getLocalStorage('username');
-	const password = getLocalStorage('password');
-	if (username && password) {
-		url += `&auth=${btoa(`${username}:${password}`)}`;
+	// Add authentication using JWT token
+	const token = auth.getToken();
+	if (token) {
+		url += `&auth=${token}`;
 	}
 
 	console.log('Creating SSE connection to:', url);
@@ -345,37 +345,4 @@ export const createLogStream = (projectId: string, limit: number = 100): EventSo
 };
 
 
-/**
- * Fetch full user profile including ownership status
- */
-export async function fetchUserProfile(token: string): Promise<User> {
-  try {
-    const response = await fetch(`${BASE_URL_API}/auth/me`, {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`
-      }
-    });
-    
-    if (!response.ok) {
-      throw new Error('Failed to fetch user profile');
-    }
-    
-    const data = await response.json();
-    
-    if (!data.success || !data.data) {
-      throw new Error(data.message || 'Failed to fetch user profile data');
-    }
-    
-    return {
-      id: data.data.id,
-      email: data.data.email,
-      name: data.data.name,
-      isOwner: data.data.is_owner || false
-    };
-  } catch (error) {
-    console.error('Error fetching user profile:', error);
-    throw error;
-  }
-}
+// Function fetchUserProfile has been moved to lib/utils/authUtils.ts

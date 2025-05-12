@@ -2,7 +2,7 @@ import { browser } from '$app/environment';
 import { writable, derived } from 'svelte/store';
 import { goto } from '$app/navigation';
 import type { User } from '$lib/types/User';
-import { BASE_URL_API, fetchUserProfile } from '$lib/api/mockoonApi';
+import { BASE_URL_API, fetchUserProfile } from '$lib/utils/authUtils';
 
 // Types
 interface AuthState {
