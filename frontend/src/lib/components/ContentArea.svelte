@@ -46,7 +46,12 @@
 
 		updatingStatus = true;
 		try {
-			await updateProjectStatus($selectedProject.id, newStatus);
+			const currentWorkspaceId = getCurrentWorkspaceId();
+			if (!currentWorkspaceId) {
+				toast.error('No workspace selected');
+				return;
+			}
+			await updateProjectStatus(currentWorkspaceId, $selectedProject.id, newStatus);
 			// Update local project status
 			selectedProject.update((current) => {
 				if (current) {
