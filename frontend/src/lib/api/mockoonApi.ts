@@ -1,6 +1,6 @@
 import axios from 'axios';
 import { goto } from '$app/navigation';
-import type { User } from '$lib/types/User';
+import type { User, Workspace } from '$lib/types/User';
 import { auth } from '$lib/stores/auth';
 import { BASE_URL_API } from '$lib/utils/authUtils';
 import { getCurrentWorkspaceId } from '$lib/utils/localStorage';
@@ -133,10 +133,22 @@ export const getMockStatus = async (): Promise<ConfigResponse[]> => {
 	return response.data.data;
 };
 
-export const getWorkspaces = async (): Promise<any[]> => {
+export const getWorkspaces = async (): Promise<Workspace[]> => {
 	const response = await api.get('/workspaces');
 	return response.data.data;
 };
+
+export const createWorkspace = async (name: string): Promise<Workspace> => {
+	const response = await api.post('/workspaces', {
+		name
+	});
+	return response.data.data;
+};
+
+export const deleteWorkspace = async (workspaceId: string): Promise<any> => {
+	const response = await api.delete(`/workspaces/${workspaceId}`);
+	return response.data;
+}
 
 export const getProjects = async (workspaceId?: string): Promise<Project[]> => {
 	// If no workspaceId provided, this will fail with the new API structure

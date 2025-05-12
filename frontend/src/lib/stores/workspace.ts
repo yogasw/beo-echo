@@ -1,7 +1,7 @@
 import { writable, derived } from 'svelte/store';
 import type { Workspace } from '$lib/types/User';
 import authStore from './auth';
-import { getWorkspaces } from '$lib/api/mockoonApi';
+import { createWorkspace, getWorkspaces } from '$lib/api/mockoonApi';
 
 interface WorkspaceState {
   workspaces: Workspace[];
@@ -27,11 +27,11 @@ const API_URL = '/mock/api';
 // Helper to get the auth token from the auth store
 function getAuthToken(): string | null {
   let token: string | null = null;
-  
+
   authStore.subscribe((state) => {
     token = state.token;
   })();
-  
+
   return token;
 }
 
@@ -46,7 +46,7 @@ export const workspaces = {
   // Load all workspaces for the current user
   loadAll: async () => {
     workspaceStore.update(state => ({ ...state, isLoading: true, error: null }));
-    
+
     try {
       const token = getAuthToken();
       if (!token) {
@@ -54,16 +54,16 @@ export const workspaces = {
       }
       const workspaces = await getWorkspaces();
       if (!workspaces) {
-       console.error('No workspaces found');
+        console.error('No workspaces found');
       }
-      
+
       // Update store with workspace data
       workspaceStore.update(state => ({
         ...state,
         workspaces: workspaces || [],
         isLoading: false
       }));
-      
+
       // If there are workspaces and no current one is set, set the first one as current
       if (workspaces?.length > 0) {
         workspaceStore.update(state => {
@@ -78,7 +78,7 @@ export const workspaces = {
       }
 
       return workspaces;
-    } catch (error) {
+    } catch (error: any) {
       workspaceStore.update(state => ({
         ...state,
         isLoading: false,
@@ -87,52 +87,37 @@ export const workspaces = {
       console.error('Failed to load workspaces:', error);
     }
   },
-  
+
   // Create a new workspace
   create: async (name: string) => {
     workspaceStore.update(state => ({ ...state, isLoading: true, error: null }));
-    
+
     try {
-      const token = getAuthToken();
-      if (!token) {
-        throw new Error('Not authenticated');
+      const workspace = await createWorkspace(name);
+      if (!workspace) {
+        throw new Error(workspace || 'Failed to create workspace');
       }
-      
-      const response = await fetch(`${API_URL}/workspaces`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({ name })
-      });
-      
-      const data = await response.json();
-      
-      if (!response.ok) {
-        throw new Error(data.message || 'Failed to create workspace');
-      }
-      
+
       // Update store with new workspace
       workspaceStore.update(state => ({
         ...state,
-        workspaces: [...state.workspaces, data.data],
-        currentWorkspace: data.data,
+        workspaces: [...state.workspaces, workspace],
+        currentWorkspace: workspace,
         isLoading: false
       }));
-      
-      return data.data;
-    } catch (error) {
+
+      return workspace;
+    } catch (error: any) {
       workspaceStore.update(state => ({
         ...state,
         isLoading: false,
-        error: error.message || 'Failed to create workspace'
+        error: error?.message || 'Failed to create workspace'
       }));
-      
+
       throw error;
     }
   },
-  
+
   // Set the current workspace
   setCurrent: (workspaceId: string) => {
     workspaceStore.update(state => {
@@ -143,7 +128,7 @@ export const workspaces = {
       };
     });
   },
-  
+
   // Check user role in a workspace
   checkRole: async (workspaceId: string, userId?: string) => {
     try {
@@ -151,29 +136,29 @@ export const workspaces = {
       if (!token) {
         throw new Error('Not authenticated');
       }
-      
-      const url = userId 
+
+      const url = userId
         ? `${API_URL}/workspaces/${workspaceId}/role?user_id=${userId}`
         : `${API_URL}/workspaces/${workspaceId}/role`;
-      
+
       const response = await fetch(url, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
       });
-      
+
       const data = await response.json();
-      
+
       if (!response.ok) {
         throw new Error(data.message || 'Failed to check role');
       }
-      
+
       return data.data;
     } catch (error) {
       throw error;
     }
   },
-  
+
 };
 
 export default workspaceStore;
