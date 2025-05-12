@@ -23,12 +23,12 @@
 </script>
 
 {#if $toast}
-  <div class="toast {$toast.type}" class:visible>
+  <div class="toast {$toast.type} fixed top-6 right-6 bg-gray-700 text-white px-4 py-3 rounded-md shadow-lg z-50 flex items-center border-l-4 transition-all" class:visible>
     <span class="icon">
-      {#if $toast.type === 'success'}<i class="fas fa-check-circle"></i>{/if}
-      {#if $toast.type === 'error'}<i class="fas fa-times-circle"></i>{/if}
-      {#if $toast.type === 'warning'}<i class="fas fa-exclamation-triangle"></i>{/if}
-      {#if $toast.type === 'info'}<i class="fas fa-info-circle"></i>{/if}
+      {#if $toast.type === 'success'}<i class="fas fa-check-circle text-green-400"></i>{/if}
+      {#if $toast.type === 'error'}<i class="fas fa-times-circle text-red-400"></i>{/if}
+      {#if $toast.type === 'warning'}<i class="fas fa-exclamation-triangle text-yellow-400"></i>{/if}
+      {#if $toast.type === 'info'}<i class="fas fa-info-circle text-blue-400"></i>{/if}
     </span>
     <span class="message">{$toast.message}</span>
     <button class="close-btn" on:click={close} aria-label="Close notification">
@@ -39,16 +39,11 @@
 
 <style>
 .toast {
-  position: fixed;
-  left: 50%;
-  bottom: 2rem;
-  transform: translateX(-50%);
+  opacity: 0;
+  transform: translateY(-20px);
+  transition: all 0.3s ease-in-out;
   min-width: 320px;
   max-width: 90vw;
-  display: flex;
-  align-items: center;
-  background: #1e293b;
-  color: #fff;
   border-radius: 0.75rem;
   box-shadow: 0 2px 16px rgba(0,0,0,0.2);
   padding: 1rem 1.5rem;

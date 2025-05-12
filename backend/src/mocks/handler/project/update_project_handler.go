@@ -48,6 +48,7 @@ func UpdateProjectHandler(c *gin.Context) {
 	var updateData struct {
 		Mode          database.ProjectMode `json:"mode"`
 		ActiveProxyID *string              `json:"active_proxy_id"`
+		Status        string               `json:"status"`
 	}
 
 	if err := c.ShouldBindJSON(&updateData); err != nil {
@@ -61,6 +62,19 @@ func UpdateProjectHandler(c *gin.Context) {
 	// Apply updates
 	if updateData.Mode != "" {
 		existingProject.Mode = updateData.Mode
+	}
+
+	if updateData.Status != "" {
+		// Validate status value
+		if updateData.Status == "running" || updateData.Status == "stopped" || updateData.Status == "error" {
+			existingProject.Status = updateData.Status
+		} else {
+			c.JSON(http.StatusBadRequest, gin.H{
+				"error":   true,
+				"message": "Invalid status value. Must be 'running', 'stopped', or 'error'",
+			})
+			return
+		}
 	}
 
 	if updateData.ActiveProxyID != nil {

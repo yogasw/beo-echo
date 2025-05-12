@@ -42,6 +42,7 @@ type Project struct {
 	ID            string         `gorm:"type:string;primaryKey" json:"id"`
 	Name          string         `gorm:"type:string" json:"name"`
 	Mode          ProjectMode    `gorm:"type:string" json:"mode"`
+	Status        string         `gorm:"type:string;default:'running'" json:"status"` // running, stopped, error
 	ActiveProxyID *string        `gorm:"type:string" json:"active_proxy_id"`
 	ActiveProxy   *ProxyTarget   `gorm:"foreignKey:ActiveProxyID" json:"active_proxy"`
 	Endpoints     []MockEndpoint `gorm:"foreignKey:ProjectID;constraint:OnDelete:CASCADE" json:"endpoints"`

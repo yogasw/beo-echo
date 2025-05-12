@@ -22,6 +22,7 @@ export type Project = {
 	id: string;
 	name: string;
 	mode: string;
+	status?: string; // 'running', 'stopped', or 'error'
 	active_proxy_id: null;
 	active_proxy: null;
 	endpoints: Endpoint[];
@@ -148,6 +149,12 @@ export const deleteResponse = async (projectId: string, endpointId: string, resp
 	return response.data;
 }
 
+export const updateProjectStatus = async (projectId: string, status: string): Promise<Project> => {
+	const response = await api.put(`/projects/${projectId}`, {
+		status: status
+	});
+	return response.data.data;
+};
 
 export const addProject = async (name: string, alias: string): Promise<Project> => {
 	const response = await api.post('/projects', {

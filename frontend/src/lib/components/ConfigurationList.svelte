@@ -4,8 +4,10 @@
 		getProjects,
 		uploadConfig,
 		addProject,
+		updateProjectStatus,
 		type Project
 	} from '$lib/api/mockoonApi';
+	import ProjectStatusBadge from '$lib/components/ProjectStatusBadge.svelte';
 	import { selectedProject } from '$lib/stores/selectedConfig';
 	import { activeTab } from '$lib/stores/activeTab';
 	import { projects } from '$lib/stores/configurations';
@@ -43,6 +45,9 @@
 	let projectAlias = '';
 	let isAddingProject = false;
 	let userEditedAlias = false;
+
+	// For project status updates
+	let updatingStatus: string | null = null;
 
 	// Function to generate alias from project name
 	function generateAlias(name: string): string {
@@ -150,19 +155,46 @@
 			isAddingProject = false;
 		}
 	}
+
+	async function handleUpdateStatus(project: Project, newStatus: string) {
+		if (updatingStatus === project.id) return; // Prevent double clicks
+		
+		updatingStatus = project.id;
+		try {
+			await updateProjectStatus(project.id, newStatus);
+			// Update local project status
+			$projects = $projects.map(p => 
+				p.id === project.id ? { ...p, status: newStatus } : p
+			);
+			
+			// If the currently selected project is modified, update that too
+			if ($selectedProject?.id === project.id) {
+				selectedProject.set({ ...$selectedProject, status: newStatus });
+			}
+			
+			toast.success(`Project ${newStatus === 'running' ? 'started' : 'stopped'} successfully`);
+		} catch (err) {
+			toast.error(`Failed to ${newStatus === 'running' ? 'start' : 'stop'} project`);
+			console.error('Error updating project status:', err);
+		} finally {
+			updatingStatus = null;
+		}
+	}
 </script>
 
 <div class="w-72 theme-bg-primary p-4 flex flex-col h-full border-r theme-border">
 	<h1 class="text-xl font-bold mb-4 flex items-center theme-text-primary">
 		<i class="fas fa-server text-5xl mr-4"></i> Beo Echo
 	</h1>
-	<div class="flex items-center theme-bg-secondary py-2 px-4 rounded mb-4">
-		<i class="fas fa-search theme-text-primary text-lg mr-2"></i>
+	<div class="relative mb-4">
+		<div class="absolute inset-y-0 start-0 flex items-center ps-3 pointer-events-none">
+			<i class="fas fa-search text-gray-400"></i>
+		</div>
 		<input
 			type="text"
 			bind:value={searchTerm}
 			placeholder="Search Configuration"
-			class="w-full theme-bg-secondary theme-text-primary py-2 px-2 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
+			class={ThemeUtils.inputField("py-2")}
 		/>
 	</div>
 	<button
@@ -182,7 +214,7 @@
 	/>
 
 	<button
-		class="bg-green-600 hover:bg-green-700 text-white py-2 px-4 rounded mb-4 w-full flex items-center justify-center"
+		class="{ThemeUtils.primaryButton('mb-4 w-full justify-center bg-green-600 hover:bg-green-700')}"
 		on:click={openAddProjectModal}
 	>
 		<i class="fas fa-plus mr-2"></i> Add Project
@@ -191,34 +223,44 @@
 	<!-- Add Project Modal -->
 	{#if showAddProjectModal}
 		<div class="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center">
-			<div class="theme-bg-primary p-6 rounded-lg max-w-md w-full mx-4 theme-shadow">
-				<h2 class="text-xl font-bold mb-4 theme-text-primary">Add New Project</h2>
+			<div class={ThemeUtils.card("p-6 max-w-md w-full mx-4")}>
+				<h2 class={ThemeUtils.headerSection("text-xl font-bold mb-4 rounded-md")}>Add New Project</h2>
 
 				<div class="mb-4">
 					<label for="projectName" class="block text-sm font-medium theme-text-secondary mb-1"
 						>Project Name</label
 					>
-					<input
-						id="projectName"
-						type="text"
-						class="w-full theme-bg-secondary theme-text-primary py-2 px-3 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 theme-border border"
-						bind:value={projectName}
-						placeholder="Enter project name"
-					/>
+					<div class="relative">
+						<div class="absolute inset-y-0 start-0 flex items-center ps-3 pointer-events-none">
+							<i class="fas fa-tag text-gray-400"></i>
+						</div>
+						<input
+							id="projectName"
+							type="text"
+							class={ThemeUtils.inputField("")}
+							bind:value={projectName}
+							placeholder="Enter project name"
+						/>
+					</div>
 				</div>
 
 				<div class="mb-4">
 					<label for="projectAlias" class="block text-sm font-medium theme-text-secondary mb-1"
 						>Project Alias</label
 					>
-					<input
-						id="projectAlias"
-						type="text"
-						class="w-full theme-bg-secondary theme-text-primary py-2 px-3 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 theme-border border"
-						bind:value={projectAlias}
-						placeholder="Enter project alias"
-						on:input={handleAliasInput}
-					/>
+					<div class="relative">
+						<div class="absolute inset-y-0 start-0 flex items-center ps-3 pointer-events-none">
+							<i class="fas fa-link text-gray-400"></i>
+						</div>
+						<input
+							id="projectAlias"
+							type="text"
+							class={ThemeUtils.inputField("")}
+							bind:value={projectAlias}
+							placeholder="Enter project alias"
+							on:input={handleAliasInput}
+						/>
+					</div>
 					<p class="text-xs theme-text-muted mt-1">
 						Only lowercase letters, numbers, underscores (_) and hyphens (-) allowed
 					</p>
@@ -227,26 +269,30 @@
 				<div class="mb-6">
 					<p class="block text-sm font-medium theme-text-secondary mb-1">URL Preview</p>
 					<div
-						class="bg-gray-100 dark:bg-gray-900 px-3 py-2 rounded border border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-300 font-mono text-sm break-all"
+						class={ThemeUtils.themeBgTertiary("px-3 py-2 rounded theme-border border font-mono text-sm break-all theme-text-secondary")}
 					>
 						http://BASE_URL/{projectAlias || '[alias]'}
 					</div>
 				</div>
 				<div class="flex justify-end space-x-2">
 					<button
-						class="{ThemeUtils.secondaryButton('px-4 py-2 rounded transition-colors')}"
+						class={ThemeUtils.secondaryButton('px-4 py-2 rounded transition-colors')}
 						on:click={closeAddProjectModal}
 						disabled={isAddingProject}
 					>
-						Cancel
+						<i class="fas fa-times mr-2"></i> Cancel
 					</button>
 					<button
-						class={`px-4 py-2 text-white rounded transition-colors flex items-center ${isAddingProject || !projectName.trim() || !projectAlias.trim() ? 'bg-gray-400 dark:bg-gray-700 cursor-not-allowed' : 'bg-blue-500 hover:bg-blue-600'}`}
+						class={isAddingProject || !projectName.trim() || !projectAlias.trim() 
+							? ThemeUtils.secondaryButton('px-4 py-2 cursor-not-allowed opacity-70') 
+							: ThemeUtils.primaryButton('px-4 py-2')}
 						on:click={handleAddProject}
 						disabled={isAddingProject || !projectName.trim() || !projectAlias.trim()}
 					>
 						{#if isAddingProject}
 							<i class="fas fa-spinner fa-spin mr-2"></i>
+						{:else}
+							<i class="fas fa-save mr-2"></i>
 						{/if}
 						{isAddingProject ? 'Creating...' : 'Create Project'}
 					</button>
@@ -261,10 +307,9 @@
 				<div
 					role="button"
 					tabindex="0"
-					class="theme-bg-secondary p-4 rounded cursor-pointer transition-colors"
-					class:theme-hover={$selectedProject?.id !== project.id}
-					class:border-2={$selectedProject?.id === project.id}
-					class:border-blue-500={$selectedProject?.id === project.id}
+					class={ThemeUtils.themeBgSecondary(`p-4 rounded cursor-pointer transition-colors 
+					${$selectedProject?.id === project.id ? 'border-2 border-blue-500' : 'theme-border border'}
+					${$selectedProject?.id !== project.id ? ThemeUtils.themeHover('') : ''}`)}
 					on:click={() => handleConfigClick(project)}
 					on:keydown={(e) => e.key === 'Enter' && handleConfigClick(project)}
 				>
@@ -275,9 +320,9 @@
 							{/if}
 							<span class="truncate">{project.name}</span>
 						</h2>
-						<span class="bg-blue-600 text-xs px-2 py-0.5 rounded-full text-white uppercase"
-							>{project.mode}</span
-						>
+						<div class="flex items-center space-x-2">
+							<span class={ThemeUtils.badge('info', 'text-xs px-2 py-0.5 uppercase')}>{project.mode}</span>
+						</div>
 					</div>
 
 					<div class="mt-2 space-y-1.5">
@@ -294,10 +339,15 @@
 						</div>
 
 						<div class="flex items-center text-xs">
-							<i class="fas fa-tag text-gray-400 dark:text-gray-400 mr-1.5 w-4"></i>
-							<span class="text-gray-600 dark:text-gray-300 truncate" title={project.alias || 'No alias'}>
+							<i class="fas fa-tag theme-text-muted mr-1.5 w-4"></i>
+							<span class="theme-text-secondary truncate" title={project.alias || 'No alias'}>
 								{project.alias || '—'}
 							</span>
+						</div>
+						
+						<!-- Status indicator with live animation -->
+						<div class="flex items-center text-xs">
+							<ProjectStatusBadge status={project.status || 'stopped'} size="small" />
 						</div>
 					</div>
 				</div>

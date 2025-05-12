@@ -4,6 +4,9 @@
 	import type { MockoonRoute } from '$lib/types/Config';
 	import AddEndpointModal from './AddEndpointModal.svelte';
 	import { onMount, onDestroy } from 'svelte';
+	import * as ThemeUtils from '$lib/utils/themeUtils';
+	import { theme } from '$lib/stores/theme';
+	import ThemeToggle from '$lib/components/ThemeToggle.svelte';
 
 	export let selectedEndpoint: Endpoint | null;
 	export let activeConfigName: string;
@@ -80,25 +83,28 @@
 </script>
 
 <!-- Routes Section -->
-<div class="w-1/3 bg-gray-800 p-4 flex flex-col">
-	<div class="bg-gray-700 p-4 rounded mb-4 flex items-center">
+<div class="w-1/3 theme-bg-primary p-4 flex flex-col">
+	<div class={ThemeUtils.headerSection("rounded mb-4")}>
 		<i class="fas fa-info-circle text-blue-500 text-2xl mr-2"></i>
 		<span class="text-xl font-bold text-blue-500">Project: {activeConfigName}</span>
+		<div class="ml-auto">
+			<ThemeToggle size="small" showLabel={false} />
+		</div>
 	</div>
-	<div class="flex items-center bg-gray-700 p-2 rounded mb-2">
-		<i class="fas fa-search text-white text-lg mr-2"></i>
+	<div class="flex items-center theme-bg-secondary p-2 rounded mb-2">
+		<i class="fas fa-search theme-text-primary text-lg mr-2"></i>
 		<input
 			type="text"
 			id="route-search"
 			placeholder="Search Path or Method"
-			class="w-full bg-gray-700 text-white py-1 px-2 rounded text-sm"
+			class={ThemeUtils.inputField("py-1 px-2 ps-2")}
 			bind:value={filterText}
 		/>
 	</div>
 	
 	<!-- Add Endpoint Button -->
 	<button 
-		class="w-full bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded mb-4 flex items-center justify-center"
+		class={ThemeUtils.primaryButton("w-full justify-center mb-4")}
 		on:click={() => showAddEndpointModal = true}
 	>
 		<i class="fas fa-plus mr-2"></i> Add Endpoint
@@ -115,10 +121,9 @@
 		<div class="space-y-4 pr-2 py-2">
 			{#each filteredEndpoints as endpoint}
 				<div
-					class="flex items-center justify-between bg-gray-700 py-2 px-4 rounded cursor-pointer relative group {selectedEndpoint ===
-					endpoint
-						? 'border-2 border-blue-500'
-						: ''} {!endpoint.enabled ? 'disabled-endpoint' : ''}"
+					class={ThemeUtils.themeBgSecondary(`flex items-center justify-between py-2 px-4 rounded cursor-pointer relative group 
+						${selectedEndpoint === endpoint ? 'border-2 border-blue-500' : 'theme-border'} 
+						${!endpoint.enabled ? 'opacity-75' : ''}`)}
 					on:click={() => selectRoute(endpoint)}
 					on:keydown={(e) => e.key === 'Enter' && selectRoute(endpoint)}
 					tabindex="0"
@@ -127,30 +132,32 @@
 					{#if !endpoint.enabled}
 						<div class="absolute left-0 top-0 bottom-0 w-1 bg-red-500 rounded-bl rounded-tl"></div>
 					{/if}
-					<span class="text-sm font-bold truncate">
-						<strong>{endpoint.method}</strong>
+					<span class={ThemeUtils.themeTextPrimary("flex items-center text-sm font-bold truncate")}>
+						<span class={ThemeUtils.methodBadge(endpoint.method, "mr-2")}>
+							{endpoint.method}
+						</span>
 						{endpoint.path.length > 30 ? endpoint.path.slice(0, 30) + '...' : endpoint.path}
 					</span>
 					
 					<!-- Three-dot menu button only shown on hover -->
 					<div class="relative menu-container">
 						<button
-							class="text-white h-8 w-8 flex items-center justify-center rounded hover:bg-gray-600 focus:outline-none opacity-0 group-hover:opacity-100 hover:opacity-100"
+							class="theme-text-primary h-8 w-8 flex items-center justify-center rounded hover:bg-gray-600 focus:outline-none opacity-0 group-hover:opacity-100 hover:opacity-100"
 							on:click|stopPropagation={(e) => toggleMenu(e, endpoint.id)}
 							aria-label="Options menu"
 						>
 							<div class="flex flex-col space-y-0.5">
-								<div class="w-1 h-1 rounded-full bg-white"></div>
-								<div class="w-1 h-1 rounded-full bg-white"></div>
-								<div class="w-1 h-1 rounded-full bg-white"></div>
+								<div class="w-1 h-1 rounded-full theme-bg-accent"></div>
+								<div class="w-1 h-1 rounded-full theme-bg-accent"></div>
+								<div class="w-1 h-1 rounded-full theme-bg-accent"></div>
 							</div>
 						</button>
 						
 						{#if activeMenuEndpointId === endpoint.id}
-							<div class="absolute right-0 top-full mt-2 w-48 bg-gray-800 border border-gray-600 rounded shadow-lg z-50">
+							<div class={ThemeUtils.card("absolute right-0 top-full mt-2 w-48 theme-bg-primary border z-50")}>
 								<div class="py-1">
 									<button
-										class="w-full text-left px-4 py-2 text-sm text-white hover:bg-gray-700 flex items-center"
+										class="w-full text-left px-4 py-2 text-sm theme-text-primary hover:bg-gray-700 flex items-center"
 										on:click|stopPropagation={(e) => handleMenuAction(e, endpoint.enabled ? 'disable' : 'enable', endpoint)}
 									>
 										{#if endpoint.enabled}
@@ -160,12 +167,12 @@
 										{/if}
 									</button>
 									<button
-										class="w-full text-left px-4 py-2 text-sm text-white hover:bg-gray-700 flex items-center"
+										class="w-full text-left px-4 py-2 text-sm theme-text-primary hover:bg-gray-700 flex items-center"
 										on:click|stopPropagation={(e) => handleMenuAction(e, 'duplicate', endpoint)}
 									>
 										<i class="fas fa-clone mr-2"></i> Duplicate
 									</button>
-									<hr class="border-gray-600 my-1" />
+									<hr class="theme-border my-1" />
 									<button
 										class="w-full text-left px-4 py-2 text-sm text-red-400 hover:bg-gray-700 flex items-center"
 										on:click|stopPropagation={(e) => handleMenuAction(e, 'delete', endpoint)}

@@ -2,6 +2,7 @@
 	// reference https://dev.to/lawrencecchen/monaco-editor-svelte-kit-572
 	import { onMount, onDestroy, createEventDispatcher, afterUpdate } from 'svelte';
 	import type * as monacoType from 'monaco-editor';
+	import { theme as appTheme } from '$lib/stores/theme';
 
 	// Worker setup (modern)
 	import editorWorker from 'monaco-editor/esm/vs/editor/editor.worker?worker';
@@ -34,14 +35,29 @@
 		}
 	};
 
+	// Update editor theme when app theme changes
+	$: if (monaco && editor && $appTheme) {
+		const editorTheme = $appTheme === 'dark' ? 'vs-dark' : 'vs';
+		monaco.editor.setTheme(editorTheme);
+	}
+
 	onMount(async () => {
 		const m = await import('monaco-editor');
 		monaco = m;
+		
+		// Set initial theme based on app theme
+		const editorTheme = $appTheme === 'dark' ? 'vs-dark' : 'vs';
+		
 		editor = monaco.editor.create(container, {
 			value,
 			language,
-			theme,
-			automaticLayout: true
+			theme: editorTheme,
+			automaticLayout: true,
+			fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace',
+			fontSize: 14,
+			minimap: {
+				enabled: true
+			}
 		});
 
 		editor.onDidChangeModelContent(() => {

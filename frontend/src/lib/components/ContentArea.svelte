@@ -2,9 +2,11 @@
 	import RoutesTab from './tabs/RoutesTab.svelte';
 	import LogsTab from './tabs/LogsTab.svelte';
 	import ConfigurationTab from './tabs/ConfigurationTab.svelte';
-	import { getProjectDetail, type Endpoint } from '$lib/api/mockoonApi';
+	import ProjectStatusBadge from './ProjectStatusBadge.svelte';
+	import { getProjectDetail, updateProjectStatus, type Endpoint } from '$lib/api/mockoonApi';
 	import { selectedProject } from '$lib/stores/selectedConfig';
 	import { activeTab } from '$lib/stores/activeTab';
+	import { toast } from '$lib/stores/toast';
 	import * as ThemeUtils from '$lib/utils/themeUtils';
 
 	export let endpoints: Endpoint[] = [];
@@ -12,6 +14,7 @@
 
 	let loading = false;
 	let error = '';
+	let updatingStatus = false;
 
 	async function loadConfigData() {
 		if (!$selectedProject) return;
@@ -31,17 +34,40 @@
 		}
 	}
 
+	async function handleUpdateStatus(newStatus: string) {
+		if (!$selectedProject || updatingStatus) return;
+		
+		updatingStatus = true;
+		try {
+			await updateProjectStatus($selectedProject.id, newStatus);
+			// Update local project status
+			selectedProject.update(current => {
+				if (current) {
+					return { ...current, status: newStatus };
+				}
+				return current;
+			});
+			
+			toast.success(`Project ${newStatus === 'running' ? 'started' : 'stopped'} successfully`);
+		} catch (err) {
+			toast.error(`Failed to ${newStatus === 'running' ? 'start' : 'stop'} project`);
+			console.error('Error updating project status:', err);
+		} finally {
+			updatingStatus = false;
+		}
+	}
+
 	// Watch for selectedConfig changes
 	$: if ($selectedProject) {
 		loadConfigData();
 	}
 </script>
 
-<div class="content-area">
+<div class={ThemeUtils.themeBgPrimary("content-area")}>
 	{#if !$selectedProject}
 		<div class="no-config-message theme-text-primary">
-			<i class="fas fa-info-circle"></i>
-			<h2>No Configuration Selected</h2>
+			<i class="fas fa-info-circle text-blue-500"></i>
+			<h2 class="theme-text-primary">No Configuration Selected</h2>
 			<p class="theme-text-secondary">Please select a configuration from the list to view its details.</p>
 		</div>
 	{:else if loading}
@@ -49,7 +75,7 @@
 			<div class="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-blue-500"></div>
 		</div>
 	{:else if error}
-		<div class="text-red-500 text-center p-4">{error}</div>
+		<div class="text-red-500 text-center p-4 bg-red-100/10 rounded-md border border-red-500/20">{error}</div>
 	{:else}
 		<div class="tab-content">
 			{#if $activeTab === 'routes'}
@@ -69,6 +95,7 @@
         flex-direction: column;
         height: 100%;
         padding: 1rem;
+        transition: background-color 0.3s ease, color 0.3s ease;
     }
 
     .tab-content {
@@ -83,13 +110,11 @@
         justify-content: center;
         height: 100%;
         text-align: center;
-        color: #64748b;
     }
 
     .no-config-message i {
         font-size: 3rem;
         margin-bottom: 1rem;
-        color: #3b82f6;
     }
 
     .no-config-message h2 {
