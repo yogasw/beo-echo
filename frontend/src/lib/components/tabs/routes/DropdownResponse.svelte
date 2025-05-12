@@ -2,6 +2,7 @@
 	import type { Endpoint, Response } from '$lib/api/mockoonApi';
 	import { addResponse } from '$lib/api/mockoonApi';
 	import type { MockoonResponse, MockoonRoute } from '$lib/types/Config';
+	import * as ThemeUtils from '$lib/utils/themeUtils';
 
 	let selectedValue: string = '';
 	export let selectedEndpoint: Endpoint | null;
@@ -66,7 +67,7 @@
 	}
 </script>
 
-<div class="flex items-center justify-between bg-gray-800 text-gray-300 py-5">
+<div class="flex items-center justify-between {ThemeUtils.themeBgPrimary()} {ThemeUtils.themeTextSecondary()} py-5">
 	<div class="flex items-center w-full">
 			<button
 				class="bg-blue-500 text-white rounded px-2 py-1 text-sm font-medium"
@@ -77,25 +78,25 @@
 			</button>
 		<div class="relative ml-4 w-full">
 			<button
-				class="text-sm font-medium bg-gray-700 text-gray-300 rounded px-2 py-1 flex items-center justify-between w-full"
+				class="text-sm font-medium {ThemeUtils.themeBgSecondary()} {ThemeUtils.themeTextSecondary()} rounded px-2 py-1 flex items-center justify-between w-full"
 				on:click={() => { toggleDropdown() }}
 			>
 				<span id="selectedValue">{selectedValue}</span>
 				<i class="fas fa-chevron-down"></i>
 			</button>
-			<div id="dropdownMenu" class="absolute mt-1 bg-gray-700 text-gray-300 rounded shadow-lg w-full hidden z-50 max-h-60 overflow-y-auto">
+			<div id="dropdownMenu" class="absolute mt-1 {ThemeUtils.themeBgSecondary()} {ThemeUtils.themeTextSecondary()} rounded shadow-lg w-full hidden z-50 max-h-60 overflow-y-auto">
 				<ul class="text-sm">
 					{#if selectedEndpoint?.responses && selectedEndpoint.responses.length > 0}
 						{#each selectedEndpoint.responses as response, index}
 							<li>
-								<button type="button" class="w-full text-left px-4 py-2 hover:bg-gray-600 cursor-pointer"
+								<button type="button" class="w-full text-left px-4 py-2 {ThemeUtils.themeHover()} cursor-pointer"
 												on:click={() => { selectResponse(index, response) }}>
 									Response {index + 1} ({response.status_code}) {response?.documentation}
 								</button>
 							</li>
 						{/each}
 					{:else}
-						<li class="px-4 py-2 text-gray-500">No Response</li>
+						<li class="px-4 py-2 {ThemeUtils.themeTextMuted()}">No Response</li>
 					{/if}
 				</ul>
 			</div>

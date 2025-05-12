@@ -2,6 +2,8 @@
 	import MonacoEditor from '$lib/components/MonacoEditor.svelte';
 	import { updateResponse } from '$lib/stores/saveButton';
 	import { toast } from '$lib/stores/toast';
+	import * as ThemeUtils from '$lib/utils/themeUtils';
+	import { theme } from '$lib/stores/theme';
 
 	export let responseBody: string;
 	export let statusCode: number;
@@ -41,10 +43,10 @@
 
 <div class="h-full flex flex-col space-y-2 w-full" on:keydown={handleKeyDown} tabindex="0">
 	<div>
-		<label class="text-sm text-white">Status Code:</label>
+		<label class="text-sm {ThemeUtils.themeTextPrimary()}">Status Code:</label>
 		<input
 			type="number"
-			class="bg-gray-700 text-white p-2 rounded w-24 focus:outline-none focus:ring-0 focus:border-none"
+			class="{ThemeUtils.themeBgSecondary()} {ThemeUtils.themeTextPrimary()} p-2 rounded w-24 focus:outline-none focus:ring-0 focus:border-none"
 			bind:value={statusCode}
 			on:blur={(e) => onStatusCodeChange(+e.target.value)}
 		/>
@@ -83,7 +85,7 @@
 			class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-80 fullscreen-modal"
 			on:click={handleModalClick}
 		>
-			<div class="relative w-11/12 h-5/6 bg-gray-800 rounded-lg shadow-lg">
+			<div class="relative w-11/12 h-5/6 {ThemeUtils.themeBgPrimary()} rounded-lg shadow-lg">
 				<div class="absolute top-2 right-2 flex space-x-2 z-50">
 					<button
 						class="bg-blue-600 text-white text-xs px-3 py-1 rounded hover:bg-blue-700"

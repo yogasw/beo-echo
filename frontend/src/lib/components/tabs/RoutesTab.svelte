@@ -7,6 +7,8 @@
 	import CallbacksTab from './routes/CallbacksTab.svelte';
 	import RoutesList from '$lib/components/tabs/routes/RoutesList.svelte';
 	import DropdownResponse from '$lib/components/tabs/routes/DropdownResponse.svelte';
+	import * as ThemeUtils from '$lib/utils/themeUtils';
+	import { theme } from '$lib/stores/theme';
 
 	export let selectedProject: Project;
 	export let endpoints: Endpoint[];
@@ -65,13 +67,13 @@
 	/>
 
 	<!-- Details Section -->
-	<div class="w-2/3 bg-gray-800 p-4 flex flex-col overflow-hidden">
+	<div class="w-2/3 {ThemeUtils.themeBgPrimary()} p-4 flex flex-col overflow-hidden">
 		<div class="mb-4">
-			<label for="endpoint-method" class="block text-sm font-bold mb-2">Endpoint</label>
+			<label for="endpoint-method" class="block text-sm font-bold mb-2 {ThemeUtils.themeTextPrimary()}">Endpoint</label>
 			<div class="flex flex-col md:flex-row items-center space-y-2 md:space-y-0 md:space-x-2">
 				<select
 					id="endpoint-method"
-					class="w-full md:w-1/6 rounded bg-gray-700 px-4 py-2 text-white"
+					class="w-full md:w-1/6 rounded {ThemeUtils.themeBgSecondary()} px-4 py-2 {ThemeUtils.themeTextPrimary()}"
 					value={selectedEndpoint?.method.toUpperCase()}
 				>
 					<option value="GET">GET</option>
@@ -80,10 +82,10 @@
 					<option value="DELETE">DELETE</option>
 					<option value="PATCH">PATCH</option>
 				</select>
-				<span class="text-gray-400 hidden md:block">{selectedProject.url}</span>
+				<span class="{ThemeUtils.themeTextMuted()} hidden md:block">{selectedProject.url}</span>
 				<input
 					type="text"
-					class="w-full md:flex-1 rounded bg-gray-700 px-4 py-2 text-white"
+					class="w-full md:flex-1 rounded {ThemeUtils.themeBgSecondary()} px-4 py-2 {ThemeUtils.themeTextPrimary()}"
 					value={selectedEndpoint?.path}
 					on:blur={(e) => {
 						if (selectedEndpoint) {
@@ -94,7 +96,7 @@
 					}}
 				/>
 				<button
-					class="text-gray-400 hover:text-blue-500 disabled:text-gray-600"
+					class="{ThemeUtils.themeTextMuted()} hover:text-blue-500 disabled:{ThemeUtils.themeTextMuted('opacity-50')}"
 					disabled={!selectedEndpoint || selectedEndpoint?.method !== 'GET'}
 					aria-label="Open endpoint in a new tab"
 					on:click={() => {
@@ -106,14 +108,14 @@
 					<i class="fas fa-external-link-alt"></i>
 				</button>
 			</div>
-			<span class="text-gray-400 block md:hidden mt-2"></span>
+			<span class="{ThemeUtils.themeTextMuted()} block md:hidden mt-2"></span>
 		</div>
-		<label for="endpoint-documentation" class="block text-sm font-bold mb-2">
+		<label for="endpoint-documentation" class="block text-sm font-bold mb-2 {ThemeUtils.themeTextPrimary()}">
 			Documentation for this routes
 		</label>
 		<textarea
 			id="endpoint-documentation"
-			class="w-full rounded bg-gray-700 px-4 py-2 text-white"
+			class="w-full rounded {ThemeUtils.themeBgSecondary()} px-4 py-2 {ThemeUtils.themeTextPrimary()} border {ThemeUtils.themeBorder()}"
 			rows="3"
 			placeholder="Provide a brief description or documentation for this endpoint"
 			on:blur={(e) => {
@@ -129,14 +131,21 @@
 
 		<div class="flex space-x-2 mb-4">
 			{#each ['Status & Body', 'Headers', 'Rules', 'Callbacks'] as tab}
-				<button
-					class="text-white py-2 px-4 rounded"
-					class:bg-blue-500={tab === activeContentTab}
-					class:bg-gray-700={tab !== activeContentTab}
-					on:click={() => (activeContentTab = tab)}
-				>
-					{tab}
-				</button>
+				{#if tab === activeContentTab}
+					<button
+						class="bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded"
+						on:click={() => (activeContentTab = tab)}
+					>
+						{tab}
+					</button>
+				{:else}
+					<button
+						class="{ThemeUtils.themeBgSecondary()} {ThemeUtils.themeTextPrimary()} py-2 px-4 rounded hover:bg-opacity-80"
+						on:click={() => (activeContentTab = tab)}
+					>
+						{tab}
+					</button>
+				{/if}
 			{/each}
 		</div>
 
@@ -183,7 +192,7 @@
 								<CallbacksTab callbacks={[]} />
 							{/if}
 						{:else}
-							<div class="text-gray-400">Select a route to view details.</div>
+							<div class="{ThemeUtils.themeTextMuted()}">Select a route to view details.</div>
 						{/if}
 					</div>
 				</div>
