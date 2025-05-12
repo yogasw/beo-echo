@@ -64,7 +64,7 @@
 		>
 			<i class="fas fa-building"></i>
 		</div>
-		<span class="text-xs mt-1 theme-text-primary">Workspace</span>
+		<span class="text-xs mt-1 theme-text-primary">{$currentWorkspace?.name}</span>
 	</button>
 
 	<!-- Workspace Modal -->
@@ -73,8 +73,6 @@
 			class="absolute top-full right-0 mt-2 w-64 theme-bg-primary rounded-md shadow-lg z-40 border theme-border"
 		>
 			<div class="p-2">
-				<h3 class="theme-text-secondary text-sm font-medium px-3 py-2">Current Workspace</h3>
-				<!-- Workspaces List -->
 				<!-- Error Message -->
 				{#if error}
 					<div
