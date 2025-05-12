@@ -5,9 +5,7 @@
 	import { theme, toggleTheme } from '$lib/stores/theme';
 	import Settings from '$lib/components/settings/Settings.svelte';
 	import SaveButton from './SaveButton.svelte';
-	import WorkspaceSelector from './WorkspaceSelector.svelte';
 	import WorkspaceManager from './workspace/WorkspaceManager.svelte';
-	import WorkspaceInfo from './workspace/WorkspaceInfo.svelte';
 
 	export let handleLogout: () => void;
 
@@ -39,10 +37,6 @@
 </script>
 
 <div class="theme-bg-primary flex items-center p-4">
-	<!-- Workspace Selector -->
-	<div class="mr-4">
-		<WorkspaceSelector className="theme-text-primary" />
-	</div>
 
 	<button
 		class="relative group mr-4 flex flex-col items-center"
@@ -111,9 +105,6 @@
 
 	<!-- Workspace Manager Button -->
 	<WorkspaceManager className="mr-4" />
-	
-	<!-- Workspace Info Button -->
-	<WorkspaceInfo className="mr-4" />
 
 	<!-- Profile Button -->
 	<div class="relative group flex flex-col items-center">

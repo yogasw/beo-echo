@@ -1,126 +1,142 @@
 <script lang="ts">
-  import { onMount } from 'svelte';
-  import { workspaces, currentWorkspace, workspaceStore } from '$lib/stores/workspace';
-  import WorkspaceDeleteConfirmation from './WorkspaceDeleteConfirmation.svelte';
-  import { toast } from '$lib/stores/toast';
-  
-  export let className = '';
-  
-  // Local state
-  let loading = false;
-  let error: string | null = null;
-  let modalOpen = false;
-  let showDeleteConfirmation = false;
-  let workspaceToDelete = null;
-  
-  // Handle modal toggle
-  function toggleModal() {
-    modalOpen = !modalOpen;
-  }
-  
-  // Open delete confirmation dialog
-  function openDeleteConfirmation(workspace) {
-    workspaceToDelete = workspace;
-    showDeleteConfirmation = true;
-    modalOpen = false;
-  }
-  
-  // Handle the deletion confirmation result
-  async function handleDeleteConfirmation(confirmed: boolean) {
-    if (confirmed && workspaceToDelete) {
-      try {
-        loading = true;
-        await workspaces.delete(workspaceToDelete.id);
-        toast.success(`Workspace "${workspaceToDelete.name}" deleted successfully`);
-      } catch (err) {
-        toast.error(`Failed to delete workspace: ${err.message || 'Unknown error'}`);
-      } finally {
-        loading = false;
-      }
-    }
-    
-    showDeleteConfirmation = false;
-    workspaceToDelete = null;
-  }
+	import { onMount } from 'svelte';
+	import { workspaces, currentWorkspace, workspaceStore } from '$lib/stores/workspace';
+	export let className = '';
+
+	// Local state
+	let loading = true;
+	let error: string | null = null;
+	let modalOpen = false;
+	let newWorkspaceName = '';
+
+	// Handle workspace selection
+	function selectWorkspace(workspaceId: string) {
+		workspaces.setCurrent(workspaceId);
+		modalOpen = false;
+	}
+
+	// Handle new workspace creation
+	async function createWorkspace() {
+		if (!newWorkspaceName?.trim()) {
+			error = 'Workspace name is required';
+			return;
+		}
+
+		loading = true;
+		error = null;
+
+		try {
+			await workspaces.create(newWorkspaceName);
+			newWorkspaceName = '';
+			modalOpen = false;
+		} catch (err) {
+			error = err.message || 'Failed to create workspace';
+		} finally {
+			loading = false;
+		}
+	}
+
+
+	// Load workspaces on component mount
+	onMount(async () => {
+		try {
+			await workspaces.loadAll();
+		} catch (err) {
+			error = 'Failed to load workspaces';
+		} finally {
+			loading = false;
+		}
+	});
+
+	// Handle modal toggle
+	function toggleModal() {
+		modalOpen = !modalOpen;
+	}
+
 </script>
 
 <!-- Workspace Manager Component -->
 <div class="relative {className}">
-  <!-- Company/Workspace Button -->
-  <button 
-    on:click={toggleModal}
-    class="flex flex-col items-center"
-  >
-    <div class="w-12 aspect-square theme-bg-secondary theme-text-primary p-3 rounded-full border-2 border-green-500 flex items-center justify-center">
-      <i class="fas fa-building"></i>
-    </div>
-    <span class="text-xs mt-1 theme-text-primary">Workspace</span>
-  </button>
-  
-  <!-- Workspace Modal -->
-  {#if modalOpen}
-    <div class="absolute top-full right-0 mt-2 w-64 theme-bg-primary rounded-md shadow-lg z-40 border theme-border">
-      <div class="p-2">
-        <h3 class="theme-text-secondary text-sm font-medium px-3 py-2">Current Workspace</h3>
-        
-        <!-- Current Workspace Info -->
-        {#if $currentWorkspace}
-          <div class="p-3 theme-bg-secondary rounded-md mx-2 mb-2">
-            <div class="flex items-center justify-between">
-              <span class="theme-text-primary font-semibold">{$currentWorkspace.name}</span>
-              
-              <!-- Only allow deletion if user has appropriate role -->
-              {#if $currentWorkspace.role === 'owner' || $currentWorkspace.role === 'admin'}
-                <button 
-                  on:click={() => openDeleteConfirmation($currentWorkspace)}
-                  class="text-red-500 hover:text-red-400 p-1"
-                  title="Delete workspace"
-                >
-                  <i class="fas fa-trash"></i>
-                </button>
-              {/if}
-            </div>
-            
-            {#if $currentWorkspace.role}
-              <div class="theme-text-muted text-xs mt-1">
-                Role: <span class="theme-text-secondary">{$currentWorkspace.role}</span>
-              </div>
-            {/if}
-            
-            {#if $currentWorkspace.description}
-              <div class="theme-text-muted text-xs mt-1 line-clamp-2">
-                {$currentWorkspace.description}
-              </div>
-            {/if}
-          </div>
-        {:else}
-          <div class="theme-text-muted text-sm px-3 py-2">
-            No workspace selected
-          </div>
-        {/if}
-        
-        <!-- Footer with action links -->
-        <div class="mt-2 pt-2 border-t theme-border">
-          <button 
-            class="flex items-center w-full px-3 py-2 text-left hover:bg-blue-500/20 rounded-md transition-colors"
-            on:click={() => {
-              modalOpen = false;
-              document.getElementById('workspaceSelectorButton')?.click();
-            }}
-          >
-            <i class="fas fa-exchange-alt mr-2 text-xs theme-text-secondary"></i>
-            <span class="theme-text-primary text-sm">Switch Workspace</span>
-          </button>
-        </div>
-      </div>
-    </div>
-  {/if}
+	<!-- Company/Workspace Button -->
+	<button on:click={toggleModal} class="flex flex-col items-center">
+		<div
+			class="w-12 aspect-square theme-bg-secondary theme-text-primary p-3 rounded-full border-2 border-green-500 flex items-center justify-center"
+		>
+			<i class="fas fa-building"></i>
+		</div>
+		<span class="text-xs mt-1 theme-text-primary">Workspace</span>
+	</button>
+
+	<!-- Workspace Modal -->
+	{#if modalOpen}
+		<div
+			class="absolute top-full right-0 mt-2 w-64 theme-bg-primary rounded-md shadow-lg z-40 border theme-border"
+		>
+			<div class="p-2">
+				<h3 class="theme-text-secondary text-sm font-medium px-3 py-2">Current Workspace</h3>
+				<!-- Workspaces List -->
+				<!-- Error Message -->
+				{#if error}
+					<div
+						class="mx-3 my-2 p-2 text-xs bg-red-500/10 text-red-400 dark:text-red-300 rounded border border-red-400/30"
+					>
+						{error}
+					</div>
+				{/if}
+
+				<!-- Workspaces List -->
+				<div class="max-h-48 overflow-y-auto">
+					{#if !loading && $workspaceStore.workspaces.length > 0}
+						{#each $workspaceStore.workspaces as workspace}
+							<button
+								on:click={() => selectWorkspace(workspace.id)}
+								class="flex items-center w-full px-3 py-2 text-left hover:bg-blue-500/20 rounded-md transition-colors"
+							>
+								<div class="flex-1">
+									<div class="flex items-center gap-2">
+										<span class="theme-text-primary">{workspace.name}</span>
+										{#if workspace.id === $currentWorkspace?.id}
+											<i class="fas fa-check text-blue-500 text-xs"></i>
+										{/if}
+									</div>
+									{#if workspace.role}
+										<span class="theme-text-muted text-xs">{workspace.role}</span>
+									{/if}
+								</div>
+							</button>
+						{/each}
+					{:else if !loading}
+						<div class="px-3 py-2 theme-text-muted text-sm">No workspaces found</div>
+					{/if}
+				</div>
+
+				<!-- Create New Workspace -->
+				<div class="mt-2 pt-2 border-t theme-border">
+					<div class="px-3 py-2">
+						<h4 class="theme-text-secondary text-xs font-medium mb-1">New Workspace</h4>
+						<div class="flex items-center gap-2">
+							<input
+								type="text"
+								placeholder="Workspace name"
+								bind:value={newWorkspaceName}
+								class="flex-1 px-2 py-1 text-sm theme-bg-secondary theme-border border rounded theme-text-primary"
+							/>
+							<button
+								on:click={createWorkspace}
+								disabled={loading || !newWorkspaceName}
+								class="p-1 theme-bg-secondary hover:bg-blue-600 disabled:opacity-50 disabled:hover:bg-gray-700 rounded text-white text-sm"
+							>
+								<i class="fas fa-plus"></i>
+							</button>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+	{/if}
 </div>
 
-<!-- Delete Confirmation Modal -->
+<!-- Delete Confirmation Modal
 {#if showDeleteConfirmation && workspaceToDelete}
-  <WorkspaceDeleteConfirmation 
-    workspace={workspaceToDelete}
-    onConfirm={handleDeleteConfirmation}
-  />
-{/if}
+	<WorkspaceDeleteConfirmation workspace={workspaceToDelete} onConfirm={handleDeleteConfirmation} />
+{/if} -->
