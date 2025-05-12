@@ -1,11 +1,13 @@
-# Mockoon Control Panel Project Guide
+# Beo Echo Project Guide
 
 ## Project Overview
-This project is a control panel for Mockoon API mocking service with a Golang backend and Svelte frontend.
+This project is a control panel for Beo Echo API mocking service with a Golang backend and Svelte frontend. It includes features for creating mock APIs, forwarding requests, and managing API behaviors, similar to tools like Beeceptor and Mockoon.
 
 ## Project Structure
 ```
-/mockoon-control-panel
+/beo-echo/
+├── .github/           # GitHub Actions and workflows
+├── .vscode/           # VSCode settings
 ├── backend/           # Golang Backend (BE)
 │   └── ...            # Go files for the backend service
 └── frontend/          # Svelte Frontend (FE)
