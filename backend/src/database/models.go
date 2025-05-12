@@ -188,7 +188,7 @@ type User struct {
 	ID         string          `gorm:"type:string;primaryKey" json:"id"`    // Unique user ID
 	Email      string          `gorm:"uniqueIndex" json:"email"`            // Unique email (used for login/identity)
 	Name       string          `json:"name"`                                // Display name
-	Password   string          `json:"-"`                                   // Optional (if login via password)
+	Password   string          `json:"-"`                                   // Argon2id hashed password (when using password login)
 	IsOwner    bool            `gorm:"default:false" json:"is_owner"`       // System-wide owner (can manage SSO configs, manage all workspaces and etc)
 	Identities []UserIdentity  `gorm:"foreignKey:UserID" json:"identities"` // Linked SSO accounts
 	Workspaces []UserWorkspace `gorm:"foreignKey:UserID" json:"workspaces"` // Memberships in workspaces
