@@ -45,6 +45,16 @@ export function themeBorder(additionalClasses = '') {
   return `border-gray-200 dark:border-gray-700 ${additionalClasses}`;
 }
 
+// Apply light/semi-transparent border color for subtle separators
+export function themeBorderLight(additionalClasses = '') {
+  return `border-gray-200/30 dark:border-gray-700/30 ${additionalClasses}`;
+}
+
+// Apply subtle border color based on theme (less prominent)
+export function themeBorderSubtle(additionalClasses = '') {
+  return `border-gray-100 dark:border-gray-800 ${additionalClasses}`;
+}
+
 // Apply hover effect based on theme
 export function themeHover(additionalClasses = '') {
   return `hover:bg-gray-200 dark:hover:bg-gray-600 ${additionalClasses}`;

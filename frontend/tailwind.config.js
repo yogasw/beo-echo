@@ -39,7 +39,11 @@ export default {
         }
       },
       borderColor: {
-        theme: 'var(--border-color)'
+        theme: {
+          DEFAULT: 'var(--border-color)',
+          light: 'var(--border-color-light)',
+          dark: 'var(--border-color-dark)'
+        }
       }
     },
   },

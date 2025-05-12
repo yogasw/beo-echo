@@ -398,7 +398,7 @@
             
             <!-- Create Mock button row - only for unmatched requests -->
             {#if !log.matched}
-              <div class="flex justify-end px-3 py-1 border-t theme-border/30">
+              <div class="flex justify-end px-3 py-1 border-t theme-border-light">
                 <button 
                   class="bg-emerald-600 hover:bg-emerald-700 text-white py-1 px-3 rounded text-xs flex items-center transition-all duration-200 transform hover:scale-105"
                   on:click|stopPropagation={() => createMockFromLog(log)}
@@ -554,16 +554,16 @@
                   <!-- Response body -->
                   <div>
                     <div class="flex justify-between items-center mb-2">
-                      <h3 class="text-sm font-semibold theme-text-secondary">Body</h3>
+                      <h3 class="text-sm font-semibold text-gray-300">Body</h3>
                       <div class="flex space-x-2">
                         <button 
-                          class={ThemeUtils.utilityButton()}
+                          class="text-xs bg-gray-700 hover:bg-gray-600 text-gray-300 px-2 py-1 rounded"
                           on:click|stopPropagation={() => copyToClipboard(JSON.stringify(parseJson(log.response_body), null, 2), 'Body')}
                         >
                           <i class="fas fa-copy mr-1"></i> Copy
                         </button>
                         <button 
-                          class={ThemeUtils.utilityButton()}
+                          class="text-xs bg-gray-700 hover:bg-gray-600 text-gray-300 px-2 py-1 rounded"
                           on:click|stopPropagation={() => copyToClipboard(JSON.stringify(parseJson(log.response_body)), 'Body (minified)')}
                         >
                           <i class="fas fa-compress-alt mr-1"></i> Minify
@@ -595,7 +595,7 @@
     
     {#if filteredLogs.length < total}
       <div class="mt-4 text-center">
-        <span class="text-xs theme-text-muted">Showing {filteredLogs.length} of {total} logs</span>
+        <span class="text-xs text-gray-400">Showing {filteredLogs.length} of {total} logs</span>
       </div>
     {/if}
   {/if}

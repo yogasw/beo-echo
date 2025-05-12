@@ -13,6 +13,8 @@
   --text-secondary: #4b5563;
   --text-muted: #6b7280;
   --border-color: #d1d5db;
+  --border-color-light: #e5e7eb;
+  --border-color-dark: #9ca3af;
 }
 
 .dark {
@@ -25,6 +27,8 @@
   --text-secondary: #e5e7eb;
   --text-muted: #9ca3af;
   --border-color: #4b5563;
+  --border-color-light: #6b7280;
+  --border-color-dark: #374151;
 }
 
 /* Apply transitions for smooth theme switching */
@@ -61,6 +65,24 @@ body, button, div, input, textarea, select {
   }
   .theme-border {
     @apply border-gray-200 dark:border-gray-700;
+  }
+  .theme-border-t {
+    @apply border-t border-gray-200 dark:border-gray-700;
+  }
+  .theme-border-r {
+    @apply border-r border-gray-200 dark:border-gray-700;
+  }
+  .theme-border-b {
+    @apply border-b border-gray-200 dark:border-gray-700;
+  }
+  .theme-border-l {
+    @apply border-l border-gray-200 dark:border-gray-700;
+  }
+  .theme-border-subtle {
+    @apply border-gray-100 dark:border-gray-800;
+  }
+  .theme-border-light {
+    @apply border-gray-200/30 dark:border-gray-700/30;
   }
   .theme-shadow {
     @apply shadow-md dark:shadow-gray-900;
