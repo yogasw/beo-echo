@@ -180,3 +180,105 @@ func (rl *RequestLog) BeforeCreate(tx *gorm.DB) error {
 	}
 	return nil
 }
+
+// TODO multi user, multi workspace support and multi sso
+// User represents an individual who can log in to the system via SSO or password.
+// A user can belong to multiple workspaces.
+type User struct {
+	ID         string          `gorm:"type:string;primaryKey" json:"id"`    // Unique user ID
+	Email      string          `gorm:"uniqueIndex" json:"email"`            // Unique email (used for login/identity)
+	Name       string          `json:"name"`                                // Display name
+	Password   string          `json:"-"`                                   // Optional (if login via password)
+	IsAdmin    bool            `gorm:"default:false" json:"is_admin"`       // System-wide admin (can manage SSO configs, etc)
+	Identities []UserIdentity  `gorm:"foreignKey:UserID" json:"identities"` // Linked SSO accounts
+	Workspaces []UserWorkspace `gorm:"foreignKey:UserID" json:"workspaces"` // Memberships in workspaces
+	CreatedAt  time.Time       `gorm:"autoCreateTime" json:"created_at"`
+	UpdatedAt  time.Time       `gorm:"autoUpdateTime" json:"updated_at"`
+}
+
+func (u *User) BeforeCreate(tx *gorm.DB) error {
+	if u.ID == "" {
+		u.ID = uuid.New().String()
+	}
+	return nil
+}
+
+// UserIdentity links a user to an external SSO provider (Google, GitHub, etc).
+// Used to authenticate users without passwords.
+// Each combination of Provider + ProviderID must be unique.
+type UserIdentity struct {
+	ID          string    `gorm:"type:string;primaryKey" json:"id"`              // Unique identity ID
+	UserID      string    `gorm:"index" json:"user_id"`                          // Linked internal user ID
+	Provider    string    `gorm:"index" json:"provider"`                         // e.g. "google", "github"
+	ProviderID  string    `gorm:"index" json:"provider_id"`                      // Unique user ID from provider (e.g. Google "sub" claim)
+	Email       string    `json:"email"`                                         // Email from provider (for display/debug)
+	Name        string    `json:"name"`                                          // Display name from provider
+	AvatarURL   string    `json:"avatar_url"`                                    // Profile image
+	AccessToken string    `json:"-"`                                             // Optional: OAuth access token (not returned in JSON)
+	User        User      `gorm:"foreignKey:UserID;constraint:OnDelete:CASCADE"` // Associated user
+	CreatedAt   time.Time `gorm:"autoCreateTime" json:"created_at"`
+	UpdatedAt   time.Time `gorm:"autoUpdateTime" json:"updated_at"`
+}
+
+func (ui *UserIdentity) BeforeCreate(tx *gorm.DB) error {
+	if ui.ID == "" {
+		ui.ID = uuid.New().String()
+	}
+	return nil
+}
+
+// Workspace represents a shared space (team or organization) that can contain projects.
+// A user can belong to multiple workspaces, and each workspace can have multiple users.
+type Workspace struct {
+	ID        string          `gorm:"type:string;primaryKey" json:"id"`                                   // Unique workspace ID
+	Name      string          `gorm:"uniqueIndex" json:"name"`                                            // Unique workspace name
+	Projects  []Project       `gorm:"foreignKey:WorkspaceID;constraint:OnDelete:CASCADE" json:"projects"` // Projects under this workspace
+	Members   []UserWorkspace `gorm:"foreignKey:WorkspaceID" json:"members"`                              // User membership records
+	CreatedAt time.Time       `gorm:"autoCreateTime" json:"created_at"`
+	UpdatedAt time.Time       `gorm:"autoUpdateTime" json:"updated_at"`
+}
+
+func (w *Workspace) BeforeCreate(tx *gorm.DB) error {
+	if w.ID == "" {
+		w.ID = uuid.New().String()
+	}
+	return nil
+}
+
+// UserWorkspace defines the relationship and role of a user in a workspace.
+// Used to implement multi-workspace and per-workspace roles (e.g., owner/admin/member).
+type UserWorkspace struct {
+	ID          string `gorm:"type:string;primaryKey" json:"id"` // Unique record ID
+	UserID      string `gorm:"index" json:"user_id"`             // Linked user
+	WorkspaceID string `gorm:"index" json:"workspace_id"`        // Linked workspace
+	Role        string `gorm:"default:'member'" json:"role"`     // "owner", "admin", or "member"
+
+	User      User      `gorm:"foreignKey:UserID;constraint:OnDelete:CASCADE"`      // Backref to User
+	Workspace Workspace `gorm:"foreignKey:WorkspaceID;constraint:OnDelete:CASCADE"` // Backref to Workspace
+}
+
+func (uw *UserWorkspace) BeforeCreate(tx *gorm.DB) error {
+	if uw.ID == "" {
+		uw.ID = uuid.New().String()
+	}
+	return nil
+}
+
+// SSOConfig stores global SSO (OAuth) settings for each provider.
+// Used to configure OAuth for Google, GitHub, etc.
+// Only one record per provider is allowed.
+type SSOConfig struct {
+	ID        string    `gorm:"type:string;primaryKey" json:"id"` // Unique config ID
+	Provider  string    `gorm:"uniqueIndex" json:"provider"`      // e.g. "google", "github"
+	Config    string    `gorm:"type:text" json:"config"`          // JSON config (client_id, secret, redirect_url, etc.)
+	Enabled   bool      `gorm:"default:true" json:"enabled"`      // Whether this provider is active
+	CreatedAt time.Time `gorm:"autoCreateTime" json:"created_at"`
+	UpdatedAt time.Time `gorm:"autoUpdateTime" json:"updated_at"`
+}
+
+func (s *SSOConfig) BeforeCreate(tx *gorm.DB) error {
+	if s.ID == "" {
+		s.ID = uuid.New().String()
+	}
+	return nil
+}
