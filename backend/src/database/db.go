@@ -49,6 +49,11 @@ func CheckAndHandlePrisma() error {
 		&MockResponse{},
 		&MockRule{},
 		&RequestLog{},
+		&User{},
+		&UserIdentity{},
+		&Workspace{},
+		&UserWorkspace{},
+		&SSOConfig{},
 	); err != nil {
 		return errors.New("Failed to migrate database schema: " + err.Error())
 	}

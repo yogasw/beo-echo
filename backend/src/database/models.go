@@ -41,6 +41,7 @@ const (
 type Project struct {
 	ID            string         `gorm:"type:string;primaryKey" json:"id"`
 	Name          string         `gorm:"type:string" json:"name"`
+	WorkspaceID   string         `gorm:"type:string;index" json:"workspace_id"` // Foreign key to the associated workspace
 	Mode          ProjectMode    `gorm:"type:string" json:"mode"`
 	Status        string         `gorm:"type:string;default:'running'" json:"status"` // running, stopped, error
 	ActiveProxyID *string        `gorm:"type:string" json:"active_proxy_id"`
@@ -184,6 +185,9 @@ func (rl *RequestLog) BeforeCreate(tx *gorm.DB) error {
 // TODO multi user, multi workspace support and multi sso
 // User represents an individual who can log in to the system via SSO or password.
 // A user can belong to multiple workspaces.
+// password is Argon2id hashed password (when using password login).
+// Salt is generated using unixtime + random number (8 bytes total).
+// NOT recommended for cryptographic use — better to use crypto/rand if possible.
 type User struct {
 	ID         string          `gorm:"type:string;primaryKey" json:"id"`    // Unique user ID
 	Email      string          `gorm:"uniqueIndex" json:"email"`            // Unique email (used for login/identity)
