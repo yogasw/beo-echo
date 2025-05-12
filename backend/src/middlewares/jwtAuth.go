@@ -16,6 +16,10 @@ func JWTAuthMiddleware() gin.HandlerFunc {
 		// Get the authorization header
 		authHeader := c.GetHeader("Authorization")
 		if authHeader == "" {
+			authHeader = c.Query("auth")
+		}
+
+		if authHeader == "" {
 			c.JSON(http.StatusUnauthorized, gin.H{
 				"success": false,
 				"message": "Authorization header is required",

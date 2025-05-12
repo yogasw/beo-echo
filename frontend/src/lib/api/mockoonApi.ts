@@ -352,7 +352,7 @@ export const createLogStream = (projectId: string, limit: number = 100): EventSo
 	// Add authentication using JWT token
 	const token = auth.getToken();
 	if (token) {
-		url += `&auth=${token}`;
+		url += `&auth=Bearer ${token}`;
 	}
 
 	console.log('Creating SSE connection to:', url);
