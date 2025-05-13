@@ -43,9 +43,6 @@
 		// Set active tab to workspace-settings
 		activeTab.set('workspace-settings');
 		
-		// Navigate to settings page and ensure it stays there
-		await goto('/settings');
-		
 		// Close the workspace modal
 		modalOpen = false;
 	}
