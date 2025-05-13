@@ -3,6 +3,7 @@
 	import LogsTab from './tabs/LogsTab.svelte';
 	import ConfigurationTab from './tabs/ConfigurationTab.svelte';
 	import WorkspaceSettingsTab from './tabs/WorkspaceSettingsTab.svelte';
+	import InstanceSettingsTab from './tabs/InstanceSettingsTab.svelte';
 	import ProjectStatusBadge from './ProjectStatusBadge.svelte';
 	import { getProjectDetail, updateProjectStatus, type Endpoint } from '$lib/api/BeoApi';
 	import { selectedProject } from '$lib/stores/selectedConfig';
@@ -76,6 +77,11 @@
 		<!-- Always render workspace settings tab regardless of project selection -->
 		<div class="tab-content">
 			<WorkspaceSettingsTab />
+		</div>
+	{:else if $activeTab === 'instance-settings'}
+		<!-- Always render instance settings tab regardless of project selection -->
+		<div class="tab-content">
+			<InstanceSettingsTab />
 		</div>
 	{:else if !$selectedProject}
 		<div class="no-config-message theme-text-primary">

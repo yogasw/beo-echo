@@ -133,6 +133,8 @@
 		} else if (activeTab === 'settings') {
 			goto('/settings');
 		}
+		// Note: We don't need special navigation for 'workspace-settings' or 'instance-settings'
+		// as they are handled directly by the ContentArea component using the activeTab store
 	}
 
 	function handleLogout() {

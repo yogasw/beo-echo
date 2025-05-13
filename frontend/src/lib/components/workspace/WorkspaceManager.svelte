@@ -48,9 +48,9 @@
 	}
 
 	// Handle instance settings
-	async function openInstanceSettings() {
-		// Navigate to instance settings page using client-side routing
-		await goto('/instance');
+	function openInstanceSettings() {
+		// Set active tab to instance-settings
+		activeTab.set('instance-settings');
 		
 		// Close the workspace modal
 		modalOpen = false;
