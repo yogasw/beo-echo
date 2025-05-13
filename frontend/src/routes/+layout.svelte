@@ -139,10 +139,10 @@
 
 	function handleLogout() {
 		isAuthenticated.set(false);
-		removeLocalStorage('username');
-		removeLocalStorage('password');
+		removeLocalStorage('auth_token');
 		removeLocalStorage('currentWorkspaceId');
 		goto("/login")
+		window.location.reload();
 	}
 </script>
 
