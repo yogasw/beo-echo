@@ -72,7 +72,12 @@
 </script>
 
 <div class={ThemeUtils.themeBgPrimary('content-area')}>
-	{#if !$selectedProject}
+	{#if $activeTab === 'workspace-settings'}
+		<!-- Always render workspace settings tab regardless of project selection -->
+		<div class="tab-content">
+			<WorkspaceSettingsTab />
+		</div>
+	{:else if !$selectedProject}
 		<div class="no-config-message theme-text-primary">
 			<i class="fas fa-info-circle text-blue-500"></i>
 			<h2 class="theme-text-primary">No Configuration Selected</h2>
@@ -96,8 +101,6 @@
 				<LogsTab selectedProject={$selectedProject} />
 			{:else if $activeTab === 'configuration'}
 				<ConfigurationTab selectedProject={$selectedProject} />
-			{:else if $activeTab === 'workspace-settings'}
-				<WorkspaceSettingsTab />
 			{/if}
 		</div>
 	{/if}

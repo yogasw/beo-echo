@@ -2,6 +2,7 @@
 	import { onMount } from 'svelte';
 	import { workspaces, currentWorkspace, workspaceStore } from '$lib/stores/workspace';
 	import { activeTab } from '$lib/stores/activeTab';
+	import { goto } from '$app/navigation';
 	export let className = '';
 
 	// Local state
@@ -38,18 +39,21 @@
 	}
 
 	// Handle workspace settings
-	function openWorkspaceSettings() {
+	async function openWorkspaceSettings() {
 		// Set active tab to workspace-settings
 		activeTab.set('workspace-settings');
+		
+		// Navigate to settings page and ensure it stays there
+		await goto('/settings');
 		
 		// Close the workspace modal
 		modalOpen = false;
 	}
 
 	// Handle instance settings
-	function openInstanceSettings() {
-		// Navigate to instance settings page
-		window.location.href = '/instance';
+	async function openInstanceSettings() {
+		// Navigate to instance settings page using client-side routing
+		await goto('/instance');
 		
 		// Close the workspace modal
 		modalOpen = false;

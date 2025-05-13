@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { fade } from 'svelte/transition';
+	import { goto } from '$app/navigation';
 	import SettingsSection from '$lib/components/instance/SettingsSection.svelte';
 	import UserManagement from '$lib/components/instance/UserManagement.svelte';
 	import WorkspaceManagement from '$lib/components/instance/WorkspaceManagement.svelte';
@@ -8,6 +9,7 @@
 	import CustomDomain from '$lib/components/instance/CustomDomain.svelte';
 	import SsoIntegration from '$lib/components/instance/SsoIntegration.svelte';
 	import GeneralSettings from '$lib/components/instance/GeneralSettings.svelte';
+	import { currentWorkspace } from '$lib/stores/workspace';
 	
 	// State for each section's visibility
 	let sectionsVisible = {
