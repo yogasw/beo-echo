@@ -3,6 +3,7 @@
 	import type { Project } from '$lib/api/BeoApi';
 	import { addEndpoint } from '$lib/api/BeoApi';
 	import { currentWorkspace, workspaceStore } from '$lib/stores/workspace';
+	import { toast } from '$lib/stores/toast';
 
 	export let isOpen = false;
 	export let project: Project;
@@ -12,7 +13,6 @@
 	let method = 'GET';
 	let path = '/';
 	let isLoading = false;
-	let error = '';
 
 	function closeModal() {
 		isOpen = false;
@@ -20,7 +20,7 @@
 	}
 	async function handleSubmit() {
 		if (!path) {
-			error = 'Path is required';
+			toast.error('Path is required');
 			return;
 		}
 
@@ -32,12 +32,11 @@
 		console.log('workspaceStore', $workspaceStore);
 
 		if (!$currentWorkspace) {
-			error = 'No workspace selected';
+			toast.error("No workspace selected");
 			return;
 		}
 
 		isLoading = true;
-		error = '';
 
 		try {
 			console.log('Creating endpoint:', {
@@ -46,7 +45,7 @@
 				method,
 				path
 			});
-			const newEndpoint = await addEndpoint( project.id, method, path);
+			const newEndpoint = await addEndpoint(project.id, method, path);
 			console.log('Endpoint created:', newEndpoint);
 
 			// Create event with the new endpoint
@@ -59,9 +58,8 @@
 			method = 'GET';
 			path = '/';
 			closeModal();
-		} catch (err) {
-			console.error('Failed to create endpoint:', err);
-			error = 'Failed to create endpoint. Please try again.';
+		} catch (err: any) {
+			toast.error(err);
 		} finally {
 			isLoading = false;
 		}
@@ -80,12 +78,6 @@
 					<i class="fas fa-times"></i>
 				</button>
 			</div>
-
-			{#if error}
-				<div class="bg-red-500 text-white p-2 rounded mb-4">
-					{error}
-				</div>
-			{/if}
 
 			<form on:submit|preventDefault={handleSubmit}>
 				<div class="mb-4">
