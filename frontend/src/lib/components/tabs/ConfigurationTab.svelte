@@ -79,14 +79,7 @@
 				<div>
 					<h2 class="text-xl font-bold theme-text-primary">{selectedProject.name}</h2>
 					<p class="text-sm theme-text-muted">Project Configuration</p>
-				</div>
-				{#if selectedProject.url}
-				<div class="ml-4 flex items-center bg-gray-100/50 dark:bg-gray-900/50 px-3 py-1 rounded-full">
-					<span class="text-xs font-medium text-blue-500 dark:text-blue-400">
-						{selectedProject.url}
-					</span>
-				</div>
-				{/if}
+				</div>	
 			</div>
 			
 			<div class="flex items-center space-x-3">
