@@ -39,35 +39,9 @@
 			}, 3000);
 		}, 1000);
 	}
-
-	// Component for section headers and collapsible content
-	function SettingsSection(props) {
-		const { title, icon, iconBgColorClass, iconTextColorClass, open, children } = props;
-		
-		return {
-			c() {
-				// Create elements
-			},
-			m(target, anchor) {
-				// Mount to DOM
-			},
-			p(ctx, dirty) {
-				// Update props
-			},
-			i(local) {
-				// Transitions in
-			},
-			o(local) {
-				// Transitions out
-			},
-			d(detaching) {
-				// Destroy component
-			}
-		};
-	}
 </script>
 
-<div class="w-full theme-bg-primary p-4 relative">
+<div class="w-full theme-bg-primary p-4">
 	<!-- Header -->
 	<div class="mb-6">
 		<div class="flex justify-between items-center mb-4">
