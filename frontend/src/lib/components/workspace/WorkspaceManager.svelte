@@ -46,6 +46,15 @@
 		modalOpen = false;
 	}
 
+	// Handle instance settings
+	function openInstanceSettings() {
+		// Navigate to instance settings page
+		window.location.href = '/instance';
+		
+		// Close the workspace modal
+		modalOpen = false;
+	}
+
 	// Load workspaces on component mount
 	onMount(async () => {
 		try {
@@ -149,6 +158,19 @@
                         >
                             <i class="fas fa-cog text-blue-400"></i>
                             <span class="theme-text-primary">Workspace Settings</span>
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- Instance Settings Button -->
+                <div class="pt-2 border-t theme-border">
+                    <div class="px-3 py-2">
+                        <button 
+                            on:click={openInstanceSettings}
+                            class="flex items-center w-full px-3 py-2 text-sm hover:bg-blue-500/20 rounded-md transition-colors gap-2"
+                        >
+                            <i class="fas fa-server text-purple-400"></i>
+                            <span class="theme-text-primary">Instance Settings</span>
                         </button>
                     </div>
                 </div>
