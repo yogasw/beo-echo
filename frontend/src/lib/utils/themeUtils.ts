@@ -122,12 +122,15 @@ export function secondaryButton(additionalClasses = '') {
 }
 
 export function destructiveButton(additionalClasses = '') {
-  return `bg-red-600 hover:bg-red-700 text-white py-2 px-4 rounded 
-    flex items-center ${additionalClasses}`;
+  return `bg-red-600 hover:bg-red-700 text-white py-2 px-4 rounded-md text-sm flex items-center ${additionalClasses}`;
 }
 
 export function utilityButton(additionalClasses = '') {
-  return `text-xs bg-gray-700 hover:bg-gray-600 text-gray-300 px-2 py-1 rounded ${additionalClasses}`;
+  return `bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-200 py-1 px-2 rounded text-xs ${additionalClasses}`;
+}
+
+export function iconButton(additionalClasses = '') {
+  return `hover:bg-gray-200 dark:hover:bg-gray-700 p-2 rounded-full ${additionalClasses}`;
 }
 
 export function badge(type = 'default', additionalClasses = '') {

@@ -82,6 +82,16 @@ export type Response = {
 	updated_at: Date;
 }
 
+export type ProxyTarget = {
+	id: string;
+	project_id: string;
+	target_url: string;
+	name: string;
+	enabled: boolean;
+	created_at: Date;
+	updated_at: Date;
+}
+
 // Create axios instance with default config
 const api = axios.create({
 	baseURL: BASE_URL_API,
@@ -375,5 +385,65 @@ export const createLogStream = (projectId: string, limit: number = 100): EventSo
 	return eventSource;
 };
 
+// Proxy management APIs
+export const listProxyTargets = async (projectId: string): Promise<ProxyTarget[]> => {
+	let workspaceId = getCurrentWorkspaceId();
+	const response = await api.get(`/workspaces/${workspaceId}/projects/${projectId}/proxies`);
+	return response.data.data;
+};
+
+export const createProxyTarget = async (projectId: string, name: string, targetUrl: string, enabled: boolean = true): Promise<ProxyTarget> => {
+	let workspaceId = getCurrentWorkspaceId();
+	const response = await api.post(`/workspaces/${workspaceId}/projects/${projectId}/proxies`, {
+		name,
+		target_url: targetUrl,
+		enabled
+	});
+	return response.data.data;
+};
+
+export const updateProxyTarget = async (projectId: string, proxyId: string, data: {
+	name?: string;
+	target_url?: string;
+	enabled?: boolean;
+}): Promise<ProxyTarget> => {
+	let workspaceId = getCurrentWorkspaceId();
+	const response = await api.put(`/workspaces/${workspaceId}/projects/${projectId}/proxies/${proxyId}`, data);
+	return response.data.data;
+};
+
+export const deleteProxyTarget = async (projectId: string, proxyId: string): Promise<any> => {
+	let workspaceId = getCurrentWorkspaceId();
+	const response = await api.delete(`/workspaces/${workspaceId}/projects/${projectId}/proxies/${proxyId}`);
+	return response.data;
+};
+
+export const getProxyTarget = async (projectId: string, proxyId: string): Promise<ProxyTarget> => {
+	let workspaceId = getCurrentWorkspaceId();
+	const response = await api.get(`/workspaces/${workspaceId}/projects/${projectId}/proxies/${proxyId}`);
+	return response.data.data;
+};
+
+// Update project mode function (for switching between 'mock' and 'proxy' modes)
+export const updateProjectMode = async (projectId: string, mode: string): Promise<Project> => {
+	let workspaceId = getCurrentWorkspaceId();
+	const response = await api.put(`/workspaces/${workspaceId}/projects/${projectId}`, {
+		mode: mode
+	});
+	return response.data.data;
+};
+
+// Update project details function 
+export const updateProject = async (projectId: string, data: {
+	name?: string;
+	alias?: string;
+	mode?: string;
+	timeout?: number;
+	cors_enabled?: boolean;
+}): Promise<Project> => {
+	let workspaceId = getCurrentWorkspaceId();
+	const response = await api.put(`/workspaces/${workspaceId}/projects/${projectId}`, data);
+	return response.data.data;
+};
 
 // Function fetchUserProfile has been moved to lib/utils/authUtils.ts
