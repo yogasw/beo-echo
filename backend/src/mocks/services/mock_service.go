@@ -93,6 +93,13 @@ func (s *MockService) handleProxyMode(project *database.Project, req *http.Reque
 		return createErrorResponse(http.StatusInternalServerError, "No proxy target configured"), nil
 	}
 
+	// Check for recursive proxy loops by checking for any header with beo-echo prefix
+	for name := range req.Header {
+		if strings.HasPrefix(strings.ToLower(name), "beo-echo") {
+			return createErrorResponse(http.StatusLoopDetected, "Proxy loop detected: request contains beo-echo header"), nil
+		}
+	}
+
 	// Use the common executeProxyRequest helper function
 	return executeProxyRequest(project.ActiveProxy.URL, req.Method, req.URL.Path, req.URL.RawQuery, req)
 }
@@ -101,6 +108,13 @@ func (s *MockService) handleProxyMode(project *database.Project, req *http.Reque
 func (s *MockService) handleForwarderMode(project *database.Project, method, path string, req *http.Request) (*http.Response, error) {
 	if project.ActiveProxy == nil {
 		return createErrorResponse(http.StatusInternalServerError, "No proxy target configured"), nil
+	}
+
+	// Check for recursive proxy loops by checking for any header with beo-echo prefix
+	for name := range req.Header {
+		if strings.HasPrefix(strings.ToLower(name), "beo-echo") {
+			return createErrorResponse(http.StatusLoopDetected, "Proxy loop detected: request contains beo-echo header"), nil
+		}
 	}
 
 	// Use the common executeProxyRequest helper function, but with the path parameter
@@ -112,6 +126,13 @@ func (s *MockService) handleForwarderMode(project *database.Project, method, pat
 // with proper header and body copying. This centralizes the forwarding logic for both
 // proxy and forwarder modes.
 func executeProxyRequest(targetURLString, method, pathStr, queryString string, req *http.Request) (*http.Response, error) {
+	// Check for recursive proxy loops by checking for any header with beo-echo prefix
+	for name := range req.Header {
+		if strings.HasPrefix(strings.ToLower(name), "beo-echo") {
+			return createErrorResponse(http.StatusLoopDetected, "Proxy loop detected: request contains beo-echo header"), nil
+		}
+	}
+
 	targetURL, err := url.Parse(targetURLString)
 	if err != nil {
 		return createErrorResponse(http.StatusInternalServerError, fmt.Sprintf("Invalid proxy URL: %s", err.Error())), nil
@@ -160,8 +181,11 @@ func executeProxyRequest(targetURLString, method, pathStr, queryString string, r
 	// Set host header to target host
 	newReq.Host = targetURL.Host
 
-	// // Track request time for latency measurement
-	// startTime := time.Now()
+	// Add loop detection header to prevent recursive proxying
+	newReq.Header.Set("beo-echo-loop-detect", "true")
+
+	// Track request time for latency measurement
+	startTime := time.Now()
 
 	// Execute the request
 	resp, err := client.Do(newReq)
@@ -169,12 +193,13 @@ func executeProxyRequest(targetURLString, method, pathStr, queryString string, r
 		return createErrorResponse(http.StatusBadGateway, fmt.Sprintf("Request error: %s", err.Error())), nil
 	}
 
-	// latencyMS := time.Since(startTime).Milliseconds()
+	latencyMS := time.Since(startTime).Milliseconds()
 
-	// // Log the latency in the header for debugging purposes
-	// if resp != nil && resp.Header != nil {
-	// 	resp.Header.Set("X-Beo-Echo-Latency-MS", fmt.Sprintf("%d", latencyMS))
-	// }
+	// Log the latency in the header for debugging purposes
+	// Using a simpler header name without X- prefix
+	if resp != nil && resp.Header != nil {
+		resp.Header.Set("beo-echo-latency-ms", fmt.Sprintf("%d", latencyMS))
+	}
 
 	return resp, nil
 }
