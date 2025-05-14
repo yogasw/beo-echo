@@ -160,8 +160,8 @@ func executeProxyRequest(targetURLString, method, pathStr, queryString string, r
 	// Set host header to target host
 	newReq.Host = targetURL.Host
 
-	// Track request time for latency measurement
-	startTime := time.Now()
+	// // Track request time for latency measurement
+	// startTime := time.Now()
 
 	// Execute the request
 	resp, err := client.Do(newReq)
@@ -169,12 +169,12 @@ func executeProxyRequest(targetURLString, method, pathStr, queryString string, r
 		return createErrorResponse(http.StatusBadGateway, fmt.Sprintf("Request error: %s", err.Error())), nil
 	}
 
-	latencyMS := time.Since(startTime).Milliseconds()
+	// latencyMS := time.Since(startTime).Milliseconds()
 
-	// Log the latency in the header for debugging purposes
-	if resp != nil && resp.Header != nil {
-		resp.Header.Set("X-Beo-Echo-Latency-MS", fmt.Sprintf("%d", latencyMS))
-	}
+	// // Log the latency in the header for debugging purposes
+	// if resp != nil && resp.Header != nil {
+	// 	resp.Header.Set("X-Beo-Echo-Latency-MS", fmt.Sprintf("%d", latencyMS))
+	// }
 
 	return resp, nil
 }
