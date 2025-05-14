@@ -13,8 +13,9 @@ import (
 //
 // Sample curl:
 //
-//	curl -X POST "http://localhost:8000/api/projects/my-project/proxies" \
+//	curl -X POST "http://localhost:8000/mock/api/workspaces/{workspaceID}/projects/{projectId}/proxies" \
 //	  -H "Content-Type: application/json" \
+//	  -H "Authorization: Bearer {token}" \
 //	  -d '{
 //	    "label": "Production",
 //	    "url": "https://api.example.com"
@@ -22,18 +23,18 @@ import (
 func CreateProxyTargetHandler(c *gin.Context) {
 	handler.EnsureMockService()
 
-	projectName := c.Param("name")
-	if projectName == "" {
+	projectId := c.Param("projectId")
+	if projectId == "" {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"error":   true,
-			"message": "Project name is required",
+			"message": "Project ID is required",
 		})
 		return
 	}
 
 	// Find project first
 	var project database.Project
-	result := database.GetDB().Where("name = ?", projectName).First(&project)
+	result := database.GetDB().Where("id = ?", projectId).First(&project)
 	if result.Error != nil {
 		c.JSON(http.StatusNotFound, gin.H{
 			"error":   true,

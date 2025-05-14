@@ -18,6 +18,7 @@ import (
 	"mockoon-control-panel/backend_new/src/mocks/handler"
 	"mockoon-control-panel/backend_new/src/mocks/handler/endpoint"
 	"mockoon-control-panel/backend_new/src/mocks/handler/project"
+	"mockoon-control-panel/backend_new/src/mocks/handler/proxy"
 	"mockoon-control-panel/backend_new/src/mocks/handler/response"
 	"mockoon-control-panel/backend_new/src/traefik"
 	"mockoon-control-panel/backend_new/src/utils"
@@ -121,6 +122,13 @@ func SetupRouter() *gin.Engine {
 				projectRoutes.GET("/endpoints/:id/responses/:responseId", response.GetResponseHandler)
 				projectRoutes.PUT("/endpoints/:id/responses/:responseId", response.UpdateResponseHandler)
 				projectRoutes.DELETE("/endpoints/:id/responses/:responseId", response.DeleteResponseHandler)
+
+				// Proxy management
+				projectRoutes.GET("/proxies", proxy.ListProxyTargetsHandler)
+				projectRoutes.POST("/proxies", proxy.CreateProxyTargetHandler)
+				projectRoutes.GET("/proxies/:proxyId", proxy.GetProxyTargetHandler)
+				projectRoutes.PUT("/proxies/:proxyId", proxy.UpdateProxyTargetHandler)
+				projectRoutes.DELETE("/proxies/:proxyId", proxy.DeleteProxyTargetHandler)
 
 				// Request Logs management
 				projectRoutes.GET("/logs", handler.GetLogsHandler)

@@ -12,21 +12,21 @@ import (
 // DeleteProxyTargetHandler deletes a proxy target
 //
 // Sample curl:
-// curl -X DELETE "http://localhost:8000/api/projects/my-project/proxies/1" -H "Content-Type: application/json"
+// curl -X DELETE "http://localhost:8000/mock/api/workspaces/{workspaceID}/projects/{projectId}/proxies/{proxyId}" -H "Content-Type: application/json" -H "Authorization: Bearer {token}"
 func DeleteProxyTargetHandler(c *gin.Context) {
 	handler.EnsureMockService()
 
-	projectName := c.Param("name")
-	if projectName == "" {
+	projectId := c.Param("projectId")
+	if projectId == "" {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"error":   true,
-			"message": "Project name is required",
+			"message": "Project ID is required",
 		})
 		return
 	}
 
 	// Parse proxy target ID
-	proxyID := c.Param("id")
+	proxyID := c.Param("proxyId")
 	if proxyID == "" {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"error":   true,
@@ -37,7 +37,7 @@ func DeleteProxyTargetHandler(c *gin.Context) {
 
 	// Find project first
 	var project database.Project
-	result := database.GetDB().Where("name = ?", projectName).First(&project)
+	result := database.GetDB().Where("id = ?", projectId).First(&project)
 	if result.Error != nil {
 		c.JSON(http.StatusNotFound, gin.H{
 			"error":   true,

@@ -33,7 +33,7 @@ type ProjectMode string
 const (
 	ModeMock      ProjectMode = "mock"      // Serve mock responses
 	ModeProxy     ProjectMode = "proxy"     // Forward to target, no modification
-	ModeForwarder ProjectMode = "forwarder" // Forward with recording
+	ModeForwarder ProjectMode = "forwarder" // Full forward without modification or mock responses
 	ModeDisabled  ProjectMode = "disabled"  // Disabled, no responses
 )
 
