@@ -156,7 +156,7 @@
 			toast.success('Project created successfully');
 			closeAddProjectModal();
 		} catch (err) {
-			toast.error('Failed to create project');
+			toast.error(err);
 		} finally {
 			isAddingProject = false;
 		}

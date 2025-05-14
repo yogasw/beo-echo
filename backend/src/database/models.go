@@ -182,7 +182,7 @@ func (rl *RequestLog) BeforeCreate(tx *gorm.DB) error {
 	return nil
 }
 
-// TODO multi user, multi workspace support and multi sso
+// TODO: multi sso
 // User represents an individual who can log in to the system via SSO or password.
 // A user can belong to multiple workspaces.
 // password is Argon2id hashed password (when using password login).
@@ -235,7 +235,7 @@ func (ui *UserIdentity) BeforeCreate(tx *gorm.DB) error {
 // A user can belong to multiple workspaces, and each workspace can have multiple users.
 type Workspace struct {
 	ID        string          `gorm:"type:string;primaryKey" json:"id"`                                   // Unique workspace ID
-	Name      string          `gorm:"uniqueIndex" json:"name"`                                            // Unique workspace name
+	Name      string          `json:"name"`                                                               // Unique workspace name
 	Projects  []Project       `gorm:"foreignKey:WorkspaceID;constraint:OnDelete:CASCADE" json:"projects"` // Projects under this workspace
 	Members   []UserWorkspace `gorm:"foreignKey:WorkspaceID" json:"members"`                              // User membership records
 	CreatedAt time.Time       `gorm:"autoCreateTime" json:"created_at"`
