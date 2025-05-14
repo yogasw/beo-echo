@@ -23,9 +23,8 @@
 	let selectedProxy: ProxyTarget | null = null;
 
 	// Form states for adding/editing proxy
-	let newProxyName = '';
-	let newProxyUrl = '';
-	let newProxyEnabled = true;
+	let proxyLabel = '';
+	let proxyUrl = '';
 	let isEditing = false;
 
 	// Initialize data
@@ -64,18 +63,16 @@
 	// Open edit proxy modal
 	function showEditProxyModal(proxy: ProxyTarget) {
 		selectedProxy = proxy;
-		newProxyName = proxy.name;
-		newProxyUrl = proxy.target_url;
-		newProxyEnabled = proxy.enabled;
+		proxyLabel = proxy.label;
+		proxyUrl = proxy.url;
 		showAddModal = true;
 		isEditing = true;
 	}
 
 	// Reset form fields
 	function resetForm() {
-		newProxyName = '';
-		newProxyUrl = '';
-		newProxyEnabled = true;
+		proxyLabel = '';
+		proxyUrl = '';
 		selectedProxy = null;
 	}
 
@@ -98,14 +95,13 @@
 			if (isEditing && selectedProxy) {
 				// Update existing proxy
 				await updateProxyTarget(project.id, selectedProxy.id, {
-					name: newProxyName,
-					target_url: newProxyUrl,
-					enabled: newProxyEnabled
+					label: proxyLabel,
+					url: proxyUrl
 				});
 				showNotification('Proxy target updated successfully!', 'success');
 			} else {
 				// Create new proxy
-				await createProxyTarget(project.id, newProxyName, newProxyUrl, newProxyEnabled);
+				await createProxyTarget(project.id, proxyLabel, proxyUrl);
 				showNotification('Proxy target created successfully!', 'success');
 			}
 			
@@ -130,21 +126,6 @@
 		} catch (error) {
 			console.error('Failed to delete proxy target:', error);
 			showNotification('Failed to delete proxy target: ' + (error instanceof Error ? error.message : String(error)), 'error');
-		}
-	}
-
-	// Toggle proxy enabled status
-	async function toggleProxyEnabled(proxy: ProxyTarget) {
-		try {
-			await updateProxyTarget(project.id, proxy.id, {
-				enabled: !proxy.enabled
-			});
-			// Update local state
-			proxy.enabled = !proxy.enabled;
-			showNotification(`Proxy ${proxy.enabled ? 'enabled' : 'disabled'} successfully!`, 'success');
-		} catch (error) {
-			console.error('Failed to update proxy status:', error);
-			showNotification('Failed to update proxy status: ' + (error instanceof Error ? error.message : String(error)), 'error');
 		}
 	}
 </script>
@@ -205,18 +186,12 @@
 						<div class="theme-border border rounded-lg overflow-hidden">
 							<div class="flex justify-between items-center p-3 theme-bg-secondary">
 								<div class="flex items-center">
-									<div class="{proxy.enabled ? 'bg-green-600/20' : 'bg-gray-600/20'} p-1.5 rounded-full">
-										<i class="fas fa-globe {proxy.enabled ? 'text-green-500' : 'text-gray-500'} text-sm"></i>
+									<div class="bg-green-600/20 p-1.5 rounded-full">
+										<i class="fas fa-globe text-green-500 text-sm"></i>
 									</div>
-									<span class="ml-2 theme-text-primary font-medium">{proxy.name}</span>
-									<span class="ml-2 text-xs px-2 py-0.5 rounded-full {proxy.enabled ? 'bg-green-600/20 text-green-500' : 'bg-gray-600/20 text-gray-500'}">
-										{proxy.enabled ? 'Enabled' : 'Disabled'}
-									</span>
+									<span class="ml-2 theme-text-primary font-medium">{proxy.label}</span>
 								</div>
 								<div class="flex items-center space-x-2">
-									<button class={ThemeUtils.iconButton('text-xs')} on:click={() => toggleProxyEnabled(proxy)}>
-										<i class="fas {proxy.enabled ? 'fa-toggle-on text-green-500' : 'fa-toggle-off text-gray-500'}"></i>
-									</button>
 									<button class={ThemeUtils.iconButton('text-xs')} on:click={() => showEditProxyModal(proxy)}>
 										<i class="fas fa-edit text-blue-500"></i>
 									</button>
@@ -228,7 +203,7 @@
 							<div class="p-3">
 								<div class="flex items-center mb-1">
 									<span class="text-xs theme-text-muted mr-2">URL:</span>
-									<span class="text-sm theme-text-secondary overflow-ellipsis overflow-hidden">{proxy.target_url}</span>
+									<span class="text-sm theme-text-secondary overflow-ellipsis overflow-hidden">{proxy.url}</span>
 								</div>
 								<div class="flex items-center text-xs theme-text-muted">
 									<i class="fas fa-clock mr-1"></i>
@@ -252,43 +227,26 @@
 			</h3>
 			<form on:submit|preventDefault={handleSubmitProxy}>
 				<div class="mb-4">
-					<label for="proxy-name" class="block text-sm font-medium mb-2 theme-text-secondary">Name</label>
+					<label for="proxy-label" class="block text-sm font-medium mb-2 theme-text-secondary">Label</label>
 					<input
 						type="text"
-						id="proxy-name"
+						id="proxy-label"
 						class={ThemeUtils.inputField()}
-						bind:value={newProxyName}
-						placeholder="Enter a name for this proxy"
+						bind:value={proxyLabel}
+						placeholder="Production, Staging, etc."
 						required
 					/>
 				</div>
-				<div class="mb-4">
+				<div class="mb-6">
 					<label for="proxy-url" class="block text-sm font-medium mb-2 theme-text-secondary">Target URL</label>
 					<input
 						type="url"
 						id="proxy-url"
 						class={ThemeUtils.inputField()}
-						bind:value={newProxyUrl}
+						bind:value={proxyUrl}
 						placeholder="https://api.example.com"
 						required
 					/>
-				</div>
-				<div class="mb-6">
-					<label class="relative inline-flex items-center cursor-pointer">
-						<input 
-							type="checkbox" 
-							class="sr-only peer" 
-							bind:checked={newProxyEnabled}
-						>
-						<div class="w-11 h-6 bg-gray-300 dark:bg-gray-700 peer-focus:outline-none peer-focus:ring-4 
-								  peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer 
-								  peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full 
-								  peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] 
-								  after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full 
-								  after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600">
-						</div>
-						<span class="ms-3 text-sm font-medium theme-text-secondary">Enabled</span>
-					</label>
 				</div>
 				<div class="flex justify-end space-x-4">
 					<button 

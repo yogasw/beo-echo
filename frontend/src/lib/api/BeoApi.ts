@@ -85,9 +85,8 @@ export type Response = {
 export type ProxyTarget = {
 	id: string;
 	project_id: string;
-	target_url: string;
-	name: string;
-	enabled: boolean;
+	url: string;
+	label: string;
 	created_at: Date;
 	updated_at: Date;
 }
@@ -392,20 +391,18 @@ export const listProxyTargets = async (projectId: string): Promise<ProxyTarget[]
 	return response.data.data;
 };
 
-export const createProxyTarget = async (projectId: string, name: string, targetUrl: string, enabled: boolean = true): Promise<ProxyTarget> => {
+export const createProxyTarget = async (projectId: string, label: string, url: string): Promise<ProxyTarget> => {
 	let workspaceId = getCurrentWorkspaceId();
 	const response = await api.post(`/workspaces/${workspaceId}/projects/${projectId}/proxies`, {
-		name,
-		target_url: targetUrl,
-		enabled
+		label,
+		url
 	});
 	return response.data.data;
 };
 
 export const updateProxyTarget = async (projectId: string, proxyId: string, data: {
-	name?: string;
-	target_url?: string;
-	enabled?: boolean;
+	label?: string;
+	url?: string;
 }): Promise<ProxyTarget> => {
 	let workspaceId = getCurrentWorkspaceId();
 	const response = await api.put(`/workspaces/${workspaceId}/projects/${projectId}/proxies/${proxyId}`, data);
