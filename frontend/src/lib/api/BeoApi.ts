@@ -26,10 +26,10 @@ export type Project = {
 	name: string;
 	mode: string;
 	status?: string; // 'running', 'stopped', or 'error'
-	active_proxy_id: null;
-	active_proxy: null;
+	active_proxy_id: string | null;
+	active_proxy: ProxyTarget | null;
 	endpoints: Endpoint[];
-	proxy_targets: null;
+	proxy_targets: ProxyTarget[] | null;
 	created_at: Date;
 	updated_at: Date;
 	url: string;
@@ -437,6 +437,7 @@ export const updateProject = async (projectId: string, data: {
 	mode?: string;
 	timeout?: number;
 	cors_enabled?: boolean;
+	active_proxy_id?: string;
 }): Promise<Project> => {
 	let workspaceId = getCurrentWorkspaceId();
 	const response = await api.put(`/workspaces/${workspaceId}/projects/${projectId}`, data);

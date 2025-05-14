@@ -128,6 +128,23 @@
 			showNotification('Failed to delete proxy target: ' + (error instanceof Error ? error.message : String(error)), 'error');
 		}
 	}
+	
+	// Set active proxy target
+	async function setActiveProxy(proxyId: string) {
+		try {
+			const updatedProject = await updateProject(project.id, { 
+				active_proxy_id: proxyId 
+			});
+			
+			// Update the local project object to reflect changes
+			project = updatedProject;
+			
+			showNotification('Proxy target set as active successfully!', 'success');
+		} catch (error) {
+			console.error('Failed to set active proxy target:', error);
+			showNotification('Failed to set active proxy: ' + (error instanceof Error ? error.message : String(error)), 'error');
+		}
+	}
 </script>
 
 <div class={ThemeUtils.card('overflow-hidden')}>
@@ -151,17 +168,26 @@
 	{#if isExpanded}
 		<div transition:fade={{ duration: 150 }} class="border-t theme-border p-4">
 			<div class="flex justify-between items-center mb-4">
-				<p class="theme-text-secondary text-sm">
-					{#if project.mode === 'proxy'}
-						<span class="bg-blue-600/20 text-blue-500 dark:text-blue-400 px-2 py-1 rounded text-xs font-semibold">
-							Proxy Mode Active
-						</span>
-					{:else}
-						<span class="bg-gray-200 dark:bg-gray-700 text-gray-500 dark:text-gray-400 px-2 py-1 rounded text-xs font-semibold">
-							Mock Mode Active
-						</span>
+				<div>
+					<p class="theme-text-secondary text-sm">
+						{#if project.mode === 'proxy'}
+							<span class="bg-blue-600/20 text-blue-500 dark:text-blue-400 px-2 py-1 rounded text-xs font-semibold">
+								Proxy Mode Active
+							</span>
+						{:else}
+							<span class="bg-gray-200 dark:bg-gray-700 text-gray-500 dark:text-gray-400 px-2 py-1 rounded text-xs font-semibold">
+								Mock Mode Active
+							</span>
+						{/if}
+					</p>
+					
+					{#if project.mode === 'proxy' && !project.active_proxy_id && proxyTargets.length > 0}
+						<div class="mt-2 bg-yellow-500/10 text-yellow-600 dark:text-yellow-400 px-3 py-2 rounded text-xs flex items-center">
+							<i class="fas fa-exclamation-triangle mr-2"></i>
+							<span>Proxy mode is active but no proxy target is selected. Please select an active proxy.</span>
+						</div>
 					{/if}
-				</p>
+				</div>
 				<button 
 					class={ThemeUtils.primaryButton('py-1.5 px-3 rounded-md text-xs')}
 					on:click={showAddProxyModal}
@@ -190,13 +216,26 @@
 										<i class="fas fa-globe text-green-500 text-sm"></i>
 									</div>
 									<span class="ml-2 theme-text-primary font-medium">{proxy.label}</span>
+									{#if project.active_proxy_id === proxy.id}
+										<span class="ml-2 bg-blue-600/20 text-blue-500 dark:text-blue-400 px-2 py-0.5 rounded text-xs font-semibold">
+											Active
+										</span>
+									{/if}
 								</div>
-								<div class="flex items-center space-x-2">
-									<button class={ThemeUtils.iconButton('text-xs')} on:click={() => showEditProxyModal(proxy)}>
-										<i class="fas fa-edit text-blue-500"></i>
+								<div class="flex items-center space-x-3">
+									<button 
+										class={ThemeUtils.iconButton('bg-gray-200 dark:bg-gray-700 p-2 hover:bg-gray-300 dark:hover:bg-gray-600 rounded-md')} 
+										on:click={() => setActiveProxy(proxy.id)}
+										disabled={project.active_proxy_id === proxy.id}
+										title={project.active_proxy_id === proxy.id ? "Current active proxy" : "Set as active proxy"}
+									>
+										<i class={`fas fa-toggle-${project.active_proxy_id === proxy.id ? 'on text-blue-500' : 'off text-gray-500'} text-sm`}></i>
 									</button>
-									<button class={ThemeUtils.iconButton('text-xs')} on:click={() => confirmDelete(proxy)}>
-										<i class="fas fa-trash-alt text-red-500"></i>
+									<button class={ThemeUtils.iconButton('bg-gray-200 dark:bg-gray-700 p-2 hover:bg-gray-300 dark:hover:bg-gray-600 rounded-md')} on:click={() => showEditProxyModal(proxy)}>
+										<i class="fas fa-edit text-blue-500 text-sm"></i>
+									</button>
+									<button class={ThemeUtils.iconButton('bg-gray-200 dark:bg-gray-700 p-2 hover:bg-gray-300 dark:hover:bg-gray-600 rounded-md')} on:click={() => confirmDelete(proxy)}>
+										<i class="fas fa-trash-alt text-red-500 text-sm"></i>
 									</button>
 								</div>
 							</div>
@@ -289,7 +328,7 @@
 				<i class="fas fa-exclamation-triangle text-yellow-500 dark:text-yellow-400 mr-2"></i>
 				Confirm Delete
 			</h3>
-			<p class="mb-6 theme-text-secondary">Are you sure you want to delete the proxy target <span class="font-semibold theme-text-primary">"{selectedProxy.name}"</span>? This action cannot be undone.</p>
+			<p class="mb-6 theme-text-secondary">Are you sure you want to delete the proxy target <span class="font-semibold theme-text-primary">"{selectedProxy.label}"</span>? This action cannot be undone.</p>
 			<div class="flex justify-end space-x-4">
 				<button 
 					class={ThemeUtils.secondaryButton('py-2 px-4 rounded')} 
