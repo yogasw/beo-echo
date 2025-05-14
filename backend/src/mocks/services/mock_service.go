@@ -7,8 +7,8 @@ import (
 	"io"
 	"math/rand"
 	"net/http"
-	"net/http/httputil"
 	"net/url"
+	"path"
 	"strings"
 	"time"
 
@@ -30,7 +30,7 @@ func NewMockService(repo *repositories.MockRepository) *MockService {
 
 // HandleRequest processes an incoming request and returns a mock response or proxies it
 // Also returns project ID, execution mode, and whether the request matched an endpoint
-func (s *MockService) HandleRequest(alias, method, path string, req *http.Request) (*http.Response, error, string, database.ProjectMode, bool) {
+func (s *MockService) HandleRequest(alias, method, reqPath string, req *http.Request) (*http.Response, error, string, database.ProjectMode, bool) {
 	// Find project by alias
 	project, err := s.Repo.FindProjectByAlias(alias)
 	if err != nil {
@@ -40,7 +40,7 @@ func (s *MockService) HandleRequest(alias, method, path string, req *http.Reques
 	// Extract the actual API endpoint path
 	// Path comes in like "/api/users" or "/users" - we need just the endpoint part
 	// First trim any project alias prefix if it exists
-	cleanPath := strings.TrimPrefix(path, "/"+project.Alias)
+	cleanPath := strings.TrimPrefix(reqPath, "/"+project.Alias)
 
 	// Check project mode
 	switch project.Mode {
@@ -93,36 +93,8 @@ func (s *MockService) handleProxyMode(project *database.Project, req *http.Reque
 		return createErrorResponse(http.StatusInternalServerError, "No proxy target configured"), nil
 	}
 
-	targetURL, err := url.Parse(project.ActiveProxy.URL)
-	if err != nil {
-		return createErrorResponse(http.StatusInternalServerError, "Invalid proxy URL"), nil
-	}
-
-	// Create proxy director
-	proxy := httputil.NewSingleHostReverseProxy(targetURL)
-	originalDirector := proxy.Director
-	proxy.Director = func(r *http.Request) {
-		originalDirector(r)
-		r.Host = targetURL.Host
-	}
-
-	// Track request time for latency measurement
-	startTime := time.Now()
-
-	// Execute the request
-	resp, err := executeProxyRequest(req, proxy)
-	if err != nil {
-		return createErrorResponse(http.StatusBadGateway, "Proxy error: "+err.Error()), nil
-	}
-
-	latencyMS := time.Since(startTime).Milliseconds()
-
-	// Log the latency in the header for debugging purposes
-	if resp != nil && resp.Header != nil {
-		resp.Header.Set("X-Beo-Echo-Latency-MS", fmt.Sprintf("%d", latencyMS))
-	}
-
-	return resp, nil
+	// Use the common executeProxyRequest helper function
+	return executeProxyRequest(project.ActiveProxy.URL, req.Method, req.URL.Path, req.URL.RawQuery, req)
 }
 
 // handleForwarderMode always forwards requests to the target without checking for mock endpoints
@@ -131,26 +103,70 @@ func (s *MockService) handleForwarderMode(project *database.Project, method, pat
 		return createErrorResponse(http.StatusInternalServerError, "No proxy target configured"), nil
 	}
 
-	targetURL, err := url.Parse(project.ActiveProxy.URL)
+	// Use the common executeProxyRequest helper function, but with the path parameter
+	// which might differ from req.URL.Path in this context
+	return executeProxyRequest(project.ActiveProxy.URL, method, path, req.URL.RawQuery, req)
+}
+
+// executeProxyRequest is a common helper function to forward requests to a target URL
+// with proper header and body copying. This centralizes the forwarding logic for both
+// proxy and forwarder modes.
+func executeProxyRequest(targetURLString, method, pathStr, queryString string, req *http.Request) (*http.Response, error) {
+	targetURL, err := url.Parse(targetURLString)
 	if err != nil {
-		return createErrorResponse(http.StatusInternalServerError, "Invalid proxy URL"), nil
+		return createErrorResponse(http.StatusInternalServerError, fmt.Sprintf("Invalid proxy URL: %s", err.Error())), nil
 	}
 
-	// Create proxy director
-	proxy := httputil.NewSingleHostReverseProxy(targetURL)
-	originalDirector := proxy.Director
-	proxy.Director = func(r *http.Request) {
-		originalDirector(r)
-		r.Host = targetURL.Host
+	// Create a new client with desired configuration
+	client := &http.Client{
+		Timeout: time.Second * 30,
 	}
+
+	// Create new URL for the target
+	forwardURL := *targetURL
+	// Join the target base path with the requested path
+	forwardURL.Path = path.Join(forwardURL.Path, pathStr)
+	forwardURL.RawQuery = queryString
+
+	// Read the original request body if present
+	var bodyBytes []byte
+	if req.Body != nil {
+		bodyBytes, err = io.ReadAll(req.Body)
+		if err != nil {
+			return createErrorResponse(http.StatusBadGateway, fmt.Sprintf("Failed to read request body: %s", err.Error())), nil
+		}
+		// Restore the original body
+		req.Body = io.NopCloser(bytes.NewReader(bodyBytes))
+	}
+
+	// Create a new request with all original attributes
+	newReq, err := http.NewRequestWithContext(
+		req.Context(),
+		method,
+		forwardURL.String(),
+		bytes.NewReader(bodyBytes),
+	)
+	if err != nil {
+		return createErrorResponse(http.StatusBadGateway, fmt.Sprintf("Failed to create request: %s", err.Error())), nil
+	}
+
+	// Copy all headers
+	for key, values := range req.Header {
+		for _, value := range values {
+			newReq.Header.Add(key, value)
+		}
+	}
+
+	// Set host header to target host
+	newReq.Host = targetURL.Host
 
 	// Track request time for latency measurement
 	startTime := time.Now()
 
 	// Execute the request
-	resp, err := executeProxyRequest(req, proxy)
+	resp, err := client.Do(newReq)
 	if err != nil {
-		return createErrorResponse(http.StatusBadGateway, "Forwarder error: "+err.Error()), nil
+		return createErrorResponse(http.StatusBadGateway, fmt.Sprintf("Request error: %s", err.Error())), nil
 	}
 
 	latencyMS := time.Since(startTime).Milliseconds()
@@ -389,54 +405,4 @@ func createErrorResponse(statusCode int, message string) *http.Response {
 
 	resp.Header.Set("Content-Type", "application/json")
 	return resp
-}
-
-// executeProxyRequest executes a request through a proxy
-func executeProxyRequest(originalReq *http.Request, proxy *httputil.ReverseProxy) (*http.Response, error) {
-	// Create in-memory pipe
-	pr, pw := io.Pipe()
-
-	// Create a response recorder
-	recorderResp := &responseRecorder{
-		headers: make(http.Header),
-		pipe:    pw,
-	}
-
-	// Use goroutine to execute proxy request
-	go func() {
-		proxy.ServeHTTP(recorderResp, originalReq)
-		pw.Close()
-	}()
-
-	// Create response
-	resp := &http.Response{
-		StatusCode:    recorderResp.statusCode,
-		Header:        recorderResp.headers,
-		Body:          pr,
-		ContentLength: -1, // Unknown content length
-	}
-
-	return resp, nil
-}
-
-// responseRecorder implements a ResponseWriter to capture response details
-type responseRecorder struct {
-	headers    http.Header
-	statusCode int
-	pipe       *io.PipeWriter
-}
-
-func (r *responseRecorder) Header() http.Header {
-	return r.headers
-}
-
-func (r *responseRecorder) Write(b []byte) (int, error) {
-	if r.statusCode == 0 {
-		r.statusCode = http.StatusOK // Default status
-	}
-	return r.pipe.Write(b)
-}
-
-func (r *responseRecorder) WriteHeader(statusCode int) {
-	r.statusCode = statusCode
 }
