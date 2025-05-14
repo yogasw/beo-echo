@@ -10,8 +10,22 @@
 	let name = project?.name || '';
 	let alias = project?.alias || '';
 	let mode = project?.mode || 'mock';
+	let baseHostUrl = '';
 	
-	$: url = project?.url || '';
+	// Extract the base host URL from the project URL once
+	$: {
+		if (project?.url) {
+			// Extract host from URL
+			const urlParts = project.url.split('/');
+			if (urlParts.length >= 3) {
+				// http://hostname/alias -> we want http://hostname/
+				baseHostUrl = urlParts[0] + '//' + urlParts[2] + '/';
+			}
+		}
+	}
+	
+	// Dynamically update URL when alias changes
+	$: url = alias ? baseHostUrl + alias : (project?.url || '');
 	$: status = project?.status || 'active';
 
 	// Function to toggle section expansion
@@ -117,6 +131,7 @@
 							id="config-alias"
 							class={ThemeUtils.inputField()}
 							bind:value={alias}
+							on:input={() => { /* URL updates reactively due to the $: binding */ }}
 							on:change={() => handleInputChange('alias')}
 							placeholder="Enter project alias"
 						/>
