@@ -20,30 +20,44 @@
 	}
 	
 	// Handle save of general info
-	async function handleSave() {
+	async function handleSave(key: string, value: any) {
 		try {
-			const updatedProject = await updateProject(project.id, {
-				name,
-				alias,
-				mode
-			});
+			// Create an update object with only the changed field
+			const updateData: Record<string, any> = {};
+			updateData[key] = value;
+			
+			const updatedProject = await updateProject(project.id, updateData);
 			
 			// Update local project with new values
 			project = updatedProject;
 			
 			// Show success notification
-			showNotification('General information updated successfully!', 'success');
+			showNotification(`${key.charAt(0).toUpperCase() + key.slice(1)} updated successfully!`, 'success');
 		} catch (error) {
-			console.error('Failed to update project:', error);
-			showNotification('Failed to update project: ' + (error instanceof Error ? error.message : String(error)), 'error');
+			console.error(`Failed to update ${key}:`, error);
+			showNotification(`Failed to update ${key}: ` + (error instanceof Error ? error.message : String(error)), 'error');
 		}
 	}
 
 	// Handle input change and auto-save
-	async function handleInputChange() {
-		// Only update if values have changed
-		if (name !== project.name || alias !== project.alias || mode !== project.mode) {
-			await handleSave();
+	async function handleInputChange(field: string) {
+		// Check which field has changed and only update that specific field
+		switch (field) {
+			case 'name':
+				if (name !== project.name) {
+					await handleSave('name', name);
+				}
+				break;
+			case 'alias':
+				if (alias !== project.alias) {
+					await handleSave('alias', alias);
+				}
+				break;
+			case 'mode':
+				if (mode !== project.mode) {
+					await handleSave('mode', mode);
+				}
+				break;
 		}
 	}
 
@@ -86,7 +100,7 @@
 							id="config-name"
 							class={ThemeUtils.inputField()}
 							bind:value={name}
-							on:change={handleInputChange}
+							on:change={() => handleInputChange('name')}
 							placeholder="Enter project name"
 						/>
 					</div>
@@ -103,7 +117,7 @@
 							id="config-alias"
 							class={ThemeUtils.inputField()}
 							bind:value={alias}
-							on:change={handleInputChange}
+							on:change={() => handleInputChange('alias')}
 							placeholder="Enter project alias"
 						/>
 					</div>
@@ -132,7 +146,7 @@
 							id="config-mode"
 							class={ThemeUtils.inputField()}
 							bind:value={mode}
-							on:change={handleInputChange}
+							on:change={() => handleInputChange('mode')}
 						>
 							{#each modeOptions as option}
 								<option value={option.value}>{option.label}</option>

@@ -44,11 +44,13 @@ func UpdateProjectHandler(c *gin.Context) {
 		return
 	}
 
-	// Parse update data
+	// Parse update data - supporting partial updates
 	var updateData struct {
-		Mode          database.ProjectMode `json:"mode"`
-		ActiveProxyID *string              `json:"active_proxy_id"`
-		Status        string               `json:"status"`
+		Name          *string               `json:"name"`
+		Alias         *string               `json:"alias"`
+		Mode          *database.ProjectMode `json:"mode"`
+		ActiveProxyID *string               `json:"active_proxy_id"`
+		Status        *string               `json:"status"`
 	}
 
 	if err := c.ShouldBindJSON(&updateData); err != nil {
@@ -59,15 +61,23 @@ func UpdateProjectHandler(c *gin.Context) {
 		return
 	}
 
-	// Apply updates
-	if updateData.Mode != "" {
-		existingProject.Mode = updateData.Mode
+	// Apply updates only for fields that were provided
+	if updateData.Name != nil {
+		existingProject.Name = *updateData.Name
 	}
 
-	if updateData.Status != "" {
+	if updateData.Alias != nil {
+		existingProject.Alias = *updateData.Alias
+	}
+
+	if updateData.Mode != nil {
+		existingProject.Mode = *updateData.Mode
+	}
+
+	if updateData.Status != nil {
 		// Validate status value
-		if updateData.Status == "running" || updateData.Status == "stopped" || updateData.Status == "error" {
-			existingProject.Status = updateData.Status
+		if *updateData.Status == "running" || *updateData.Status == "stopped" || *updateData.Status == "error" {
+			existingProject.Status = *updateData.Status
 		} else {
 			c.JSON(http.StatusBadRequest, gin.H{
 				"error":   true,
