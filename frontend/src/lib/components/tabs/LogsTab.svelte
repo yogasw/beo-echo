@@ -370,10 +370,82 @@
 			</button>
 		</div>
 	{:else if filteredLogs.length === 0}
-		<div class="theme-bg-secondary p-4 rounded text-center">
-			<p class="theme-text-primary">
-				No logs found {searchTerm ? 'matching your search criteria' : 'for this project'}
-			</p>
+		<div class="theme-bg-secondary border theme-border p-6 rounded-lg flex flex-col items-center justify-center text-center">
+			{#if searchTerm}
+				<!-- Search with no results -->
+				<div class="bg-blue-600/10 dark:bg-blue-600/20 p-4 rounded-full mb-4">
+					<i class="fas fa-search text-blue-500 text-3xl"></i>
+				</div>
+				<h3 class="text-lg font-semibold theme-text-primary mb-2">No logs match your search</h3>
+				<p class="theme-text-secondary mb-3 max-w-lg">
+					We couldn't find any logs matching "{searchTerm}". Try using different keywords or clearing your search.
+				</p>
+				<button
+					class={ThemeUtils.secondaryButton('py-1.5 px-4 text-sm')}
+					on:click={() => (searchTerm = '')}
+				>
+					<i class="fas fa-times mr-2"></i> Clear Search
+				</button>
+			{:else}
+				<!-- Empty logs state -->
+				<div class="bg-blue-600/10 dark:bg-blue-600/20 p-5 rounded-full mb-5">
+					<i class="fas fa-satellite-dish text-blue-500 text-4xl"></i>
+				</div>
+				<h3 class="text-xl font-semibold theme-text-primary mb-2">Waiting for requests</h3>
+				<p class="theme-text-secondary mb-5 max-w-lg">
+					Your endpoint is ready! Send your first HTTP request to start populating your logs.
+				</p>
+				
+				<!-- Example request section -->
+				<div class="w-full max-w-2xl mb-6">
+					<div class="flex items-center justify-between mb-2">
+						<h4 class="text-sm font-medium theme-text-primary">Example cURL request</h4>
+						<button
+							class={ThemeUtils.utilityButton()}
+							on:click|stopPropagation={() => copyToClipboard(`curl -X GET "https://${selectedProject.subdomain}.beo-echo.server.com/api/example"`, 'Example request')}
+						>
+							<i class="fas fa-copy mr-1"></i> Copy
+						</button>
+					</div>
+					<div class="theme-bg-tertiary border theme-border rounded-md p-3">
+						<pre class="font-mono text-xs theme-text-secondary overflow-x-auto">curl -X GET "https://{selectedProject.subdomain}.beo-echo.server.com/api/example"</pre>
+					</div>
+				</div>
+				
+				<div class="w-full max-w-2xl grid gap-4 md:grid-cols-2">
+					<!-- Live status -->
+					<div class="theme-bg-tertiary border theme-border rounded-md p-4 flex items-center">
+						<span class="relative flex h-3 w-3 mr-3">
+							{#if isConnected}
+								<span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+								<span class="relative inline-flex rounded-full h-3 w-3 bg-green-500"></span>
+							{:else}
+								<span class="relative inline-flex rounded-full h-3 w-3 bg-red-500"></span>
+							{/if}
+						</span>
+						<div>
+							<h4 class="text-sm font-medium theme-text-primary">Live connection</h4>
+							<p class="text-xs theme-text-muted">
+								{isConnected ? 'Connected and ready for requests' : 'Currently offline'}
+							</p>
+						</div>
+					</div>
+					
+					<!-- Create mock CTA -->
+					<div class="theme-bg-tertiary border theme-border rounded-md p-4">
+						<h4 class="text-sm font-medium theme-text-primary mb-1 flex items-center">
+							<i class="fas fa-magic text-blue-500 mr-2"></i>
+							Need mock responses?
+						</h4>
+						<p class="text-xs theme-text-muted mb-2">
+							Create mock endpoints from the Configuration tab
+						</p>
+						<a href="/configuration" class="text-xs text-blue-500 hover:text-blue-400 underline">
+							Go to Configuration
+						</a>
+					</div>
+				</div>
+			{/if}
 		</div>
 	{:else}
 		<div class="space-y-4">
