@@ -109,6 +109,17 @@ func StreamLogsHandler(c *gin.Context) {
 	// Create channel for this client
 	logChannel := logService.SubscribeToLogs(projectID)
 
+	// Send initial ping event to establish SSE connection
+	pingEvent := services.FormatSSEPingEvent()
+	if c.Writer != nil {
+		_, err := c.Writer.Write([]byte(pingEvent))
+		if err == nil {
+			if flusher, ok := c.Writer.(http.Flusher); ok && flusher != nil {
+				flusher.Flush()
+			}
+		}
+	}
+
 	// Send initial batch of logs (most recent 1 first)
 	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "1"))
 	initialLogs, err := logService.GetLatestLogs(limit, projectID)
