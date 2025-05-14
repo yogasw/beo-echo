@@ -402,13 +402,13 @@
 						<h4 class="text-sm font-medium theme-text-primary">Example cURL request</h4>
 						<button
 							class={ThemeUtils.utilityButton()}
-							on:click|stopPropagation={() => copyToClipboard(`curl -X GET "https://${selectedProject.subdomain}.beo-echo.server.com/api/example"`, 'Example request')}
+							on:click|stopPropagation={() => copyToClipboard(`curl -X GET "${selectedProject.url}"`, 'Example request')}
 						>
 							<i class="fas fa-copy mr-1"></i> Copy
 						</button>
 					</div>
 					<div class="theme-bg-tertiary border theme-border rounded-md p-3">
-						<pre class="font-mono text-xs theme-text-secondary overflow-x-auto">curl -X GET "https://{selectedProject.subdomain}.beo-echo.server.com/api/example"</pre>
+						<pre class="font-mono text-xs theme-text-secondary overflow-x-auto">curl -X GET {selectedProject.url}</pre>
 					</div>
 				</div>
 				
