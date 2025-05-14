@@ -6,7 +6,7 @@
 		createProxyTarget, 
 		updateProxyTarget, 
 		deleteProxyTarget,
-		updateProjectMode,
+		updateProject,
 		type Project, 
 		type ProxyTarget 
 	} from '$lib/api/BeoApi';
@@ -222,31 +222,44 @@
 {#if showAddModal}
 	<div class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" transition:fade={{ duration: 150 }}>
 		<div class={ThemeUtils.card('p-6 rounded-lg max-w-lg w-full')}>
-			<h3 class="text-xl font-bold mb-4 theme-text-primary">
+			<h3 class="text-xl font-bold mb-4 theme-text-primary flex items-center">
+				<div class="bg-green-600/10 p-1.5 rounded mr-3">
+					<i class="fas fa-exchange-alt text-green-500"></i>
+				</div>
 				{isEditing ? 'Edit Proxy Target' : 'Add Proxy Target'}
 			</h3>
 			<form on:submit|preventDefault={handleSubmitProxy}>
 				<div class="mb-4">
 					<label for="proxy-label" class="block text-sm font-medium mb-2 theme-text-secondary">Label</label>
-					<input
-						type="text"
-						id="proxy-label"
-						class={ThemeUtils.inputField()}
-						bind:value={proxyLabel}
-						placeholder="Production, Staging, etc."
-						required
-					/>
+					<div class="relative">
+						<div class="absolute inset-y-0 start-0 flex items-center ps-3 pointer-events-none">
+							<i class="fas fa-tag text-gray-400"></i>
+						</div>
+						<input
+							type="text"
+							id="proxy-label"
+							class={ThemeUtils.inputField('pl-10')}
+							bind:value={proxyLabel}
+							placeholder="Production, Staging, etc."
+							required
+						/>
+					</div>
 				</div>
 				<div class="mb-6">
 					<label for="proxy-url" class="block text-sm font-medium mb-2 theme-text-secondary">Target URL</label>
-					<input
-						type="url"
-						id="proxy-url"
-						class={ThemeUtils.inputField()}
-						bind:value={proxyUrl}
-						placeholder="https://api.example.com"
-						required
-					/>
+					<div class="relative">
+						<div class="absolute inset-y-0 start-0 flex items-center ps-3 pointer-events-none">
+							<i class="fas fa-globe text-gray-400"></i>
+						</div>
+						<input
+							type="url"
+							id="proxy-url"
+							class={ThemeUtils.inputField('pl-10')}
+							bind:value={proxyUrl}
+							placeholder="https://api.example.com"
+							required
+						/>
+					</div>
 				</div>
 				<div class="flex justify-end space-x-4">
 					<button 
