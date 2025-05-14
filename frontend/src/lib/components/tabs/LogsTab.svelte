@@ -503,6 +503,13 @@
 								>
 									{log.matched ? 'Matched' : 'Unmatched'}
 								</span>
+								
+								<!-- Execution Mode badge (proxy/forwarder) -->
+								{#if log.execution_mode === 'proxy' || log.execution_mode === 'forward'}
+									<span class="px-2 py-0.5 text-xs font-mono rounded bg-purple-600 text-white">
+										{log.execution_mode === 'proxy' ? 'Proxy' : 'Forwarder'}
+									</span>
+								{/if}
 							</div>
 
 							<div class="flex items-center space-x-3">
@@ -685,8 +692,18 @@
 												</span>
 											</div>
 											<div>
-												<span class="theme-text-muted">Execution:</span>
-												<span class="theme-text-primary font-mono">{log.execution_mode}</span>
+												<span class="theme-text-muted">Execution Mode:</span>
+												<span class="{log.execution_mode === 'proxy' || log.execution_mode === 'forward' 
+													? 'text-purple-600 dark:text-purple-400' 
+													: 'theme-text-primary'} font-mono">
+													{#if log.execution_mode === 'proxy'}
+														Proxy (Forwarded Request)
+													{:else if log.execution_mode === 'forward'}
+														Forwarder
+													{:else}
+														{log.execution_mode}
+													{/if}
+												</span>
 											</div>
 										</div>
 									</div>
