@@ -7,7 +7,6 @@
 	
 	// For backwards compatibility with old login system
 	import { setLocalStorage } from '$lib/utils/localStorage';
-	import { isAuthenticated as legacyIsAuthenticated } from '$lib/stores/authentication';
 	
 	let email = '';
 	let password = '';
@@ -35,7 +34,6 @@
 						// For backwards compatibility with old login system
 						setLocalStorage('username', email);
 						setLocalStorage('password', password);
-						legacyIsAuthenticated.set(true);
 						
 						// New auth system
 						await auth.login(email, password);

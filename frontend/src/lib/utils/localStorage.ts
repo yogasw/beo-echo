@@ -1,5 +1,5 @@
 import { browser } from '$app/environment';
-import { isAuthenticated } from '$lib/stores/authentication';
+import { isAuthenticated, auth } from '$lib/stores/auth';
 
 /**
  * Get item from localStorage safely
@@ -37,7 +37,7 @@ export function removeAuthLocalStorage() {
 	removeLocalStorage('username');
 	removeLocalStorage('password');
 	removeLocalStorage('currentWorkspaceId');
-	isAuthenticated.set(false);
+	auth.logout();
 }
 
 export function isOwnAuth() {

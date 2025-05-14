@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import { isAuthenticated } from '$lib/stores/authentication';
+	import { isAuthenticated } from '$lib/stores/auth';
 	import { goto } from '$app/navigation';
 	import { isFirstOpenPage } from '$lib/stores/isFirstOpen';
 	onMount(async () => {

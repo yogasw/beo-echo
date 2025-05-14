@@ -12,7 +12,7 @@
 	import { onMount } from 'svelte';
 	import { projects } from '$lib/stores/configurations';
 	import Toast from '$lib/components/Toast.svelte';
-	import { isAuthenticated } from '$lib/stores/authentication';
+	import { isAuthenticated, auth } from '$lib/stores/auth';
 	import { browser } from '$app/environment';
 
 	interface Config {
@@ -83,11 +83,11 @@
 			try {
 				// First check authentication by getting workspaces
 				await getWorkspaces();
-				isAuthenticated.set(true);
+				await auth.initialize(); // This will set isAuthenticated to true if token is valid
 				await goto('/home');
 			} catch (e) {
 				console.error('Failed to authenticate:', e);
-				isAuthenticated.set(false);
+				auth.logout(); // This will set isAuthenticated to false
 				await goto('/login');
 			}
 		}
@@ -138,8 +138,7 @@
 	}
 
 	function handleLogout() {
-		isAuthenticated.set(false);
-		removeLocalStorage('auth_token');
+		auth.logout(); // This will set isAuthenticated to false and remove auth token
 		removeLocalStorage('currentWorkspaceId');
 		goto("/login")
 		window.location.reload();
