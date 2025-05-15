@@ -44,9 +44,27 @@ func CheckAndHandle() error {
 		}
 
 		log.Println("Using SQLite database:", dbURL)
-		
-		// Remove "file:" prefix if present, for GORM SQLite
-		sqlitePath := strings.TrimPrefix(dbURL, "file:")
+
+		// Process SQLite connection string based on format
+		var sqlitePath string
+
+		// Handle different SQLite URL formats
+		if strings.HasPrefix(dbURL, "sqlite:") {
+			sqlitePath = strings.TrimPrefix(dbURL, "sqlite:")
+		} else if strings.HasPrefix(dbURL, "file:") {
+			sqlitePath = strings.TrimPrefix(dbURL, "file:")
+		} else {
+			sqlitePath = dbURL
+		}
+
+		// Ensure the directory for the SQLite file exists
+		dbDir := filepath.Dir(sqlitePath)
+		if _, err := os.Stat(dbDir); os.IsNotExist(err) {
+			log.Println("SQLite directory doesn't exist, creating:", dbDir)
+			if err := os.MkdirAll(dbDir, 0755); err != nil {
+				return errors.New("Failed to create SQLite database directory: " + err.Error())
+			}
+		}
 
 		// Open SQLite database connection
 		DB, err = gorm.Open(sqlite.Open(sqlitePath), &gorm.Config{
