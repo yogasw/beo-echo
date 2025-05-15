@@ -19,6 +19,7 @@
 	onMount(() => {
 		if ($isAuthenticated) {
 			goto('/');
+			window.location.reload();
 		}
 	});
 	
@@ -31,13 +32,10 @@
 				// Login flow
 				if (email && password) {
 					if (browser) {
-						// For backwards compatibility with old login system
-						setLocalStorage('username', email);
-						setLocalStorage('password', password);
-						
 						// New auth system
 						await auth.login(email, password);
 						await goto('/');
+						window.location.reload();
 					}
 				} else {
 					error = 'Please enter both email and password';

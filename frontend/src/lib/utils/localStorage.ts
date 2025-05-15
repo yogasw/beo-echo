@@ -28,27 +28,6 @@ export function removeLocalStorage(key: string) {
 		localStorage.removeItem(key);
 	}
 }
-
-
-/**
- * remove username and password and isAuthenticated from localStorage
- */
-export function removeAuthLocalStorage() {
-	removeLocalStorage('username');
-	removeLocalStorage('password');
-	removeLocalStorage('currentWorkspaceId');
-	auth.logout();
-}
-
-export function isOwnAuth() {
-	const username = getLocalStorage('username');
-	const password = getLocalStorage('password');
-	if (username && password) {
-		return true;
-	}
-	return false;
-}
-
 export function getCurrentWorkspaceId(): string | null {
 	return getLocalStorage('currentWorkspaceId');
 }

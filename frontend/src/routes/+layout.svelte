@@ -7,7 +7,7 @@
 	import { goto } from '$app/navigation';
 	import ConfigurationList from '$lib/components/ConfigurationList.svelte';
 	import Header from '$lib/components/Header.svelte';
-	import { getCurrentWorkspaceId, isOwnAuth, removeLocalStorage, setCurrentWorkspaceId } from '$lib/utils/localStorage';
+	import { getCurrentWorkspaceId, removeLocalStorage, setCurrentWorkspaceId } from '$lib/utils/localStorage';
 	import { getProjects, getWorkspaces } from '$lib/api/BeoApi';
 	import { onMount } from 'svelte';
 	import { projects } from '$lib/stores/configurations';
@@ -79,7 +79,7 @@
 
 	onMount(async () => {
 		console.log("onMount: layout");
-		if (isOwnAuth() && !$isAuthenticated && !isLoginPage) {
+		if (!$isAuthenticated && !isLoginPage) {
 			try {
 				// First check authentication by getting workspaces
 				await getWorkspaces();
