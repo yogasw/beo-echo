@@ -47,9 +47,6 @@ RUN mkdir -p /app/frontend /app/backend /app/configs /data/caddy /config/caddy
 COPY --from=frontend-builder /app/frontend/build /app/frontend
 COPY --from=backend-builder /app/backend/beo-echo /app/backend/
 
-# Copy configuration files
-COPY configs/ /app/configs/
-
 # Create Caddy configuration file
 COPY Caddyfile /etc/caddy/Caddyfile
 
