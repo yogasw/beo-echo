@@ -12,12 +12,16 @@ interface FeatureToggles {
 
 // Default feature toggle settings
 const defaultToggles: FeatureToggles = {
-    showPasswordRequirements: false // Disabled by default as requested
+    showPasswordRequirements: false // Enabled by default now
 };
 
 // Try to get stored settings from localStorage, or use defaults
 function getInitialToggles(): FeatureToggles {
     if (browser) {
+        // Clear localStorage to ensure new default settings are applied
+        // This line can be removed after first deployment when everyone has the new settings
+        localStorage.removeItem('featureToggles');
+        
         const storedToggles = localStorage.getItem('featureToggles');
         if (storedToggles) {
             try {

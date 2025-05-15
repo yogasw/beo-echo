@@ -3,17 +3,11 @@
 	import * as ThemeUtils from '$lib/utils/themeUtils';
 	import UserProfile from '$lib/components/settings/UserProfile.svelte';
 	import PasswordChange from '$lib/components/settings/PasswordChange.svelte';
-	import FeatureSettings from '$lib/components/settings/FeatureSettings.svelte';
 	
-	// Simulate admin state - in a real application, this would come from auth store
-	// Set to true to test admin features, false for regular user view
-	const isAdmin = true;
-
 	// State for each section's visibility
 	let sectionsVisible = {
 		profile: true,    // Profile open by default
-		password: false,
-		features: false   // Admin feature toggles section
+		password: false
 	};
 </script>
 
@@ -96,32 +90,6 @@
 			{/if}
 		</div>
 		
-		{#if isAdmin}
-			<!-- 3. Feature Settings (Admin Only) -->
-			<div class={ThemeUtils.card('overflow-hidden')}>
-				<div 
-					class="flex justify-between items-center p-3 hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer bg-gray-100 dark:bg-gray-750"
-					on:click={() => sectionsVisible.features = !sectionsVisible.features}
-					on:keydown={(e) => e.key === 'Enter' && (sectionsVisible.features = !sectionsVisible.features)}
-					tabindex="0"
-					role="button"
-				>
-					<div class="flex items-center">
-						<div class="bg-amber-500/20 p-1.5 rounded mr-2">
-							<i class="fas fa-wrench text-amber-400"></i>
-						</div>
-						<h3 class="font-medium theme-text-primary">Feature Configuration</h3>
-						<span class="ml-2 px-1.5 py-0.5 bg-blue-500/20 text-blue-400 rounded text-xs">Admin</span>
-					</div>
-					<i class="fas {sectionsVisible.features ? 'fa-chevron-up' : 'fa-chevron-down'} theme-text-muted"></i>
-				</div>
-				
-				{#if sectionsVisible.features}
-					<div transition:fade={{ duration: 150 }} class="border-t theme-border p-4">
-						<FeatureSettings />
-					</div>
-				{/if}
-			</div>
-		{/if}
+		<!-- Feature Configuration has been moved to Instance Settings tab -->
 	</div>
 </div>
