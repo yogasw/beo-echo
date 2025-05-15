@@ -95,7 +95,7 @@
 </script>
 
 <!-- Routes Section -->
-<div class="w-1/3 theme-bg-primary p-4 flex flex-col">
+<div class="w-1/3 theme-bg-primary flex flex-col">
 	<div class={ThemeUtils.headerSection('rounded mb-4')}>
 		<div class="bg-blue-600/10 dark:bg-blue-600/10 p-2 rounded-lg mr-3">
 			<i class="fas fa-route text-blue-500 text-xl"></i>
