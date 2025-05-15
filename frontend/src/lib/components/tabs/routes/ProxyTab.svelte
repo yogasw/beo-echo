@@ -137,7 +137,7 @@
 					{:else}
 						<select 
 							id="proxyTarget"
-							class="bg-gray-700 border border-gray-600 text-white text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5"
+							class="{ThemeUtils.themeBgSecondary('border')} {ThemeUtils.themeBorder()} {ThemeUtils.themeTextPrimary()} text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5"
 							value={endpoint.proxy_target_id || ''}
 							on:change={handleProxyTargetChange}
 						>
@@ -148,13 +148,13 @@
 						</select>
 						
 						{#if endpoint.proxy_target_id && endpoint.proxy_target}
-							<div class="mt-2 p-3 bg-gray-750 rounded-lg border border-gray-700">
+							<div class="mt-2 p-3 {ThemeUtils.themeBgSecondary()} rounded-lg border {ThemeUtils.themeBorder()}">
 								<div class="flex flex-col">
 									<span class="text-sm {ThemeUtils.themeTextSecondary()}">
-										Target: <span class="text-blue-400">{endpoint.proxy_target.label}</span>
+										Target: <span class="text-blue-400 dark:text-blue-400">{endpoint.proxy_target.label}</span>
 									</span>
 									<span class="text-sm {ThemeUtils.themeTextSecondary()}">
-										URL: <span class="text-blue-400">{endpoint.proxy_target.url}</span>
+										URL: <span class="text-blue-400 dark:text-blue-400">{endpoint.proxy_target.url}</span>
 									</span>
 								</div>
 							</div>
@@ -162,18 +162,18 @@
 					{/if}
 				</div>
 				
-				<div class="p-3 bg-gray-750 rounded-lg">
+				<div class="p-3 {ThemeUtils.themeBgSecondary()} rounded-lg">
 					<p class="text-sm {ThemeUtils.themeTextSecondary()}">
-						<i class="fas fa-info-circle mr-2 text-blue-400"></i>
+						<i class="fas fa-info-circle mr-2 text-blue-400 dark:text-blue-400"></i>
 						Requests to this endpoint will be forwarded to the selected proxy target, 
 						only when the project is in "Mock" mode. This will not work in other modes.
 					</p>
 				</div>
 			</div>
 		{:else}
-			<div class="p-3 bg-gray-750 rounded-lg">
+			<div class="p-3 {ThemeUtils.themeBgSecondary()} rounded-lg">
 				<p class="text-sm {ThemeUtils.themeTextSecondary()}">
-					<i class="fas fa-info-circle mr-2 text-blue-400"></i>
+					<i class="fas fa-info-circle mr-2 text-blue-400 dark:text-blue-400"></i>
 					Enable proxy to forward requests for this specific endpoint to a proxy target, 
 					only when the project is in "Mock" mode. This will not work in other modes.
 				</p>

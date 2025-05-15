@@ -152,6 +152,11 @@
 							{endpoint.method}
 						</span>
 						{endpoint.path.length > 30 ? endpoint.path.slice(0, 30) + '...' : endpoint.path}
+						{#if endpoint.use_proxy}
+							<span class="ml-2 px-2 py-0.5 text-xs font-medium rounded-full bg-purple-600 text-white">
+								Proxy
+							</span>
+						{/if}
 					</span>
 
 					<!-- Three-dot menu button only shown on hover -->

@@ -53,6 +53,16 @@
 		endpoints = [...endpoints, newEndpoint];
 		selectRoute(newEndpoint);
 	}
+
+	function handleProxyChange(updatedEndpoint: Endpoint) {
+		// Update the endpoint in the list
+		const index = endpoints.findIndex(e => e.id === updatedEndpoint.id);
+		if (index !== -1) {
+			endpoints[index] = updatedEndpoint;
+			endpoints = [...endpoints]; // Trigger reactivity
+		}
+		selectedEndpoint = updatedEndpoint;
+	}
 </script>
 
 <div class="flex flex-1 h-full">
@@ -128,86 +138,86 @@
 			}}>{selectedEndpoint?.documentation || ''}</textarea
 		>
 
-		<DropdownResponse bind:selectedEndpoint bind:selectedResponse />
+		{#if selectedEndpoint}
+			<div class="mb-4 mt-4">
+				<!-- ProxyTab moved here, above DropdownResponse -->
+				<ProxyTab 
+					endpoint={selectedEndpoint} 
+					onChange={handleProxyChange} 
+				/>
+			</div>
+		{/if}
 
-		<div class="flex space-x-2 mb-4">
-			{#each ['Status & Body', 'Headers', 'Rules', 'Callbacks', 'Proxy'] as tab}
-				{#if tab === activeContentTab}
-					<button
-						class="bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded"
-						on:click={() => (activeContentTab = tab)}
-					>
-						{tab}
-					</button>
-				{:else}
-					<button
-						class="{ThemeUtils.themeBgSecondary()} {ThemeUtils.themeTextPrimary()} py-2 px-4 rounded hover:bg-opacity-80"
-						on:click={() => (activeContentTab = tab)}
-					>
-						{tab}
-					</button>
-				{/if}
-			{/each}
-		</div>
+		<!-- Response section with opacity when proxy is enabled -->
+		<div class={selectedEndpoint?.use_proxy ? "opacity-50 pointer-events-none" : ""}>
+			<DropdownResponse bind:selectedEndpoint bind:selectedResponse />
 
-		<div class="flex-1 overflow-auto h-full">
-			<div class="max-w-full overflow-x-auto h-full">
-				<div class="min-w-0 h-full">
-					<div class="h-full flex flex-col">
-						{#if selectedEndpoint}
-							{#if activeContentTab === 'Status & Body'}
-								<StatusBodyTab
-									responseBody={selectedResponse?.body || ''}
-									statusCode={selectedResponse?.status_code || 200}
-									onStatusCodeChange={(val) => {
-										if (selectedResponse) {
-											console.log('Status code changed:', val);
-											selectedResponse = updateResponse(
-												'status_code',
-												val,
-												selectedEndpoint,
-												selectedResponse
-											);
-										}
-									}}
-									onSaveButtonClick={(content) => {
-										console.log('Save button clicked with content:', content);
-										if (selectedResponse) {
-											selectedResponse = updateResponse(
-												'body',
-												content,
-												selectedEndpoint,
-												selectedResponse
-											);
-										}
-									}}
-								/>
-							{:else if activeContentTab === 'Headers'}
-								<HeadersTab headers={selectedResponse?.headers || '{}'} />
-							{:else if activeContentTab === 'Rules'}
-								<RulesTab
-									rules={selectedResponse?.rules || []}
-									rulesOperator={selectedResponse?.rulesOperator}
-								/>
-							{:else if activeContentTab === 'Callbacks'}
-								<CallbacksTab callbacks={[]} />
-							{:else if activeContentTab === 'Proxy'}
-								<ProxyTab 
-									endpoint={selectedEndpoint} 
-									onChange={(updatedEndpoint) => {
-										// Update the endpoint in the list
-										const index = endpoints.findIndex(e => e.id === updatedEndpoint.id);
-										if (index !== -1) {
-											endpoints[index] = updatedEndpoint;
-											endpoints = [...endpoints]; // Trigger reactivity
-										}
-										selectedEndpoint = updatedEndpoint;
-									}} 
-								/>
+			<div class="flex space-x-2 mb-4">
+				{#each ['Status & Body', 'Headers', 'Rules', 'Callbacks'] as tab}
+					{#if tab === activeContentTab}
+						<button
+							class="bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded"
+							on:click={() => (activeContentTab = tab)}
+						>
+							{tab}
+						</button>
+					{:else}
+						<button
+							class="{ThemeUtils.themeBgSecondary()} {ThemeUtils.themeTextPrimary()} py-2 px-4 rounded hover:bg-opacity-80"
+							on:click={() => (activeContentTab = tab)}
+						>
+							{tab}
+						</button>
+					{/if}
+				{/each}
+			</div>
+
+			<div class="flex-1 overflow-auto h-full">
+				<div class="max-w-full overflow-x-auto h-full">
+					<div class="min-w-0 h-full">
+						<div class="h-full flex flex-col">
+							{#if selectedEndpoint}
+								{#if activeContentTab === 'Status & Body'}
+									<StatusBodyTab
+										responseBody={selectedResponse?.body || ''}
+										statusCode={selectedResponse?.status_code || 200}
+										onStatusCodeChange={(val) => {
+											if (selectedResponse) {
+												console.log('Status code changed:', val);
+												selectedResponse = updateResponse(
+													'status_code',
+													val,
+													selectedEndpoint,
+													selectedResponse
+												);
+											}
+										}}
+										onSaveButtonClick={(content) => {
+											console.log('Save button clicked with content:', content);
+											if (selectedResponse) {
+												selectedResponse = updateResponse(
+													'body',
+													content,
+													selectedEndpoint,
+													selectedResponse
+												);
+											}
+										}}
+									/>
+								{:else if activeContentTab === 'Headers'}
+									<HeadersTab headers={selectedResponse?.headers || '{}'} />
+								{:else if activeContentTab === 'Rules'}
+									<RulesTab
+										rules={selectedResponse?.rules || []}
+										rulesOperator="AND"
+									/>
+								{:else if activeContentTab === 'Callbacks'}
+									<CallbacksTab callbacks={[]} />
+								{/if}
+							{:else}
+								<div class="{ThemeUtils.themeTextMuted()}">Select a route to view details.</div>
 							{/if}
-						{:else}
-							<div class="{ThemeUtils.themeTextMuted()}">Select a route to view details.</div>
-						{/if}
+						</div>
 					</div>
 				</div>
 			</div>
