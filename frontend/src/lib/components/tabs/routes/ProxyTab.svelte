@@ -14,10 +14,16 @@
 	export let endpoint: Endpoint;
 	export let isLoading: boolean = false;
 	export let onChange: (endpoint: Endpoint) => void;
-	let useProxy: boolean = endpoint.use_proxy || false;
-	let proxyTargetId: string | null = endpoint.proxy_target_id || null;
+	let useProxy: boolean =  false;
+	let proxyTargetId: string | null = null;
 	let proxyTargets =  $selectedProject?.proxy_targets || [];
 
+	$: {
+		if (endpoint) {
+			useProxy = endpoint.use_proxy || false;
+			proxyTargetId = endpoint.proxy_target_id || null;
+		}
+	}
 	// Handle proxy toggle
 	async function handleProxyToggle() {
 		console.log('Proxy toggle changed:', useProxy);
