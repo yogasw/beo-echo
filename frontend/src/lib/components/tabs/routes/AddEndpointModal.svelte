@@ -1,12 +1,11 @@
 <script lang="ts">
 	import { createEventDispatcher } from 'svelte';
-	import type { Project } from '$lib/api/BeoApi';
 	import { addEndpoint } from '$lib/api/BeoApi';
 	import { currentWorkspace, workspaceStore } from '$lib/stores/workspace';
 	import { toast } from '$lib/stores/toast';
+	import { selectedProject } from '$lib/stores/selectedConfig';
 
 	export let isOpen = false;
-	export let project: Project;
 
 	const dispatch = createEventDispatcher();
 
@@ -41,11 +40,11 @@
 		try {
 			console.log('Creating endpoint:', {
 				workspaceId: $currentWorkspace.id,
-				projectId: project.id,
+				projectId: $selectedProject?.id || '',
 				method,
 				path
 			});
-			const newEndpoint = await addEndpoint(project.id, method, path);
+			const newEndpoint = await addEndpoint($selectedProject?.id || '', method, path);
 			console.log('Endpoint created:', newEndpoint);
 
 			// Create event with the new endpoint
@@ -107,7 +106,7 @@
 				<div class="mb-6">
 					<label class="block text-sm font-medium theme-text-secondary mb-1"> Full URL Preview </label>
 					<div class="theme-bg-secondary border theme-border rounded py-2 px-3 theme-text-secondary">
-						{project.url}{path.startsWith('/') ? path : '/' + path}
+						{$selectedProject?.url}{path.startsWith('/') ? path : '/' + path}
 					</div>
 				</div>
 

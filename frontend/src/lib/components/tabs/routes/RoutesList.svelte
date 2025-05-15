@@ -1,12 +1,9 @@
 <script lang="ts">
 	import { deleteEndpoint, updateEndpoint, type Endpoint, type Project } from '$lib/api/BeoApi';
 	import { toast } from '$lib/stores/toast';
-	import type { MockoonRoute } from '$lib/types/Config';
 	import AddEndpointModal from './AddEndpointModal.svelte';
 	import { onMount, onDestroy } from 'svelte';
 	import * as ThemeUtils from '$lib/utils/themeUtils';
-	import { theme } from '$lib/stores/theme';
-	import ThemeToggle from '$lib/components/ThemeToggle.svelte';
 	import { currentWorkspace } from '$lib/stores/workspace';
 
 	export let selectedEndpoint: Endpoint | null;
@@ -16,7 +13,6 @@
 	export let selectRoute: (route: Endpoint) => void;
 	export let handleRouteStatusChange: (route: Endpoint) => void;
 	export let handleAddEndpoint: (endpoint: Endpoint) => void;
-	export let project: Project;
 
 	let showAddEndpointModal = false;
 	let activeMenuEndpointId: string | null = null;
@@ -127,7 +123,6 @@
 
 	<AddEndpointModal
 		bind:isOpen={showAddEndpointModal}
-		{project}
 		on:endpointCreated={onEndpointCreated}
 		on:close={() => (showAddEndpointModal = false)}
 	/>
