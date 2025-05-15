@@ -45,8 +45,8 @@ func (s *MockService) HandleRequest(alias, method, reqPath string, req *http.Req
 	// Check project mode
 	switch project.Mode {
 	case database.ModeMock:
-		resp, err, matched := s.handleMockMode(project.ID, method, cleanPath, req)
-		return resp, err, project.ID, project.Mode, matched
+		resp, err, mode, matched := s.handleMockMode(project.ID, method, cleanPath, req)
+		return resp, err, project.ID, mode, matched
 	case database.ModeProxy:
 		resp, err, matched := s.handleProxyMode(project, req)
 		return resp, err, project.ID, project.Mode, matched // Matched is true only if handled by a mock endpoint
@@ -61,24 +61,24 @@ func (s *MockService) HandleRequest(alias, method, reqPath string, req *http.Req
 }
 
 // handleMockMode generates mock response and returns if the request matched an endpoint
-func (s *MockService) handleMockMode(projectID string, method, path string, req *http.Request) (*http.Response, error, bool) {
+func (s *MockService) handleMockMode(projectID string, method, path string, req *http.Request) (*http.Response, error, database.ProjectMode, bool) {
 	endpoint, err := s.Repo.FindMatchingEndpoint(projectID, method, path)
 	if err != nil {
 		// No matching endpoint found
-		return createErrorResponse(http.StatusNotFound, "Endpoint not found"), nil, false
+		return createErrorResponse(http.StatusNotFound, "Endpoint not found"), nil, database.ModeMock, false
 	}
 
 	// Check if endpoint is configured for proxying
 	if endpoint.UseProxy && endpoint.ProxyTarget != nil {
 		// Forward the request to the proxy target
 		resp, err := executeProxyRequest(endpoint.ProxyTarget.URL, method, path, req.URL.RawQuery, req)
-		return resp, err, true
+		return resp, err, database.ModeProxy, true
 	}
 
 	// Get all responses for this endpoint
 	responses, err := s.Repo.FindResponsesByEndpointID(endpoint.ID)
 	if err != nil || len(responses) == 0 {
-		return createErrorResponse(http.StatusInternalServerError, "No responses configured"), nil, true
+		return createErrorResponse(http.StatusInternalServerError, "No responses configured"), nil, database.ModeMock, true
 	}
 
 	// Select response based on ResponseMode
@@ -91,7 +91,7 @@ func (s *MockService) handleMockMode(projectID string, method, path string, req 
 
 	// Create and return HTTP response with match indicator
 	resp, err := createMockResponse(response)
-	return resp, err, true
+	return resp, err, database.ModeMock, true
 }
 
 // handleProxyMode checks for mock endpoint first, if not found forwards the request to target
