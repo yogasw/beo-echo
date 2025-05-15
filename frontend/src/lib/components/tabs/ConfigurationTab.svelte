@@ -82,11 +82,11 @@
 		<!-- General Information Component -->
 		<GeneralInfo project={selectedProject} {showNotification} />
 		
-		<!-- Advanced Settings Component -->
-		<AdvancedSettings project={selectedProject} {showNotification} />
-		
 		<!-- Proxy Management Component -->
 		<ProxyManagement project={selectedProject} {showNotification} />
+
+		<!-- Advanced Settings Component -->
+		<AdvancedSettings project={selectedProject} {showNotification} />
 	</div>
 </div>
 

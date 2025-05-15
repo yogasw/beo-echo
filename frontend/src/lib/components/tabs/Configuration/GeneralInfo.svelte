@@ -77,8 +77,10 @@
 
 	// Mode options
 	const modeOptions = [
-		{ value: 'mock', label: 'Mock' },
-		{ value: 'proxy', label: 'Proxy' }
+		{ value: 'mock', label: 'Mock', description: 'Serves predefined mock responses only' },
+		{ value: 'proxy', label: 'Proxy', description: 'Uses mocks when available, otherwise forwards requests' },
+		{ value: 'forwarder', label: 'Forwarder', description: 'Always forwards all requests to target endpoint' },
+		{ value: 'disabled', label: 'Disabled', description: 'Endpoint inactive - no responses served' },
 	];
 </script>
 
@@ -167,6 +169,14 @@
 								<option value={option.value}>{option.label}</option>
 							{/each}
 						</select>
+					</div>
+					
+					<!-- Mode description display -->
+					<div class="mt-2 text-xs theme-text-muted">
+						<div class="flex items-start p-2 bg-gray-100/50 dark:bg-gray-700/50 rounded-md">
+							<i class="fas fa-info-circle text-blue-500 mt-0.5 mr-2"></i>
+							<span>{modeOptions.find(o => o.value === mode)?.description}</span>
+						</div>
 					</div>
 				</div>
 

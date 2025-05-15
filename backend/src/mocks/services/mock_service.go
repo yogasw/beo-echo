@@ -100,8 +100,42 @@ func (s *MockService) handleProxyMode(project *database.Project, req *http.Reque
 		}
 	}
 
-	// Use the common executeProxyRequest helper function
-	return executeProxyRequest(project.ActiveProxy.URL, req.Method, req.URL.Path, req.URL.RawQuery, req)
+	// Extract path from request URL for endpoint matching
+	// Trim any project alias prefix if it exists
+	reqPath := req.URL.Path
+	cleanPath := strings.TrimPrefix(reqPath, "/"+project.Alias)
+
+	// First check if a mock endpoint exists for this request
+	endpoint, err := s.Repo.FindMatchingEndpoint(project.ID, req.Method, cleanPath)
+	if err == nil {
+		// Found a matching endpoint, use the mock response
+		responses, err := s.Repo.FindResponsesByEndpointID(endpoint.ID)
+		if err == nil && len(responses) > 0 {
+			// Select response based on ResponseMode
+			response := selectResponse(responses, endpoint.ResponseMode, req)
+
+			// Apply delay if configured
+			if response.DelayMS > 0 {
+				time.Sleep(time.Duration(response.DelayMS) * time.Millisecond)
+			}
+
+			// Create and return HTTP response from mock
+			resp, err := createMockResponse(response)
+			if err == nil {
+				// Add header to indicate response was mocked
+				resp.Header.Set("beo-echo-response-type", "mock")
+				return resp, nil
+			}
+		}
+	}
+
+	// No matching mock endpoint found or error occurred, forward to target
+	resp, err := executeProxyRequest(project.ActiveProxy.URL, req.Method, reqPath, req.URL.RawQuery, req)
+	if err == nil && resp != nil && resp.Header != nil {
+		// Add header to indicate response was proxied
+		resp.Header.Set("beo-echo-response-type", "proxy")
+	}
+	return resp, err
 }
 
 // handleForwarderMode always forwards requests to the target without checking for mock endpoints

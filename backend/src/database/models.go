@@ -31,10 +31,10 @@ func (s *SystemConfig) BeforeCreate(tx *gorm.DB) error {
 type ProjectMode string
 
 const (
-	ModeMock      ProjectMode = "mock"      // Serve mock responses without proxying
-	ModeProxy     ProjectMode = "proxy"     // Forward to target when mock available get response from mock
-	ModeForwarder ProjectMode = "forwarder" // Full forward without get response from mock
-	ModeDisabled  ProjectMode = "disabled"  // Disabled, no responses
+	ModeMock      ProjectMode = "mock"      // Serves predefined mock responses only
+	ModeProxy     ProjectMode = "proxy"     // Uses mocks when available, otherwise forwards requests
+	ModeForwarder ProjectMode = "forwarder" // Always forwards all requests to target endpoint
+	ModeDisabled  ProjectMode = "disabled"  // Endpoint inactive - no responses served
 )
 
 // Project represents one group of endpoints, accessible via subdomain or alias
