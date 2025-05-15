@@ -166,7 +166,7 @@
 					<p class="text-sm {ThemeUtils.themeTextSecondary()}">
 						<i class="fas fa-info-circle mr-2 text-blue-400"></i>
 						Requests to this endpoint will be forwarded to the selected proxy target, 
-						even when the project is in "Mock" mode.
+						only when the project is in "Mock" mode. This will not work in other modes.
 					</p>
 				</div>
 			</div>
@@ -175,7 +175,7 @@
 				<p class="text-sm {ThemeUtils.themeTextSecondary()}">
 					<i class="fas fa-info-circle mr-2 text-blue-400"></i>
 					Enable proxy to forward requests for this specific endpoint to a proxy target, 
-					even when the project is in "Mock" mode.
+					only when the project is in "Mock" mode. This will not work in other modes.
 				</p>
 			</div>
 		{/if}
