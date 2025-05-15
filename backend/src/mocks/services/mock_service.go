@@ -48,11 +48,11 @@ func (s *MockService) HandleRequest(alias, method, reqPath string, req *http.Req
 		resp, err, matched := s.handleMockMode(project.ID, method, cleanPath, req)
 		return resp, err, project.ID, project.Mode, matched
 	case database.ModeProxy:
-		resp, err := s.handleProxyMode(project, req)
-		return resp, err, project.ID, project.Mode, true // Proxy requests are always considered "matched"
+		resp, err, matched := s.handleProxyMode(project, req)
+		return resp, err, project.ID, project.Mode, matched // Matched is true only if handled by a mock endpoint
 	case database.ModeForwarder:
 		resp, err := s.handleForwarderMode(project, method, cleanPath, req)
-		return resp, err, project.ID, project.Mode, true // Forwarder requests are always considered "matched"
+		return resp, err, project.ID, project.Mode, false // Forwarder requests are always considered "not matched"
 	case database.ModeDisabled:
 		return createErrorResponse(http.StatusServiceUnavailable, "Service is disabled"), nil, project.ID, project.Mode, false
 	default:
@@ -88,15 +88,15 @@ func (s *MockService) handleMockMode(projectID string, method, path string, req 
 }
 
 // handleProxyMode checks for mock endpoint first, if not found forwards the request to target
-func (s *MockService) handleProxyMode(project *database.Project, req *http.Request) (*http.Response, error) {
+func (s *MockService) handleProxyMode(project *database.Project, req *http.Request) (*http.Response, error, bool) {
 	if project.ActiveProxy == nil {
-		return createErrorResponse(http.StatusInternalServerError, "No proxy target configured"), nil
+		return createErrorResponse(http.StatusInternalServerError, "No proxy target configured"), nil, false
 	}
 
 	// Check for recursive proxy loops by checking for any header with beo-echo prefix
 	for name := range req.Header {
 		if strings.HasPrefix(strings.ToLower(name), "beo-echo") {
-			return createErrorResponse(http.StatusLoopDetected, "Proxy loop detected: request contains beo-echo header"), nil
+			return createErrorResponse(http.StatusLoopDetected, "Proxy loop detected: request contains beo-echo header"), nil, false
 		}
 	}
 
@@ -124,7 +124,7 @@ func (s *MockService) handleProxyMode(project *database.Project, req *http.Reque
 			if err == nil {
 				// Add header to indicate response was mocked
 				resp.Header.Set("beo-echo-response-type", "mock")
-				return resp, nil
+				return resp, nil, true // True because it was handled by a mock endpoint
 			}
 		}
 	}
@@ -135,7 +135,7 @@ func (s *MockService) handleProxyMode(project *database.Project, req *http.Reque
 		// Add header to indicate response was proxied
 		resp.Header.Set("beo-echo-response-type", "proxy")
 	}
-	return resp, err
+	return resp, err, false // False because it was forwarded to target, not handled by a mock
 }
 
 // handleForwarderMode always forwards requests to the target without checking for mock endpoints
@@ -153,6 +153,7 @@ func (s *MockService) handleForwarderMode(project *database.Project, method, pat
 
 	// Use the common executeProxyRequest helper function, but with the path parameter
 	// which might differ from req.URL.Path in this context
+	// Note: handleForwarderMode always returns false for match status in HandleRequest
 	return executeProxyRequest(project.ActiveProxy.URL, method, path, req.URL.RawQuery, req)
 }
 
