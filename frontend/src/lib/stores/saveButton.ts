@@ -45,8 +45,11 @@ export function updateEndpoint(key: string, value: any, currentEndpoint: Endpoin
     }
 
     if (value === undefined || value === null) {
-        toast.error(`Invalid update: value for '${key}' cannot be empty`);
-        return currentEndpoint;
+        // Allow null values for proxy_target_id
+        if (key !== 'proxy_target_id') {
+            toast.error(`Invalid update: value for '${key}' cannot be empty`);
+            return currentEndpoint;
+        }
     }
 
     if (!currentEndpoint) {
@@ -61,6 +64,7 @@ export function updateEndpoint(key: string, value: any, currentEndpoint: Endpoin
         return currentEndpoint;
     }
 
+    // Update the endpoints update list for saving later
     let listToUpdate = get(endpointsUpdateList);
     let endpointUpdateIndex = listToUpdate.findIndex((e) => e.endpointId === currentEndpoint.id);
 
@@ -108,8 +112,40 @@ export function updateEndpoint(key: string, value: any, currentEndpoint: Endpoin
         showSaveButton.set(true);
     }
 
-    console.log('Updated endpoint list', get(endpointsUpdateList));
-    return currentEndpoint;
+    console.log('Updated endpoints list', get(endpointsUpdateList));
+    
+    // Return the updated endpoint
+    return getUpdatedEndpoint(key, value, currentEndpoint);
+}
+
+/**
+ * Get a copy of the updated endpoint with the new value
+ */
+function getUpdatedEndpoint(key: string, value: any, currentEndpoint: Endpoint): Endpoint {
+    // Create a new endpoint object with the updated value
+    const updatedEndpoint = {
+        ...currentEndpoint
+    };
+
+    // Handle special fields
+    switch(key) {
+        case 'use_proxy':
+            updatedEndpoint.use_proxy = Boolean(value);
+            // If disabling proxy, also clear the target
+            if (!value && updatedEndpoint.proxy_target_id) {
+                updatedEndpoint.proxy_target_id = null;
+                updatedEndpoint.proxy_target = null;
+            }
+            break;
+        case 'proxy_target_id':
+            updatedEndpoint.proxy_target_id = value;
+            break;
+        default:
+            // For standard fields, simply update the value
+            (updatedEndpoint as any)[key] = value;
+    }
+
+    return updatedEndpoint;
 }
 
 /**

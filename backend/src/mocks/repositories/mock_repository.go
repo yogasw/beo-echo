@@ -36,7 +36,8 @@ func (r *MockRepository) FindProjectByAlias(alias string) (*database.Project, er
 func (r *MockRepository) FindMatchingEndpoint(projectID string, method, path string) (*database.MockEndpoint, error) {
 	var endpoints []database.MockEndpoint
 
-	result := r.DB.Where("project_id = ? AND method = ? AND enabled = ?", projectID, strings.ToUpper(method), true).Find(&endpoints)
+	// Preload ProxyTarget for endpoints that use proxy
+	result := r.DB.Preload("ProxyTarget").Where("project_id = ? AND method = ? AND enabled = ?", projectID, strings.ToUpper(method), true).Find(&endpoints)
 	if result.Error != nil {
 		return nil, result.Error
 	}
@@ -58,6 +59,16 @@ func (r *MockRepository) FindResponsesByEndpointID(endpointID string) ([]databas
 		return nil, result.Error
 	}
 	return responses, nil
+}
+
+// FindProxyTarget gets a proxy target by ID
+func (r *MockRepository) GetProxyTarget(proxyTargetID string) (*database.ProxyTarget, error) {
+	var proxyTarget database.ProxyTarget
+	result := r.DB.Where("id = ?", proxyTargetID).First(&proxyTarget)
+	if result.Error != nil {
+		return nil, result.Error
+	}
+	return &proxyTarget, nil
 }
 
 // Helper functions

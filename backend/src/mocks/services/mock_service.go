@@ -68,6 +68,13 @@ func (s *MockService) handleMockMode(projectID string, method, path string, req 
 		return createErrorResponse(http.StatusNotFound, "Endpoint not found"), nil, false
 	}
 
+	// Check if endpoint is configured for proxying
+	if endpoint.UseProxy && endpoint.ProxyTarget != nil {
+		// Forward the request to the proxy target
+		resp, err := executeProxyRequest(endpoint.ProxyTarget.URL, method, path, req.URL.RawQuery, req)
+		return resp, err, true
+	}
+
 	// Get all responses for this endpoint
 	responses, err := s.Repo.FindResponsesByEndpointID(endpoint.ID)
 	if err != nil || len(responses) == 0 {

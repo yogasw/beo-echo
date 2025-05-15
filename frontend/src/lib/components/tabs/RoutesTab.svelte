@@ -5,6 +5,7 @@
 	import HeadersTab from './routes/HeadersTab.svelte';
 	import RulesTab from './routes/RulesTab.svelte';
 	import CallbacksTab from './routes/CallbacksTab.svelte';
+	import ProxyTab from './routes/ProxyTab.svelte';
 	import RoutesList from '$lib/components/tabs/routes/RoutesList.svelte';
 	import DropdownResponse from '$lib/components/tabs/routes/DropdownResponse.svelte';
 	import * as ThemeUtils from '$lib/utils/themeUtils';
@@ -130,7 +131,7 @@
 		<DropdownResponse bind:selectedEndpoint bind:selectedResponse />
 
 		<div class="flex space-x-2 mb-4">
-			{#each ['Status & Body', 'Headers', 'Rules', 'Callbacks'] as tab}
+			{#each ['Status & Body', 'Headers', 'Rules', 'Callbacks', 'Proxy'] as tab}
 				{#if tab === activeContentTab}
 					<button
 						class="bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded"
@@ -190,6 +191,19 @@
 								/>
 							{:else if activeContentTab === 'Callbacks'}
 								<CallbacksTab callbacks={[]} />
+							{:else if activeContentTab === 'Proxy'}
+								<ProxyTab 
+									endpoint={selectedEndpoint} 
+									onChange={(updatedEndpoint) => {
+										// Update the endpoint in the list
+										const index = endpoints.findIndex(e => e.id === updatedEndpoint.id);
+										if (index !== -1) {
+											endpoints[index] = updatedEndpoint;
+											endpoints = [...endpoints]; // Trigger reactivity
+										}
+										selectedEndpoint = updatedEndpoint;
+									}} 
+								/>
 							{/if}
 						{:else}
 							<div class="{ThemeUtils.themeTextMuted()}">Select a route to view details.</div>

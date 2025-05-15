@@ -61,6 +61,10 @@ export type Endpoint = {
 	enabled: boolean;
 	response_mode: string;
 	responses: Response[];
+	// Proxy fields
+	use_proxy: boolean;
+	proxy_target_id: string | null;
+	proxy_target?: ProxyTarget | null;
 	created_at: Date;
 	updated_at: Date;
 	documentation: string;
@@ -325,6 +329,8 @@ export const updateEndpoint = async (projectId: string, endpointId: string, data
 	enabled?: boolean;
 	responseMode?: string;
 	documentation?: string;
+	use_proxy?: boolean;
+	proxy_target_id?: string | null;
 }): Promise<Endpoint> => {
 	let workspaceId = getCurrentWorkspaceId();
 	const response = await api.put(`/workspaces/${workspaceId}/projects/${projectId}/endpoints/${endpointId}`, data);
@@ -445,3 +451,9 @@ export const updateProject = async (projectId: string, data: {
 };
 
 // Function fetchUserProfile has been moved to lib/utils/authUtils.ts
+
+export const getProxyTargets = async (projectId: string): Promise<ProxyTarget[]> => {
+	let workspaceId = getCurrentWorkspaceId();
+	const response = await api.get(`/workspaces/${workspaceId}/projects/${projectId}/proxies`);
+	return response.data.data;
+};

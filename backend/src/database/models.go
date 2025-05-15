@@ -91,8 +91,12 @@ type MockEndpoint struct {
 	ResponseMode  string         `json:"response_mode" gorm:"default:'random'"` // "static", "random", "round_robin"
 	Documentation string         `gorm:"type:text" json:"documentation"`        // Documentation URL or text
 	Responses     []MockResponse `gorm:"foreignKey:EndpointID;constraint:OnDelete:CASCADE;" json:"responses"`
-	CreatedAt     time.Time      `gorm:"autoCreateTime" json:"created_at"`
-	UpdatedAt     time.Time      `gorm:"autoUpdateTime" json:"updated_at"`
+	// Proxy configuration for endpoint-level proxying
+	UseProxy      bool         `json:"use_proxy" gorm:"default:false"`               // Whether to use proxy for this endpoint
+	ProxyTargetID *string      `gorm:"type:string" json:"proxy_target_id"`           // ID of the proxy target to use
+	ProxyTarget   *ProxyTarget `gorm:"foreignKey:ProxyTargetID" json:"proxy_target"` // The associated proxy target
+	CreatedAt     time.Time    `gorm:"autoCreateTime" json:"created_at"`
+	UpdatedAt     time.Time    `gorm:"autoUpdateTime" json:"updated_at"`
 }
 
 // BeforeCreate hook to generate UUID string
