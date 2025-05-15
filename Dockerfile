@@ -15,8 +15,6 @@ RUN npm ci --quiet
 # Copy the rest of the frontend code
 COPY frontend/ ./
 
-# Optimize the build process
-ENV NODE_OPTIONS="--max-old-space-size=4096"
 ENV NODE_ENV=production
 # Build the frontend
 RUN npm run build -- --no-sourcemap
