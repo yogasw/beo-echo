@@ -104,7 +104,7 @@
 
 					{#if isLoading}
 						<div class="animate-pulse flex space-x-4">
-							<div class="h-10 bg-gray-700 rounded w-full"></div>
+							<div class="h-10 {ThemeUtils.themeBgSecondary()} rounded w-full"></div>
 						</div>
 					{:else if proxyTargets.length === 0}
 						<div class="text-yellow-500 text-sm mb-2">
