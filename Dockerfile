@@ -8,7 +8,12 @@ COPY frontend/package*.json ./
 RUN npm install
 
 COPY frontend/ ./
-RUN npm run build
+# Increase Node.js memory limit for building
+ENV NODE_OPTIONS="--max-old-space-size=2048"
+# Use production mode to reduce memory usage
+ENV NODE_ENV=production
+# Use a more memory-efficient build command with lower concurrency
+RUN npm run build -- --no-sourcemap
 
 # Stage 2: Build Backend
 FROM golang:1.24-alpine AS backend-builder
