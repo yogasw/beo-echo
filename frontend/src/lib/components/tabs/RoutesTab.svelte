@@ -148,8 +148,8 @@
 			</div>
 		{/if}
 
-		<!-- Response section with opacity when proxy is enabled -->
-		<div class={selectedEndpoint?.use_proxy ? "opacity-50 pointer-events-none" : ""}>
+		<!-- Response section only shown when proxy is disabled -->
+		{#if !selectedEndpoint?.use_proxy}
 			<DropdownResponse bind:selectedEndpoint bind:selectedResponse />
 
 			<div class="flex space-x-2 mb-4">
@@ -221,6 +221,6 @@
 					</div>
 				</div>
 			</div>
-		</div>
+		{/if}
 	</div>
 </div>
