@@ -21,10 +21,10 @@ jobs:
       - name: Install dependencies
         run: sudo apt-get install -y jq
 
-      - name: Read version from package.json
+      - name: Read version from VERSION file
         id: read_version
         run: |
-          version=$(jq -r '.version' package.json)
+          version=$(cat VERSION)
           echo "Version: $version"
           echo "version=$version" >> $GITHUB_OUTPUT
 
