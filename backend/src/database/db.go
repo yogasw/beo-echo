@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	"gorm.io/driver/postgres"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
@@ -16,26 +17,48 @@ import (
 
 var DB *gorm.DB
 
-// CheckAndHandlePrisma initializes the database connection
-func CheckAndHandlePrisma() error {
+// CheckAndHandle initializes the database connection
+func CheckAndHandle() error {
 	// Get the database URL from environment
 	dbURL := os.Getenv("DATABASE_URL")
-	if dbURL == "" {
-		// Set default database URL if not provided
-		dbDir := filepath.Join(lib.CONFIGS_DIR, "db")
-		dbPath := filepath.Join(dbDir, "db.sqlite")
-		dbURL = "file:" + dbPath
-		os.Setenv("DATABASE_URL", dbURL)
-	}
-
-	// Remove "file:" prefix for GORM SQLite
-	sqlitePath := strings.TrimPrefix(dbURL, "file:")
-
-	// Open the database connection
 	var err error
-	DB, err = gorm.Open(sqlite.Open(sqlitePath), &gorm.Config{
-		Logger: logger.Default.LogMode(logger.Info),
-	})
+
+	// Check if the database URL is empty or contains "sqlite"
+	if dbURL == "" || strings.Contains(strings.ToLower(dbURL), "sqlite") {
+		// If no URL is provided or if it contains "sqlite", use SQLite
+		if dbURL == "" {
+			// Set default database URL if not provided
+			dbDir := filepath.Join(lib.CONFIGS_DIR, "db")
+			dbPath := filepath.Join(dbDir, "db.sqlite")
+
+			// Create database directory if it doesn't exist
+			if _, err := os.Stat(dbDir); os.IsNotExist(err) {
+				log.Println("Database directory doesn't exist, creating:", dbDir)
+				if err := os.MkdirAll(dbDir, 0755); err != nil {
+					return errors.New("Failed to create database directory: " + err.Error())
+				}
+			}
+
+			dbURL = "file:" + dbPath
+			os.Setenv("DATABASE_URL", dbURL)
+		}
+
+		log.Println("Using SQLite database:", dbURL)
+		
+		// Remove "file:" prefix if present, for GORM SQLite
+		sqlitePath := strings.TrimPrefix(dbURL, "file:")
+
+		// Open SQLite database connection
+		DB, err = gorm.Open(sqlite.Open(sqlitePath), &gorm.Config{
+			Logger: logger.Default.LogMode(logger.Info),
+		})
+	} else {
+		// Use PostgreSQL for all other database URLs
+		log.Println("Using PostgreSQL database")
+		DB, err = gorm.Open(postgres.Open(dbURL), &gorm.Config{
+			Logger: logger.Default.LogMode(logger.Info),
+		})
+	}
 	if err != nil {
 		return errors.New("Failed to connect to the database: " + err.Error())
 	}

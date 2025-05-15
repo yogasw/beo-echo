@@ -7,6 +7,7 @@ This is the Go implementation of the Mockoon Control Panel backend, refactored f
 - Complete API implementation using Gin Gonic framework
 - Command-line interface using Cobra library
 - Database models using GORM (replacing Prisma)
+  - Support for both SQLite (default) and PostgreSQL
 - File and mock instance repositories
 - Traefik configuration generators
 
@@ -19,6 +20,17 @@ This is the Go implementation of the Mockoon Control Panel backend, refactored f
 
 Alternatively, you can use the run script:
 - `./run.sh` - Run the main server
+
+## Database Configuration
+
+The service supports two database backends:
+
+1. **SQLite** (default): Used when no `DATABASE_URL` environment variable is set. Data is stored in a SQLite file in the configured data directory.
+
+2. **PostgreSQL**: Used when the `DATABASE_URL` environment variable is set. The URL should follow the PostgreSQL connection string format:
+   ```
+   DATABASE_URL=postgresql://username:password@localhost:5432/dbname
+   ```
 - `./run.sh api` - Run only the API server
 - `./run.sh generate` - Generate configuration files
 

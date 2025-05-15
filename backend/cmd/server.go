@@ -52,7 +52,7 @@ func runServer() error {
 
 	// Setup database connection
 	log.Println("🔧 Setting up database connection...")
-	if err := database.CheckAndHandlePrisma(); err != nil {
+	if err := database.CheckAndHandle(); err != nil {
 		log.Printf("❌ Database setup failed: %v", err)
 		return err
 	}
