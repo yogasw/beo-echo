@@ -162,7 +162,7 @@ func StartServer() error {
 	}
 
 	// Setup database connection
-	if err := database.CheckAndHandlePrisma(); err != nil {
+	if err := database.CheckAndHandle(); err != nil {
 		log.Fatalf("Failed to setup database: %v", err)
 	}
 

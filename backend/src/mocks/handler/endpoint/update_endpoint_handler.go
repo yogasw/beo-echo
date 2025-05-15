@@ -59,11 +59,13 @@ func UpdateEndpointHandler(c *gin.Context) {
 
 	// Parse update data
 	var updateData struct {
-		Method        string `json:"method"`
-		Path          string `json:"path"`
-		Enabled       *bool  `json:"enabled"`
-		ResponseMode  string `json:"response_mode"`
-		Documentation string `json:"documentation"`
+		Method        string  `json:"method"`
+		Path          string  `json:"path"`
+		Enabled       *bool   `json:"enabled"`
+		ResponseMode  string  `json:"response_mode"`
+		Documentation string  `json:"documentation"`
+		UseProxy      *bool   `json:"use_proxy"`       // Whether to use proxy for this endpoint
+		ProxyTargetID *string `json:"proxy_target_id"` // ID of the proxy target to use
 	}
 
 	if err := c.ShouldBindJSON(&updateData); err != nil {
@@ -98,6 +100,32 @@ func UpdateEndpointHandler(c *gin.Context) {
 
 	if updateData.Documentation != "" {
 		existingEndpoint.Documentation = updateData.Documentation
+	}
+
+	// Update proxy settings
+	if updateData.UseProxy != nil {
+		existingEndpoint.UseProxy = *updateData.UseProxy
+
+		// If proxy is disabled, clear proxy target
+		if !*updateData.UseProxy {
+			existingEndpoint.ProxyTargetID = nil
+		}
+	}
+
+	// Update proxy target if provided and proxy is enabled
+	if updateData.ProxyTargetID != nil && (updateData.UseProxy == nil || *updateData.UseProxy) {
+		// Verify if the proxy target exists and belongs to this project
+		var proxyTarget database.ProxyTarget
+		result := database.GetDB().Where("id = ? AND project_id = ?", *updateData.ProxyTargetID, projectId).First(&proxyTarget)
+		if result.Error != nil {
+			c.JSON(http.StatusBadRequest, gin.H{
+				"error":   true,
+				"message": "Invalid proxy target: " + result.Error.Error(),
+			})
+			return
+		}
+		existingEndpoint.ProxyTargetID = updateData.ProxyTargetID
+		existingEndpoint.UseProxy = true
 	}
 
 	// Save updates

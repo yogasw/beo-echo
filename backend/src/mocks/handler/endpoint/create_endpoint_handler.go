@@ -90,6 +90,26 @@ func CreateEndpointHandler(c *gin.Context) {
 		endpoint.ResponseMode = "random"
 	}
 
+	// Validate proxy target if proxy is enabled
+	if endpoint.UseProxy && endpoint.ProxyTargetID != nil {
+		var proxyTarget database.ProxyTarget
+		result := database.GetDB().Where("id = ? AND project_id = ?", *endpoint.ProxyTargetID, projectId).First(&proxyTarget)
+		if result.Error != nil {
+			c.JSON(http.StatusBadRequest, gin.H{
+				"error":   true,
+				"message": "Invalid proxy target: " + result.Error.Error(),
+			})
+			return
+		}
+	} else if endpoint.UseProxy && endpoint.ProxyTargetID == nil {
+		// Can't enable proxy without a target
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error":   true,
+			"message": "ProxyTargetID is required when UseProxy is enabled",
+		})
+		return
+	}
+
 	// validation alredy added or not when creating the project response error
 
 	check := database.GetDB().

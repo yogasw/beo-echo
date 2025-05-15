@@ -117,13 +117,15 @@ The Caddyfile in the project root handles all the necessary routing.
 
 ## 🗄️ Database Configuration
 
-By default, Beo Echo uses a SQLite database. You can override the database connection by setting the `DATABASE_URL` environment variable:
+By default, Beo Echo uses a SQLite database stored in the configured data directory. You can override the database connection by setting the `DATABASE_URL` environment variable to use PostgreSQL instead:
 
 ### Example using PostgreSQL:
 
 ```bash
 DATABASE_URL=postgresql://username:password@host:port/database go run main.go
 ```
+
+When a valid PostgreSQL connection string is provided in the `DATABASE_URL` environment variable, the system automatically uses PostgreSQL instead of SQLite.
 
 ---
 

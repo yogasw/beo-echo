@@ -1,12 +1,9 @@
 <script lang="ts">
 	import { deleteEndpoint, updateEndpoint, type Endpoint, type Project } from '$lib/api/BeoApi';
 	import { toast } from '$lib/stores/toast';
-	import type { MockoonRoute } from '$lib/types/Config';
 	import AddEndpointModal from './AddEndpointModal.svelte';
 	import { onMount, onDestroy } from 'svelte';
 	import * as ThemeUtils from '$lib/utils/themeUtils';
-	import { theme } from '$lib/stores/theme';
-	import ThemeToggle from '$lib/components/ThemeToggle.svelte';
 	import { currentWorkspace } from '$lib/stores/workspace';
 
 	export let selectedEndpoint: Endpoint | null;
@@ -16,7 +13,6 @@
 	export let selectRoute: (route: Endpoint) => void;
 	export let handleRouteStatusChange: (route: Endpoint) => void;
 	export let handleAddEndpoint: (endpoint: Endpoint) => void;
-	export let project: Project;
 
 	let showAddEndpointModal = false;
 	let activeMenuEndpointId: string | null = null;
@@ -95,7 +91,7 @@
 </script>
 
 <!-- Routes Section -->
-<div class="w-1/3 theme-bg-primary p-4 flex flex-col">
+<div class="w-1/3 theme-bg-primary flex flex-col">
 	<div class={ThemeUtils.headerSection('rounded mb-4')}>
 		<div class="bg-blue-600/10 dark:bg-blue-600/10 p-2 rounded-lg mr-3">
 			<i class="fas fa-route text-blue-500 text-xl"></i>
@@ -127,7 +123,6 @@
 
 	<AddEndpointModal
 		bind:isOpen={showAddEndpointModal}
-		{project}
 		on:endpointCreated={onEndpointCreated}
 		on:close={() => (showAddEndpointModal = false)}
 	/>
@@ -152,6 +147,11 @@
 							{endpoint.method}
 						</span>
 						{endpoint.path.length > 30 ? endpoint.path.slice(0, 30) + '...' : endpoint.path}
+						{#if endpoint.use_proxy}
+							<span class="ml-2 px-2 py-0.5 text-xs font-medium rounded-full bg-purple-600 text-white">
+								Proxy
+							</span>
+						{/if}
 					</span>
 
 					<!-- Three-dot menu button only shown on hover -->

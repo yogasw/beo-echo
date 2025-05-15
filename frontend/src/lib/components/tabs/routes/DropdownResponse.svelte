@@ -67,7 +67,7 @@
 	}
 </script>
 
-<div class="flex items-center justify-between {ThemeUtils.themeBgPrimary()} {ThemeUtils.themeTextSecondary()} py-5">
+<div class="flex items-center justify-between {ThemeUtils.themeBgPrimary()} {ThemeUtils.themeTextSecondary()} py-2">
 	<div class="flex items-center w-full">
 			<button
 				class="bg-blue-500 text-white rounded px-2 py-1 text-sm font-medium"

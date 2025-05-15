@@ -5,7 +5,8 @@
 		uploadConfig,
 		addProject,
 		updateProjectStatus,
-		type Project
+		type Project,
+		getProjectDetail
 	} from '$lib/api/BeoApi';
 	import ProjectStatusBadge from '$lib/components/ProjectStatusBadge.svelte';
 	import { selectedProject } from '$lib/stores/selectedConfig';
@@ -15,6 +16,7 @@
 	import { resetEndpointsList } from '$lib/stores/saveButton';
 	import * as ThemeUtils from '$lib/utils/themeUtils';
 	import { currentWorkspace } from '$lib/stores/workspace';
+	import { isLoadingContentArea } from '$lib/stores/loadingContentArea';
 
 	interface Config {
 		uuid: string;
@@ -87,13 +89,26 @@
 		userEditedAlias = false;
 	}
 
-	function handleConfigClick(project: Project) {
+	async function handleConfigClick(project: Project) {
 		console.log('1. ConfigurationList - Clicked config:', project);
-		selectedProject.set(project);
-		activeTab.set('routes');
-		// Reset endpoints update list when changing projects
-		resetEndpointsList();
-		dispatch('selectConfiguration', project);
+		isLoadingContentArea.set(true);
+		try {
+			const fullConfig = await getProjectDetail(project.id);
+			selectedProject.set(project);
+			activeTab.set('routes');
+			// Reset endpoints update list when changing projects
+			resetEndpointsList();
+			dispatch('selectConfiguration', project);
+			// Parse routes from config
+			// endpoints = fullConfig.endpoints;
+			fullConfig.url = project.url;
+			selectedProject.set(fullConfig);
+			console.log('Config data loaded:', fullConfig);
+		} catch (err) {
+			console.error('Failed to load config data:', err);
+		} finally {
+			isLoadingContentArea.set(false);
+		}
 	}
 
 	async function handleUploadConfig(event: Event) {
@@ -168,20 +183,18 @@
 			toast.error('No workspace selected');
 			return;
 		}
-		
+
 		updatingStatus = project.id;
 		try {
 			await updateProjectStatus(project.id, newStatus);
 			// Update local project status
-			$projects = $projects.map(p => 
-				p.id === project.id ? { ...p, status: newStatus } : p
-			);
-			
+			$projects = $projects.map((p) => (p.id === project.id ? { ...p, status: newStatus } : p));
+
 			// If the currently selected project is modified, update that too
 			if ($selectedProject?.id === project.id) {
 				selectedProject.set({ ...$selectedProject, status: newStatus });
 			}
-			
+
 			toast.success(`Project ${newStatus === 'running' ? 'started' : 'stopped'} successfully`);
 		} catch (err) {
 			toast.error(`Failed to ${newStatus === 'running' ? 'start' : 'stop'} project`);
@@ -219,11 +232,11 @@
 			type="text"
 			bind:value={searchTerm}
 			placeholder="Search Configuration"
-			class={ThemeUtils.inputField("py-2")}
+			class={ThemeUtils.inputField('py-2')}
 		/>
 	</div>
 	<button
-		class="{ThemeUtils.primaryButton('mb-2 w-full justify-center')}"
+		class={ThemeUtils.primaryButton('mb-2 w-full justify-center')}
 		on:click={triggerFileInput}
 		disabled={uploading}
 	>
@@ -239,7 +252,7 @@
 	/>
 
 	<button
-		class="{ThemeUtils.primaryButton('mb-4 w-full justify-center bg-green-600 hover:bg-green-700')}"
+		class={ThemeUtils.primaryButton('mb-4 w-full justify-center bg-green-600 hover:bg-green-700')}
 		on:click={openAddProjectModal}
 	>
 		<i class="fas fa-plus mr-2"></i> Add Project
@@ -248,8 +261,10 @@
 	<!-- Add Project Modal -->
 	{#if showAddProjectModal}
 		<div class="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center">
-			<div class={ThemeUtils.card("p-6 max-w-md w-full mx-4")}>
-				<h2 class={ThemeUtils.headerSection("text-xl font-bold mb-4 rounded-md")}>Add New Project</h2>
+			<div class={ThemeUtils.card('p-6 max-w-md w-full mx-4')}>
+				<h2 class={ThemeUtils.headerSection('text-xl font-bold mb-4 rounded-md')}>
+					Add New Project
+				</h2>
 
 				<div class="mb-4">
 					<label for="projectName" class="block text-sm font-medium theme-text-secondary mb-1"
@@ -262,7 +277,7 @@
 						<input
 							id="projectName"
 							type="text"
-							class={ThemeUtils.inputField("")}
+							class={ThemeUtils.inputField('')}
 							bind:value={projectName}
 							placeholder="Enter project name"
 						/>
@@ -280,7 +295,7 @@
 						<input
 							id="projectAlias"
 							type="text"
-							class={ThemeUtils.inputField("")}
+							class={ThemeUtils.inputField('')}
 							bind:value={projectAlias}
 							placeholder="Enter project alias"
 							on:input={handleAliasInput}
@@ -294,7 +309,9 @@
 				<div class="mb-6">
 					<p class="block text-sm font-medium theme-text-secondary mb-1">URL Preview</p>
 					<div
-						class={ThemeUtils.themeBgTertiary("px-3 py-2 rounded theme-border border font-mono text-sm break-all theme-text-secondary")}
+						class={ThemeUtils.themeBgTertiary(
+							'px-3 py-2 rounded theme-border border font-mono text-sm break-all theme-text-secondary'
+						)}
 					>
 						http://BASE_URL/{projectAlias || '[alias]'}
 					</div>
@@ -308,8 +325,8 @@
 						<i class="fas fa-times mr-2"></i> Cancel
 					</button>
 					<button
-						class={isAddingProject || !projectName.trim() || !projectAlias.trim() 
-							? ThemeUtils.secondaryButton('px-4 py-2 cursor-not-allowed opacity-70') 
+						class={isAddingProject || !projectName.trim() || !projectAlias.trim()
+							? ThemeUtils.secondaryButton('px-4 py-2 cursor-not-allowed opacity-70')
 							: ThemeUtils.primaryButton('px-4 py-2')}
 						on:click={handleAddProject}
 						disabled={isAddingProject || !projectName.trim() || !projectAlias.trim()}
@@ -346,7 +363,9 @@
 							<span class="truncate">{project.name}</span>
 						</h2>
 						<div class="flex items-center space-x-2">
-							<span class={ThemeUtils.badge('info', 'text-xs px-2 py-0.5 uppercase')}>{project.mode}</span>
+							<span class={ThemeUtils.badge('info', 'text-xs px-2 py-0.5 uppercase')}
+								>{project.mode}</span
+							>
 						</div>
 					</div>
 
@@ -369,7 +388,7 @@
 								{project.alias || '—'}
 							</span>
 						</div>
-						
+
 						<!-- Status indicator with live animation -->
 						<div class="flex items-center text-xs">
 							<ProjectStatusBadge status={project.status || 'stopped'} size="small" />
