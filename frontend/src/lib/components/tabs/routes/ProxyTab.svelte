@@ -17,11 +17,13 @@
 	let useProxy: boolean =  false;
 	let proxyTargetId: string | null = null;
 	let proxyTargets =  $selectedProject?.proxy_targets || [];
+	let proxyTarget: ProxyTarget | null = null;
 
 	$: {
 		if (endpoint) {
 			useProxy = endpoint.use_proxy || false;
 			proxyTargetId = endpoint.proxy_target_id || null;
+			proxyTarget = proxyTargets.find((target) => target.id === proxyTargetId) || null;
 		}
 	}
 	// Handle proxy toggle
@@ -123,21 +125,21 @@
 							{/each}
 						</select>
 
-						{#if endpoint.proxy_target_id && endpoint.proxy_target}
-							<div class="mt-2 p-3 bg-gray-750 rounded-lg border border-gray-700">
+						{#if proxyTargetId && proxyTarget}
+							<div class="mt-2 p-3 {ThemeUtils.themeBgSecondary()} rounded-lg border {ThemeUtils.themeBorder()}">
 								<div class="flex flex-col">
 									<span class="text-sm {ThemeUtils.themeTextSecondary()}">
-										Target: <span class="text-blue-400">{endpoint.proxy_target.label}</span>
+										Target: <span class="text-blue-400">{proxyTarget.label}</span>
 									</span>
 									<span class="text-sm {ThemeUtils.themeTextSecondary()}">
-										URL: <span class="text-blue-400">{endpoint.proxy_target.url}</span>
+										URL: <span class="text-blue-400">{proxyTarget.url}</span>
 									</span>
 								</div>
 							</div>
 						{/if}
 					{/if}
 				</div>
-				<div class="p-3 bg-gray-750 rounded-lg">
+				<div class="p-3 {ThemeUtils.themeBgSecondary()} rounded-lg">
 					<p class="text-sm {ThemeUtils.themeTextSecondary()}">
 						<i class="fas fa-info-circle mr-2 text-blue-400"></i>
 						Requests to this endpoint will be forwarded to the selected proxy target, only when the project
