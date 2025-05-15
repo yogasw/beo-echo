@@ -9,8 +9,7 @@ WORKDIR /app/frontend
 # Copy package files first to leverage Docker layer caching
 COPY frontend/package*.json ./
 
-# Install dependencies with npm ci for more reliable builds
-RUN npm ci --quiet
+RUN npm install
 
 # Copy the rest of the frontend code
 COPY frontend/ ./
