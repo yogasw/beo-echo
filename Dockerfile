@@ -4,6 +4,9 @@ ARG NODE_VERSION=22.14.0
 # Stage 1: Build Frontend
 FROM node:${NODE_VERSION}-alpine AS frontend-builder
 
+# Set the working directory for the frontend build
+ENV VITE_API_BASE_URL="/mock/api"
+
 WORKDIR /app/frontend
 
 # Copy package files first to leverage Docker layer caching
@@ -43,7 +46,7 @@ WORKDIR /app
 
 # Install only the necessary packages in a single layer
 RUN apk add --no-cache ca-certificates caddy && \
-    mkdir -p /app/frontend /app/backend /app/configs /data/caddy /config/caddy
+    mkdir -p /app/frontend /app/backend /app/configs /app/logs /data/caddy /config/caddy
 
 # Copy built artifacts from previous stages
 COPY --from=frontend-builder /app/frontend/build /app/frontend
@@ -64,7 +67,8 @@ ENV GIN_MODE=release
 
 # Set a non-root user for better security
 RUN addgroup -S beoecho && adduser -S -G beoecho beoecho && \
-    chown -R beoecho:beoecho /app /data /config
+    chown -R beoecho:beoecho /app /data /config && \
+    chmod -R 755 /app/logs
 
 # Use the non-root user
 USER beoecho
