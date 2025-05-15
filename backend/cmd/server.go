@@ -9,7 +9,6 @@ import (
 
 	"mockoon-control-panel/backend_new/src"
 	"mockoon-control-panel/backend_new/src/database"
-	"mockoon-control-panel/backend_new/src/traefik"
 	"mockoon-control-panel/backend_new/src/utils"
 )
 
@@ -58,20 +57,6 @@ func runServer() error {
 		return err
 	}
 	log.Println("✅ Database connected")
-
-	// Generate Traefik config
-	// log.Println("🔧 Generating Traefik configuration...")
-	// if err := traefik.GenerateDynamicTraefikConfig(); err != nil {
-	// 	log.Printf("❌ Failed to generate dynamic Traefik config: %v", err)
-	// 	return err
-	// }
-	// log.Println("✅ Dynamic Traefik configuration generated")
-
-	if err := traefik.GenerateStaticTraefikConfig(); err != nil {
-		log.Printf("❌ Failed to generate static Traefik config: %v", err)
-		return err
-	}
-	log.Println("✅ Static Traefik configuration generated")
 
 	log.Println("🚀 All systems initialized, starting HTTP server...")
 

@@ -13,10 +13,6 @@ var (
 	// Derived paths
 	CONFIGS_DIR = filepath.Join(CURRENT_DIR, "..", "configs")
 	UPLOAD_DIR  = filepath.Join(CURRENT_DIR, "uploads")
-
-	// Traefik config paths
-	TRAEFIK_DYNAMIC_CONFIG_PATH = filepath.Join(CONFIGS_DIR, "traefik", "dynamic.yml")
-	TRAEFIK_STATIC_CONFIG_PATH  = filepath.Join(CONFIGS_DIR, "traefik", "traefik.yml")
 )
 
 // Server configuration

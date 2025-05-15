@@ -131,16 +131,6 @@ func CreateProjectWithWorkspaceHandler(c *gin.Context) {
 		return
 	}
 
-	// Disable Traefik configuration update for now
-	// // Generate Traefik configuration if needed
-	// if err := handler.UpdateTraefikConfig(); err != nil {
-	// 	c.JSON(http.StatusInternalServerError, gin.H{
-	// 		"error":   true,
-	// 		"message": "Project created but failed to update routing configuration: " + err.Error(),
-	// 	})
-	// 	return
-	// }
-
 	// Add project URL
 	project.URL = handler.GetProjectURL(c.Request.Host, project)
 

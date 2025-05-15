@@ -20,7 +20,6 @@ import (
 	"mockoon-control-panel/backend_new/src/mocks/handler/project"
 	"mockoon-control-panel/backend_new/src/mocks/handler/proxy"
 	"mockoon-control-panel/backend_new/src/mocks/handler/response"
-	"mockoon-control-panel/backend_new/src/traefik"
 	"mockoon-control-panel/backend_new/src/utils"
 
 	// New imports for auth and workspace management
@@ -169,10 +168,6 @@ func StartServer() error {
 
 	// Initialize services
 	handler.InitLogService()
-
-	if err := traefik.GenerateStaticTraefikConfig(); err != nil {
-		log.Fatalf("Error generating static Traefik config: %v", err)
-	}
 
 	router := SetupRouter()
 

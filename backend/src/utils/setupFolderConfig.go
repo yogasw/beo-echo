@@ -14,7 +14,6 @@ func EnsureRequiredFoldersAndEnv() error {
 	directories := []string{
 		lib.CONFIGS_DIR,
 		lib.UPLOAD_DIR,
-		filepath.Join(lib.CONFIGS_DIR, "traefik"),
 	}
 
 	for _, dir := range directories {
