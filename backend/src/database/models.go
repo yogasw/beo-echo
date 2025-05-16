@@ -63,6 +63,11 @@ func (p *Project) BeforeCreate(tx *gorm.DB) error {
 	return nil
 }
 
+// project table name
+func (p *Project) TableName() string {
+	return "projects"
+}
+
 // ProxyTarget defines forward request destination if project mode is proxy or forwarder
 type ProxyTarget struct {
 	ID        string    `gorm:"type:string;primaryKey" json:"id"`

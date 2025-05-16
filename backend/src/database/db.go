@@ -81,11 +81,12 @@ func CheckAndHandle() error {
 		return errors.New("Failed to connect to the database: " + err.Error())
 	}
 
+	DB.AutoMigrate(&ProxyTarget{})
+	DB.AutoMigrate(&Project{})
+
 	// Auto migrate the models
 	if err := DB.AutoMigrate(
 		&SystemConfig{},
-		&Project{},
-		&ProxyTarget{},
 		&MockEndpoint{},
 		&MockResponse{},
 		&MockRule{},
