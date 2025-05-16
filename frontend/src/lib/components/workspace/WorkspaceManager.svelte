@@ -3,6 +3,7 @@
 	import { workspaces, currentWorkspace, workspaceStore } from '$lib/stores/workspace';
 	import { activeTab } from '$lib/stores/activeTab';
 	import { goto } from '$app/navigation';
+	import { auth } from '$lib/stores/auth';
 	export let className = '';
 
 	// Local state
@@ -42,7 +43,7 @@
 	async function openWorkspaceSettings() {
 		// Set active tab to workspace-settings
 		activeTab.set('workspace-settings');
-		
+
 		// Close the workspace modal
 		modalOpen = false;
 	}
@@ -51,7 +52,7 @@
 	function openInstanceSettings() {
 		// Set active tab to instance-settings
 		activeTab.set('instance-settings');
-		
+
 		// Close the workspace modal
 		modalOpen = false;
 	}
@@ -71,7 +72,6 @@
 	function toggleModal() {
 		modalOpen = !modalOpen;
 	}
-
 </script>
 
 <!-- Workspace Manager Component -->
@@ -148,33 +148,35 @@
 						</div>
 					</div>
 				</div>
-                
-                <!-- Workspace Settings Button -->
-                <div class="mt-2 pt-2 border-t theme-border">
-                    <div class="px-3 py-2">
-                        <button 
-                            on:click={openWorkspaceSettings}
-                            disabled={!$currentWorkspace}
-                            class="flex items-center w-full px-3 py-2 text-sm hover:bg-blue-500/20 disabled:opacity-50 disabled:hover:bg-gray-700 rounded-md transition-colors gap-2"
-                        >
-                            <i class="fas fa-cog text-blue-400"></i>
-                            <span class="theme-text-primary">Workspace Settings</span>
-                        </button>
-                    </div>
-                </div>
-                
-                <!-- Instance Settings Button -->
-                <div class="pt-2 border-t theme-border">
-                    <div class="px-3 py-2">
-                        <button 
-                            on:click={openInstanceSettings}
-                            class="flex items-center w-full px-3 py-2 text-sm hover:bg-blue-500/20 rounded-md transition-colors gap-2"
-                        >
-                            <i class="fas fa-server text-purple-400"></i>
-                            <span class="theme-text-primary">Instance Settings</span>
-                        </button>
-                    </div>
-                </div>
+
+				<!-- Workspace Settings Button -->
+				<div class="mt-2 pt-2 border-t theme-border">
+					<div class="px-3 py-2">
+						<button
+							on:click={openWorkspaceSettings}
+							disabled={!$currentWorkspace}
+							class="flex items-center w-full px-3 py-2 text-sm hover:bg-blue-500/20 disabled:opacity-50 disabled:hover:bg-gray-700 rounded-md transition-colors gap-2"
+						>
+							<i class="fas fa-cog text-blue-400"></i>
+							<span class="theme-text-primary">Workspace Settings</span>
+						</button>
+					</div>
+				</div>
+
+				{#if auth.isOwner()}
+					<!-- Instance Settings Button -->
+					<div class="pt-2 border-t theme-border">
+						<div class="px-3 py-2">
+							<button
+								on:click={openInstanceSettings}
+								class="flex items-center w-full px-3 py-2 text-sm hover:bg-blue-500/20 rounded-md transition-colors gap-2"
+							>
+								<i class="fas fa-server text-purple-400"></i>
+								<span class="theme-text-primary">Instance Settings</span>
+							</button>
+						</div>
+					</div>
+				{/if}
 			</div>
 		</div>
 	{/if}

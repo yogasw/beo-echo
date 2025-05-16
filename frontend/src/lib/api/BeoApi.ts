@@ -457,3 +457,110 @@ export const getProxyTargets = async (projectId: string): Promise<ProxyTarget[]>
 	const response = await api.get(`/workspaces/${workspaceId}/projects/${projectId}/proxies`);
 	return response.data.data;
 };
+
+// User Management API Functions
+
+export interface UpdateUserPayload {
+  name?: string;
+  email?: string;
+}
+
+export interface UpdatePasswordPayload {
+  current_password: string;
+  new_password: string;
+}
+
+export interface SystemConfigItem {
+  id: string;
+  key: string;
+  value: string;
+  type: string;
+  description: string;
+  hide_value: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+/**
+ * Update user profile
+ * @param userId User ID to update
+ * @param data Fields to update (name, email)
+ * @returns Updated user data
+ */
+export const updateUserProfile = async (userId: string, data: UpdateUserPayload): Promise<User> => {
+  const response = await api.patch(`/users/${userId}`, data);
+  
+  // Update auth store with the new user data
+  if (response.data.success && response.data.data) {
+    auth.updateUserData(response.data.data);
+  }
+  
+  return response.data.data;
+};
+
+/**
+ * Update user password
+ * @param currentPassword Current password for verification
+ * @param newPassword New password to set
+ * @returns Success message
+ */
+export const updatePassword = async (currentPassword: string, newPassword: string): Promise<{success: boolean; message: string}> => {
+  const payload: UpdatePasswordPayload = {
+    current_password: currentPassword,
+    new_password: newPassword
+  };
+  
+  const response = await api.post('/users/change-password', payload);
+  return {
+    success: response.data.success,
+    message: response.data.message
+  };
+};
+
+/**
+ * Get a system configuration by key
+ * @param key Configuration key
+ * @returns SystemConfigItem
+ */
+export const getSystemConfig = async (key: string): Promise<SystemConfigItem> => {
+  const response = await api.get(`/system-config/${key}`);
+  return response.data.data;
+};
+
+/**
+ * Get all available system configurations
+ * @returns Array of SystemConfigItem
+ */
+export const getAllSystemConfigs = async (): Promise<SystemConfigItem[]> => {
+  const response = await api.get('/system-configs');
+  return response.data.data;
+};
+
+/**
+ * Update a system configuration
+ * @param key Configuration key
+ * @param value New value
+ * @returns Updated configuration
+ */
+export const updateSystemConfig = async (key: string, value: string): Promise<SystemConfigItem> => {
+  const response = await api.put(`/system-config/${key}`, { value });
+  return response.data.data;
+};
+
+/**
+ * Check if a feature flag is enabled
+ * @param key Feature flag key (should start with 'feature_')
+ * @param defaultValue Default value if flag doesn't exist
+ * @returns Boolean value indicating if feature is enabled
+ */
+export const isFeatureEnabled = async (key: string, defaultValue = false): Promise<boolean> => {
+  try {
+    // Make sure key has feature_ prefix
+    const featureKey = key.startsWith('feature_') ? key : `feature_${key}`;
+    const config = await getSystemConfig(featureKey);
+    return config.value === 'true';
+  } catch (error) {
+    console.warn(`Feature flag ${key} not found, using default: ${defaultValue}`);
+    return defaultValue;
+  }
+};

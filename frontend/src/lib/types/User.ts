@@ -2,7 +2,9 @@ export interface User {
   id: string;
   email: string;
   name: string;
-  isOwner: boolean;
+  is_owner: boolean;
+  is_enabled?: boolean; // Flag to determine if user account is active or disabled
+  feature_flags?: Record<string, boolean>; // Feature flags from the backend
 }
 
 export interface Workspace {

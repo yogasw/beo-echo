@@ -22,6 +22,10 @@ const (
 	SSHKey    = "SSH_KEY:string"
 	GitName   = "GIT_NAME:string"
 	GitEmail  = "GIT_EMAIL:string"
+
+	FeatureShowPasswordRequirements = "FEATURE_SHOW_PASSWORD_REQUIREMENTS:boolean"
+	FeatureEmailUpdatesEnabled      = "FEATURE_EMAIL_UPDATES_ENABLED:boolean"
+	FEATURE_REGISTER_EMAIL_ENABLED  = "FEATURE_REGISTER_EMAIL_ENABLED:boolean"
 )
 
 // DefaultVariables contains default values for system configuration
@@ -32,6 +36,11 @@ var DefaultVariables = map[string]string{
 	SSHKey:    "",
 	GitName:   "Mockoon Control Panel",
 	GitEmail:  "noreply@example.com",
+
+	// Default values for feature flags
+	FeatureShowPasswordRequirements: "true",
+	FeatureEmailUpdatesEnabled:      "true",
+	FEATURE_REGISTER_EMAIL_ENABLED:  "false",
 }
 
 // GetSystemConfig retrieves a system configuration value from the database with type conversion
@@ -58,6 +67,43 @@ func GetSystemConfig(key string) (interface{}, error) {
 	}
 
 	return nil, fmt.Errorf("configuration key %s not found", key)
+}
+
+// GetConfig retrieves a system configuration value with automatic type conversion to T
+// T can be string, bool, float64, or []string
+func GetConfig[T any](key string) (T, error) {
+	var empty T
+
+	// Add the type suffix if not already present
+	if !strings.Contains(key, ":") {
+		// Determine type suffix based on T
+		switch any(empty).(type) {
+		case string:
+			key += ":string"
+		case bool:
+			key += ":boolean"
+		case float64:
+			key += ":number"
+		case []string:
+			key += ":array"
+		default:
+			return empty, fmt.Errorf("unsupported type for key %s", key)
+		}
+	}
+
+	// Get the config using the original function
+	value, err := GetSystemConfig(key)
+	if err != nil {
+		return empty, err
+	}
+
+	// Type assert to the requested type
+	result, ok := value.(T)
+	if !ok {
+		return empty, fmt.Errorf("unable to convert value to requested type for key %s", key)
+	}
+
+	return result, nil
 }
 
 // SetSystemConfig sets a system configuration value in the database with type validation
@@ -136,6 +182,47 @@ func GetAllSystemConfigs() ([]database.SystemConfig, error) {
 		return nil, fmt.Errorf("failed to fetch system configs: %w", err)
 	}
 	return configs, nil
+}
+
+// GetFeatureFlags retrieves all feature flags from the system configuration
+func GetFeatureFlags() (map[string]bool, error) {
+	featureFlags := make(map[string]bool)
+
+	// Get all configs
+	configs, err := GetAllSystemConfigs()
+	if err != nil {
+		return nil, fmt.Errorf("failed to fetch feature flags: %w", err)
+	}
+
+	// Filter out feature flags
+	for _, config := range configs {
+		if strings.HasPrefix(strings.ToLower(config.Key), "feature_") ||
+			strings.HasPrefix(config.Key, "FEATURE_") {
+			// Convert the value to boolean
+			enabled, _ := strconv.ParseBool(config.Value)
+			featureFlags[config.Key] = enabled
+		}
+	}
+
+	// Add default feature flags that don't exist in the database
+	for key, value := range DefaultVariables {
+		// skip if already exists
+		if strings.HasPrefix(key, "FEATURE_") && !featureFlags[key] {
+			enabled, _ := strconv.ParseBool(value)
+			featureFlags[key] = enabled
+		}
+	}
+
+	// remove type suffix from keys
+	for key := range featureFlags {
+		if strings.Contains(key, ":") {
+			parts := strings.Split(key, ":")
+			featureFlags[parts[0]] = featureFlags[key]
+			delete(featureFlags, key)
+		}
+	}
+
+	return featureFlags, nil
 }
 
 // SetConfigByID updates a system configuration by its ID
