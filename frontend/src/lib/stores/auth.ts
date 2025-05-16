@@ -3,6 +3,7 @@ import { writable, derived } from 'svelte/store';
 import { goto } from '$app/navigation';
 import type { User } from '$lib/types/User';
 import { BASE_URL_API, fetchUserProfile } from '$lib/utils/authUtils';
+import { syncFeatureFlags } from './featureToggles';
 
 // Types
 interface AuthState {
@@ -11,6 +12,7 @@ interface AuthState {
   isAuthenticated: boolean;
   isLoading: boolean;
   error: string | null;
+  is_owner: boolean;
 }
 
 // Initial state
@@ -19,7 +21,8 @@ const initialState: AuthState = {
   user: null,
   isAuthenticated: false,
   isLoading: false,
-  error: null
+  error: null,
+  is_owner: false
 };
 
 // Create the store
@@ -79,12 +82,20 @@ export const auth = {
           // Then fetch complete profile including owner status
           try {
             const fullUser = await fetchUserProfile(currentState.token!);
-            
+            console.log('Fetched full user profile:', fullUser);
+            // Update store with user data
+            // Update store with user data
             authStore.update(state => ({
               ...state,
               user: fullUser,
               isLoading: false
             }));
+            
+            // Sync feature flags if available
+            if (fullUser && fullUser.feature_flags) {
+              syncFeatureFlags(fullUser.feature_flags);
+            }
+            
           } catch (error) {
             console.error('Failed to fetch user profile:', error);
             authStore.update(state => ({ ...state, isLoading: false }));
@@ -141,6 +152,11 @@ export const auth = {
         isLoading: false
       }));
       
+      // Sync feature flags if available in user data
+      if (data.user && data.user.feature_flags) {
+        syncFeatureFlags(data.user.feature_flags);
+      }
+      
       return data.user;
     } catch (error: any) {
       authStore.update(state => ({
@@ -186,6 +202,11 @@ export const auth = {
         isLoading: false
       }));
       
+      // Sync feature flags if available in user data
+      if (data.user && data.user.feature_flags) {
+        syncFeatureFlags(data.user.feature_flags);
+      }
+      
       return data.user;
     } catch (error: any) {
       authStore.update(state => ({
@@ -228,9 +249,25 @@ export const auth = {
   isOwner: (): boolean => {
     let isOwner = false;
     authStore.subscribe(state => {
-      isOwner = !!state.user?.isOwner;
+      isOwner = !!state.user?.is_owner;
     })();
     return isOwner;
+  },
+  
+  // Update current user data
+  updateUserData: (userData: Partial<User>): void => {
+    authStore.update(state => {
+      if (state.user) {
+        return {
+          ...state,
+          user: {
+            ...state.user,
+            ...userData
+          }
+        };
+      }
+      return state;
+    });
   }
 };
 

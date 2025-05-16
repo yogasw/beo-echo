@@ -83,9 +83,19 @@ func SetupRouter() *gin.Engine {
 	// Protected API routes group
 	apiGroup := router.Group("/mock/api")
 	apiGroup.Use(middlewares.JWTAuthMiddleware())
-	{
-		// User-related routes
+	{ // User-related routes
 		apiGroup.GET("/auth/me", authHandler.GetCurrentUserHandler)
+		apiGroup.PATCH("/users/:userId", authHandler.UpdateUserHandler)
+		apiGroup.POST("/users/change-password", authHandler.UpdatePasswordHandler)
+
+		// Owner-only system configuration routes
+		ownerGroup := apiGroup.Group("")
+		ownerGroup.Use(middlewares.OwnerOnlyMiddleware())
+		{
+			apiGroup.GET("/system-config/:key", authHandler.GetSystemConfigHandler)
+			apiGroup.GET("/system-configs", authHandler.GetAllSystemConfigsHandler)
+			ownerGroup.PUT("/system-config/:key", authHandler.UpdateSystemConfigHandler)
+		}
 
 		// General workspace-related routes
 		apiGroup.GET("/workspaces", authHandler.GetUserWorkspacesHandler)
