@@ -90,6 +90,5 @@
 			{/if}
 		</div>
 		
-		<!-- Feature Configuration has been moved to Instance Settings tab -->
 	</div>
 </div>

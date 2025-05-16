@@ -9,7 +9,7 @@
 	import SsoIntegration from '$lib/components/instance/SsoIntegration.svelte';
 	import GeneralSettings from '$lib/components/instance/GeneralSettings.svelte';
 	import FeatureConfigSection from '$lib/components/instance/FeatureConfigSection.svelte';
-	import FeatureDebug from '$lib/components/settings/FeatureDebug.svelte';
+	import FeatureDebug from '$lib/components/instance/FeatureDebug.svelte';
 
 	// State for each section's visibility
 	let sectionsVisible = {
@@ -89,6 +89,38 @@
 
 	<!-- Settings Sections -->
 	<div class="space-y-5">
+				<!-- 6. Feature Configuration -->
+		<div class={ThemeUtils.card('overflow-hidden')}>
+			<div 
+				class="flex justify-between items-center p-3 hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer bg-gray-100 dark:bg-gray-750"
+				on:click={() => sectionsVisible.features = !sectionsVisible.features}
+				on:keydown={(e) => e.key === 'Enter' && (sectionsVisible.features = !sectionsVisible.features)}
+				tabindex="0"
+				role="button"
+			>
+				<div class="flex items-center">
+					<div class="bg-amber-500/20 p-1.5 rounded mr-2">
+						<i class="fas fa-toggle-on text-amber-400"></i>
+					</div>
+					<h3 class="font-medium theme-text-primary">Feature Configuration</h3>
+				</div>
+				<i class="fas {sectionsVisible.features ? 'fa-chevron-up' : 'fa-chevron-down'} theme-text-muted"></i>
+			</div>
+			
+			{#if sectionsVisible.features}
+				<div transition:fade={{ duration: 150 }} class="border-t theme-border p-4">
+					<FeatureConfigSection />
+					
+					<!-- Include debug component in development -->
+					{#if import.meta.env?.DEV}
+						<div class="mt-8 pt-4 border-t theme-border">
+							<FeatureDebug />
+						</div>
+					{/if}
+				</div>
+			{/if}
+		</div>
+		
 		<!-- 1. User Management -->
 		<div class={ThemeUtils.card('overflow-hidden')}>
 			<div 
@@ -210,38 +242,6 @@
 			{#if sectionsVisible.sso}
 				<div transition:fade={{ duration: 150 }} class="border-t theme-border">
 					<SsoIntegration visible={true} />
-				</div>
-			{/if}
-		</div>
-
-		<!-- 6. Feature Configuration -->
-		<div class={ThemeUtils.card('overflow-hidden')}>
-			<div 
-				class="flex justify-between items-center p-3 hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer bg-gray-100 dark:bg-gray-750"
-				on:click={() => sectionsVisible.features = !sectionsVisible.features}
-				on:keydown={(e) => e.key === 'Enter' && (sectionsVisible.features = !sectionsVisible.features)}
-				tabindex="0"
-				role="button"
-			>
-				<div class="flex items-center">
-					<div class="bg-amber-500/20 p-1.5 rounded mr-2">
-						<i class="fas fa-toggle-on text-amber-400"></i>
-					</div>
-					<h3 class="font-medium theme-text-primary">Feature Configuration</h3>
-				</div>
-				<i class="fas {sectionsVisible.features ? 'fa-chevron-up' : 'fa-chevron-down'} theme-text-muted"></i>
-			</div>
-			
-			{#if sectionsVisible.features}
-				<div transition:fade={{ duration: 150 }} class="border-t theme-border p-4">
-					<FeatureConfigSection />
-					
-					<!-- Include debug component in development -->
-					{#if import.meta.env?.DEV}
-						<div class="mt-8 pt-4 border-t theme-border">
-							<FeatureDebug />
-						</div>
-					{/if}
 				</div>
 			{/if}
 		</div>
