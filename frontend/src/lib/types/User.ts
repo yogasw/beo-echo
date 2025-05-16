@@ -3,6 +3,7 @@ export interface User {
   email: string;
   name: string;
   isOwner: boolean;
+  isEnabled?: boolean; // Flag to determine if user account is active or disabled
 }
 
 export interface Workspace {

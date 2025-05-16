@@ -77,9 +77,11 @@ func LoginHandler(c *gin.Context) {
 		"message": "Login successful",
 		"token":   token,
 		"user": gin.H{
-			"id":    user.ID,
-			"email": user.Email,
-			"name":  user.Name,
+			"id":         user.ID,
+			"email":      user.Email,
+			"name":       user.Name,
+			"is_owner":   user.IsOwner,
+			"is_enabled": user.IsEnabled,
 		},
 	})
 }

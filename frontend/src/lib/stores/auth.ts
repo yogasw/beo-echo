@@ -231,6 +231,22 @@ export const auth = {
       isOwner = !!state.user?.isOwner;
     })();
     return isOwner;
+  },
+  
+  // Update current user data
+  updateUserData: (userData: Partial<User>): void => {
+    authStore.update(state => {
+      if (state.user) {
+        return {
+          ...state,
+          user: {
+            ...state.user,
+            ...userData
+          }
+        };
+      }
+      return state;
+    });
   }
 };
 
