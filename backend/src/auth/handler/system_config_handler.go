@@ -7,6 +7,7 @@ import (
 	"github.com/gin-gonic/gin"
 
 	"mockoon-control-panel/backend_new/src/database"
+	"mockoon-control-panel/backend_new/src/utils"
 )
 
 // GetSystemConfigHandler returns a specific system configuration by key
@@ -31,7 +32,7 @@ func GetSystemConfigHandler(c *gin.Context) {
 	}
 
 	// Check if the user is an owner for non-feature configs
-	if !strings.HasPrefix(key, "feature_") {
+	if !strings.HasPrefix(strings.ToLower(key), "feature_") && !strings.HasPrefix(key, "FEATURE_") {
 		isOwner, exists := c.Get("isOwner")
 		if !exists || isOwner != true {
 			c.JSON(http.StatusForbidden, gin.H{
@@ -46,6 +47,29 @@ func GetSystemConfigHandler(c *gin.Context) {
 	var config database.SystemConfig
 	result := database.DB.Where("key = ?", key).First(&config)
 	if result.Error != nil {
+		// Try to get from default configs
+		for defaultKey := range utils.DefaultVariables {
+			parts := strings.Split(defaultKey, ":")
+			if parts[0] == key {
+				configType := "string"
+				if len(parts) > 1 {
+					configType = parts[1]
+				}
+
+				c.JSON(http.StatusOK, gin.H{
+					"success": true,
+					"data": gin.H{
+						"key":         key,
+						"value":       utils.DefaultVariables[defaultKey],
+						"type":        configType,
+						"description": "Default configuration",
+						"hide_value":  false,
+					},
+				})
+				return
+			}
+		}
+
 		c.JSON(http.StatusNotFound, gin.H{
 			"success": false,
 			"message": "Configuration not found",
@@ -87,27 +111,29 @@ func GetAllSystemConfigsHandler(c *gin.Context) {
 	isOwnerValue, exists := c.Get("isOwner")
 	isOwner := exists && isOwnerValue == true
 
-	// Prepare query
-	query := database.DB.Model(&database.SystemConfig{})
-
-	// If user is not an owner, only return feature flags and non-hidden values
-	if !isOwner {
-		query = query.Where("key LIKE ? OR hide_value = ?", "feature_%", false)
-	}
-
-	var configs []database.SystemConfig
-	result := query.Find(&configs)
-	if result.Error != nil {
+	// Get configs from utils
+	configs, err := utils.GetAllSystemConfigs()
+	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"success": false,
-			"message": "Failed to retrieve configurations: " + result.Error.Error(),
+			"message": "Failed to retrieve configurations: " + err.Error(),
 		})
 		return
 	}
 
+	// Filter configs based on user permissions
+	var visibleConfigs []database.SystemConfig
+	for _, config := range configs {
+		// If user is not an owner, only show feature flags and non-hidden configs
+		if isOwner || strings.HasPrefix(strings.ToLower(config.Key), "feature_") ||
+			strings.HasPrefix(config.Key, "FEATURE_") || !config.HideValue {
+			visibleConfigs = append(visibleConfigs, config)
+		}
+	}
+
 	c.JSON(http.StatusOK, gin.H{
 		"success": true,
-		"data":    configs,
+		"data":    visibleConfigs,
 	})
 }
 
@@ -138,37 +164,62 @@ func UpdateSystemConfigHandler(c *gin.Context) {
 		return
 	}
 
+	// Check if this is a feature flag
+	isFeatureFlag := strings.HasPrefix(strings.ToLower(key), "feature_") || strings.HasPrefix(key, "FEATURE_")
+
+	// If it's a feature flag, ensure it's set as a boolean type
+	configType := "string"
+	if isFeatureFlag {
+		configType = "boolean"
+
+		// Validate that the value is a valid boolean for feature flags
+		if req.Value != "true" && req.Value != "false" {
+			c.JSON(http.StatusBadRequest, gin.H{
+				"success": false,
+				"message": "Feature flag value must be 'true' or 'false'",
+			})
+			return
+		}
+	}
+
 	// Find the config
 	var config database.SystemConfig
 	result := database.DB.Where("key = ?", key).First(&config)
 	if result.Error != nil {
 		// Config doesn't exist, create a new one
-		config = database.SystemConfig{
-			Key:         key,
-			Value:       req.Value,
-			Type:        "string", // Default to string
-			Description: "",
-			HideValue:   false,
+		description := ""
+		if isFeatureFlag {
+			description = "Feature flag created via API"
 		}
-		result = database.DB.Create(&config)
-		if result.Error != nil {
+
+		// Use the utility function to create new config
+		newConfig, err := utils.AddConfig(key, req.Value, description, configType)
+		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{
 				"success": false,
-				"message": "Failed to create configuration: " + result.Error.Error(),
+				"message": "Failed to create configuration: " + err.Error(),
 			})
 			return
 		}
+		config = *newConfig
 	} else {
-		// Update existing config
-		config.Value = req.Value
-		result = database.DB.Save(&config)
-		if result.Error != nil {
+		// Use the utility function to update existing config
+		keyWithType := key
+		if config.Type != "" {
+			keyWithType = key + ":" + config.Type
+		}
+
+		err := utils.SetSystemConfig(keyWithType, req.Value)
+		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{
 				"success": false,
-				"message": "Failed to update configuration: " + result.Error.Error(),
+				"message": "Failed to update configuration: " + err.Error(),
 			})
 			return
 		}
+
+		// Refresh config object to return in response
+		database.DB.Where("key = ?", key).First(&config)
 	}
 
 	c.JSON(http.StatusOK, gin.H{

@@ -3,11 +3,12 @@
 	import { toast } from '$lib/stores/toast';
 	import { currentUser } from '$lib/stores/auth';
 	import { onMount } from 'svelte';
-	import { isFeatureEnabled, updateUserProfile, updatePassword } from '$lib/api/BeoApi';
+	import { updateUserProfile, updatePassword } from '$lib/api/BeoApi';
+	import { FeatureFlags, getFeatureToggle } from '$lib/stores/featureToggles';
 	
 	// Feature flags
-	let emailUpdatesEnabled = false;
-	
+	let emailUpdatesEnabled = getFeatureToggle(FeatureFlags.FEATURE_EMAIL_UPDATES_ENABLED);
+
 	// User profile state
 	$: fullName = $currentUser?.name || 'User Name';
 	$: email = $currentUser?.email || 'user@example.com';
@@ -32,7 +33,7 @@
 	async function loadFeatureFlags() {
 		try {
 			// Load email updates feature flag
-			emailUpdatesEnabled = await isFeatureEnabled('EMAIL_UPDATES_ENABLED', false);
+			emailUpdatesEnabled = getFeatureToggle(FeatureFlags.FEATURE_EMAIL_UPDATES_ENABLED);
 		} catch (error) {
 			console.error('Failed to load feature flags:', error);
 			emailUpdatesEnabled = false; // Default to disabled on error
@@ -41,7 +42,6 @@
 	
 	// Load feature flags on component mount
 	onMount(() => {
-		loadFeatureFlags();
 		// Also initialize form values
 		formName = fullName;
 		formEmail = email;

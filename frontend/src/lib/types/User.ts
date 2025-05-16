@@ -4,6 +4,7 @@ export interface User {
   name: string;
   isOwner: boolean;
   isEnabled?: boolean; // Flag to determine if user account is active or disabled
+  feature_flags?: Record<string, boolean>; // Feature flags from the backend
 }
 
 export interface Workspace {

@@ -12,8 +12,3 @@ export interface SystemConfig {
 
 // For backwards compatibility
 export type SystemConfigItem = SystemConfig;
-
-// Feature flags used in the application
-export enum FeatureFlags {
-  EMAIL_UPDATES_ENABLED = 'EMAIL_UPDATES_ENABLED',
-}

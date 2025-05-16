@@ -15,23 +15,18 @@ export async function fetchUserProfile(token: string): Promise<User> {
         'Authorization': `Bearer ${token}`
       }
     });
-    
+
     if (!response.ok) {
       throw new Error('Failed to fetch user profile');
     }
-    
+
     const data = await response.json();
-    
+
     if (!data.success || !data.data) {
       throw new Error(data.message || 'Failed to fetch user profile data');
     }
-    
-    return {
-      id: data.data.id,
-      email: data.data.email,
-      name: data.data.name,
-      isOwner: data.data.is_owner || false
-    };
+
+    return data.data as User;
   } catch (error) {
     console.error('Error fetching user profile:', error);
     throw error;

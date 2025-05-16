@@ -7,6 +7,7 @@ import (
 	"gorm.io/gorm"
 
 	"mockoon-control-panel/backend_new/src/database"
+	"mockoon-control-panel/backend_new/src/utils"
 )
 
 // GetCurrentUserHandler returns the authenticated user's information
@@ -31,9 +32,12 @@ func GetCurrentUserHandler(c *gin.Context) {
 		return
 	}
 
-	featureFlags := make(map[string]bool)
-	// Fetch feature flags for the user
-	// get from system config
+	// Get feature flags from system config
+	featureFlags, err := utils.GetFeatureFlags()
+	if err != nil {
+		// Log the error but don't fail the request
+		featureFlags = make(map[string]bool)
+	}
 
 	c.JSON(http.StatusOK, gin.H{
 		"success": true,

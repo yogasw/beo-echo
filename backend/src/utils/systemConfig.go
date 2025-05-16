@@ -22,6 +22,9 @@ const (
 	SSHKey    = "SSH_KEY:string"
 	GitName   = "GIT_NAME:string"
 	GitEmail  = "GIT_EMAIL:string"
+
+	FeatureShowPasswordRequirements = "FEATURE_SHOW_PASSWORD_REQUIREMENTS:boolean"
+	FeatureEmailUpdatesEnabled      = "FEATURE_EMAIL_UPDATES_ENABLED:boolean"
 )
 
 // DefaultVariables contains default values for system configuration
@@ -32,6 +35,10 @@ var DefaultVariables = map[string]string{
 	SSHKey:    "",
 	GitName:   "Mockoon Control Panel",
 	GitEmail:  "noreply@example.com",
+
+	// Default values for feature flags
+	FeatureShowPasswordRequirements: "true",
+	FeatureEmailUpdatesEnabled:      "true",
 }
 
 // GetSystemConfig retrieves a system configuration value from the database with type conversion
@@ -136,6 +143,47 @@ func GetAllSystemConfigs() ([]database.SystemConfig, error) {
 		return nil, fmt.Errorf("failed to fetch system configs: %w", err)
 	}
 	return configs, nil
+}
+
+// GetFeatureFlags retrieves all feature flags from the system configuration
+func GetFeatureFlags() (map[string]bool, error) {
+	featureFlags := make(map[string]bool)
+
+	// Get all configs
+	configs, err := GetAllSystemConfigs()
+	if err != nil {
+		return nil, fmt.Errorf("failed to fetch feature flags: %w", err)
+	}
+
+	// Filter out feature flags
+	for _, config := range configs {
+		if strings.HasPrefix(strings.ToLower(config.Key), "feature_") ||
+			strings.HasPrefix(config.Key, "FEATURE_") {
+			// Convert the value to boolean
+			enabled, _ := strconv.ParseBool(config.Value)
+			featureFlags[config.Key] = enabled
+		}
+	}
+
+	// Add default feature flags that don't exist in the database
+	for key, value := range DefaultVariables {
+		// skip if already exists
+		if strings.HasPrefix(key, "FEATURE_") && !featureFlags[key] {
+			enabled, _ := strconv.ParseBool(value)
+			featureFlags[key] = enabled
+		}
+	}
+
+	// remove type suffix from keys
+	for key := range featureFlags {
+		if strings.Contains(key, ":") {
+			parts := strings.Split(key, ":")
+			featureFlags[parts[0]] = featureFlags[key]
+			delete(featureFlags, key)
+		}
+	}
+
+	return featureFlags, nil
 }
 
 // SetConfigByID updates a system configuration by its ID
