@@ -12,6 +12,7 @@ interface AuthState {
   isAuthenticated: boolean;
   isLoading: boolean;
   error: string | null;
+  is_owner: boolean;
 }
 
 // Initial state
@@ -20,7 +21,8 @@ const initialState: AuthState = {
   user: null,
   isAuthenticated: false,
   isLoading: false,
-  error: null
+  error: null,
+  is_owner: false
 };
 
 // Create the store
@@ -247,7 +249,7 @@ export const auth = {
   isOwner: (): boolean => {
     let isOwner = false;
     authStore.subscribe(state => {
-      isOwner = !!state.user?.isOwner;
+      isOwner = !!state.user?.is_owner;
     })();
     return isOwner;
   },

@@ -15,6 +15,7 @@ export enum FeatureFlags {
     // Both uppercase and lowercase versions are supported by the backend
     FEATURE_EMAIL_UPDATES_ENABLED = 'FEATURE_EMAIL_UPDATES_ENABLED',
     FEATURE_SHOW_PASSWORD_REQUIREMENTS = 'FEATURE_SHOW_PASSWORD_REQUIREMENTS',
+    FEATURE_REGISTER_EMAIL_ENABLED = 'FEATURE_REGISTER_EMAIL_ENABLED',
 }
 
 // Default feature toggle settings

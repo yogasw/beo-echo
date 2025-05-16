@@ -25,6 +25,7 @@ const (
 
 	FeatureShowPasswordRequirements = "FEATURE_SHOW_PASSWORD_REQUIREMENTS:boolean"
 	FeatureEmailUpdatesEnabled      = "FEATURE_EMAIL_UPDATES_ENABLED:boolean"
+	FEATURE_REGISTER_EMAIL_ENABLED  = "FEATURE_REGISTER_EMAIL_ENABLED:boolean"
 )
 
 // DefaultVariables contains default values for system configuration
@@ -39,6 +40,7 @@ var DefaultVariables = map[string]string{
 	// Default values for feature flags
 	FeatureShowPasswordRequirements: "true",
 	FeatureEmailUpdatesEnabled:      "true",
+	FEATURE_REGISTER_EMAIL_ENABLED:  "false",
 }
 
 // GetSystemConfig retrieves a system configuration value from the database with type conversion
