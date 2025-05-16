@@ -3,7 +3,7 @@
 	import { toast } from '$lib/stores/toast';
 	import { currentUser } from '$lib/stores/auth';
 	import { onMount } from 'svelte';
-	import { updateUserProfile, updatePassword } from '$lib/api/BeoApi';
+	import { updateUserProfile } from '$lib/api/BeoApi';
 	import { FeatureFlags, getFeatureToggle } from '$lib/stores/featureToggles';
 	
 	// Feature flags
@@ -17,28 +17,9 @@
 	
 	let isEditing = false;
 	let isSaving = false;
-	
-	// Form state for password change
-	let currentPassword = '';
-	let newPassword = '';
-	let confirmPassword = '';
-	let showPasswordForm = false;
-	let isChangingPassword = false;
-	
 	// Form state for editing
 	let formName = fullName;
 	let formEmail = email;
-	
-	// Feature flag for email updates - load from SystemConfig
-	async function loadFeatureFlags() {
-		try {
-			// Load email updates feature flag
-			emailUpdatesEnabled = getFeatureToggle(FeatureFlags.FEATURE_EMAIL_UPDATES_ENABLED);
-		} catch (error) {
-			console.error('Failed to load feature flags:', error);
-			emailUpdatesEnabled = false; // Default to disabled on error
-		}
-	}
 	
 	// Load feature flags on component mount
 	onMount(() => {
@@ -94,59 +75,6 @@
 			console.error('Profile update error:', error);
 		} finally {
 			isSaving = false;
-		}
-	}
-
-	// Toggle password change form
-	function togglePasswordForm() {
-		showPasswordForm = !showPasswordForm;
-		if (!showPasswordForm) {
-			// Reset form if hiding
-			currentPassword = '';
-			newPassword = '';
-			confirmPassword = '';
-		}
-	}
-	
-	// Change password
-	async function changePassword() {
-		// Validate input
-		if (!currentPassword) {
-			toast.error('Current password is required');
-			return;
-		}
-		
-		if (!newPassword || newPassword.length < 6) {
-			toast.error('New password must be at least 6 characters long');
-			return;
-		}
-		
-		if (newPassword !== confirmPassword) {
-			toast.error('New password and confirmation do not match');
-			return;
-		}
-		
-		isChangingPassword = true;
-		
-		try {
-			// Update password via API
-			const result = await updatePassword(currentPassword, newPassword);
-			
-			if (result.success) {
-				toast.success('Password changed successfully');
-				// Reset form
-				currentPassword = '';
-				newPassword = '';
-				confirmPassword = '';
-				showPasswordForm = false;
-			} else {
-				toast.error(result.message || 'Failed to change password');
-			}
-		} catch (error: any) {
-			toast.error(error.response?.data?.message || 'Failed to change password');
-			console.error('Password change error:', error);
-		} finally {
-			isChangingPassword = false;
 		}
 	}
 </script>
@@ -216,109 +144,6 @@
 						'You can update your email address' : 
 						'Email updates are currently disabled by system administrator'}
 				</p>
-			</div>
-			
-			<!-- Account Status information (removed toggle) -->
-			<div class="mt-6 p-3 rounded-lg border theme-border">
-				<h4 class="text-sm font-medium theme-text-primary mb-2">Account Status</h4>
-				
-				<div class="flex items-center">
-					{#if accountEnabled}
-						<div class="inline-flex items-center">
-							<span class="w-2 h-2 mr-2 bg-green-400 dark:bg-green-300 rounded-full"></span>
-							<span class="text-sm font-medium theme-text-primary">
-								Active Account
-							</span>
-						</div>
-					{:else}
-						<div class="inline-flex items-center">
-							<span class="w-2 h-2 mr-2 bg-red-400 dark:bg-red-300 rounded-full"></span>
-							<span class="text-sm font-medium theme-text-primary">
-								Disabled Account
-							</span>
-						</div>
-					{/if}
-				</div>
-				
-				<p class="text-xs theme-text-muted mt-2">
-					{accountEnabled ? 
-						'Your account is active and you can access all permitted features' : 
-						'Your account is currently disabled. Please contact an administrator for assistance'}
-				</p>
-			</div>
-
-			<!-- Password Change Form -->
-			<div class="mt-6 p-3 rounded-lg border theme-border">
-				<h4 class="text-sm font-medium theme-text-primary mb-2">Change Password</h4>
-				
-				{#if showPasswordForm}
-					<div class="space-y-4">
-						<div class="space-y-2">
-							<label for="currentPassword" class="block text-sm font-medium theme-text-primary">Current Password</label>
-							<input 
-								type="password" 
-								id="currentPassword" 
-								bind:value={currentPassword}
-								class="block w-full p-2 theme-bg-primary theme-text-primary border theme-border rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
-							/>
-						</div>
-						
-						<div class="space-y-2">
-							<label for="newPassword" class="block text-sm font-medium theme-text-primary">New Password</label>
-							<input 
-								type="password" 
-								id="newPassword" 
-								bind:value={newPassword}
-								class="block w-full p-2 theme-bg-primary theme-text-primary border theme-border rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
-							/>
-						</div>
-						
-						<div class="space-y-2">
-							<label for="confirmPassword" class="block text-sm font-medium theme-text-primary">Confirm New Password</label>
-							<input 
-								type="password" 
-								id="confirmPassword" 
-								bind:value={confirmPassword}
-								class="block w-full p-2 theme-bg-primary theme-text-primary border theme-border rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
-							/>
-						</div>
-						
-						<div class="flex justify-end gap-3 pt-3">
-							<button 
-								type="button"
-								on:click={togglePasswordForm}
-								class="theme-bg-secondary theme-text-primary px-4 py-2 rounded-md text-sm hover:bg-gray-200 dark:hover:bg-gray-600"
-							>
-								Cancel
-							</button>
-							<button 
-								type="button"
-								on:click={changePassword}
-								class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md text-sm flex items-center gap-2"
-								disabled={isChangingPassword}
-							>
-								{#if isChangingPassword}
-									<i class="fas fa-spinner fa-spin"></i>
-									<span>Changing...</span>
-								{:else}
-									<i class="fas fa-save"></i>
-									<span>Change Password</span>
-								{/if}
-							</button>
-						</div>
-					</div>
-				{:else}
-					<div class="flex justify-end">
-						<button 
-							type="button"
-							on:click={togglePasswordForm}
-							class="theme-bg-secondary theme-text-primary px-4 py-2 rounded-md text-sm flex items-center gap-2 hover:bg-gray-200 dark:hover:bg-gray-600"
-						>
-							<i class="fas fa-key"></i>
-							<span>Change Password</span>
-						</button>
-					</div>
-				{/if}
 			</div>
 			
 			<div class="flex justify-end gap-3 pt-3">

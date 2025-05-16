@@ -185,7 +185,7 @@ func UpdatePasswordHandler(c *gin.Context) {
 	// Get the user from database
 	user, err := database.GetUserByID(userID.(string))
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
+		c.JSON(http.StatusBadRequest, gin.H{
 			"success": false,
 			"message": "Failed to retrieve user: " + err.Error(),
 		})
@@ -194,7 +194,7 @@ func UpdatePasswordHandler(c *gin.Context) {
 
 	// Verify current password
 	if !user.VerifyPassword(req.CurrentPassword) {
-		c.JSON(http.StatusUnauthorized, gin.H{
+		c.JSON(http.StatusBadRequest, gin.H{
 			"success": false,
 			"message": "Current password is incorrect",
 		})

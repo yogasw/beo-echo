@@ -2,6 +2,7 @@
 	import { fade } from 'svelte/transition';
 	import { toast } from '$lib/stores/toast';
 	import { featureToggles } from '$lib/stores/featureToggles';
+	import { updatePassword } from '$lib/api/BeoApi';
 	
 	// Form state
 	let currentPassword = '';
@@ -59,17 +60,11 @@
 		isSaving = true;
 		
 		try {
-			// Simulate API call
-			await new Promise(r => setTimeout(r, 800));
-			
-			// Reset form on success
-			currentPassword = '';
-			newPassword = '';
-			confirmPassword = '';
-			
+			// Call API to change password
+			await updatePassword(currentPassword, newPassword);
 			toast.success('Password changed successfully');
 		} catch (error) {
-			toast.error('Failed to change password');
+			toast.error(error);
 			console.error('Password change error:', error);
 		} finally {
 			isSaving = false;
