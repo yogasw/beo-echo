@@ -81,20 +81,21 @@ func CheckAndHandle() error {
 		return errors.New("Failed to connect to the database: " + err.Error())
 	}
 
-	// Auto migrate the models - order matters for foreign key constraints
+	DB.AutoMigrate(&ProxyTarget{})
+	DB.AutoMigrate(&Project{})
+
+	// Auto migrate the models
 	if err := DB.AutoMigrate(
 		&SystemConfig{},
-		&SSOConfig{},
-		&User{},
-		&Workspace{},
-		&UserIdentity{},
-		&UserWorkspace{},
-		&Project{},
-		&ProxyTarget{},
 		&MockEndpoint{},
 		&MockResponse{},
 		&MockRule{},
 		&RequestLog{},
+		&User{},
+		&UserIdentity{},
+		&Workspace{},
+		&UserWorkspace{},
+		&SSOConfig{},
 	); err != nil {
 		return errors.New("Failed to migrate database schema: " + err.Error())
 	}
