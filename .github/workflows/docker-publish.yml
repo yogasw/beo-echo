@@ -61,13 +61,13 @@ jobs:
       # - name: Set up QEMU (for ARM emulation)
       #   uses: docker/setup-qemu-action@v3
 
-      # - name: Set up Docker Buildx
-      #   uses: docker/setup-buildx-action@v3
-      #   with:
-      #     buildkitd-flags: --debug
-      #     driver-opts: |
-      #       image=moby/buildkit:latest
-      #       network=host
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+        with:
+          buildkitd-flags: --debug
+          driver-opts: |
+            image=moby/buildkit:latest
+            network=host
 
       - name: Build and Push Multi-Arch Docker image
         uses: docker/build-push-action@v5
@@ -75,7 +75,7 @@ jobs:
           context: .
           file: Dockerfile
           push: true
-          platforms: linux/amd64
+          platforms: linux/amd64,linux/arm64
           # platforms: linux/amd64,linux/arm64
           cache-from: type=registry,ref=ghcr.io/${{ github.repository }}:buildcache
           cache-to: type=registry,ref=ghcr.io/${{ github.repository }}:buildcache,mode=max
