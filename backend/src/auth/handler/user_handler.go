@@ -261,11 +261,13 @@ func UpdateUserHandler(c *gin.Context) {
 	if currentUser.IsOwner {
 		emailUpdatesEnabled = true // Owners can always update email
 	} else {
-		// For non-owners, check system config
-		var config database.SystemConfig
-		err := database.DB.Where("key = ?", "feature_EMAIL_UPDATES_ENABLED").First(&config).Error
-		if err == nil && config.Value == "true" {
-			emailUpdatesEnabled = true
+		emailUpdatesEnabled, err = utils.GetConfig[bool](utils.FeatureEmailUpdatesEnabled)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"success": false,
+				"message": "Failed to retrieve system config: " + err.Error(),
+			})
+			return
 		}
 	}
 

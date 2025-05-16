@@ -67,6 +67,43 @@ func GetSystemConfig(key string) (interface{}, error) {
 	return nil, fmt.Errorf("configuration key %s not found", key)
 }
 
+// GetConfig retrieves a system configuration value with automatic type conversion to T
+// T can be string, bool, float64, or []string
+func GetConfig[T any](key string) (T, error) {
+	var empty T
+
+	// Add the type suffix if not already present
+	if !strings.Contains(key, ":") {
+		// Determine type suffix based on T
+		switch any(empty).(type) {
+		case string:
+			key += ":string"
+		case bool:
+			key += ":boolean"
+		case float64:
+			key += ":number"
+		case []string:
+			key += ":array"
+		default:
+			return empty, fmt.Errorf("unsupported type for key %s", key)
+		}
+	}
+
+	// Get the config using the original function
+	value, err := GetSystemConfig(key)
+	if err != nil {
+		return empty, err
+	}
+
+	// Type assert to the requested type
+	result, ok := value.(T)
+	if !ok {
+		return empty, fmt.Errorf("unable to convert value to requested type for key %s", key)
+	}
+
+	return result, nil
+}
+
 // SetSystemConfig sets a system configuration value in the database with type validation
 func SetSystemConfig(key string, value interface{}) error {
 	parts := strings.Split(key, ":")
