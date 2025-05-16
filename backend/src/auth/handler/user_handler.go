@@ -31,16 +31,21 @@ func GetCurrentUserHandler(c *gin.Context) {
 		return
 	}
 
+	featureFlags := make(map[string]bool)
+	// Fetch feature flags for the user
+	// get from system config
+
 	c.JSON(http.StatusOK, gin.H{
 		"success": true,
 		"data": gin.H{
-			"id":         user.ID,
-			"email":      user.Email,
-			"name":       user.Name,
-			"is_owner":   user.IsOwner,
-			"is_enabled": user.IsEnabled,
-			"created_at": user.CreatedAt,
-			"updated_at": user.UpdatedAt,
+			"id":            user.ID,
+			"email":         user.Email,
+			"name":          user.Name,
+			"is_owner":      user.IsOwner,
+			"is_enabled":    user.IsEnabled,
+			"created_at":    user.CreatedAt,
+			"updated_at":    user.UpdatedAt,
+			"feature_flags": featureFlags,
 		},
 	})
 }
