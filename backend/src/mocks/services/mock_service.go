@@ -2,6 +2,7 @@ package services
 
 import (
 	"bytes"
+	"crypto/tls"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -183,6 +184,11 @@ func executeProxyRequest(targetURLString, method, pathStr, queryString string, r
 	// Create a new client with desired configuration
 	client := &http.Client{
 		Timeout: time.Second * 30,
+		Transport: &http.Transport{
+			TLSClientConfig: &tls.Config{
+				InsecureSkipVerify: true, // Disable SSL verification
+			},
+		},
 	}
 
 	// Create new URL for the target
