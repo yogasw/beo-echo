@@ -75,7 +75,7 @@ jobs:
           context: .
           file: Dockerfile
           push: true
-          platforms: linux/amd64,linux/arm64
+          platforms: linux/amd64
           # platforms: linux/amd64,linux/arm64
           cache-from: type=registry,ref=ghcr.io/${{ github.repository }}:buildcache
           cache-to: type=registry,ref=ghcr.io/${{ github.repository }}:buildcache,mode=max
