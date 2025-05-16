@@ -143,3 +143,38 @@ func IsUserWorkspaceAdmin(userID string, workspaceID string) (bool, error) {
 
 	return userWorkspace.Role == "admin", nil
 }
+
+// UpdatePassword updates a user's password with a bcrypt hash
+func UpdatePassword(userID string, newPassword string) error {
+	// Hash the new password
+	hashedPassword, err := HashPassword(newPassword)
+	if err != nil {
+		return err
+	}
+
+	// Update the user's password
+	result := DB.Model(&User{}).
+		Where("id = ?", userID).
+		Update("password", hashedPassword)
+
+	return result.Error
+}
+
+// UpdateUserFields updates specified user fields
+func UpdateUserFields(userID string, updates map[string]interface{}) error {
+	result := DB.Model(&User{}).
+		Where("id = ?", userID).
+		Updates(updates)
+
+	return result.Error
+}
+
+// GetUserByID retrieves a user by ID
+func GetUserByID(id string) (*User, error) {
+	var user User
+	result := DB.Where("id = ?", id).First(&user)
+	if result.Error != nil {
+		return nil, result.Error
+	}
+	return &user, nil
+}

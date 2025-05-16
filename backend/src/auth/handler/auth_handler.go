@@ -8,6 +8,7 @@ import (
 
 	"mockoon-control-panel/backend_new/src/auth"
 	"mockoon-control-panel/backend_new/src/database"
+	"mockoon-control-panel/backend_new/src/utils"
 )
 
 // LoginRequest represents the login form data
@@ -77,9 +78,11 @@ func LoginHandler(c *gin.Context) {
 		"message": "Login successful",
 		"token":   token,
 		"user": gin.H{
-			"id":    user.ID,
-			"email": user.Email,
-			"name":  user.Name,
+			"id":         user.ID,
+			"email":      user.Email,
+			"name":       user.Name,
+			"is_owner":   user.IsOwner,
+			"is_enabled": user.IsEnabled,
 		},
 	})
 }
@@ -91,6 +94,22 @@ func RegisterHandler(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"success": false,
 			"message": "Invalid request: " + err.Error(),
+		})
+		return
+	}
+	//check feature flag
+	enable, err := utils.GetConfig[bool](utils.FEATURE_REGISTER_EMAIL_ENABLED)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"success": false,
+			"message": "Failed to check feature flag: " + err.Error(),
+		})
+		return
+	}
+	if enable == false {
+		c.JSON(http.StatusForbidden, gin.H{
+			"success": false,
+			"message": "Registration is disabled",
 		})
 		return
 	}

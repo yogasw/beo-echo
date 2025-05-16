@@ -4,6 +4,7 @@
 	import ConfigurationTab from './tabs/ConfigurationTab.svelte';
 	import WorkspaceSettingsTab from './tabs/WorkspaceSettingsTab.svelte';
 	import InstanceSettingsTab from './tabs/InstanceSettingsTab.svelte';
+	import SettingsTab from './tabs/SettingsTab.svelte';
 	import { selectedProject } from '$lib/stores/selectedConfig';
 	import { activeTab } from '$lib/stores/activeTab';
 	import * as ThemeUtils from '$lib/utils/themeUtils';
@@ -22,6 +23,11 @@
 		<!-- Always render instance settings tab regardless of project selection -->
 		<div class="tab-content">
 			<InstanceSettingsTab />
+		</div>
+	{:else if $activeTab === 'settings'}
+		<!-- Always render settings tab regardless of project selection -->
+		<div class="tab-content">
+			<SettingsTab />
 		</div>
 	{:else if !$selectedProject}
 		<div class="no-config-message theme-text-primary">
