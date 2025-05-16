@@ -65,12 +65,12 @@ RUN chmod +x /app/entrypoint.sh
 # Set environment variables
 ENV GIN_MODE=release
 
-# Set a non-root user for better security
-RUN addgroup -S beoecho && adduser -S -G beoecho beoecho && \
-    chown -R beoecho:beoecho /app /data /config && \
-    chmod -R 755 /app/logs
+# # Set a non-root user for better security
+# RUN addgroup -S beoecho && adduser -S -G beoecho beoecho && \
+#     chown -R beoecho:beoecho /app /data /config && \
+#     chmod -R 755 /app/logs
 
-# Use the non-root user
-USER beoecho
+# # Use the non-root user
+# USER beoecho
 
 ENTRYPOINT ["/app/entrypoint.sh"]
