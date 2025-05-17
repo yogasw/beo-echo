@@ -3,6 +3,7 @@ package scripts
 import (
 	"beo-echo/backend/src/caddy/config"
 	"beo-echo/backend/src/lib"
+	systemConfig "beo-echo/backend/src/systemConfigs"
 	"bufio"
 	"context"
 	"fmt"
@@ -14,6 +15,7 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
+// Config struct for Caddy configuration
 type Config struct {
 	Domain      string
 	ProxyTarget string
@@ -171,6 +173,36 @@ func GenerateSingleConfigFromText(
 		Str("main", mainConfigPath).
 		Str("imported", dynamicImportPath).
 		Msg("config validated and import successful")
+
+	return nil
+}
+
+func InitCaddyConfig(ctx context.Context) error {
+	l := log.With().Str("func", "InitCaddyConfig").Logger()
+	enable, err := systemConfig.GetSystemConfigWithType[bool](systemConfig.CUSTOM_SUBDOMAIN_ENABLED)
+	if err != nil {
+		return fmt.Errorf("failed to find active projects: %w", err)
+	}
+	if !enable {
+		l.Info().Msg("custom subdomain feature is disabled")
+		return nil
+	}
+	subdomain, err := systemConfig.GetSystemConfigWithType[string](systemConfig.CUSTOM_SUBDOMAIN_DOMAIN)
+	if err != nil {
+		return fmt.Errorf("failed to find active projects: %w", err)
+	}
+	if subdomain == "" {
+		l.Info().Msg("custom subdomain domain is empty")
+		return nil
+	}
+
+	var config = []Config{
+		{Domain: subdomain, ProxyTarget: "localhost:8080"},
+	}
+
+	if err := GenerateSingleConfigFromText(ctx, config); err != nil {
+		return fmt.Errorf("failed to generate single config from text: %w", err)
+	}
 
 	return nil
 }

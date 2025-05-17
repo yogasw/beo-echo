@@ -1,7 +1,6 @@
 package src
 
 import (
-	"log"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -10,7 +9,9 @@ import (
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
+	"github.com/rs/zerolog/log"
 
+	"beo-echo/backend/src/caddy/scripts"
 	"beo-echo/backend/src/database"
 	"beo-echo/backend/src/health"
 	"beo-echo/backend/src/lib"
@@ -24,7 +25,7 @@ import (
 
 	// New imports for auth and workspace management
 	authHandler "beo-echo/backend/src/auth/handler"
-	systemConfigHandler "beo-echo/backend/src/system-config/handler"
+	systemConfigHandler "beo-echo/backend/src/systemConfigs/handler"
 )
 
 // SetupRouter creates and configures a new Gin router
@@ -164,23 +165,27 @@ func SetupRouter() *gin.Engine {
 func StartServer() error {
 	// Load environment variables from .env file
 	if err := godotenv.Load(filepath.Join("..", ".env")); err != nil {
-		log.Println("Warning: .env file not found or could not be loaded")
+		log.Info().Msgf("Warning: .env file not found or could not be loaded")
 	}
 
 	// Setup required directories
 	if err := utils.EnsureRequiredFoldersAndEnv(); err != nil {
-		log.Fatalf("Failed to setup required folders: %v", err)
+		log.Fatal().Msgf("Failed to setup required folders: %v", err)
 	}
 
 	// Setup database connection
 	if err := database.CheckAndHandle(); err != nil {
-		log.Fatalf("Failed to setup database: %v", err)
+		log.Fatal().Msgf("Failed to setup database: %v", err)
 	}
 
 	// Initialize services
 	handler.InitLogService()
 
 	router := SetupRouter()
+	// zero log context
+	if err := scripts.InitCaddyConfig(); err != nil {
+		log.Error().Msgf("Failed to initialize Caddy config: %v", err)
+	}
 
 	// Add request logging middleware
 	router.Use(func(c *gin.Context) {
@@ -189,16 +194,16 @@ func StartServer() error {
 
 		// Process request
 		c.Next()
-
-		// Log request details
-		log.Printf(
-			"[%s] %s %s %d %s",
-			c.Request.Method,
-			c.Request.URL.Path,
-			c.ClientIP(),
-			c.Writer.Status(),
-			time.Since(startTime),
-		)
+		log.Info().
+			// Log request details
+			Msgf(
+				"[%s] %s %s %d %s",
+				c.Request.Method,
+				c.Request.URL.Path,
+				c.ClientIP(),
+				c.Writer.Status(),
+				time.Since(startTime),
+			)
 	})
 
 	// Start the server

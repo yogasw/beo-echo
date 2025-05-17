@@ -7,7 +7,7 @@ import (
 	"gorm.io/gorm"
 
 	"beo-echo/backend/src/database"
-	"beo-echo/backend/src/system-config/services"
+	systemConfig "beo-echo/backend/src/systemConfigs"
 )
 
 // GetCurrentUserHandler returns the authenticated user's information
@@ -33,7 +33,7 @@ func GetCurrentUserHandler(c *gin.Context) {
 	}
 
 	// Get feature flags from system config
-	featureFlags, err := services.GetFeatureFlags()
+	featureFlags, err := systemConfig.GetFeatureFlags()
 	if err != nil {
 		// Log the error but don't fail the request
 		featureFlags = make(map[string]bool)
@@ -261,7 +261,7 @@ func UpdateUserHandler(c *gin.Context) {
 	if currentUser.IsOwner {
 		emailUpdatesEnabled = true // Owners can always update email
 	} else {
-		emailUpdatesEnabled, err = services.GetConfig[bool](services.FeatureEmailUpdatesEnabled)
+		emailUpdatesEnabled, err = systemConfig.GetSystemConfigWithType[bool](string(systemConfig.FEATURE_EMAIL_UPDATES_ENABLED))
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{
 				"success": false,

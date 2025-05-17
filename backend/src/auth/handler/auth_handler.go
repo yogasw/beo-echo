@@ -8,7 +8,7 @@ import (
 
 	"beo-echo/backend/src/auth"
 	"beo-echo/backend/src/database"
-	"beo-echo/backend/src/system-config/services"
+	systemConfig "beo-echo/backend/src/systemConfigs"
 )
 
 // LoginRequest represents the login form data
@@ -98,7 +98,7 @@ func RegisterHandler(c *gin.Context) {
 		return
 	}
 	//check feature flag
-	enable, err := services.GetConfig[bool](services.FEATURE_REGISTER_EMAIL_ENABLED)
+	enable, err := systemConfig.GetSystemConfigWithType[bool](systemConfig.FEATURE_REGISTER_EMAIL_ENABLED)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"success": false,
@@ -106,7 +106,7 @@ func RegisterHandler(c *gin.Context) {
 		})
 		return
 	}
-	if enable == false {
+	if !enable {
 		c.JSON(http.StatusForbidden, gin.H{
 			"success": false,
 			"message": "Registration is disabled",
