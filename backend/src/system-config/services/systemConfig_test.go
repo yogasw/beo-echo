@@ -124,7 +124,7 @@ func TestSystemConfigOperations(t *testing.T) {
 		// Test getting a default config that hasn't been explicitly set
 		val, err := GetSystemConfig(GitName)
 		assert.NoError(t, err, "Getting default config should not error")
-		assert.Equal(t, "Mockoon Control Panel", val, "Default value should be returned")
+		assert.Equal(t, "BeoEcho", val, "Default value should be returned")
 	})
 
 	// Test AddConfig and SetConfigByID

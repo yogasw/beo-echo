@@ -1,4 +1,4 @@
-# Mockoon Control Panel - Go Backend
+# Beo Echo - Go Backend
 
 This is the Go implementation of the Mockoon Control Panel backend, refactored from the original Node.js/TypeScript implementation.
 

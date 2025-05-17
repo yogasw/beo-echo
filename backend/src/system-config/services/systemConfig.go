@@ -34,7 +34,7 @@ var DefaultVariables = map[string]string{
 	GitURL:    "",
 	GitBranch: "main",
 	SSHKey:    "",
-	GitName:   "Mockoon Control Panel",
+	GitName:   "BeoEcho",
 	GitEmail:  "noreply@example.com",
 
 	// Default values for feature flags

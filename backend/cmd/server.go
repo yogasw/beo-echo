@@ -18,8 +18,8 @@ var hostname string
 // serverCmd represents the server command
 var serverCmd = &cobra.Command{
 	Use:   "server",
-	Short: "Start the Mockoon Control Panel server",
-	Long: `Starts the HTTP server for Mockoon Control Panel.
+	Short: "Start the BeoEcho server",
+	Long: `Starts the HTTP server for BeoEcho.
 This provides API endpoints for managing mock instances.`,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		return runServer()
@@ -33,7 +33,7 @@ func init() {
 }
 
 func runServer() error {
-	log.Println("🔧 Initializing Mockoon Control Panel server...")
+	log.Println("🔧 Initializing BeoEcho server...")
 
 	// Load environment variables from .env file
 	if err := godotenv.Load(filepath.Join("..", ".env")); err != nil {

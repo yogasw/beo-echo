@@ -205,7 +205,7 @@ func StartServer() error {
 	serverAddr := lib.SERVER_HOSTNAME + ":" + lib.SERVER_PORT
 
 	log.Printf("=================================================")
-	log.Printf("🚀 Mockoon Control Panel server is starting up!")
+	log.Printf("🚀 BeoEcho server is starting up!")
 	log.Printf("🔗 Server URL: http://%s", serverAddr)
 	log.Printf("📄 API endpoint: http://%s/mock/api", serverAddr)
 	log.Printf("🔍 Health check: http://%s/mock/api/health", serverAddr)

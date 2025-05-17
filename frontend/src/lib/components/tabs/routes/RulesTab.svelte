@@ -1,9 +1,8 @@
 <script lang="ts">
-	import type { MockoonRule } from '$lib/types/Config';
+	import type { BeoEchoRule } from '$lib/types/Config';
 	import * as ThemeUtils from '$lib/utils/themeUtils';
-	import { theme } from '$lib/stores/theme';
 
-	export let rules: MockoonRule[] = [];
+	export let rules: BeoEchoRule[] = [];
 	export let rulesOperator = 'OR'; // Default operator
 
 	let isModalVisible = false;
