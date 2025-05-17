@@ -1,5 +1,7 @@
-import { writable } from 'svelte/store';
+import { writable, get } from 'svelte/store';
 import type { RequestLog } from '$lib/api/BeoApi';
+import { activeTab } from './activeTab';
+import { logStatus } from './logStatus';
 
 // Initialize logs store with empty array
 export const logs = writable<RequestLog[]>([]);
@@ -34,6 +36,12 @@ export function addLog(newLog: RequestLog) {
     logs.update(currentLogs => {
         // Check if log already exists to prevent duplicates
         if (!currentLogs.some(log => log.id === newLog.id)) {
+            // If the current tab is not logs, increment the unread count
+            const currentTab = get(activeTab);
+            if (currentTab !== 'logs') {
+                logStatus.incrementUnread();
+            }
+            
             // Add to beginning of array (newest first) and limit to 1000 logs to prevent browser slowdown
             return [newLog, ...currentLogs].slice(0, 1000);
         }
@@ -105,4 +113,11 @@ export function addBatchLogs(logsArray: RequestLog[]) {
         ...state,
         total: logsArray.length
     }));
+    
+    // If we're adding batch logs and current tab is not logs, update the unread count
+    const currentTab = get(activeTab);
+    if (currentTab !== 'logs' && logsArray.length > 0) {
+        // We only increment by 1 regardless of how many logs to prevent overwhelming the counter
+        logStatus.incrementUnread();
+    }
 }
