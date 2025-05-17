@@ -24,6 +24,18 @@ func GetSystemConfig(key string) (interface{}, error) {
 	// If not found in database, check defaults
 	defaultValue, exists := DefaultConfigSettings[SystemConfigKey(key)]
 	if exists {
+		// add config to database
+		config = database.SystemConfig{
+			Key:         key,
+			Value:       defaultValue.Value,
+			Type:        string(defaultValue.Type),
+			Description: defaultValue.Description,
+			HideValue:   defaultValue.HideValue,
+		}
+		if err := database.DB.Create(&config).Error; err != nil {
+			return nil, fmt.Errorf("failed to create default config: %w", err)
+		}
+
 		// Convert default value to the requested type
 		convertedValue, err := convertValue(defaultValue.Value, string(defaultValue.Type))
 		if err != nil {

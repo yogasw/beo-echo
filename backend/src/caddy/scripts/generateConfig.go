@@ -178,7 +178,7 @@ func GenerateSingleConfigFromText(
 }
 
 func InitCaddyConfig(ctx context.Context) error {
-	l := log.With().Str("func", "InitCaddyConfig").Logger()
+	l := log.Ctx(ctx).With().Str("func", "InitCaddyConfig").Logger()
 	enable, err := systemConfig.GetSystemConfigWithType[bool](systemConfig.CUSTOM_SUBDOMAIN_ENABLED)
 	if err != nil {
 		return fmt.Errorf("failed to find active projects: %w", err)

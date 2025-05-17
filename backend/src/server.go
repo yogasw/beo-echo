@@ -1,6 +1,7 @@
 package src
 
 import (
+	"context"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -183,7 +184,12 @@ func StartServer() error {
 
 	router := SetupRouter()
 	// zero log context
-	if err := scripts.InitCaddyConfig(); err != nil {
+	ctxLog := log.With().
+		Str("script", "Candy Setup").
+		Logger().
+		WithContext(context.Background())
+
+	if err := scripts.InitCaddyConfig(ctxLog); err != nil {
 		log.Error().Msgf("Failed to initialize Caddy config: %v", err)
 	}
 
