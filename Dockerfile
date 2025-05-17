@@ -52,9 +52,6 @@ RUN apk add --no-cache ca-certificates caddy && \
 COPY --from=frontend-builder /app/frontend/build /app/frontend
 COPY --from=backend-builder /app/backend/beo-echo /app/backend/
 
-# Create Caddy configuration file
-COPY --from=backend-builder /app/backend/caddy/config/Caddyfile /etc/caddy/Caddyfile
-
 # Expose ports
 EXPOSE 80
 

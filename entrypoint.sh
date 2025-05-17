@@ -12,7 +12,7 @@ sleep 2
 
 # Start Caddy in the foreground
 echo "Starting Caddy server..."
-caddy run --config /etc/caddy/Caddyfile &
+caddy run --config /app/config/Caddyfile &
 CADDY_PID=$!
 
 # Handle shutdown signals
