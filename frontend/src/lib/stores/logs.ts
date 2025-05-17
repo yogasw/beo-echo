@@ -113,11 +113,4 @@ export function addBatchLogs(logsArray: RequestLog[]) {
         ...state,
         total: logsArray.length
     }));
-    
-    // If we're adding batch logs and current tab is not logs, update the unread count
-    const currentTab = get(activeTab);
-    if (currentTab !== 'logs' && logsArray.length > 0) {
-        // We only increment by 1 regardless of how many logs to prevent overwhelming the counter
-        logStatus.incrementUnread();
-    }
 }
