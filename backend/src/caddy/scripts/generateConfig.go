@@ -115,19 +115,9 @@ func GenerateSingleConfigFromText(
 	configs []Config,
 ) error {
 	// setup
-	mainConfigStr := config.CADDY_DEFAULT_CONFIG
+	mainConfigPath := lib.CANDY_DIR + "/Caddyfile"
 	outputPath := lib.CANDY_DIR + "/Dynamic.conf"
 	dynamicImportPath := "./Dynamic.conf"
-	mainConfigPath := lib.CANDY_DIR + "/Caddyfile"
-
-	// check if main config file exists or not when not found create it
-	if _, err := os.Stat(mainConfigPath); os.IsNotExist(err) {
-		if err := os.WriteFile(mainConfigPath, []byte(mainConfigStr), 0644); err != nil {
-			log.Ctx(ctx).Error().Err(err).Str("file", mainConfigPath).Msg("failed to create main config file")
-			return fmt.Errorf("failed to create main config file: %w", err)
-		}
-		log.Ctx(ctx).Info().Str("file", mainConfigPath).Msg("main config file created")
-	}
 
 	// 1. Parse template string
 	tmpl, err := template.New("caddy").Parse(caddyTemplate)
@@ -178,7 +168,20 @@ func GenerateSingleConfigFromText(
 }
 
 func InitCaddyConfig(ctx context.Context) error {
+	// setup
+	mainConfigStr := config.CADDY_DEFAULT_CONFIG
+	mainConfigPath := lib.CANDY_DIR + "/Caddyfile"
+
 	l := log.Ctx(ctx).With().Str("func", "InitCaddyConfig").Logger()
+	// check if main config file exists or not when not found create it
+	if _, err := os.Stat(mainConfigPath); os.IsNotExist(err) {
+		if err := os.WriteFile(mainConfigPath, []byte(mainConfigStr), 0644); err != nil {
+			log.Ctx(ctx).Error().Err(err).Str("file", mainConfigPath).Msg("failed to create main config file")
+			return fmt.Errorf("failed to create main config file: %w", err)
+		}
+		log.Ctx(ctx).Info().Str("file", mainConfigPath).Msg("main config file created")
+	}
+
 	enable, err := systemConfig.GetSystemConfigWithType[bool](systemConfig.CUSTOM_SUBDOMAIN_ENABLED)
 	if err != nil {
 		return fmt.Errorf("failed to find active projects: %w", err)
@@ -197,7 +200,7 @@ func InitCaddyConfig(ctx context.Context) error {
 	}
 
 	var config = []Config{
-		{Domain: subdomain, ProxyTarget: "localhost:8080"},
+		{Domain: subdomain, ProxyTarget: "0.0.0.0:3600"},
 	}
 
 	if err := GenerateSingleConfigFromText(ctx, config); err != nil {

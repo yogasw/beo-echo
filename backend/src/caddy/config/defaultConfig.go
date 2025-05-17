@@ -3,7 +3,6 @@ package config
 const CADDY_DEFAULT_CONFIG = `{
 	# Global Caddy settings
 	admin off
-	auto_https off
 }
 
 :80 {
