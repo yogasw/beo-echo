@@ -53,7 +53,7 @@ COPY --from=frontend-builder /app/frontend/build /app/frontend
 COPY --from=backend-builder /app/backend/beo-echo /app/backend/
 
 # Create Caddy configuration file
-COPY Caddyfile /etc/caddy/Caddyfile
+COPY --from=backend-builder /app/backend/caddy/config/Caddyfile /etc/caddy/Caddyfile
 
 # Expose ports
 EXPOSE 80
