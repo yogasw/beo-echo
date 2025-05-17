@@ -102,9 +102,7 @@ func EnsureImportDynamicConf(ctx context.Context, mainConfigFile, dynamicImportP
 
 var caddyTemplate = `{{range .}}
 {{.Domain}} {
-  rewrite {
-    to /{http.request.host.labels.3}{http.request.uri}
-  }
+  rewrite * /{http.request.host.labels.3}{http.request.uri}
 
   reverse_proxy http://{{.ProxyTarget}}
 }

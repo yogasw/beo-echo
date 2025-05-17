@@ -2,7 +2,7 @@
     "version": "2.0.0",
     "tasks": [
         {
-            "label": "Run all Tests",
+            "label": "Run all Tests in Backend",
             "type": "shell",
             "command": "cd ${workspaceFolder}/backend && go test ./... -v",
             "group": {

@@ -14,6 +14,7 @@ func EnsureRequiredFoldersAndEnv() error {
 	directories := []string{
 		lib.CONFIGS_DIR,
 		lib.UPLOAD_DIR,
+		lib.CANDY_DIR,
 	}
 
 	for _, dir := range directories {
@@ -40,4 +41,9 @@ func EnsureRequiredFoldersAndEnv() error {
 // EnsureDirectoryExists creates a directory if it doesn't exist
 func EnsureDirectoryExists(dirPath string) error {
 	return os.MkdirAll(dirPath, os.ModePerm)
+}
+
+func SetupFolderConfigForTest() {
+	lib.IS_TEST = true
+	EnsureRequiredFoldersAndEnv()
 }

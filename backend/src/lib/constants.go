@@ -7,12 +7,10 @@ import (
 
 // Path constants
 var (
-	// Get the current working directory
-	CURRENT_DIR, _ = os.Getwd()
-
+	IS_TEST = false
 	// Derived paths
-	CONFIGS_DIR = filepath.Join(CURRENT_DIR, "..", "configs")
-	UPLOAD_DIR  = filepath.Join(CURRENT_DIR, "uploads")
+	CONFIGS_DIR = filepath.Join(CURRENT_DIR(), "..", "configs")
+	UPLOAD_DIR  = filepath.Join(CURRENT_DIR(), "uploads")
 	CANDY_DIR   = filepath.Join(CONFIGS_DIR, "caddy")
 )
 
@@ -30,4 +28,13 @@ func getEnvOrDefault(key, defaultValue string) string {
 		return value
 	}
 	return defaultValue
+}
+
+func CURRENT_DIR() string {
+	if IS_TEST {
+		return "/tmp/beo"
+	} else {
+		dir, _ := os.Getwd()
+		return dir
+	}
 }
