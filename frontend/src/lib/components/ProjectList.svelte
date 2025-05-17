@@ -17,11 +17,12 @@
 	import * as ThemeUtils from '$lib/utils/themeUtils';
 	import { currentWorkspace } from '$lib/stores/workspace';
 	import { isLoadingContentArea } from '$lib/stores/loadingContentArea';
+	import { initializeLogsStream } from '$lib/services/logsService';
 
 	export let searchTerm = '';
 
 	const dispatch = createEventDispatcher<{
-		selectConfiguration: Project;
+		selectedProject: Project;
 	}>();
 
 	$: filteredConfigurations = $projects.filter((project) =>
@@ -81,13 +82,15 @@
 	async function handleConfigClick(project: Project) {
 		console.log('1. ConfigurationList - Clicked config:', project);
 		isLoadingContentArea.set(true);
+		initializeLogsStream(project.id, 100, project.id != $selectedProject?.id);
+
 		try {
 			const fullConfig = await getProjectDetail(project.id);
 			selectedProject.set(project);
 			activeTab.set('routes');
 			// Reset endpoints update list when changing projects
 			resetEndpointsList();
-			dispatch('selectConfiguration', project);
+			dispatch('selectedProject', project);
 			// Parse routes from config
 			// endpoints = fullConfig.endpoints;
 			fullConfig.url = project.url;

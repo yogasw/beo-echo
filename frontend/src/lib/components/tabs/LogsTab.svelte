@@ -1,11 +1,11 @@
 <script lang="ts">
-	import { onMount, onDestroy } from 'svelte';
+	import {onDestroy } from 'svelte';
 	import type { Project, RequestLog } from '$lib/api/BeoApi';
 	import { fade } from 'svelte/transition';
 	import ModalCreateMock from './logs/ModalCreateMock.svelte';
 	import * as ThemeUtils from '$lib/utils/themeUtils';
 	import { logs, logsConnectionStatus } from '$lib/stores/logs';
-	import { initializeLogsStream, reconnectLogStream, refreshLogs } from '$lib/services/logsService';
+	import {reconnectLogStream, refreshLogs } from '$lib/services/logsService';
 
 	export let selectedProject: Project;
 
@@ -104,12 +104,6 @@
 		}
 	}
 
-	// Update project ID when selectedProject changes
-	$: if (selectedProject) {
-		// When the component receives a new project, initialize the logs stream
-		initializeLogsStream(selectedProject.id, pageSize);
-	}
-
 	// Convert JSON string to object for display
 	function parseJson(jsonString: string): any {
 		try {
@@ -146,14 +140,6 @@
 			copyNotification = { show: false, message: '' };
 		}, 2000);
 	}
-
-	// Initialize on component mount
-	onMount(() => {
-		// Initialize logs stream with the selected project
-		if (selectedProject) {
-			initializeLogsStream(selectedProject.id, pageSize);
-		}
-	});
 
 	// Clean up on component destroy
 	onDestroy(() => {

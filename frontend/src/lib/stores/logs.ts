@@ -97,3 +97,12 @@ export function setTotalLogs(total: number) {
         total
     }));
 }
+
+// init all logs
+export function addBatchLogs(logsArray: RequestLog[]) {
+    logs.set(logsArray);
+    logsConnectionStatus.update(state => ({
+        ...state,
+        total: logsArray.length
+    }));
+}

@@ -1,5 +1,5 @@
 <script lang="ts">
-// Import necessary modules and components
+	// Import necessary modules and components
 	import '../app.css';
 	import { workspaces, allWorkspaces, currentWorkspace } from '$lib/stores/workspace';
 
@@ -7,27 +7,19 @@
 	import { goto } from '$app/navigation';
 	import ProjectList from '$lib/components/ProjectList.svelte';
 	import Header from '$lib/components/Header.svelte';
-	import { getCurrentWorkspaceId, removeLocalStorage, setCurrentWorkspaceId } from '$lib/utils/localStorage';
-	import { getProjects, getWorkspaces } from '$lib/api/BeoApi';
+	import {
+		getCurrentWorkspaceId,
+		removeLocalStorage,
+		setCurrentWorkspaceId
+	} from '$lib/utils/localStorage';
+	import { getProjects, getWorkspaces, type Project } from '$lib/api/BeoApi';
 	import { onMount } from 'svelte';
 	import { projects } from '$lib/stores/configurations';
 	import Toast from '$lib/components/Toast.svelte';
 	import { isAuthenticated, auth } from '$lib/stores/auth';
-	import { browser } from '$app/environment';
-
-	interface Config {
-		uuid: string;
-		name: string;
-		configFile: string;
-		port: number;
-		url: string;
-		size: string;
-		modified: string;
-		inUse: boolean;
-	}
+	import { initializeLogsStream } from '$lib/services/logsService';
 
 	let searchTerm = '';
-	let selectedConfig: Config | null = null;
 	let activeTab = 'routes';
 	// Check authentication from localStorage
 	$: isLoginPage = $page.url.pathname === '/login';
@@ -40,15 +32,15 @@
 			console.error('Failed to fetch projects:', err);
 		}
 	}
-	
+
 	async function fetchWorkspaces() {
 		try {
 			const workspacesData = await getWorkspaces();
 			workspaces.loadAll();
-			
+
 			// Get current workspace from localStorage or use the first one
 			const currentWorkspaceId = getCurrentWorkspaceId();
-			
+
 			// If we have workspaces but no current one is selected, use the first one
 			if (workspacesData.length > 0) {
 				if (!currentWorkspaceId) {
@@ -58,7 +50,7 @@
 					return workspacesData[0].id;
 				} else {
 					// Verify the stored ID exists in our workspaces
-					const exists = workspacesData.some(w => w.id === currentWorkspaceId);
+					const exists = workspacesData.some((w) => w.id === currentWorkspaceId);
 					if (exists) {
 						workspaces.setCurrent(currentWorkspaceId);
 						return currentWorkspaceId;
@@ -78,7 +70,7 @@
 	}
 
 	onMount(async () => {
-		console.log("onMount: layout");
+		console.log('onMount: layout');
 		if (!$isAuthenticated && !isLoginPage) {
 			try {
 				// First check authentication by getting workspaces
@@ -96,7 +88,7 @@
 			if ($isAuthenticated) {
 				// First fetch workspaces and get current workspace ID
 				const currentWorkspaceId = await fetchWorkspaces();
-				
+
 				// If we have a valid workspace ID, fetch projects for that workspace
 				if (currentWorkspaceId) {
 					await fetchConfigs(currentWorkspaceId);
@@ -108,22 +100,18 @@
 		initialize();
 	});
 
-	function handleConfigSelect(event: CustomEvent<Config>) {
-		selectedConfig = { ...event.detail };
+	function handleProjectStart(event: CustomEvent<Project>) {
+		const project = event.detail;
+		projects.update((configs) =>
+			configs.map((c) => (c.name === project.name ? { ...c, inUse: true } : c))
+		);
 	}
 
-	function handleConfigStart(event: CustomEvent<Config>) {
-		const config = event.detail;
-		projects.update(configs => configs.map(c =>
-			c.name === config.name ? { ...c, inUse: true } : c
-		));
-	}
-
-	function handleConfigStop(event: CustomEvent<Config>) {
-		const config = event.detail;
-		projects.update(configs => configs.map(c =>
-			c.name === config.name ? { ...c, inUse: false } : c
-		));
+	function handleProjectStop(event: CustomEvent<Project>) {
+		const project = event.detail;
+		projects.update((configs) =>
+			configs.map((c) => (c.name === project.name ? { ...c, inUse: false } : c))
+		);
 	}
 
 	function handleTabChange(event: CustomEvent<string>) {
@@ -140,7 +128,7 @@
 	function handleLogout() {
 		auth.logout(); // This will set isAuthenticated to false and remove auth token
 		removeLocalStorage('currentWorkspaceId');
-		goto("/login")
+		goto('/login');
 		window.location.reload();
 	}
 </script>
@@ -150,27 +138,19 @@
 {:else}
 	<div class="min-h-screen w-full theme-bg-tertiary theme-text-primary font-sans transition-colors">
 		<div class="mx-auto flex h-screen">
-			<ProjectList
-				{searchTerm}
-				on:selectProject={handleConfigSelect}
-				on:startProject={handleConfigStart}
-				on:stopProject={handleConfigStop}
-			/>
+			<ProjectList {searchTerm} />
 
 			<div class="flex-1 flex flex-col overflow-hidden">
-				<Header on:tabChange={handleTabChange} handleLogout={handleLogout} />
+				<Header on:tabChange={handleTabChange} {handleLogout} />
 				<div class="flex-1 overflow-auto theme-bg-primary">
-					<slot activeTab={activeTab} />
+					<slot {activeTab} />
 				</div>
 			</div>
-
 		</div>
 	</div>
-
 {/if}
 
 <Toast />
 
 <style global>
-
 </style>
