@@ -24,8 +24,8 @@ func TestDatabaseConnection(t *testing.T) {
 
 		t.Cleanup(func() {
 			// Clean up the test database file after test
-			dbPath := filepath.Join(dbDir, "db.sqlite")
-			os.Remove(dbPath)
+			dbPath := filepath.Join(configsDir)
+			os.RemoveAll(dbPath)
 		})
 
 		// Initialize database

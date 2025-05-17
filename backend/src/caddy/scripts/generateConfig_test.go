@@ -3,6 +3,7 @@ package scripts
 import (
 	"context"
 	"fmt"
+	"mockoon-control-panel/backend_new/src/lib"
 	"mockoon-control-panel/backend_new/src/utils"
 	"os"
 	"testing"
@@ -29,6 +30,9 @@ func TestGenerateSingleConfigFromText(t *testing.T) {
 	if err != nil {
 		fmt.Println("Error generating config:", err)
 	}
+	require.NoError(t, err)
 
+	// remove all generated files
+	err = os.RemoveAll(lib.CONFIGS_DIR)
 	require.NoError(t, err)
 }
