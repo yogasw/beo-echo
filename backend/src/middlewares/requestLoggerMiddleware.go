@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 	"github.com/rs/zerolog/log"
 
 	"gorm.io/gorm"
@@ -62,9 +63,10 @@ func RequestLoggerMiddleware(db *gorm.DB) gin.HandlerFunc {
 		if projectID == nil || projectID == "" || path == nil {
 			return
 		}
-
+		id := uuid.New().String()
 		// Save log
 		logEntry := &database.RequestLog{
+			ID:              id,
 			ProjectID:       toString(projectID),
 			Method:          c.Request.Method,
 			Path:            toString(path),
