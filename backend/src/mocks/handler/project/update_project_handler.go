@@ -67,6 +67,14 @@ func UpdateProjectHandler(c *gin.Context) {
 	}
 
 	if updateData.Alias != nil {
+		if !handler.IsValidAlias(*updateData.Alias) {
+			c.JSON(http.StatusBadRequest, gin.H{
+				"error":   true,
+				"message": "Invalid alias format for project. Only alphanumeric characters, dashes and underscores are allowed",
+			})
+			return
+		}
+
 		existingProject.Alias = *updateData.Alias
 	}
 

@@ -5,7 +5,7 @@
 
 	import { page } from '$app/stores';
 	import { goto } from '$app/navigation';
-	import ConfigurationList from '$lib/components/ConfigurationList.svelte';
+	import ProjectList from '$lib/components/ProjectList.svelte';
 	import Header from '$lib/components/Header.svelte';
 	import { getCurrentWorkspaceId, removeLocalStorage, setCurrentWorkspaceId } from '$lib/utils/localStorage';
 	import { getProjects, getWorkspaces } from '$lib/api/BeoApi';
@@ -150,11 +150,11 @@
 {:else}
 	<div class="min-h-screen w-full theme-bg-tertiary theme-text-primary font-sans transition-colors">
 		<div class="mx-auto flex h-screen">
-			<ConfigurationList
+			<ProjectList
 				{searchTerm}
-				on:selectConfiguration={handleConfigSelect}
-				on:startConfiguration={handleConfigStart}
-				on:stopConfiguration={handleConfigStop}
+				on:selectProject={handleConfigSelect}
+				on:startProject={handleConfigStart}
+				on:stopProject={handleConfigStop}
 			/>
 
 			<div class="flex-1 flex flex-col overflow-hidden">

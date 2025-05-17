@@ -18,17 +18,6 @@
 	import { currentWorkspace } from '$lib/stores/workspace';
 	import { isLoadingContentArea } from '$lib/stores/loadingContentArea';
 
-	interface Config {
-		uuid: string;
-		name: string;
-		configFile: string;
-		port: number;
-		url: string;
-		size: string;
-		modified: string;
-		inUse: boolean;
-	}
-
 	export let searchTerm = '';
 
 	const dispatch = createEventDispatcher<{
@@ -342,6 +331,7 @@
 			</div>
 		</div>
 	{/if}
+
 	<!-- Configuration List -->
 	<div class="flex-1 min-h-0 overflow-auto hide-scrollbar">
 		<div class="space-y-4">
@@ -360,12 +350,14 @@
 							{#if $selectedProject?.id === project.id}
 								<i class="fas fa-edit text-blue-500 mr-2"></i>
 							{/if}
-							<span class="truncate">{project.name}</span>
+							<span class="truncate" title={project.name}>
+								{project.name.length > 15 ? project.name.slice(0, 15) + '…' : project.name}
+							</span>
 						</h2>
 						<div class="flex items-center space-x-2">
-							<span class={ThemeUtils.badge('info', 'text-xs px-2 py-0.5 uppercase')}
-								>{project.mode}</span
-							>
+							<span class={ThemeUtils.badge('info', 'text-xs px-2 py-0.5 uppercase')}>
+								{project.mode}
+							</span>
 						</div>
 					</div>
 
