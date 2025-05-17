@@ -3,6 +3,7 @@ package middlewares
 import (
 	"beo-echo/backend/src/database"
 	"beo-echo/backend/src/mocks/handler"
+	systemConfig "beo-echo/backend/src/systemConfigs"
 	"bytes"
 	"encoding/json"
 	"fmt"
@@ -11,6 +12,7 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/rs/zerolog/log"
 
 	"gorm.io/gorm"
 )
@@ -77,12 +79,25 @@ func RequestLoggerMiddleware(db *gorm.DB) gin.HandlerFunc {
 			Matched:         toBool(matched),
 		}
 
-		// Save to database
-		if err := db.Create(logEntry).Error; err == nil {
-			// Notify log subscribers if log service is available
-			handler.EnsureLogService()
-			if ls := handler.LogService(); ls != nil {
-				ls.NotifySubscribers(*logEntry)
+		handler.EnsureLogService()
+		if ls := handler.LogService(); ls != nil {
+			ls.NotifySubscribers(*logEntry)
+		}
+
+		// Check if auto-save is enabled
+		autoSaveEnabled, err := systemConfig.GetSystemConfigWithType[bool](systemConfig.AUTO_SAVE_LOGS_IN_DB_ENABLED)
+		if err != nil {
+			log.Error().Err(err).Msg("Failed to get AUTO_SAVE_LOGS_IN_DB_ENABLED config")
+			return
+		}
+
+		if autoSaveEnabled {
+			// Save to database
+			if err := db.Create(logEntry).Error; err != nil {
+				// Log error if saving to DB fails
+				log.Error().Err(err).
+					Str("project_id", toString(projectID)).
+					Msg("Failed to save request log to database")
 			}
 		}
 	}
