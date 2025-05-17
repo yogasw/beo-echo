@@ -10,7 +10,8 @@ const (
 	FEATURE_SHOW_PASSWORD_REQUIREMENTS = "FEATURE_SHOW_PASSWORD_REQUIREMENTS"
 	FEATURE_EMAIL_UPDATES_ENABLED      = "FEATURE_EMAIL_UPDATES_ENABLED"
 	FEATURE_REGISTER_EMAIL_ENABLED     = "FEATURE_REGISTER_EMAIL_ENABLED"
-	AUTO_SAVE_LOGS_IN_DB_ENABLED       = "AUTO_SAVE_LOGS_IN_DB_ENABLED" // Enable auto-saving of logs
+
+	AUTO_SAVE_LOGS_IN_DB_ENABLED = "AUTO_SAVE_LOGS_IN_DB_ENABLED" // Enable auto-saving of logs
 )
 
 // DefaultConfigSettings contains all system configuration settings with metadata
@@ -47,6 +48,12 @@ var DefaultConfigSettings = map[SystemConfigKey]ConfigSetting{
 		Value:       "false",
 		Description: "Enable email registration confirmation",
 		Category:    "Features",
+	},
+	AUTO_SAVE_LOGS_IN_DB_ENABLED: {
+		Type:        TypeBoolean,
+		Value:       "false",
+		Description: "Automatically persist request logs to database (may affect performance)",
+		Category:    "Logging",
 	},
 }
 

@@ -1,12 +1,13 @@
 package scripts
 
 import (
+	"beo-echo/backend/src/database"
 	"beo-echo/backend/src/utils"
 	"context"
 	"fmt"
 	"testing"
 
-	"github.com/stretchr/testify/require"
+	"github.com/stretchr/testify/assert"
 )
 
 var sampleConfigs = []Config{
@@ -21,9 +22,21 @@ func TestGenerateSingleConfigFromText(t *testing.T) {
 		utils.CleanupTestFolders()
 	})
 
+	// init db for test
+	errDB := database.CheckAndHandle()
+	assert.NoError(t, errDB)
+
+	// Initialize main config
+	errInit := InitCaddyConfig(ctx)
+	if errInit != nil {
+		fmt.Println("Error initializing Caddy config:", errInit)
+	}
+	assert.NoError(t, errInit)
+
 	err := GenerateSingleConfigFromText(ctx, sampleConfigs)
 	if err != nil {
 		fmt.Println("Error generating config:", err)
 	}
-	require.NoError(t, err)
+	require := assert.New(t)
+	require.NoError(err)
 }
