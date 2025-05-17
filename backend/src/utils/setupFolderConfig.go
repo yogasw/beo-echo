@@ -47,3 +47,7 @@ func SetupFolderConfigForTest() {
 	lib.IS_TEST = true
 	EnsureRequiredFoldersAndEnv()
 }
+
+func CleanupTestFolders() {
+	os.RemoveAll(lib.CONFIGS_DIR)
+}

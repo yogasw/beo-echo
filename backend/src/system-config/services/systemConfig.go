@@ -226,10 +226,10 @@ func GetFeatureFlags() (map[string]bool, error) {
 }
 
 // SetConfigByID updates a system configuration by its ID
-func SetConfigByID(id int, key, value, description string) (*database.SystemConfig, error) {
+func SetConfigByID(id, key, value, description string) (*database.SystemConfig, error) {
 	var config database.SystemConfig
-	if err := database.DB.First(&config, id).Error; err != nil {
-		return nil, fmt.Errorf("config with ID %d not found: %w", id, err)
+	if err := database.DB.Where("id = ?", id).First(&config).Error; err != nil {
+		return nil, fmt.Errorf("config with ID %v not found: %w", id, err)
 	}
 
 	config.Key = key
