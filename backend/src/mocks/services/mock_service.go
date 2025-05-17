@@ -13,8 +13,8 @@ import (
 	"strings"
 	"time"
 
-	"mockoon-control-panel/backend_new/src/database"
-	"mockoon-control-panel/backend_new/src/mocks/repositories"
+	"beo-echo/backend/src/database"
+	"beo-echo/backend/src/mocks/repositories"
 )
 
 // MockService handles mock response logic

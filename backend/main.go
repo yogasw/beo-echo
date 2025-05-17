@@ -4,7 +4,7 @@ import (
 	"log"
 	"os"
 
-	"mockoon-control-panel/backend_new/cmd"
+	"beo-echo/backend/cmd"
 )
 
 func main() {

@@ -6,8 +6,8 @@ import (
 
 	"github.com/gin-gonic/gin"
 
-	"mockoon-control-panel/backend_new/src/database"
-	"mockoon-control-panel/backend_new/src/system-config/services"
+	"beo-echo/backend/src/database"
+	"beo-echo/backend/src/system-config/services"
 )
 
 // GetSystemConfigHandler returns a specific system configuration by key

@@ -5,7 +5,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"mockoon-control-panel/backend_new/src/lib"
+	"beo-echo/backend/src/lib"
 
 	"github.com/stretchr/testify/assert"
 )

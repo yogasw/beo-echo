@@ -6,7 +6,7 @@ import (
 	"os"
 	"time"
 
-	"mockoon-control-panel/backend_new/src/database"
+	"beo-echo/backend/src/database"
 
 	"github.com/golang-jwt/jwt/v5"
 )

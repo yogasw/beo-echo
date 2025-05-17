@@ -11,20 +11,20 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
 
-	"mockoon-control-panel/backend_new/src/database"
-	"mockoon-control-panel/backend_new/src/health"
-	"mockoon-control-panel/backend_new/src/lib"
-	"mockoon-control-panel/backend_new/src/middlewares"
-	"mockoon-control-panel/backend_new/src/mocks/handler"
-	"mockoon-control-panel/backend_new/src/mocks/handler/endpoint"
-	"mockoon-control-panel/backend_new/src/mocks/handler/project"
-	"mockoon-control-panel/backend_new/src/mocks/handler/proxy"
-	"mockoon-control-panel/backend_new/src/mocks/handler/response"
-	"mockoon-control-panel/backend_new/src/utils"
+	"beo-echo/backend/src/database"
+	"beo-echo/backend/src/health"
+	"beo-echo/backend/src/lib"
+	"beo-echo/backend/src/middlewares"
+	"beo-echo/backend/src/mocks/handler"
+	"beo-echo/backend/src/mocks/handler/endpoint"
+	"beo-echo/backend/src/mocks/handler/project"
+	"beo-echo/backend/src/mocks/handler/proxy"
+	"beo-echo/backend/src/mocks/handler/response"
+	"beo-echo/backend/src/utils"
 
 	// New imports for auth and workspace management
-	authHandler "mockoon-control-panel/backend_new/src/auth/handler"
-	systemConfigHandler "mockoon-control-panel/backend_new/src/system-config/handler"
+	authHandler "beo-echo/backend/src/auth/handler"
+	systemConfigHandler "beo-echo/backend/src/system-config/handler"
 )
 
 // SetupRouter creates and configures a new Gin router

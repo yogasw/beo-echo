@@ -7,9 +7,9 @@ import (
 	"github.com/joho/godotenv"
 	"github.com/spf13/cobra"
 
-	"mockoon-control-panel/backend_new/src"
-	"mockoon-control-panel/backend_new/src/database"
-	"mockoon-control-panel/backend_new/src/utils"
+	"beo-echo/backend/src"
+	"beo-echo/backend/src/database"
+	"beo-echo/backend/src/utils"
 )
 
 var port string

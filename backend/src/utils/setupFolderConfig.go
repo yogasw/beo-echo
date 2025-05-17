@@ -5,7 +5,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"mockoon-control-panel/backend_new/src/lib"
+	"beo-echo/backend/src/lib"
 )
 
 // EnsureRequiredFoldersAndEnv ensures that all required folders and environment variables exist

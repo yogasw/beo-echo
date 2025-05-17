@@ -4,7 +4,7 @@ import (
 	"testing"
 	"time"
 
-	"mockoon-control-panel/backend_new/src/database"
+	"beo-echo/backend/src/database"
 
 	"github.com/stretchr/testify/assert"
 )

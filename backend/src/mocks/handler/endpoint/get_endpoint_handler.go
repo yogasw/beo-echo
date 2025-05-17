@@ -5,8 +5,8 @@ import (
 
 	"github.com/gin-gonic/gin"
 
-	"mockoon-control-panel/backend_new/src/database"
-	"mockoon-control-panel/backend_new/src/mocks/handler"
+	"beo-echo/backend/src/database"
+	"beo-echo/backend/src/mocks/handler"
 )
 
 // GetEndpointHandler retrieves an endpoint by ID

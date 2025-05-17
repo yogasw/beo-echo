@@ -8,7 +8,7 @@ import (
 	"strconv"
 	"strings"
 
-	"mockoon-control-panel/backend_new/src/database"
+	"beo-echo/backend/src/database"
 )
 
 // System configuration keys

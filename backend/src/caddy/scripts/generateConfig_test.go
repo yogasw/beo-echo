@@ -1,10 +1,10 @@
 package scripts
 
 import (
+	"beo-echo/backend/src/lib"
+	"beo-echo/backend/src/utils"
 	"context"
 	"fmt"
-	"mockoon-control-panel/backend_new/src/lib"
-	"mockoon-control-panel/backend_new/src/utils"
 	"os"
 	"testing"
 

@@ -1,12 +1,12 @@
 package middlewares
 
 import (
+	"beo-echo/backend/src/database"
+	"beo-echo/backend/src/mocks/handler"
 	"bytes"
 	"encoding/json"
 	"fmt"
 	"io"
-	"mockoon-control-panel/backend_new/src/database"
-	"mockoon-control-panel/backend_new/src/mocks/handler"
 	"strings"
 	"time"
 

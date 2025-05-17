@@ -4,8 +4,8 @@ import (
 	"net/http"
 	"strings"
 
-	"mockoon-control-panel/backend_new/src/auth"
-	"mockoon-control-panel/backend_new/src/database"
+	"beo-echo/backend/src/auth"
+	"beo-echo/backend/src/database"
 
 	"github.com/gin-gonic/gin"
 )

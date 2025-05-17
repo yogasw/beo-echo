@@ -6,9 +6,9 @@ import (
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
 
-	"mockoon-control-panel/backend_new/src/auth"
-	"mockoon-control-panel/backend_new/src/database"
-	"mockoon-control-panel/backend_new/src/system-config/services"
+	"beo-echo/backend/src/auth"
+	"beo-echo/backend/src/database"
+	"beo-echo/backend/src/system-config/services"
 )
 
 // LoginRequest represents the login form data

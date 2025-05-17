@@ -5,8 +5,8 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	"mockoon-control-panel/backend_new/src/database"
-	"mockoon-control-panel/backend_new/src/utils"
+	"beo-echo/backend/src/database"
+	"beo-echo/backend/src/utils"
 )
 
 // TestSystemConfigOperations tests the system config operations
