@@ -50,4 +50,5 @@ func SetupFolderConfigForTest() {
 
 func CleanupTestFolders() {
 	os.RemoveAll(lib.CONFIGS_DIR)
+	os.RemoveAll(lib.UPLOAD_DIR)
 }
