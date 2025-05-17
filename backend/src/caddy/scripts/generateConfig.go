@@ -4,6 +4,8 @@ import (
 	"bufio"
 	"context"
 	"fmt"
+	"mockoon-control-panel/backend_new/src/caddy/config"
+	"mockoon-control-panel/backend_new/src/lib"
 	"os"
 	"os/exec"
 	"strings"
@@ -100,19 +102,33 @@ func EnsureImportDynamicConf(ctx context.Context, mainConfigFile, dynamicImportP
 
 var caddyTemplate = `{{range .}}
 {{.Domain}} {
-  reverse_proxy http://{{.ProxyTarget}} {
-    rewrite * /{http.request.host.labels.3}{http.request.uri}
+  rewrite {
+    to /{http.request.host.labels.3}{http.request.uri}
   }
+
+  reverse_proxy http://{{.ProxyTarget}}
 }
 {{end}}`
 
 func GenerateSingleConfigFromText(
 	ctx context.Context,
-	outputPath,
-	mainConfigPath,
-	dynamicImportPath string,
 	configs []Config,
 ) error {
+	// setup
+	mainConfigStr := config.CADDY_DEFAULT_CONFIG
+	outputPath := lib.CANDY_DIR + "/Dynamic.conf"
+	dynamicImportPath := "./Dynamic.conf"
+	mainConfigPath := lib.CANDY_DIR + "/Caddyfile"
+
+	// check if main config file exists or not when not found create it
+	if _, err := os.Stat(mainConfigPath); os.IsNotExist(err) {
+		if err := os.WriteFile(mainConfigPath, []byte(mainConfigStr), 0644); err != nil {
+			log.Ctx(ctx).Error().Err(err).Str("file", mainConfigPath).Msg("failed to create main config file")
+			return fmt.Errorf("failed to create main config file: %w", err)
+		}
+		log.Ctx(ctx).Info().Str("file", mainConfigPath).Msg("main config file created")
+	}
+
 	// 1. Parse template string
 	tmpl, err := template.New("caddy").Parse(caddyTemplate)
 	if err != nil {
@@ -138,19 +154,19 @@ func GenerateSingleConfigFromText(
 	// 3. Validate dynamic config alone
 	if err := ValidateConfig(ctx, outputPath); err != nil {
 		os.Remove(outputPath)
-		return err
+		return fmt.Errorf("dynamic config validation failed: %w", err)
 	}
 
 	// 4. Ensure import into main config
 	if err := EnsureImportDynamicConf(ctx, mainConfigPath, dynamicImportPath); err != nil {
 		os.Remove(outputPath)
-		return err
+		return fmt.Errorf("ensure import into main config failed: %w", err)
 	}
 
 	// 5. Validate full config
 	if err := ValidateConfig(ctx, mainConfigPath); err != nil {
 		os.Remove(outputPath)
-		return err
+		return fmt.Errorf("full config validation failed: %w", err)
 	}
 
 	log.Ctx(ctx).Info().
