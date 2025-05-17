@@ -1,11 +1,11 @@
 package scripts
 
 import (
+	"beo-echo/backend/src/caddy/config"
+	"beo-echo/backend/src/lib"
 	"bufio"
 	"context"
 	"fmt"
-	"beo-echo/backend/src/caddy/config"
-	"beo-echo/backend/src/lib"
 	"os"
 	"os/exec"
 	"strings"
