@@ -8,7 +8,7 @@ import (
 
 	"mockoon-control-panel/backend_new/src/auth"
 	"mockoon-control-panel/backend_new/src/database"
-	"mockoon-control-panel/backend_new/src/utils"
+	"mockoon-control-panel/backend_new/src/system-config/services"
 )
 
 // LoginRequest represents the login form data
@@ -98,7 +98,7 @@ func RegisterHandler(c *gin.Context) {
 		return
 	}
 	//check feature flag
-	enable, err := utils.GetConfig[bool](utils.FEATURE_REGISTER_EMAIL_ENABLED)
+	enable, err := services.GetConfig[bool](services.FEATURE_REGISTER_EMAIL_ENABLED)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"success": false,

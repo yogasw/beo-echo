@@ -7,7 +7,7 @@ import (
 	"gorm.io/gorm"
 
 	"mockoon-control-panel/backend_new/src/database"
-	"mockoon-control-panel/backend_new/src/utils"
+	"mockoon-control-panel/backend_new/src/system-config/services"
 )
 
 // GetCurrentUserHandler returns the authenticated user's information
@@ -33,7 +33,7 @@ func GetCurrentUserHandler(c *gin.Context) {
 	}
 
 	// Get feature flags from system config
-	featureFlags, err := utils.GetFeatureFlags()
+	featureFlags, err := services.GetFeatureFlags()
 	if err != nil {
 		// Log the error but don't fail the request
 		featureFlags = make(map[string]bool)
@@ -261,7 +261,7 @@ func UpdateUserHandler(c *gin.Context) {
 	if currentUser.IsOwner {
 		emailUpdatesEnabled = true // Owners can always update email
 	} else {
-		emailUpdatesEnabled, err = utils.GetConfig[bool](utils.FeatureEmailUpdatesEnabled)
+		emailUpdatesEnabled, err = services.GetConfig[bool](services.FeatureEmailUpdatesEnabled)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{
 				"success": false,

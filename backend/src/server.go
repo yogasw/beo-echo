@@ -24,6 +24,7 @@ import (
 
 	// New imports for auth and workspace management
 	authHandler "mockoon-control-panel/backend_new/src/auth/handler"
+	systemConfigHandler "mockoon-control-panel/backend_new/src/system-config/handler"
 )
 
 // SetupRouter creates and configures a new Gin router
@@ -92,9 +93,9 @@ func SetupRouter() *gin.Engine {
 		ownerGroup := apiGroup.Group("")
 		ownerGroup.Use(middlewares.OwnerOnlyMiddleware())
 		{
-			apiGroup.GET("/system-config/:key", authHandler.GetSystemConfigHandler)
-			apiGroup.GET("/system-configs", authHandler.GetAllSystemConfigsHandler)
-			ownerGroup.PUT("/system-config/:key", authHandler.UpdateSystemConfigHandler)
+			apiGroup.GET("/system-config/:key", systemConfigHandler.GetSystemConfigHandler)
+			apiGroup.GET("/system-configs", systemConfigHandler.GetAllSystemConfigsHandler)
+			ownerGroup.PUT("/system-config/:key", systemConfigHandler.UpdateSystemConfigHandler)
 		}
 
 		// General workspace-related routes

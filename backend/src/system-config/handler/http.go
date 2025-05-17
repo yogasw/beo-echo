@@ -7,7 +7,7 @@ import (
 	"github.com/gin-gonic/gin"
 
 	"mockoon-control-panel/backend_new/src/database"
-	"mockoon-control-panel/backend_new/src/utils"
+	"mockoon-control-panel/backend_new/src/system-config/services"
 )
 
 // GetSystemConfigHandler returns a specific system configuration by key
@@ -48,7 +48,7 @@ func GetSystemConfigHandler(c *gin.Context) {
 	result := database.DB.Where("key = ?", key).First(&config)
 	if result.Error != nil {
 		// Try to get from default configs
-		for defaultKey := range utils.DefaultVariables {
+		for defaultKey := range services.DefaultVariables {
 			parts := strings.Split(defaultKey, ":")
 			if parts[0] == key {
 				configType := "string"
@@ -60,7 +60,7 @@ func GetSystemConfigHandler(c *gin.Context) {
 					"success": true,
 					"data": gin.H{
 						"key":         key,
-						"value":       utils.DefaultVariables[defaultKey],
+						"value":       services.DefaultVariables[defaultKey],
 						"type":        configType,
 						"description": "Default configuration",
 						"hide_value":  false,
@@ -111,8 +111,8 @@ func GetAllSystemConfigsHandler(c *gin.Context) {
 	isOwnerValue, exists := c.Get("isOwner")
 	isOwner := exists && isOwnerValue == true
 
-	// Get configs from utils
-	configs, err := utils.GetAllSystemConfigs()
+	// Get configs from services
+	configs, err := services.GetAllSystemConfigs()
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"success": false,
@@ -193,7 +193,7 @@ func UpdateSystemConfigHandler(c *gin.Context) {
 		}
 
 		// Use the utility function to create new config
-		newConfig, err := utils.AddConfig(key, req.Value, description, configType)
+		newConfig, err := services.AddConfig(key, req.Value, description, configType)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{
 				"success": false,
@@ -209,7 +209,7 @@ func UpdateSystemConfigHandler(c *gin.Context) {
 			keyWithType = key + ":" + config.Type
 		}
 
-		err := utils.SetSystemConfig(keyWithType, req.Value)
+		err := services.SetSystemConfig(keyWithType, req.Value)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{
 				"success": false,
