@@ -83,6 +83,7 @@ func RequestLoggerMiddleware(db *gorm.DB) gin.HandlerFunc {
 			LatencyMS:       int(latency),
 			ExecutionMode:   database.ProjectMode(toString(executionMode)),
 			Matched:         toBool(matched),
+			CreatedAt:       time.Now(),
 		}
 
 		entry, err := json.Marshal(logEntry)

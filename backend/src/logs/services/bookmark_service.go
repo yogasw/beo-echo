@@ -49,6 +49,8 @@ func (s *BookmarkService) AddBookmark(projectID string, logData string) error {
 		return errors.New("invalid log data: response hash is empty")
 	}
 
+	logHash := logInput.LogsHash
+
 	// verification jwt
 	claim, errV := auth.ValidateToken(logInput.LogsHash)
 	if errV != nil {
@@ -67,13 +69,13 @@ func (s *BookmarkService) AddBookmark(projectID string, logData string) error {
 		if md5Hash != claim.UserID {
 			return errors.New("invalid log data: response hash does not match")
 		}
+		logInput.LogsHash = logHash
 	}
 
 	var log database.RequestLog
 	result := s.db.Where("project_id = ? AND id = ?", projectID, logInput.ID).First(&log)
 	if result.Error != nil {
 		if errors.Is(result.Error, gorm.ErrRecordNotFound) {
-			logInput.ProjectID = projectID
 			logInput.Bookmark = true
 			if err := s.db.Create(&logInput).Error; err != nil {
 				return err
