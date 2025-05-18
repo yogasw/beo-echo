@@ -1,7 +1,9 @@
 package utils
 
 import (
+	"crypto/md5"
 	"crypto/rand"
+	"encoding/hex"
 	"math/big"
 )
 
@@ -18,4 +20,9 @@ func GenerateRandomString(length int) (string, error) {
 	}
 
 	return string(result), nil
+}
+
+func HashMD5(input string) string {
+	hash := md5.Sum([]byte(input))
+	return hex.EncodeToString(hash[:])
 }

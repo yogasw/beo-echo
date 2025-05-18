@@ -1,6 +1,7 @@
 <script lang="ts">
 	import {onDestroy } from 'svelte';
 	import type { Project, RequestLog } from '$lib/api/BeoApi';
+	import { addBookmark, deleteBookmark } from '$lib/api/BeoApi';
 	import { fade } from 'svelte/transition';
 	import ModalCreateMock from './logs/ModalCreateMock.svelte';
 	import * as ThemeUtils from '$lib/utils/themeUtils';
@@ -131,6 +132,38 @@
 		selectedLogForMock = log;
 		isCreateMockModalOpen = true;
 		console.log('Opening mock creation modal for log:', log.id);
+	}
+	
+	// Function to bookmark a log
+	async function bookmarkLog(log: RequestLog) {
+		try {
+			if (log.bookmark) {
+				// If already bookmarked, remove the bookmark
+				await deleteBookmark(selectedProject.id, log.id);
+				log.bookmark = false;
+				
+				copyNotification = { show: true, message: 'Bookmark removed successfully!' };
+			} else {
+				// Otherwise add a bookmark
+				await addBookmark(selectedProject.id, log);
+				// The log object is updated by the API function to set bookmark=true
+				
+				copyNotification = { show: true, message: 'Log bookmarked successfully!' };
+			}
+			
+			// Force Svelte reactivity to update the UI
+			logs.update(logs => [...logs]);
+			
+			setTimeout(() => {
+				copyNotification = { show: false, message: '' };
+			}, 2000);
+		} catch (err) {
+			console.error('Failed to update bookmark:', err);
+			copyNotification = { show: true, message: 'Failed to update bookmark' };
+			setTimeout(() => {
+				copyNotification = { show: false, message: '' };
+			}, 2000);
+		}
 	}
 
 	// Handle success after mock creation
@@ -407,9 +440,20 @@
 							</div>
 						</div>
 
-						<!-- Create Mock button row - only for unmatched requests -->
-						{#if !log.matched}
-							<div class="flex justify-end px-3 py-1 border-t theme-border-light">
+						<!-- Action buttons row -->
+						<div class="flex justify-end px-3 py-1 border-t theme-border-light">
+							<!-- Bookmark button -->
+							<button
+								class="{log.bookmark ? 'bg-yellow-600 hover:bg-yellow-700' : 'bg-gray-600 hover:bg-gray-700'} text-white py-1 px-3 rounded text-xs flex items-center transition-all duration-200 transform hover:scale-105 mr-2"
+								on:click|stopPropagation={() => bookmarkLog(log)}
+								title={log.bookmark ? "Remove from bookmarks" : "Add to bookmarks"}
+							>
+								<i class="fas {log.bookmark ? 'fa-bookmark' : 'fa-bookmark'} mr-1"></i> 
+								{log.bookmark ? 'Bookmarked' : 'Bookmark'}
+							</button>
+							
+							<!-- Create Mock button - only for unmatched requests -->
+							{#if !log.matched}
 								<button
 									class="bg-emerald-600 hover:bg-emerald-700 text-white py-1 px-3 rounded text-xs flex items-center transition-all duration-200 transform hover:scale-105"
 									on:click|stopPropagation={() => createMockFromLog(log)}
@@ -417,8 +461,8 @@
 								>
 									<i class="fas fa-magic mr-1"></i> Create Mock from this Request
 								</button>
-							</div>
-						{/if}
+							{/if}
+						</div>
 					</div>
 
 					<!-- Expanded details -->

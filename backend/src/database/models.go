@@ -170,8 +170,8 @@ type RequestLog struct {
 	ResponseBody    string `gorm:"type:text" json:"response_body"`      // Raw response body
 	ResponseHeaders string `gorm:"type:text" json:"response_headers"`   // Response headers as array of key-value pairs
 	LatencyMS       int    `json:"latency_ms"`                          // Time taken to respond or delay applied (in milliseconds)
-	Bookmark        string `gorm:"type:string" json:"bookmark"`         // Optional bookmark for easy reference
-	ResponseHash    string `gorm:"type:string" json:"response_hash"`    // Hash of the response body for integrity checks + jwt signature
+	Bookmark        bool   `gorm:"type:bool" json:"bookmark"`           // Optional bookmark for easy reference
+	LogsHash        string `gorm:"type:string" json:"logs_hash"`        // Hash of the response body for integrity checks + jwt signature
 
 	// ExecutionMode indicates the handling logic used for this request.
 	// Values follow ProjectMode: "mock", "proxy", "forwarder", etc.

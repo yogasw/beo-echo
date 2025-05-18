@@ -6,9 +6,8 @@ import (
 	handlerLogs "beo-echo/backend/src/logs/handlers"
 	"beo-echo/backend/src/mocks/handler"
 	systemConfig "beo-echo/backend/src/systemConfigs"
+	"beo-echo/backend/src/utils"
 	"bytes"
-	"crypto/md5"
-	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -90,12 +89,12 @@ func RequestLoggerMiddleware(db *gorm.DB) gin.HandlerFunc {
 		if err != nil {
 			log.Error().Err(err).Msg("Failed to marshal log entry to JSON")
 		} else {
-			md5Hash := hashMD5(string(entry))
+			md5Hash := utils.HashMD5(string(entry))
 			logHash, errJwt := auth.GenerateJWTFromString(md5Hash)
 			if errJwt != nil {
 				log.Error().Err(errJwt).Msg("Failed to generate JWT from MD5 hash")
 			}
-			logEntry.ResponseHash = logHash
+			logEntry.LogsHash = logHash
 		}
 
 		handlerLogs.EnsureLogService()
@@ -147,9 +146,4 @@ func toBool(v interface{}) bool {
 		return b
 	}
 	return false
-}
-
-func hashMD5(input string) string {
-	hash := md5.Sum([]byte(input))
-	return hex.EncodeToString(hash[:])
 }

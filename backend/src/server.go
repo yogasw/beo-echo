@@ -147,6 +147,11 @@ func SetupRouter() *gin.Engine {
 				projectRoutes.GET("/logs", handlerLogs.GetLogsHandler)
 				projectRoutes.GET("/logs/stream", handlerLogs.StreamLogsHandler)
 
+				// Bookmark Logs management
+				projectRoutes.GET("/logs/bookmark", handlerLogs.GetBookmarksHandler)
+				projectRoutes.POST("/logs/bookmark", handlerLogs.AddBookmarkHandler)
+				projectRoutes.DELETE("/logs/bookmark/:bookmarkId", handlerLogs.DeleteBookmarkHandler)
+
 			}
 		}
 	}
