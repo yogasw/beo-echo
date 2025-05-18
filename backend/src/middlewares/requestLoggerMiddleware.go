@@ -3,6 +3,7 @@ package middlewares
 import (
 	"beo-echo/backend/src/auth"
 	"beo-echo/backend/src/database"
+	handlerLogs "beo-echo/backend/src/logs/handlers"
 	"beo-echo/backend/src/mocks/handler"
 	systemConfig "beo-echo/backend/src/systemConfigs"
 	"bytes"
@@ -97,8 +98,8 @@ func RequestLoggerMiddleware(db *gorm.DB) gin.HandlerFunc {
 			logEntry.ResponseHash = logHash
 		}
 
-		handler.EnsureLogService()
-		if ls := handler.LogService(); ls != nil {
+		handlerLogs.EnsureLogService()
+		if ls := handlerLogs.LogService(); ls != nil {
 			ls.NotifySubscribers(*logEntry)
 		}
 

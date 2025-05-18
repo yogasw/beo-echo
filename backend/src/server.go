@@ -26,6 +26,7 @@ import (
 
 	// New imports for auth and workspace management
 	authHandler "beo-echo/backend/src/auth/handler"
+	handlerLogs "beo-echo/backend/src/logs/handlers"
 	systemConfigHandler "beo-echo/backend/src/systemConfigs/handler"
 )
 
@@ -143,8 +144,9 @@ func SetupRouter() *gin.Engine {
 				projectRoutes.DELETE("/proxies/:proxyId", proxy.DeleteProxyTargetHandler)
 
 				// Request Logs management
-				projectRoutes.GET("/logs", handler.GetLogsHandler)
-				projectRoutes.GET("/logs/stream", handler.StreamLogsHandler)
+				projectRoutes.GET("/logs", handlerLogs.GetLogsHandler)
+				projectRoutes.GET("/logs/stream", handlerLogs.StreamLogsHandler)
+
 			}
 		}
 	}
@@ -180,7 +182,7 @@ func StartServer() error {
 	}
 
 	// Initialize services
-	handler.InitLogService()
+	handlerLogs.InitLogService()
 
 	router := SetupRouter()
 	// zero log context
