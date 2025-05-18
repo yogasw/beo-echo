@@ -211,16 +211,9 @@ jobs:
         run: |
           tempfile=$(mktemp)
           VERSION=v${{ steps.read_version.outputs.version }}
-          DATE=$(date +'%Y-%m-%d' 2>/dev/null || echo "")
-          
-          # Get Docker image tags
-          DOCKER_IMAGE="ghcr.io/${{ github.repository }}"
-          VERSIONED_IMAGE="$DOCKER_IMAGE:${{ steps.read_version.outputs.version }}"
-          LATEST_IMAGE="$DOCKER_IMAGE:latest"
-          echo "Release date: $DATE"
 
           echo "## $VERSION" >> $tempfile
-          echo "_Released on $DATE_" >> $tempfile
+          echo "_Released on $(date +'%Y-%m-%d')_" >> $tempfile
           echo "" >> $tempfile
           echo "${{ steps.ai_summary.outputs.summary }}" >> $tempfile
           echo "" >> $tempfile
