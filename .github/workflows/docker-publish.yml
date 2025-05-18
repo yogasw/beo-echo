@@ -125,19 +125,14 @@ jobs:
         with:
           script: |
             console.log("Fetching PR data...");
-            const { data: pulls } = await github.rest.pulls.list({
+            const { data: pr } = await github.rest.pulls.get({
               owner: context.repo.owner,
               repo: context.repo.repo,
-              state: "open",
-              sort: "updated",
-              direction: "desc",
-              base: "main",
-              per_page: 1
+              pull_number: context.issue.number
             });
             
-            const pr = pulls.find(pr => pr.merge_commit_sha === context.sha);
             if (!pr) {
-              core.setFailed("No matching merged PR found.");
+              core.setFailed("No matching PR found.");
               return;
             }
 
@@ -147,7 +142,7 @@ jobs:
             const commits = await github.rest.pulls.listCommits({
               owner: context.repo.owner,
               repo: context.repo.repo,
-              pull_number: pr.number
+              pull_number: context.issue.number
             });
 
             // Clean commit messages to prevent shell interpretation issues
@@ -254,27 +249,11 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v3
         
-      - name: Get PR number
+      - name: Set PR number from context
         id: pr_number
-        uses: actions/github-script@v6
-        with:
-          script: |
-            console.log("Fetching PR data...");
-            const { data: pulls } = await github.rest.pulls.list({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              state: "open",
-              base: "release",
-              head: `${context.repo.owner}:${context.ref.replace('refs/heads/', '')}`
-            });
-            
-            if (pulls.length === 0) {
-              core.setFailed("No matching open PR found.");
-              return;
-            }
-            
-            core.setOutput("pr_number", pulls[0].number);
-            console.log(`Found PR #${pulls[0].number}`);
+        run: |
+          echo "pr_number=${{ github.event.pull_request.number }}" >> $GITHUB_OUTPUT
+          echo "Found PR #${{ github.event.pull_request.number }}"
       
       - name: Auto Merge PR
         uses: actions/github-script@v6
