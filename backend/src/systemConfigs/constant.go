@@ -12,6 +12,8 @@ const (
 	FEATURE_REGISTER_EMAIL_ENABLED     = "FEATURE_REGISTER_EMAIL_ENABLED"
 
 	AUTO_SAVE_LOGS_IN_DB_ENABLED = "AUTO_SAVE_LOGS_IN_DB_ENABLED" // Enable auto-saving of logs
+
+	JWT_SECRET = "JWT_SECRET" // JWT secret for signing tokens
 )
 
 // DefaultConfigSettings contains all system configuration settings with metadata
@@ -54,6 +56,13 @@ var DefaultConfigSettings = map[SystemConfigKey]ConfigSetting{
 		Value:       "false",
 		Description: "Automatically persist request logs to database (may affect performance)",
 		Category:    "Logging",
+	},
+	JWT_SECRET: {
+		Type:        TypeString,
+		Value:       "",
+		Description: "JWT secret for signing tokens",
+		Category:    "Security",
+		HideValue:   true,
 	},
 }
 

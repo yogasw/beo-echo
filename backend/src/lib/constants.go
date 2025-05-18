@@ -12,6 +12,7 @@ var (
 	CONFIGS_DIR = filepath.Join(CURRENT_DIR(), "..", "configs")
 	UPLOAD_DIR  = filepath.Join(CURRENT_DIR(), "uploads")
 	CANDY_DIR   = filepath.Join(CONFIGS_DIR, "caddy")
+	JWT_SECRET  = getEnvOrDefault("JWT_SECRET", "")
 )
 
 // Server configuration
@@ -37,4 +38,12 @@ func CURRENT_DIR() string {
 		dir, _ := os.Getwd()
 		return dir
 	}
+}
+
+func GetJWTSecret() []byte {
+	return []byte(JWT_SECRET)
+}
+
+func SetJWTSecret(secret string) {
+	JWT_SECRET = secret
 }

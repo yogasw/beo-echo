@@ -9,6 +9,7 @@ import (
 
 	"beo-echo/backend/src"
 	"beo-echo/backend/src/database"
+	systemConfig "beo-echo/backend/src/systemConfigs"
 	"beo-echo/backend/src/utils"
 )
 
@@ -59,6 +60,12 @@ func runServer() error {
 	log.Println("✅ Database connected")
 
 	log.Println("🚀 All systems initialized, starting HTTP server...")
+
+	// Initialize default system configuration
+	// Initialize default system configuration
+	if err := systemConfig.InitializeDefaultConfig(); err != nil {
+		log.Printf("❌ Failed to initialize default system configuration: %v", err)
+	}
 
 	// Start the server (this will block until the server is stopped)
 	return src.StartServer()

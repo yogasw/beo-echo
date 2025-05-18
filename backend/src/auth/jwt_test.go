@@ -5,11 +5,13 @@ import (
 	"time"
 
 	"beo-echo/backend/src/database"
+	"beo-echo/backend/src/lib"
 
 	"github.com/stretchr/testify/assert"
 )
 
 func TestGenerateToken(t *testing.T) {
+	lib.SetJWTSecret("test_secret2")
 	// Mock user data
 	user := &database.User{
 		ID:    "123",
@@ -20,6 +22,7 @@ func TestGenerateToken(t *testing.T) {
 	token, err := GenerateToken(user)
 	assert.NoError(t, err, "Failed to generate token")
 	assert.NotEmpty(t, token, "Generated token is empty")
+	assert.Contains(t, string(lib.GetJWTSecret()), "test_secret2", "JWT secret does not contain expected value")
 }
 
 func TestValidateToken(t *testing.T) {
