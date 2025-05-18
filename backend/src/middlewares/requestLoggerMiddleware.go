@@ -1,10 +1,13 @@
 package middlewares
 
 import (
+	"beo-echo/backend/src/auth"
 	"beo-echo/backend/src/database"
 	"beo-echo/backend/src/mocks/handler"
 	systemConfig "beo-echo/backend/src/systemConfigs"
 	"bytes"
+	"crypto/md5"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -64,7 +67,8 @@ func RequestLoggerMiddleware(db *gorm.DB) gin.HandlerFunc {
 			return
 		}
 		id := uuid.New().String()
-		// Save log
+
+		// Save log with hashed JWTs
 		logEntry := &database.RequestLog{
 			ID:              id,
 			ProjectID:       toString(projectID),
@@ -79,6 +83,18 @@ func RequestLoggerMiddleware(db *gorm.DB) gin.HandlerFunc {
 			LatencyMS:       int(latency),
 			ExecutionMode:   database.ProjectMode(toString(executionMode)),
 			Matched:         toBool(matched),
+		}
+
+		entry, err := json.Marshal(logEntry)
+		if err != nil {
+			log.Error().Err(err).Msg("Failed to marshal log entry to JSON")
+		} else {
+			md5Hash := hashMD5(string(entry))
+			logHash, errJwt := auth.GenerateJWTFromString(md5Hash)
+			if errJwt != nil {
+				log.Error().Err(errJwt).Msg("Failed to generate JWT from MD5 hash")
+			}
+			logEntry.ResponseHash = logHash
 		}
 
 		handler.EnsureLogService()
@@ -130,4 +146,9 @@ func toBool(v interface{}) bool {
 		return b
 	}
 	return false
+}
+
+func hashMD5(input string) string {
+	hash := md5.Sum([]byte(input))
+	return hex.EncodeToString(hash[:])
 }

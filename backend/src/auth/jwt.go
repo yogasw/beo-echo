@@ -46,6 +46,32 @@ func GenerateToken(user *database.User) (string, error) {
 	return tokenString, nil
 }
 
+func GenerateJWTFromString(plainText string) (string, error) {
+	// Create the claims
+	claims := JWTClaims{
+		UserID: plainText,
+		Email:  "",
+		Name:   "",
+		RegisteredClaims: jwt.RegisteredClaims{
+			// Token expires in 24 hours
+			ExpiresAt: jwt.NewNumericDate(time.Now().Add(24 * time.Hour)),
+			IssuedAt:  jwt.NewNumericDate(time.Now()),
+			NotBefore: jwt.NewNumericDate(time.Now()),
+		},
+	}
+
+	// Create the token
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+
+	// Sign the token with our secret key
+	tokenString, err := token.SignedString(lib.GetJWTSecret())
+	if err != nil {
+		return "", err
+	}
+
+	return tokenString, nil
+}
+
 // ValidateToken validates the given token and returns the claims
 func ValidateToken(tokenString string) (*JWTClaims, error) {
 	// Parse and validate the token
