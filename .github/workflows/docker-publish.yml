@@ -7,8 +7,35 @@ on:
     types: [opened, synchronize, reopened]
 
 jobs:
+  check-source-branch:
+    name: Validate PR Source Branch
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+      
+      - name: Verify PR is from main branch
+        uses: actions/github-script@v6
+        with:
+          script: |
+            console.log("Checking PR source branch...");
+            const { data: pr } = await github.rest.pulls.get({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: context.issue.number
+            });
+            
+            if (pr.head.ref !== 'main') {
+              core.setFailed(`PR must be from the main branch, but was from: ${pr.head.ref}`);
+              process.exit(1);
+            }
+            
+            console.log("PR is from main branch. Proceeding with release.");
+  
   release-docker-image:
     name: Release Docker Image
+    needs: check-source-branch
     runs-on: ubuntu-latest
 
     permissions:
