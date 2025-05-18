@@ -227,13 +227,14 @@ jobs:
           mv $tempfile CHANGELOG.md
           cat CHANGELOG.md
 
-      - name: Commit and push CHANGELOG.md
-        run: |
-          git config user.name "${{ github.actor }}"
-          git config user.email "${{ github.actor }}@users.noreply.github.com"
-          git add CHANGELOG.md
-          git commit -m "Update CHANGELOG.md for v${{ steps.read_version.outputs.version }}"
-          git push origin release
+      - name: Create Pull Request to update CHANGELOG.md
+        uses: peter-evans/create-pull-request@v5
+        with:
+          commit-message: "chore: update CHANGELOG.md for v${{ steps.read_version.outputs.version }}"
+          title: "Update CHANGELOG.md for v${{ steps.read_version.outputs.version }}"
+          body: "This PR updates the changelog after release."
+          branch: changelog/update-${{ steps.read_version.outputs.version }}
+          base: main
 
   auto-merge-pr:
     name: Auto Merge PR
