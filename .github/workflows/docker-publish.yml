@@ -124,9 +124,10 @@ jobs:
             const { data: pulls } = await github.rest.pulls.list({
               owner: context.repo.owner,
               repo: context.repo.repo,
-              state: "closed",
+              state: "open",
               sort: "updated",
               direction: "desc",
+              base: "main",
               per_page: 5
             });
             
