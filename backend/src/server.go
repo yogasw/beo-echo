@@ -1,7 +1,7 @@
 package src
 
 import (
-	"log"
+	"context"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -10,20 +10,24 @@ import (
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
+	"github.com/rs/zerolog/log"
 
-	"mockoon-control-panel/backend_new/src/database"
-	"mockoon-control-panel/backend_new/src/health"
-	"mockoon-control-panel/backend_new/src/lib"
-	"mockoon-control-panel/backend_new/src/middlewares"
-	"mockoon-control-panel/backend_new/src/mocks/handler"
-	"mockoon-control-panel/backend_new/src/mocks/handler/endpoint"
-	"mockoon-control-panel/backend_new/src/mocks/handler/project"
-	"mockoon-control-panel/backend_new/src/mocks/handler/proxy"
-	"mockoon-control-panel/backend_new/src/mocks/handler/response"
-	"mockoon-control-panel/backend_new/src/utils"
+	"beo-echo/backend/src/caddy/scripts"
+	"beo-echo/backend/src/database"
+	"beo-echo/backend/src/health"
+	"beo-echo/backend/src/lib"
+	"beo-echo/backend/src/middlewares"
+	"beo-echo/backend/src/mocks/handler"
+	"beo-echo/backend/src/mocks/handler/endpoint"
+	"beo-echo/backend/src/mocks/handler/project"
+	"beo-echo/backend/src/mocks/handler/proxy"
+	"beo-echo/backend/src/mocks/handler/response"
+	"beo-echo/backend/src/utils"
 
 	// New imports for auth and workspace management
-	authHandler "mockoon-control-panel/backend_new/src/auth/handler"
+	authHandler "beo-echo/backend/src/auth/handler"
+	handlerLogs "beo-echo/backend/src/logs/handlers"
+	systemConfigHandler "beo-echo/backend/src/systemConfigs/handler"
 )
 
 // SetupRouter creates and configures a new Gin router
@@ -92,9 +96,9 @@ func SetupRouter() *gin.Engine {
 		ownerGroup := apiGroup.Group("")
 		ownerGroup.Use(middlewares.OwnerOnlyMiddleware())
 		{
-			apiGroup.GET("/system-config/:key", authHandler.GetSystemConfigHandler)
-			apiGroup.GET("/system-configs", authHandler.GetAllSystemConfigsHandler)
-			ownerGroup.PUT("/system-config/:key", authHandler.UpdateSystemConfigHandler)
+			apiGroup.GET("/system-config/:key", systemConfigHandler.GetSystemConfigHandler)
+			apiGroup.GET("/system-configs", systemConfigHandler.GetAllSystemConfigsHandler)
+			ownerGroup.PUT("/system-config/:key", systemConfigHandler.UpdateSystemConfigHandler)
 		}
 
 		// General workspace-related routes
@@ -140,8 +144,14 @@ func SetupRouter() *gin.Engine {
 				projectRoutes.DELETE("/proxies/:proxyId", proxy.DeleteProxyTargetHandler)
 
 				// Request Logs management
-				projectRoutes.GET("/logs", handler.GetLogsHandler)
-				projectRoutes.GET("/logs/stream", handler.StreamLogsHandler)
+				projectRoutes.GET("/logs", handlerLogs.GetLogsHandler)
+				projectRoutes.GET("/logs/stream", handlerLogs.StreamLogsHandler)
+
+				// Bookmark Logs management
+				projectRoutes.GET("/logs/bookmark", handlerLogs.GetBookmarksHandler)
+				projectRoutes.POST("/logs/bookmark", handlerLogs.AddBookmarkHandler)
+				projectRoutes.DELETE("/logs/bookmark/:bookmarkId", handlerLogs.DeleteBookmarkHandler)
+
 			}
 		}
 	}
@@ -163,23 +173,32 @@ func SetupRouter() *gin.Engine {
 func StartServer() error {
 	// Load environment variables from .env file
 	if err := godotenv.Load(filepath.Join("..", ".env")); err != nil {
-		log.Println("Warning: .env file not found or could not be loaded")
+		log.Info().Msgf("Warning: .env file not found or could not be loaded")
 	}
 
 	// Setup required directories
 	if err := utils.EnsureRequiredFoldersAndEnv(); err != nil {
-		log.Fatalf("Failed to setup required folders: %v", err)
+		log.Fatal().Msgf("Failed to setup required folders: %v", err)
 	}
 
 	// Setup database connection
 	if err := database.CheckAndHandle(); err != nil {
-		log.Fatalf("Failed to setup database: %v", err)
+		log.Fatal().Msgf("Failed to setup database: %v", err)
 	}
 
 	// Initialize services
-	handler.InitLogService()
+	handlerLogs.InitLogService()
 
 	router := SetupRouter()
+	// zero log context
+	ctxLog := log.With().
+		Str("script", "Candy Setup").
+		Logger().
+		WithContext(context.Background())
+
+	if err := scripts.InitCaddyConfig(ctxLog); err != nil {
+		log.Error().Msgf("Failed to initialize Caddy config: %v", err)
+	}
 
 	// Add request logging middleware
 	router.Use(func(c *gin.Context) {
@@ -188,23 +207,23 @@ func StartServer() error {
 
 		// Process request
 		c.Next()
-
-		// Log request details
-		log.Printf(
-			"[%s] %s %s %d %s",
-			c.Request.Method,
-			c.Request.URL.Path,
-			c.ClientIP(),
-			c.Writer.Status(),
-			time.Since(startTime),
-		)
+		log.Info().
+			// Log request details
+			Msgf(
+				"[%s] %s %s %d %s",
+				c.Request.Method,
+				c.Request.URL.Path,
+				c.ClientIP(),
+				c.Writer.Status(),
+				time.Since(startTime),
+			)
 	})
 
 	// Start the server
 	serverAddr := lib.SERVER_HOSTNAME + ":" + lib.SERVER_PORT
 
 	log.Printf("=================================================")
-	log.Printf("🚀 Mockoon Control Panel server is starting up!")
+	log.Printf("🚀 BeoEcho server is starting up!")
 	log.Printf("🔗 Server URL: http://%s", serverAddr)
 	log.Printf("📄 API endpoint: http://%s/mock/api", serverAddr)
 	log.Printf("🔍 Health check: http://%s/mock/api/health", serverAddr)

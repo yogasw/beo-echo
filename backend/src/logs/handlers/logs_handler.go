@@ -1,9 +1,9 @@
 package handler
 
 import (
-	"mockoon-control-panel/backend_new/src/database"
-	"mockoon-control-panel/backend_new/src/mocks/repositories"
-	"mockoon-control-panel/backend_new/src/mocks/services"
+	"beo-echo/backend/src/database"
+	"beo-echo/backend/src/logs/services"
+	"beo-echo/backend/src/mocks/repositories"
 	"net/http"
 	"strconv"
 	"sync"
@@ -116,24 +116,6 @@ func StreamLogsHandler(c *gin.Context) {
 		if err == nil {
 			if flusher, ok := c.Writer.(http.Flusher); ok && flusher != nil {
 				flusher.Flush()
-			}
-		}
-	}
-
-	// Send initial batch of logs (most recent 1 first)
-	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "1"))
-	initialLogs, err := logService.GetLatestLogs(limit, projectID)
-	if err == nil {
-		// Send initial logs from oldest to newest
-		for i := len(initialLogs) - 1; i >= 0; i-- {
-			sseData := services.FormatSSEEvent(initialLogs[i], "log")
-			if c.Writer != nil {
-				_, err := c.Writer.Write([]byte(sseData))
-				if err == nil {
-					if flusher, ok := c.Writer.(http.Flusher); ok && flusher != nil {
-						flusher.Flush()
-					}
-				}
 			}
 		}
 	}

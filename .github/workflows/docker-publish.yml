@@ -1,18 +1,51 @@
 name: Auto Docker Build
 
 on:
-  push:
+  pull_request:
     branches:
       - release
+    types: [opened, synchronize, reopened]
 
 jobs:
-  build-and-push:
+  check-source-branch:
+    name: Validate PR Source Branch
+    runs-on: ubuntu-latest
+    
+    permissions:
+      contents: read
+      pull-requests: read
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+      
+      - name: Verify PR is from main branch
+        uses: actions/github-script@v6
+        with:
+          script: |
+            console.log("Checking PR source branch...");
+            const { data: pr } = await github.rest.pulls.get({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: context.issue.number
+            });
+            
+            if (pr.head.ref !== 'main') {
+              core.setFailed(`PR must be from the main branch, but was from: ${pr.head.ref}`);
+              process.exit(1);
+            }
+            
+            console.log("PR is from main branch. Proceeding with release.");
+  
+  release-docker-image:
+    name: Release Docker Image
+    needs: check-source-branch
     runs-on: ubuntu-latest
 
     permissions:
       contents: write
       packages: write
-      pull-requests: read
+      pull-requests: write
 
     steps:
       - name: Checkout repository
@@ -61,13 +94,13 @@ jobs:
       # - name: Set up QEMU (for ARM emulation)
       #   uses: docker/setup-qemu-action@v3
 
-      # - name: Set up Docker Buildx
-      #   uses: docker/setup-buildx-action@v3
-      #   with:
-      #     buildkitd-flags: --debug
-      #     driver-opts: |
-      #       image=moby/buildkit:latest
-      #       network=host
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+        with:
+          buildkitd-flags: --debug
+          driver-opts: |
+            image=moby/buildkit:latest
+            network=host
 
       - name: Build and Push Multi-Arch Docker image
         uses: docker/build-push-action@v5
@@ -92,18 +125,14 @@ jobs:
         with:
           script: |
             console.log("Fetching PR data...");
-            const { data: pulls } = await github.rest.pulls.list({
+            const { data: pr } = await github.rest.pulls.get({
               owner: context.repo.owner,
               repo: context.repo.repo,
-              state: "closed",
-              sort: "updated",
-              direction: "desc",
-              per_page: 5
+              pull_number: context.issue.number
             });
             
-            const pr = pulls.find(pr => pr.merge_commit_sha === context.sha);
             if (!pr) {
-              core.setFailed("No matching merged PR found.");
+              core.setFailed("No matching PR found.");
               return;
             }
 
@@ -113,10 +142,19 @@ jobs:
             const commits = await github.rest.pulls.listCommits({
               owner: context.repo.owner,
               repo: context.repo.repo,
-              pull_number: pr.number
+              pull_number: context.issue.number
             });
 
-            const messages = commits.data.map(c => `- ${c.commit.message} (${c.commit.author.name})`);
+            // Clean commit messages to prevent shell interpretation issues
+            const messages = commits.data.map(c => {
+              // Sanitize commit message to remove or escape characters that could be interpreted as commands
+              const cleanMessage = c.commit.message
+                .replace(/`/g, "'")             // Replace backticks with single quotes
+                .replace(/\$/g, "")             // Remove dollar signs
+                .replace(/\\/g, "")             // Remove backslashes
+                .replace(/;/g, ",");            // Replace semicolons with commas
+              return `- ${cleanMessage} (${c.commit.author.name})`;
+            });
             core.setOutput("commit_log", messages.join('\\n'));
 
 
@@ -126,7 +164,10 @@ jobs:
           VERSION=v${{ steps.read_version.outputs.version }}
           PR_TITLE="${{ steps.pr_data.outputs.title }}"
           PR_BODY="${{ steps.pr_data.outputs.body }}"
-          COMMITS="${{ steps.pr_data.outputs.commit_log }}"
+          
+          # Write commit logs to file to avoid shell interpretation issues
+          echo '${{ steps.pr_data.outputs.commit_log }}' > commit_log.txt
+          COMMITS=$(cat commit_log.txt)
 
           PROMPT=$(printf "Release version: %s\n\nPull Request: %s\n\nDescription:\n%s\n\nCommits:\n%s\n\nYou are an agent responsible for generating GitHub release summaries from pull request commits. Write the summary using only a numbered list under the relevant categories: New Features, Improvements, or Bug Fixes. Only include categories that are present based on the commit messages. Do not add any introductory sentences like \"This release includes...\" or \"In this version...\". Go straight to the list, and describe each item as specifically as possible based on the available commit details. Maintain a clear, professional tone appropriate for public changelogs." "$VERSION" "$PR_TITLE" "$PR_BODY" "$COMMITS")
           echo "Prompt: $PROMPT"
@@ -142,8 +183,8 @@ jobs:
           SUMMARY=$(echo "$RESPONSE" | jq -r '.candidates[0].content.parts[0].text')
           
           # Add Docker pull command information
-          DOCKER_PULL_CMD="docker pull ghcr.io/${{ github.repository }}:${{ steps.read_version.outputs.version }}"
-          DOCKER_PULL_LATEST="docker pull ghcr.io/${{ github.repository }}:latest"
+          DOCKER_PULL_CMD="`docker pull ghcr.io/${{ github.repository }}:${{ steps.read_version.outputs.version }}`"
+          DOCKER_PULL_LATEST="`docker pull ghcr.io/${{ github.repository }}:latest`"
           
           FULL_SUMMARY="$SUMMARY\n\n### Docker Images\n\`\`\`bash\n$DOCKER_PULL_CMD\n$DOCKER_PULL_LATEST\n\`\`\`\n\n---\n*This summary was automatically generated by Gemini AI*"
           
@@ -185,11 +226,60 @@ jobs:
           [ -f CHANGELOG.md ] && cat CHANGELOG.md >> $tempfile
           mv $tempfile CHANGELOG.md
           cat CHANGELOG.md
+          rm commit_log.txt
 
-      - name: Commit and push CHANGELOG.md
+      - name: Create Pull Request to update CHANGELOG.md
+        uses: peter-evans/create-pull-request@v5
+        with:
+          commit-message: "chore: update CHANGELOG.md for v${{ steps.read_version.outputs.version }}"
+          title: "Update CHANGELOG.md for v${{ steps.read_version.outputs.version }}"
+          body: "This PR updates the changelog after release."
+          branch: changelog/update-${{ steps.read_version.outputs.version }}
+          base: main
+
+  auto-merge-pr:
+    name: Auto Merge PR
+    needs: release-docker-image
+    runs-on: ubuntu-latest
+    if: success()
+    
+    permissions:
+      contents: write
+      pull-requests: write
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+        
+      - name: Set PR number from context
+        id: pr_number
         run: |
-          git config user.name "${{ github.actor }}"
-          git config user.email "${{ github.actor }}@users.noreply.github.com"
-          git add CHANGELOG.md
-          git commit -m "Update CHANGELOG.md for v${{ steps.read_version.outputs.version }}"
-          git push origin release
+          echo "pr_number=${{ github.event.pull_request.number }}" >> $GITHUB_OUTPUT
+          echo "Found PR #${{ github.event.pull_request.number }}"
+      
+      - name: Auto Merge PR Release
+        uses: actions/github-script@v6
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const pr_number = ${{ steps.pr_number.outputs.pr_number }};
+            if (!pr_number) {
+              core.setFailed("No PR number found");
+              return;
+            }
+            
+            console.log(`Attempting to merge PR #${pr_number}...`);
+            
+            try {
+              await github.rest.pulls.merge({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                pull_number: pr_number,
+                merge_method: 'merge',
+                commit_title: `[Automated] Merge PR #${pr_number} to release branch`,
+                commit_message: `Auto-merged after successful Docker image build`
+              });
+              console.log(`Successfully merged PR #${pr_number}`);
+            } catch (error) {
+              core.setFailed(`Failed to merge PR: ${error.message}`);
+            }

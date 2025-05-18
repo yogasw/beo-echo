@@ -1,22 +1,17 @@
 <script lang="ts">
-	import { onMount, onDestroy } from 'svelte';
-	import { createLogStream, getLogs, type Project, type RequestLog } from '$lib/api/BeoApi';
+	import {onDestroy } from 'svelte';
+	import type { Project, RequestLog } from '$lib/api/BeoApi';
+	import { addBookmark, deleteBookmark } from '$lib/api/BeoApi';
 	import { fade } from 'svelte/transition';
 	import ModalCreateMock from './logs/ModalCreateMock.svelte';
 	import * as ThemeUtils from '$lib/utils/themeUtils';
-	import { currentWorkspace } from '$lib/stores/workspace';
+	import { logs, logsConnectionStatus } from '$lib/stores/logs';
+	import {reconnectLogStream, refreshLogs } from '$lib/services/logsService';
 
 	export let selectedProject: Project;
 
-	let logs: RequestLog[] = [];
-	let isLoading = true;
-	let error: string | null = null;
 	let searchTerm = '';
-	let total = 0;
-	let page = 1;
 	const pageSize = 100;
-	let eventSource: EventSource | null = null;
-	let autoScroll = true;
 	// Map to track expanded logs
 	let expandedLogs: Record<string, boolean> = {};
 	// Map to track active tab (request/response)
@@ -99,8 +94,16 @@
 		.split(' ')
 		.filter((term) => term.trim() !== '');
 	$: filteredLogs = searchTerm
-		? logs.filter((log) => matchesAllSearchTerms(log, searchTerms))
-		: logs;
+		? $logs.filter((log) => matchesAllSearchTerms(log, searchTerms))
+		: $logs;
+	
+	// Update auto-scroll setting in store when changed
+	$: {
+		// When autoScroll changes from the UI, update the store
+		if ($logsConnectionStatus.autoScroll !== $logsConnectionStatus.autoScroll) {
+			$logsConnectionStatus.autoScroll = $logsConnectionStatus.autoScroll;
+		}
+	}
 
 	// Convert JSON string to object for display
 	function parseJson(jsonString: string): any {
@@ -121,108 +124,7 @@
 		}
 	}
 
-	async function loadInitialLogs() {
-		try {
-			if (!$currentWorkspace) {
-				throw new Error('No workspace selected');
-			}
-			
-			isLoading = true;
-			const result = await getLogs(1, pageSize, selectedProject.id);
-			logs = result.logs;
-			total = result.total;
-			isLoading = false;
-		} catch (err) {
-			console.error('Failed to load logs:', err);
-			error = 'Failed to load logs: ' + (err instanceof Error ? err.message : String(err));
-			isLoading = false;
-		}
-	}
-
-	function setupLogStream() {
-		// Close any existing connection
-		if (eventSource) {
-			eventSource.close();
-		}
-
-		if (!$currentWorkspace) {
-			console.error('Cannot setup log stream: No workspace selected');
-			return;
-		}
-
-		console.log('Setting up log stream for project:', selectedProject.id, 'in workspace:', $currentWorkspace.id);
-
-		// Create new connection
-		eventSource = createLogStream(selectedProject.id, pageSize);
-
-		// Setup event handlers
-		eventSource.addEventListener('log', (event) => {
-			try {
-				console.log('Log event received:', event.data);
-				const newLog = JSON.parse(event.data);
-
-				// Check if log already exists to prevent duplicates
-				if (!logs.some((log) => log.id === newLog.id)) {
-					// Add to beginning of array (newest first) and force Svelte reactivity
-					logs = [newLog, ...logs].slice(0, 1000); // Limit to 1000 logs to prevent browser slowdown
-					console.log('Added new log, total logs:', logs.length);
-
-					// Auto-scroll to top if enabled
-					if (autoScroll) {
-						window.scrollTo(0, 0);
-					}
-				}
-			} catch (err) {
-				console.error('Error processing log event:', err, event.data);
-			}
-		});
-
-		// Direct message event (fallback)
-		eventSource.onmessage = (event) => {
-			console.log('Generic message received:', event.data);
-			try {
-				const newLog = JSON.parse(event.data);
-				if (newLog && newLog.id && !logs.some((log) => log.id === newLog.id)) {
-					logs = [newLog, ...logs].slice(0, 1000);
-				}
-			} catch (err) {
-				console.error('Error processing generic message:', err);
-			}
-		};
-
-		eventSource.addEventListener('ping', (event) => {
-			// Keep connection alive, no action needed
-			console.log('Ping received from server:', event.data);
-			isConnected = true;
-			reconnectAttempts = 0; // Reset reconnect counter on successful ping
-		});
-
-		eventSource.onopen = () => {
-			console.log('Log stream connection established');
-			isConnected = true;
-			reconnectAttempts = 0; // Reset reconnect counter on connection
-		};
-
-		eventSource.onerror = (err) => {
-			console.error('EventSource error:', err);
-			isConnected = false;
-
-			// Implement smart reconnection strategy with backoff
-			if (reconnectAttempts < MAX_RECONNECT_ATTEMPTS) {
-				reconnectAttempts++;
-				const delay = RECONNECT_DELAY_MS * reconnectAttempts; // Increase delay with each attempt
-				console.log(
-					`Attempting to reconnect log stream (attempt ${reconnectAttempts}/${MAX_RECONNECT_ATTEMPTS}) in ${delay}ms...`
-				);
-
-				setTimeout(() => {
-					setupLogStream();
-				}, delay);
-			} else {
-				console.error('Max reconnection attempts reached. Please refresh manually.');
-			}
-		};
-	}
+	// These functions have been moved to the logsService
 
 	// Function to create a mock from a log entry
 	function createMockFromLog(log: RequestLog) {
@@ -230,6 +132,38 @@
 		selectedLogForMock = log;
 		isCreateMockModalOpen = true;
 		console.log('Opening mock creation modal for log:', log.id);
+	}
+	
+	// Function to bookmark a log
+	async function bookmarkLog(log: RequestLog) {
+		try {
+			if (log.bookmark) {
+				// If already bookmarked, remove the bookmark
+				await deleteBookmark(selectedProject.id, log.id);
+				log.bookmark = false;
+				
+				copyNotification = { show: true, message: 'Bookmark removed successfully!' };
+			} else {
+				// Otherwise add a bookmark
+				await addBookmark(selectedProject.id, log);
+				// The log object is updated by the API function to set bookmark=true
+				
+				copyNotification = { show: true, message: 'Log bookmarked successfully!' };
+			}
+			
+			// Force Svelte reactivity to update the UI
+			logs.update(logs => [...logs]);
+			
+			setTimeout(() => {
+				copyNotification = { show: false, message: '' };
+			}, 2000);
+		} catch (err) {
+			console.error('Failed to update bookmark:', err);
+			copyNotification = { show: true, message: 'Failed to update bookmark' };
+			setTimeout(() => {
+				copyNotification = { show: false, message: '' };
+			}, 2000);
+		}
 	}
 
 	// Handle success after mock creation
@@ -240,24 +174,9 @@
 		}, 2000);
 	}
 
-	// Track connection status for UI feedback
-	let isConnected = false;
-	let reconnectAttempts = 0;
-	const MAX_RECONNECT_ATTEMPTS = 5;
-	const RECONNECT_DELAY_MS = 3000;
-
-	// Initialize on component mount
-	onMount(() => {
-		loadInitialLogs().then(() => {
-			setupLogStream();
-		});
-	});
-
 	// Clean up on component destroy
 	onDestroy(() => {
-		if (eventSource) {
-			eventSource.close();
-		}
+		// No cleanup needed as the closeLogStream is handled at the service level
 	});
 </script>
 
@@ -273,7 +192,7 @@
 		</div>
 	{/if}
 
-	{#if !isConnected && reconnectAttempts > 0}
+	{#if !$logsConnectionStatus.isConnected && $logsConnectionStatus.reconnectAttempts > 0}
 		<div
 			class="bg-red-100/30 dark:bg-red-900/30 border border-red-300 dark:border-red-700 p-2 rounded mb-4 flex items-center justify-between"
 		>
@@ -284,7 +203,7 @@
 			</div>
 			<button
 				class={ThemeUtils.primaryButton('py-1 px-3 text-sm')}
-				on:click={() => setupLogStream()}
+				on:click={() => reconnectLogStream()}
 			>
 				<i class="fas fa-sync mr-1"></i> Reconnect Stream
 			</button>
@@ -305,7 +224,7 @@
 				>
 					<!-- Stream status indicator -->
 					<span class="relative flex h-3 w-3 mr-2">
-						{#if isConnected}
+						{#if $logsConnectionStatus.isConnected}
 							<span
 								class="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"
 							></span>
@@ -314,8 +233,8 @@
 							<span class="relative inline-flex rounded-full h-3 w-3 bg-red-500"></span>
 						{/if}
 					</span>
-					<span class="text-xs font-medium {isConnected ? 'text-green-400' : 'text-red-400'}">
-						{isConnected ? 'Live' : 'Offline'}
+					<span class="text-xs font-medium {$logsConnectionStatus.isConnected ? 'text-green-400' : 'text-red-400'}">
+						{$logsConnectionStatus.isConnected ? 'Live' : 'Offline'}
 					</span>
 				</div>
 			</div>
@@ -324,7 +243,7 @@
 				<div class="flex items-center bg-gray-100/50 dark:bg-gray-900/50 px-3 py-1 rounded-full">
 					<span class="text-xs theme-text-secondary mr-2">Auto-scroll</span>
 					<label class="inline-flex items-center cursor-pointer">
-						<input type="checkbox" bind:checked={autoScroll} class="sr-only peer" />
+						<input type="checkbox" bind:checked={$logsConnectionStatus.autoScroll} class="sr-only peer" />
 						<div
 							class="relative w-9 h-5 bg-gray-300 dark:bg-gray-700 peer-checked:bg-blue-500 rounded-full peer peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-600 peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all"
 						></div>
@@ -333,12 +252,7 @@
 
 				<button
 					class={ThemeUtils.primaryButton('py-2 px-4 text-sm')}
-					on:click={() => {
-						loadInitialLogs();
-						if (!isConnected) {
-							setupLogStream(); // Also try to reconnect if disconnected
-						}
-					}}
+					on:click={() => refreshLogs()}
 				>
 					<i class="fas fa-sync mr-2"></i> Refresh Logs
 				</button>
@@ -358,14 +272,14 @@
 		</div>
 	</div>
 
-	{#if isLoading}
+	{#if $logsConnectionStatus.isLoading}
 		<div class="flex justify-center py-8">
 			<div class="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
 		</div>
-	{:else if error}
+	{:else if $logsConnectionStatus.error}
 		<div class="bg-red-100 dark:bg-red-800 p-4 rounded mb-4 text-center">
-			<p class="text-red-700 dark:text-white">{error}</p>
-			<button on:click={loadInitialLogs} class={ThemeUtils.primaryButton('mt-2 py-1 px-4 text-sm')}>
+			<p class="text-red-700 dark:text-white">{$logsConnectionStatus.error}</p>
+			<button on:click={() => refreshLogs()} class={ThemeUtils.primaryButton('mt-2 py-1 px-4 text-sm')}>
 				Retry
 			</button>
 		</div>
@@ -416,7 +330,7 @@
 					<!-- Live status -->
 					<div class="theme-bg-tertiary border theme-border rounded-md p-4 flex items-center">
 						<span class="relative flex h-3 w-3 mr-3">
-							{#if isConnected}
+							{#if $logsConnectionStatus.isConnected}
 								<span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
 								<span class="relative inline-flex rounded-full h-3 w-3 bg-green-500"></span>
 							{:else}
@@ -426,7 +340,7 @@
 						<div>
 							<h4 class="text-sm font-medium theme-text-primary">Live connection</h4>
 							<p class="text-xs theme-text-muted">
-								{isConnected ? 'Connected and ready for requests' : 'Currently offline'}
+								{$logsConnectionStatus.isConnected ? 'Connected and ready for requests' : 'Currently offline'}
 							</p>
 						</div>
 					</div>
@@ -526,9 +440,20 @@
 							</div>
 						</div>
 
-						<!-- Create Mock button row - only for unmatched requests -->
-						{#if !log.matched}
-							<div class="flex justify-end px-3 py-1 border-t theme-border-light">
+						<!-- Action buttons row -->
+						<div class="flex justify-end px-3 py-1 border-t theme-border-light">
+							<!-- Bookmark button -->
+							<button
+								class="{log.bookmark ? 'bg-yellow-600 hover:bg-yellow-700' : 'bg-gray-600 hover:bg-gray-700'} text-white py-1 px-3 rounded text-xs flex items-center transition-all duration-200 transform hover:scale-105 mr-2"
+								on:click|stopPropagation={() => bookmarkLog(log)}
+								title={log.bookmark ? "Remove from bookmarks" : "Add to bookmarks"}
+							>
+								<i class="fas {log.bookmark ? 'fa-bookmark' : 'fa-bookmark'} mr-1"></i> 
+								{log.bookmark ? 'Bookmarked' : 'Bookmark'}
+							</button>
+							
+							<!-- Create Mock button - only for unmatched requests -->
+							{#if !log.matched}
 								<button
 									class="bg-emerald-600 hover:bg-emerald-700 text-white py-1 px-3 rounded text-xs flex items-center transition-all duration-200 transform hover:scale-105"
 									on:click|stopPropagation={() => createMockFromLog(log)}
@@ -536,8 +461,8 @@
 								>
 									<i class="fas fa-magic mr-1"></i> Create Mock from this Request
 								</button>
-							</div>
-						{/if}
+							{/if}
+						</div>
 					</div>
 
 					<!-- Expanded details -->
@@ -803,9 +728,9 @@
 			{/each}
 		</div>
 
-		{#if filteredLogs.length < total}
+		{#if filteredLogs.length < $logsConnectionStatus.total}
 			<div class="mt-4 text-center">
-				<span class="text-xs text-gray-400">Showing {filteredLogs.length} of {total} logs</span>
+				<span class="text-xs text-gray-400">Showing {filteredLogs.length} of {$logsConnectionStatus.total} logs</span>
 			</div>
 		{/if}
 	{/if}

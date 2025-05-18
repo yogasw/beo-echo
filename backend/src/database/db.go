@@ -12,7 +12,7 @@ import (
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
 
-	"mockoon-control-panel/backend_new/src/lib"
+	"beo-echo/backend/src/lib"
 )
 
 var DB *gorm.DB

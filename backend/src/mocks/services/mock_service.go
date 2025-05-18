@@ -13,8 +13,8 @@ import (
 	"strings"
 	"time"
 
-	"mockoon-control-panel/backend_new/src/database"
-	"mockoon-control-panel/backend_new/src/mocks/repositories"
+	"beo-echo/backend/src/database"
+	"beo-echo/backend/src/mocks/repositories"
 )
 
 // MockService handles mock response logic
@@ -49,7 +49,7 @@ func (s *MockService) HandleRequest(alias, method, reqPath string, req *http.Req
 		resp, err, mode, matched := s.handleMockMode(project.ID, method, cleanPath, req)
 		return resp, err, project.ID, mode, matched
 	case database.ModeProxy:
-		resp, err, matched := s.handleProxyMode(project, req)
+		resp, err, matched := s.handleProxyMode(project, method, cleanPath, req)
 		return resp, err, project.ID, project.Mode, matched // Matched is true only if handled by a mock endpoint
 	case database.ModeForwarder:
 		resp, err := s.handleForwarderMode(project, method, cleanPath, req)
@@ -96,7 +96,7 @@ func (s *MockService) handleMockMode(projectID string, method, path string, req 
 }
 
 // handleProxyMode checks for mock endpoint first, if not found forwards the request to target
-func (s *MockService) handleProxyMode(project *database.Project, req *http.Request) (*http.Response, error, bool) {
+func (s *MockService) handleProxyMode(project *database.Project, method, path string, req *http.Request) (*http.Response, error, bool) {
 	if project.ActiveProxy == nil {
 		return createErrorResponse(http.StatusInternalServerError, "No proxy target configured"), nil, false
 	}
@@ -108,13 +108,8 @@ func (s *MockService) handleProxyMode(project *database.Project, req *http.Reque
 		}
 	}
 
-	// Extract path from request URL for endpoint matching
-	// Trim any project alias prefix if it exists
-	reqPath := req.URL.Path
-	cleanPath := strings.TrimPrefix(reqPath, "/"+project.Alias)
-
 	// First check if a mock endpoint exists for this request
-	endpoint, err := s.Repo.FindMatchingEndpoint(project.ID, req.Method, cleanPath)
+	endpoint, err := s.Repo.FindMatchingEndpoint(project.ID, method, path)
 	if err == nil {
 		// Found a matching endpoint, use the mock response
 		responses, err := s.Repo.FindResponsesByEndpointID(endpoint.ID)
@@ -138,7 +133,7 @@ func (s *MockService) handleProxyMode(project *database.Project, req *http.Reque
 	}
 
 	// No matching mock endpoint found or error occurred, forward to target
-	resp, err := executeProxyRequest(project.ActiveProxy.URL, req.Method, reqPath, req.URL.RawQuery, req)
+	resp, err := executeProxyRequest(project.ActiveProxy.URL, method, path, req.URL.RawQuery, req)
 	if err == nil && resp != nil && resp.Header != nil {
 		// Add header to indicate response was proxied
 		resp.Header.Set("beo-echo-response-type", "proxy")
@@ -222,7 +217,9 @@ func executeProxyRequest(targetURLString, method, pathStr, queryString string, r
 	// Copy all headers
 	for key, values := range req.Header {
 		for _, value := range values {
-			newReq.Header.Add(key, value)
+			if key != "Referer" {
+				newReq.Header.Add(key, value)
+			}
 		}
 	}
 

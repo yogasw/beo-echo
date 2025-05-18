@@ -6,7 +6,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
 
-	"mockoon-control-panel/backend_new/src/database"
+	"beo-echo/backend/src/database"
 )
 
 // GetUserWorkspacesHandler returns all workspaces accessible to the authenticated user

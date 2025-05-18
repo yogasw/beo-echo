@@ -9,12 +9,12 @@ import (
 )
 
 var rootCmd = &cobra.Command{
-	Use:   "mockoon-control-panel",
-	Short: "Mockoon Control Panel - Backend server",
-	Long: `Mockoon Control Panel is a backend server that provides API endpoints
-for managing Mockoon configurations and instances.`,
+	Use:   "BeoEcho",
+	Short: "BeoEcho - Backend server",
+	Long: `BeoEcho is a backend server that provides API endpoints
+for managing BeoEcho configurations and instances.`,
 	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Println("Starting Mockoon Control Panel server...")
+		fmt.Println("Starting BeoEcho server...")
 		fmt.Println("Use Ctrl+C to stop the server")
 		// By default, run the server
 		if err := serverCmd.RunE(cmd, args); err != nil {

@@ -3,9 +3,9 @@ package handler
 import (
 	"log"
 
-	"mockoon-control-panel/backend_new/src/database"
-	"mockoon-control-panel/backend_new/src/mocks/repositories"
-	"mockoon-control-panel/backend_new/src/mocks/services"
+	"beo-echo/backend/src/database"
+	"beo-echo/backend/src/mocks/repositories"
+	"beo-echo/backend/src/mocks/services"
 )
 
 // Gin context keys

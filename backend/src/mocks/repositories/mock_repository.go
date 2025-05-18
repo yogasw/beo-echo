@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"strings"
 
-	"mockoon-control-panel/backend_new/src/database"
+	"beo-echo/backend/src/database"
 
 	"gorm.io/gorm"
 )

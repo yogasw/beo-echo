@@ -50,6 +50,7 @@ export type RequestLog = {
 	latency_ms: number;
 	execution_mode: string;
 	matched: boolean;
+	bookmark?: boolean;
 	created_at: Date;
 }
 
@@ -562,5 +563,56 @@ export const isFeatureEnabled = async (key: string, defaultValue = false): Promi
   } catch (error) {
     console.warn(`Feature flag ${key} not found, using default: ${defaultValue}`);
     return defaultValue;
+  }
+};
+
+// Bookmark API functions
+
+/**
+ * Gets all bookmarks for a project
+ * @param projectId The project ID
+ * @returns Array of bookmarked logs
+ */
+export const getBookmarks = async (projectId: string): Promise<RequestLog[]> => {
+  const workspaceId = getCurrentWorkspaceId();
+  const response = await api.get(`/workspaces/${workspaceId}/projects/${projectId}/logs/bookmark`);
+  
+  if (!response.data.success) {
+    throw new Error(response.data.message || 'Failed to get bookmarks');
+  }
+  
+  return response.data.data;
+};
+
+/**
+ * Adds a log to bookmarks
+ * @param projectId The project ID
+ * @param log The log to bookmark
+ */
+export const addBookmark = async (projectId: string, log: RequestLog): Promise<void> => {
+  const workspaceId = getCurrentWorkspaceId();
+  const response = await api.post(`/workspaces/${workspaceId}/projects/${projectId}/logs/bookmark`, {
+    logs: JSON.stringify(log) // Send the full log object as a JSON string
+  });
+  
+  if (!response.data.success) {
+    throw new Error(response.data.message || 'Failed to add bookmark');
+  }
+  
+  // Update log object locally
+  log.bookmark = true;
+};
+
+/**
+ * Deletes a bookmark
+ * @param projectId The project ID
+ * @param logId The log ID to unbookmark
+ */
+export const deleteBookmark = async (projectId: string, logId: string): Promise<void> => {
+  const workspaceId = getCurrentWorkspaceId();
+  const response = await api.delete(`/workspaces/${workspaceId}/projects/${projectId}/logs/bookmark/${logId}`);
+  
+  if (!response.data.success) {
+    throw new Error(response.data.message || 'Failed to delete bookmark');
   }
 };

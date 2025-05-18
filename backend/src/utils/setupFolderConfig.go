@@ -5,7 +5,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"mockoon-control-panel/backend_new/src/lib"
+	"beo-echo/backend/src/lib"
 )
 
 // EnsureRequiredFoldersAndEnv ensures that all required folders and environment variables exist
@@ -14,6 +14,7 @@ func EnsureRequiredFoldersAndEnv() error {
 	directories := []string{
 		lib.CONFIGS_DIR,
 		lib.UPLOAD_DIR,
+		lib.CANDY_DIR,
 	}
 
 	for _, dir := range directories {
@@ -40,4 +41,14 @@ func EnsureRequiredFoldersAndEnv() error {
 // EnsureDirectoryExists creates a directory if it doesn't exist
 func EnsureDirectoryExists(dirPath string) error {
 	return os.MkdirAll(dirPath, os.ModePerm)
+}
+
+func SetupFolderConfigForTest() {
+	lib.IS_TEST = true
+	EnsureRequiredFoldersAndEnv()
+}
+
+func CleanupTestFolders() {
+	os.RemoveAll(lib.CONFIGS_DIR)
+	os.RemoveAll(lib.UPLOAD_DIR)
 }
