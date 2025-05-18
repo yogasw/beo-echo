@@ -87,7 +87,9 @@
 		try {
 			const fullConfig = await getProjectDetail(project.id);
 			selectedProject.set(project);
-			activeTab.set('routes');
+			// Disable switching tabs when click project
+			// activeTab.set('routes');
+			
 			// Reset endpoints update list when changing projects
 			resetEndpointsList();
 			dispatch('selectedProject', project);
