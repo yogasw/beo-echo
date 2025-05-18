@@ -1,4 +1,4 @@
-package handler
+package systemConfig
 
 import (
 	"net/http"
@@ -6,8 +6,8 @@ import (
 
 	"github.com/gin-gonic/gin"
 
-	"mockoon-control-panel/backend_new/src/database"
-	"mockoon-control-panel/backend_new/src/utils"
+	"beo-echo/backend/src/database"
+	systemConfig "beo-echo/backend/src/systemConfigs"
 )
 
 // GetSystemConfigHandler returns a specific system configuration by key
@@ -42,34 +42,8 @@ func GetSystemConfigHandler(c *gin.Context) {
 			return
 		}
 	}
-
-	// Find the config
-	var config database.SystemConfig
-	result := database.DB.Where("key = ?", key).First(&config)
-	if result.Error != nil {
-		// Try to get from default configs
-		for defaultKey := range utils.DefaultVariables {
-			parts := strings.Split(defaultKey, ":")
-			if parts[0] == key {
-				configType := "string"
-				if len(parts) > 1 {
-					configType = parts[1]
-				}
-
-				c.JSON(http.StatusOK, gin.H{
-					"success": true,
-					"data": gin.H{
-						"key":         key,
-						"value":       utils.DefaultVariables[defaultKey],
-						"type":        configType,
-						"description": "Default configuration",
-						"hide_value":  false,
-					},
-				})
-				return
-			}
-		}
-
+	config, err := systemConfig.GetConfigSetting(key)
+	if err != nil || config == nil {
 		c.JSON(http.StatusNotFound, gin.H{
 			"success": false,
 			"message": "Configuration not found",
@@ -77,7 +51,7 @@ func GetSystemConfigHandler(c *gin.Context) {
 		return
 	}
 
-	// Only return hideValue: true configs to owners
+	// Only return HideValue: true configs to owners
 	if config.HideValue {
 		isOwner, exists := c.Get("isOwner")
 		if !exists || isOwner != true {
@@ -111,8 +85,8 @@ func GetAllSystemConfigsHandler(c *gin.Context) {
 	isOwnerValue, exists := c.Get("isOwner")
 	isOwner := exists && isOwnerValue == true
 
-	// Get configs from utils
-	configs, err := utils.GetAllSystemConfigs()
+	// Get configs from services
+	configs, err := systemConfig.GetAllSystemConfigs()
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"success": false,
@@ -193,7 +167,7 @@ func UpdateSystemConfigHandler(c *gin.Context) {
 		}
 
 		// Use the utility function to create new config
-		newConfig, err := utils.AddConfig(key, req.Value, description, configType)
+		newConfig, err := systemConfig.AddConfig(key, req.Value, description, systemConfig.ConfigType(configType), false)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{
 				"success": false,
@@ -209,7 +183,7 @@ func UpdateSystemConfigHandler(c *gin.Context) {
 			keyWithType = key + ":" + config.Type
 		}
 
-		err := utils.SetSystemConfig(keyWithType, req.Value)
+		err := systemConfig.SetSystemConfig(keyWithType, req.Value)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{
 				"success": false,

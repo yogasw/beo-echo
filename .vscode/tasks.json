@@ -2,9 +2,9 @@
     "version": "2.0.0",
     "tasks": [
         {
-            "label": "Run Database Tests",
+            "label": "Run all Tests in Backend",
             "type": "shell",
-            "command": "cd ${workspaceFolder}/backend && go test -v ./src/database",
+            "command": "cd ${workspaceFolder}/backend && go test ./...",
             "group": {
                 "kind": "test",
                 "isDefault": true

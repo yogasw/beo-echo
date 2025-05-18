@@ -1,13 +1,14 @@
-{
+package config
+
+const CADDY_DEFAULT_CONFIG = `{
 	# Global Caddy settings
 	admin off
-	auto_https off
 }
 
 :80 {
 	# Log requests
 	log {
-		output file /app/logs/caddy-access.log
+		# output file /app/logs/caddy-access.log
 		format console
 	}
 
@@ -45,3 +46,4 @@
 		respond "{err.status_code} {err.status_text}"
 	}
 }
+`

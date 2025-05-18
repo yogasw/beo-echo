@@ -1,4 +1,4 @@
-export type ConfigMockoon = {
+export type ConfigBeoEcho = {
 	uuid: string;
 	lastMigration: number;
 	name: string;
@@ -7,21 +7,21 @@ export type ConfigMockoon = {
 	port: number;
 	hostname: string;
 	folders: any[];
-	routes: MockoonRoute[];
-	rootChildren: MockoonRootChild[];
+	routes: BeoEchoRoute[];
+	rootChildren: BeoEchoRootChild[];
 	proxyMode: boolean;
 	proxyHost: string;
 	proxyRemovePrefix: boolean;
-	tlsOptions: MockoonTLSOptions;
+	tlsOptions: BeoEchoTLSOptions;
 	cors: boolean;
-	headers: MockoonHeader[];
-	proxyReqHeaders: MockoonHeader[];
-	proxyResHeaders: MockoonHeader[];
+	headers: BeoEchoHeader[];
+	proxyReqHeaders: BeoEchoHeader[];
+	proxyResHeaders: BeoEchoHeader[];
 	data: any[];
-	callbacks: MockoonCallback[];
+	callbacks: BeoEchoCallback[];
 }
 
-export type MockoonCallback = {
+export type BeoEchoCallback = {
 	uuid: string;
 	id: string;
 	uri: string;
@@ -36,54 +36,54 @@ export type MockoonCallback = {
 	sendFileAsBody: boolean;
 }
 
-export type MockoonHeader = {
+export type BeoEchoHeader = {
 	key: string;
 	value: string;
 }
 
-export type MockoonRootChild = {
+export type BeoEchoRootChild = {
 	type: string;
 	uuid: string;
 }
 
-export type MockoonRoute = {
+export type BeoEchoRoute = {
 	uuid: string;
 	type: string;
 	documentation: string;
 	method: string;
 	endpoint: string;
-	responses: MockoonResponse[];
+	responses: BeoEchoResponse[];
 	responseMode: null;
 	//additional properties
 	status: string
 }
 
-export type MockoonResponse = {
+export type BeoEchoResponse = {
 	uuid: string;
 	body: string;
 	latency: number;
 	statusCode: number;
 	label: string;
-	headers: MockoonHeader[];
+	headers: BeoEchoHeader[];
 	bodyType: string;
 	filePath: string;
 	databucketID: string;
 	sendFileAsBody: boolean;
-	rules: MockoonRule[];
+	rules: BeoEchoRule[];
 	rulesOperator: string;
 	disableTemplating: boolean;
 	fallbackTo404: boolean;
 	default: boolean;
 	crudKey: string;
-	callbacks: MockoonResponseCallback[];
+	callbacks: BeoEchoResponseCallback[];
 }
 
-export type MockoonResponseCallback = {
+export type BeoEchoResponseCallback = {
 	uuid: string;
 	latency: number;
 }
 
-export type MockoonRule = {
+export type BeoEchoRule = {
 	target: string;
 	modifier: string;
 	value: string;
@@ -91,7 +91,7 @@ export type MockoonRule = {
 	operator: string;
 }
 
-export type MockoonTLSOptions = {
+export type BeoEchoTLSOptions = {
 	enabled: boolean;
 	type: string;
 	pfxPath: string;

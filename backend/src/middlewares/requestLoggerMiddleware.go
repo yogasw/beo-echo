@@ -1,16 +1,22 @@
 package middlewares
 
 import (
+	"beo-echo/backend/src/auth"
+	"beo-echo/backend/src/database"
+	handlerLogs "beo-echo/backend/src/logs/handlers"
+	"beo-echo/backend/src/mocks/handler"
+	systemConfig "beo-echo/backend/src/systemConfigs"
+	"beo-echo/backend/src/utils"
 	"bytes"
 	"encoding/json"
 	"fmt"
 	"io"
-	"mockoon-control-panel/backend_new/src/database"
-	"mockoon-control-panel/backend_new/src/mocks/handler"
 	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
+	"github.com/rs/zerolog/log"
 
 	"gorm.io/gorm"
 )
@@ -60,9 +66,11 @@ func RequestLoggerMiddleware(db *gorm.DB) gin.HandlerFunc {
 		if projectID == nil || projectID == "" || path == nil {
 			return
 		}
+		id := uuid.New().String()
 
-		// Save log
+		// Save log with hashed JWTs
 		logEntry := &database.RequestLog{
+			ID:              id,
 			ProjectID:       toString(projectID),
 			Method:          c.Request.Method,
 			Path:            toString(path),
@@ -75,14 +83,40 @@ func RequestLoggerMiddleware(db *gorm.DB) gin.HandlerFunc {
 			LatencyMS:       int(latency),
 			ExecutionMode:   database.ProjectMode(toString(executionMode)),
 			Matched:         toBool(matched),
+			CreatedAt:       time.Now(),
 		}
 
-		// Save to database
-		if err := db.Create(logEntry).Error; err == nil {
-			// Notify log subscribers if log service is available
-			handler.EnsureLogService()
-			if ls := handler.LogService(); ls != nil {
-				ls.NotifySubscribers(*logEntry)
+		entry, err := json.Marshal(logEntry)
+		if err != nil {
+			log.Error().Err(err).Msg("Failed to marshal log entry to JSON")
+		} else {
+			md5Hash := utils.HashMD5(string(entry))
+			logHash, errJwt := auth.GenerateJWTFromString(md5Hash)
+			if errJwt != nil {
+				log.Error().Err(errJwt).Msg("Failed to generate JWT from MD5 hash")
+			}
+			logEntry.LogsHash = logHash
+		}
+
+		handlerLogs.EnsureLogService()
+		if ls := handlerLogs.LogService(); ls != nil {
+			ls.NotifySubscribers(*logEntry)
+		}
+
+		// Check if auto-save is enabled
+		autoSaveEnabled, err := systemConfig.GetSystemConfigWithType[bool](systemConfig.AUTO_SAVE_LOGS_IN_DB_ENABLED)
+		if err != nil {
+			log.Error().Err(err).Msg("Failed to get AUTO_SAVE_LOGS_IN_DB_ENABLED config")
+			return
+		}
+
+		if autoSaveEnabled {
+			// Save to database
+			if err := db.Create(logEntry).Error; err != nil {
+				// Log error if saving to DB fails
+				log.Error().Err(err).
+					Str("project_id", toString(projectID)).
+					Msg("Failed to save request log to database")
 			}
 		}
 	}

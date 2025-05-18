@@ -17,22 +17,12 @@
 	import * as ThemeUtils from '$lib/utils/themeUtils';
 	import { currentWorkspace } from '$lib/stores/workspace';
 	import { isLoadingContentArea } from '$lib/stores/loadingContentArea';
-
-	interface Config {
-		uuid: string;
-		name: string;
-		configFile: string;
-		port: number;
-		url: string;
-		size: string;
-		modified: string;
-		inUse: boolean;
-	}
+	import { initializeLogsStream } from '$lib/services/logsService';
 
 	export let searchTerm = '';
 
 	const dispatch = createEventDispatcher<{
-		selectConfiguration: Project;
+		selectedProject: Project;
 	}>();
 
 	$: filteredConfigurations = $projects.filter((project) =>
@@ -92,13 +82,17 @@
 	async function handleConfigClick(project: Project) {
 		console.log('1. ConfigurationList - Clicked config:', project);
 		isLoadingContentArea.set(true);
+		initializeLogsStream(project.id, 100, project.id != $selectedProject?.id);
+
 		try {
 			const fullConfig = await getProjectDetail(project.id);
 			selectedProject.set(project);
-			activeTab.set('routes');
+			// Disable switching tabs when click project
+			// activeTab.set('routes');
+			
 			// Reset endpoints update list when changing projects
 			resetEndpointsList();
-			dispatch('selectConfiguration', project);
+			dispatch('selectedProject', project);
 			// Parse routes from config
 			// endpoints = fullConfig.endpoints;
 			fullConfig.url = project.url;
@@ -342,6 +336,7 @@
 			</div>
 		</div>
 	{/if}
+
 	<!-- Configuration List -->
 	<div class="flex-1 min-h-0 overflow-auto hide-scrollbar">
 		<div class="space-y-4">
@@ -360,12 +355,14 @@
 							{#if $selectedProject?.id === project.id}
 								<i class="fas fa-edit text-blue-500 mr-2"></i>
 							{/if}
-							<span class="truncate">{project.name}</span>
+							<span class="truncate" title={project.name}>
+								{project.name.length > 15 ? project.name.slice(0, 15) + '…' : project.name}
+							</span>
 						</h2>
 						<div class="flex items-center space-x-2">
-							<span class={ThemeUtils.badge('info', 'text-xs px-2 py-0.5 uppercase')}
-								>{project.mode}</span
-							>
+							<span class={ThemeUtils.badge('info', 'text-xs px-2 py-0.5 uppercase')}>
+								{project.mode}
+							</span>
 						</div>
 					</div>
 

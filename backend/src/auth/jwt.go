@@ -3,10 +3,10 @@ package auth
 import (
 	"errors"
 	"fmt"
-	"os"
 	"time"
 
-	"mockoon-control-panel/backend_new/src/database"
+	"beo-echo/backend/src/database"
+	"beo-echo/backend/src/lib"
 
 	"github.com/golang-jwt/jwt/v5"
 )
@@ -17,16 +17,6 @@ type JWTClaims struct {
 	Email  string `json:"email"`
 	Name   string `json:"name"`
 	jwt.RegisteredClaims
-}
-
-// Default JWT secret key - will be overridden by environment variable if available
-var jwtSecretKey = []byte("default_jwt_secret_key_change_in_production")
-
-func init() {
-	// Use environment variable for JWT secret if available
-	if secretKey := os.Getenv("JWT_SECRET"); secretKey != "" {
-		jwtSecretKey = []byte(secretKey)
-	}
 }
 
 // GenerateToken creates a new JWT token for the given user
@@ -48,7 +38,33 @@ func GenerateToken(user *database.User) (string, error) {
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 
 	// Sign the token with our secret key
-	tokenString, err := token.SignedString(jwtSecretKey)
+	tokenString, err := token.SignedString(lib.GetJWTSecret())
+	if err != nil {
+		return "", err
+	}
+
+	return tokenString, nil
+}
+
+func GenerateJWTFromString(plainText string) (string, error) {
+	// Create the claims
+	claims := JWTClaims{
+		UserID: plainText,
+		Email:  "",
+		Name:   "",
+		RegisteredClaims: jwt.RegisteredClaims{
+			// Token expires in 24 hours
+			ExpiresAt: jwt.NewNumericDate(time.Now().Add(24 * time.Hour)),
+			IssuedAt:  jwt.NewNumericDate(time.Now()),
+			NotBefore: jwt.NewNumericDate(time.Now()),
+		},
+	}
+
+	// Create the token
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+
+	// Sign the token with our secret key
+	tokenString, err := token.SignedString(lib.GetJWTSecret())
 	if err != nil {
 		return "", err
 	}
@@ -64,7 +80,7 @@ func ValidateToken(tokenString string) (*JWTClaims, error) {
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
 		}
-		return jwtSecretKey, nil
+		return lib.GetJWTSecret(), nil
 	})
 
 	if err != nil {

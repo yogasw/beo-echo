@@ -5,8 +5,8 @@ import (
 
 	"github.com/gin-gonic/gin"
 
-	"mockoon-control-panel/backend_new/src/database"
-	"mockoon-control-panel/backend_new/src/mocks/handler"
+	"beo-echo/backend/src/database"
+	"beo-echo/backend/src/mocks/handler"
 )
 
 /*
@@ -67,6 +67,14 @@ func UpdateProjectHandler(c *gin.Context) {
 	}
 
 	if updateData.Alias != nil {
+		if !handler.IsValidAlias(*updateData.Alias) {
+			c.JSON(http.StatusBadRequest, gin.H{
+				"error":   true,
+				"message": "Invalid alias format for project. Only alphanumeric characters, dashes and underscores are allowed",
+			})
+			return
+		}
+
 		existingProject.Alias = *updateData.Alias
 	}
 
