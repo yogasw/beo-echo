@@ -12,7 +12,7 @@ var (
 	CONFIGS_DIR = filepath.Join(CURRENT_DIR(), "..", "configs")
 	UPLOAD_DIR  = filepath.Join(CURRENT_DIR(), "uploads")
 	CANDY_DIR   = filepath.Join(CONFIGS_DIR, "caddy")
-	JWT_SECRET  = getEnvOrDefault("JWT_SECRET", "")
+	JWT_SECRET  = "" // ini from db or from env
 )
 
 // Server configuration
@@ -40,8 +40,14 @@ func CURRENT_DIR() string {
 	}
 }
 
+// when env JWT_SECRET is not set, it will be generated and saved in the database
 func GetJWTSecret() []byte {
-	return []byte(JWT_SECRET)
+	fromEnv := getEnvOrDefault("JWT_SECRET", "")
+	if fromEnv == "" {
+		return []byte(JWT_SECRET)
+	} else {
+		return []byte(fromEnv)
+	}
 }
 
 func SetJWTSecret(secret string) {
