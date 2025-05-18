@@ -257,7 +257,7 @@ jobs:
           echo "pr_number=${{ github.event.pull_request.number }}" >> $GITHUB_OUTPUT
           echo "Found PR #${{ github.event.pull_request.number }}"
       
-      - name: Auto Merge PR
+      - name: Auto Merge PR Release
         uses: actions/github-script@v6
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
