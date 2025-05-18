@@ -3,6 +3,7 @@ package services
 import (
 	"beo-echo/backend/src/auth"
 	"beo-echo/backend/src/database"
+	systemConfig "beo-echo/backend/src/systemConfigs"
 	"beo-echo/backend/src/utils"
 	"encoding/json"
 	"errors"
@@ -80,7 +81,6 @@ func (s *BookmarkService) AddBookmark(projectID string, logData string) error {
 		} else {
 			return result.Error
 		}
-		return result.Error
 	} else {
 		// Check if the log is already bookmarked
 		if log.Bookmark {
@@ -97,23 +97,46 @@ func (s *BookmarkService) AddBookmark(projectID string, logData string) error {
 }
 
 // DeleteBookmark removes a log from bookmarks
+// when auto save is enabled update only bookmark field
+// when auto save is disabled delete the log
+
 func (s *BookmarkService) DeleteBookmark(projectID string, logID string) error {
-	var log database.RequestLog
-	result := s.db.Where("project_id = ? AND id = ?", projectID, logID).First(&log)
-	if result.Error != nil {
-		if errors.Is(result.Error, gorm.ErrRecordNotFound) {
-			return errors.New("log not found")
-		}
-		return result.Error
-	}
-
-	if !log.Bookmark {
-		return errors.New("log is not bookmarked")
-	}
-
-	log.Bookmark = false
-	if err := s.db.Save(&log).Error; err != nil {
+	//check auto save is enabled or not
+	autoSave, err := systemConfig.GetSystemConfigWithType[bool](systemConfig.AUTO_SAVE_LOGS_IN_DB_ENABLED)
+	if err != nil {
+		log.Error().Err(err).Msg("Failed to get system config")
 		return err
 	}
-	return nil
+	if autoSave {
+		var log database.RequestLog
+		result := s.db.Where("project_id = ? AND id = ?", projectID, logID).First(&log)
+		if result.Error != nil {
+			if errors.Is(result.Error, gorm.ErrRecordNotFound) {
+				return errors.New("log not found")
+			}
+			return result.Error
+		}
+
+		if !log.Bookmark {
+			return errors.New("log is not bookmarked")
+		}
+
+		log.Bookmark = false
+		if err := s.db.Save(&log).Error; err != nil {
+			return err
+		}
+		return nil
+	} else {
+		result := s.db.Where("project_id = ? AND id = ?", projectID, logID).Delete(&database.RequestLog{})
+		if result.Error != nil {
+			if errors.Is(result.Error, gorm.ErrRecordNotFound) {
+				return errors.New("log not found")
+			}
+			return result.Error
+		}
+		if result.RowsAffected == 0 {
+			return errors.New("log not found")
+		}
+		return nil
+	}
 }
