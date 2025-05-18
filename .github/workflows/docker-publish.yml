@@ -45,7 +45,7 @@ jobs:
     permissions:
       contents: write
       packages: write
-      pull-requests: read
+      pull-requests: write
 
     steps:
       - name: Checkout repository
