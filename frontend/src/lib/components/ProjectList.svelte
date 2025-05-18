@@ -18,6 +18,7 @@
 	import { currentWorkspace } from '$lib/stores/workspace';
 	import { isLoadingContentArea } from '$lib/stores/loadingContentArea';
 	import { initializeLogsStream } from '$lib/services/logsService';
+	import { logStatus } from '$lib/stores/logStatus';
 
 	export let searchTerm = '';
 
@@ -81,15 +82,20 @@
 
 	async function handleConfigClick(project: Project) {
 		console.log('1. ConfigurationList - Clicked config:', project);
+		let isResetLogs = project.id != $selectedProject?.id;
+		if (isResetLogs) {
+			logStatus.reset();
+			initializeLogsStream(project.id, 100, isResetLogs);
+		}
+		
 		isLoadingContentArea.set(true);
-		initializeLogsStream(project.id, 100, project.id != $selectedProject?.id);
 
 		try {
 			const fullConfig = await getProjectDetail(project.id);
 			selectedProject.set(project);
 			// Disable switching tabs when click project
 			// activeTab.set('routes');
-			
+
 			// Reset endpoints update list when changing projects
 			resetEndpointsList();
 			dispatch('selectedProject', project);
