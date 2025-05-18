@@ -1,12 +1,14 @@
 name: Auto Docker Build
 
 on:
-  push:
+  pull_request:
     branches:
       - release
+    types: [opened, synchronize, reopened]
 
 jobs:
-  build-and-push:
+  release-docker-image:
+    name: Release Docker Image
     runs-on: ubuntu-latest
 
     permissions:
