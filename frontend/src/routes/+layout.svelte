@@ -17,7 +17,6 @@
 	import { projects } from '$lib/stores/configurations';
 	import Toast from '$lib/components/Toast.svelte';
 	import { isAuthenticated, auth } from '$lib/stores/auth';
-	import { initializeLogsStream } from '$lib/services/logsService';
 
 	let searchTerm = '';
 	let activeTab = 'routes';
