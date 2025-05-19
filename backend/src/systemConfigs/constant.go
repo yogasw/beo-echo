@@ -10,6 +10,7 @@ const (
 	FEATURE_SHOW_PASSWORD_REQUIREMENTS = "FEATURE_SHOW_PASSWORD_REQUIREMENTS"
 	FEATURE_EMAIL_UPDATES_ENABLED      = "FEATURE_EMAIL_UPDATES_ENABLED"
 	FEATURE_REGISTER_EMAIL_ENABLED     = "FEATURE_REGISTER_EMAIL_ENABLED"
+	FEATURE_OAUTH_AUTO_REGISTER        = "FEATURE_OAUTH_AUTO_REGISTER" // Controls whether new users can register through OAuth
 
 	AUTO_SAVE_LOGS_IN_DB_ENABLED = "AUTO_SAVE_LOGS_IN_DB_ENABLED" // Enable auto-saving of logs
 
@@ -49,6 +50,12 @@ var DefaultConfigSettings = map[SystemConfigKey]ConfigSetting{
 		Type:        TypeBoolean,
 		Value:       "true",
 		Description: "Enable email registration confirmation",
+		Category:    "Features",
+	},
+	FEATURE_OAUTH_AUTO_REGISTER: {
+		Type:        TypeBoolean,
+		Value:       "true",
+		Description: "Allow new users to register through OAuth providers. If disabled, only existing users can login",
 		Category:    "Features",
 	},
 	AUTO_SAVE_LOGS_IN_DB_ENABLED: {
