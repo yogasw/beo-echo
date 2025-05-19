@@ -28,7 +28,6 @@ _Released on
 1.  Migrated system configuration handling to a new  package and updated related handlers.
 2.  Improved dynamic config handling in tests.
 3.  Refactored module paths from  to .
-4.  Renamed project from Mockoon Control Panel to Beo Echo and updated related references.
 5.  Updated import paths in  to reflect project renaming.
 6.  Enhanced logging context in  and added default config creation in .
 7.  Streamlined main config file creation.
