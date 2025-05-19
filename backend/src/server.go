@@ -12,6 +12,8 @@ import (
 	"github.com/joho/godotenv"
 	"github.com/rs/zerolog/log"
 
+	authServices "beo-echo/backend/src/auth/services"
+
 	"beo-echo/backend/src/caddy/scripts"
 	"beo-echo/backend/src/database"
 	"beo-echo/backend/src/health"
@@ -80,17 +82,18 @@ func SetupRouter() *gin.Engine {
 	// Health check route
 	router.GET("/mock/api/health", health.HealthCheckHandler)
 
+	// Initialize OAuth service and handler
+	googleOAuthService := authServices.NewGoogleOAuthService(database.DB)
+	googleOAuthHandler := authHandler.NewGoogleOAuthHandler(googleOAuthService)
+
 	// Authentication routes
 	router.POST("/mock/api/auth/login", authHandler.LoginHandler)
+	router.GET("/mock/api/auth/google/callback", googleOAuthHandler.HandleCallback)
 
 	// Protected API routes group
 	apiGroup := router.Group("/mock/api")
 	apiGroup.Use(middlewares.JWTAuthMiddleware())
-	{ // User-related routes
-		apiGroup.GET("/auth/me", authHandler.GetCurrentUserHandler)
-		apiGroup.PATCH("/users/:userId", authHandler.UpdateUserHandler)
-		apiGroup.POST("/users/change-password", authHandler.UpdatePasswordHandler)
-
+	{
 		// Owner-only system configuration routes
 		ownerGroup := apiGroup.Group("")
 		ownerGroup.Use(middlewares.OwnerOnlyMiddleware())
@@ -98,7 +101,17 @@ func SetupRouter() *gin.Engine {
 			apiGroup.GET("/system-config/:key", systemConfigHandler.GetSystemConfigHandler)
 			apiGroup.GET("/system-configs", systemConfigHandler.GetAllSystemConfigsHandler)
 			ownerGroup.PUT("/system-config/:key", systemConfigHandler.UpdateSystemConfigHandler)
+
+			// Google OAuth Configuration Routes
+			ownerGroup.GET("/auth/google/config", googleOAuthHandler.GetConfig)
+			ownerGroup.PUT("/auth/google/config", googleOAuthHandler.UpdateConfig)
+			ownerGroup.PUT("/auth/google/state", googleOAuthHandler.UpdateState)
 		}
+
+		// User-related routes
+		apiGroup.GET("/auth/me", authHandler.GetCurrentUserHandler)
+		apiGroup.PATCH("/users/:userId", authHandler.UpdateUserHandler)
+		apiGroup.POST("/users/change-password", authHandler.UpdatePasswordHandler)
 
 		// General workspace-related routes
 		apiGroup.GET("/workspaces", authHandler.GetUserWorkspacesHandler)
