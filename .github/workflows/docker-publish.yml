@@ -285,7 +285,7 @@ jobs:
     if: success()
     
     permissions:
-      contents: write
+      contents: read
     
     steps:
       - name: Checkout repository
