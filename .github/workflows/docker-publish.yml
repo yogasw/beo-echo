@@ -277,3 +277,65 @@ jobs:
             } catch (error) {
               core.setFailed(`Failed to merge PR: ${error.message}`);
             }
+
+  create-public-release:
+    name: Create Public GitHub Release
+    needs: auto-merge-pr
+    runs-on: ubuntu-latest
+    if: success()
+    
+    permissions:
+      contents: write
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+        
+      - name: Read version from VERSION file
+        id: read_version
+        run: |
+          version=$(cat VERSION)
+          echo "Version: $version"
+          echo "version=$version" >> $GITHUB_OUTPUT
+      
+      - name: Checkout target public repository
+        uses: actions/checkout@v3
+        with:
+          repository: yogasw/beo-echo-release
+          token: ${{ secrets.PUBLIC_REPO_PAT }}
+          path: public-repo
+
+      - name: Copy release notes to public repo
+        run: |
+          cp CHANGELOG.md public-repo/
+          cd public-repo
+          
+          if [[ -z $(git status --porcelain) ]]; then
+            echo "No changes to commit"
+          else
+            git config user.name "${{ github.actor }}"
+            git config user.email "${{ github.actor }}@users.noreply.github.com"
+            git add CHANGELOG.md
+            git commit -m "Update changelog for v${{ steps.read_version.outputs.version }}"
+            git push
+          fi
+      
+      - name: Get Release Info
+        id: release_info
+        run: |
+          VERSION=v${{ steps.read_version.outputs.version }}
+          SUMMARY=$(grep -A 20 "^## $VERSION" CHANGELOG.md | sed '/^## /d' | sed -n '/^## /q;p')
+          echo "summary<<EOF" >> $GITHUB_OUTPUT
+          echo "$SUMMARY" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+      
+      - name: Create Public GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          token: ${{ secrets.PUBLIC_REPO_PAT }}
+          repository: yogasw/beo-echo-release
+          tag_name: v${{ steps.read_version.outputs.version }}
+          name: v${{ steps.read_version.outputs.version }}
+          body: ${{ steps.release_info.outputs.summary }}
+          draft: false
+          prerelease: false
