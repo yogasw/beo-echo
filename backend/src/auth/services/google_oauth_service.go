@@ -8,13 +8,10 @@ import (
 	"net/http"
 	"strings"
 
+	auth "beo-echo/backend/src/auth"
 	"beo-echo/backend/src/database"
-	"beo-echo/backend/src/lib"
 	systemConfig "beo-echo/backend/src/systemConfigs"
 
-	"time"
-
-	"github.com/dgrijalva/jwt-go"
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/google"
 	"gorm.io/gorm"
@@ -170,7 +167,7 @@ func (s *GoogleOAuthService) HandleOAuthCallback(code string) (*database.User, s
 	}
 
 	// 5. Generate JWT token
-	token, err := s.generateJWTToken(user)
+	token, err := auth.GenerateToken(user)
 	if err != nil {
 		return nil, "", fmt.Errorf("failed to generate JWT token: %w", err)
 	}
@@ -306,17 +303,4 @@ func (s *GoogleOAuthService) handleUserCreation(userInfo *GoogleUserInfo, access
 	}
 
 	return newUser, nil
-}
-
-func (s *GoogleOAuthService) generateJWTToken(user *database.User) (string, error) {
-	// You'll need to implement this based on your JWT generation logic
-	// Example:
-	token := jwt.New(jwt.SigningMethodHS256)
-	claims := token.Claims.(jwt.MapClaims)
-	claims["user_id"] = user.ID
-	claims["email"] = user.Email
-	claims["is_owner"] = user.IsOwner
-	claims["exp"] = time.Now().Add(time.Hour * 24).Unix()
-
-	return token.SignedString([]byte(lib.JWT_SECRET))
 }
