@@ -13,9 +13,7 @@
 
 	let email = '';
 	let password = '';
-	let name = '';
 	let error = '';
-	let isLogin = true;
 	let loading = false;
 	let showPassword = false;
 	let hasThirdPartyLogin = false; // This will be set based on API response
@@ -34,38 +32,21 @@
 		error = '';
 
 		try {
-			if (isLogin) {
-				// Login flow
-				if (email && password) {
-					if (browser) {
-						// New auth system
-						await auth.login(email, password);
-						await goto('/');
-						window.location.reload();
-					}
-				} else {
-					error = 'Please enter both email and password';
+			if (email && password) {
+				if (browser) {
+					// New auth system
+					await auth.login(email, password);
+					await goto('/');
+					window.location.reload();
 				}
 			} else {
-				// Registration flow
-				if (name && email && password) {
-					await auth.register(name, email, password);
-					await goto('/');
-				} else {
-					error = 'Please fill all fields';
-				}
+				error = 'Please enter both email and password';
 			}
 		} catch (err: any) {
 			error = err?.message || 'Authentication failed. Please try again.';
 		} finally {
 			loading = false;
 		}
-	}
-
-	// Toggle between login and registration
-	function toggleAuthMode() {
-		isLogin = !isLogin;
-		error = '';
 	}
 
 	// Toggle password visibility
@@ -103,38 +84,12 @@
 	<div class="w-full max-w-md p-8">
 		<div class="text-center mb-8">
 			<h1 class="text-4xl font-bold theme-text-primary mb-2">Beo Echo</h1>
-			<p class="theme-text-secondary">Login or register to your workspace</p>
+			<p class="theme-text-secondary">Sign in to your workspace</p>
 		</div>
 
 		<div class="theme-bg-primary rounded-lg theme-shadow p-8">
 			<form class="space-y-6" on:submit|preventDefault={handleLogin}>
 				<div class="space-y-4">
-					{#if !isLogin}
-						<!-- Name field for registration -->
-						<div>
-							<label for="name" class="block text-sm font-medium theme-text-secondary mb-1"
-								>Name</label
-							>
-							<div class="relative">
-								<div class="absolute inset-y-0 left-0 pl-3 flex items-center">
-									<span class="theme-text-muted">
-										<i class="fas fa-user"></i>
-									</span>
-								</div>
-								<input
-									id="name"
-									name="name"
-									type="text"
-									required={!isLogin}
-									bind:value={name}
-									disabled={loading}
-									class="w-full pl-10 px-4 py-3 theme-bg-secondary theme-border border rounded-lg theme-text-primary placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-colors"
-									placeholder="Full name"
-								/>
-							</div>
-						</div>
-					{/if}
-
 					<!-- Email field -->
 					<div>
 						<label for="email" class="block text-sm font-medium theme-text-secondary mb-1"
@@ -204,25 +159,12 @@
 
 				<Button
 					type="submit"
-					disabled={loading || (!isLogin && !name) || !email || !password}
+					disabled={loading || !email || !password}
 					loading={loading}
 					fullWidth
 				>
-					{isLogin ? 'Sign In' : 'Create Account'}
+					Sign In
 				</Button>
-
-				<!-- Toggle auth mode -->
-				{#if getFeatureToggle(FeatureFlags.FEATURE_REGISTER_EMAIL_ENABLED)}
-					<div class="text-center pt-2">
-						<button
-							type="button"
-							on:click={toggleAuthMode}
-							class="text-blue-400 hover:text-blue-300 text-sm"
-						>
-							{isLogin ? 'Need an account? Register' : 'Already have an account? Sign in'}
-						</button>
-					</div>
-				{/if}
 			</form>
 		</div>
 
