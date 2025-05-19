@@ -203,11 +203,15 @@
 
 				<button
 					type="submit"
-					disabled={loading}
-					class="w-full py-3 px-4 font-medium rounded-lg transition-colors duration-200 
-					dark:bg-blue-600 dark:hover:bg-blue-700 dark:text-white
-					bg-blue-500 hover:bg-blue-600 text-white
-					focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
+					disabled={loading || (!isLogin && !name) || !email || !password}
+					class="w-full flex items-center justify-center gap-2 p-3 rounded-lg border transition-colors duration-200
+					dark:bg-gray-800 dark:hover:bg-gray-700 dark:border-gray-600 dark:text-white
+					bg-white hover:bg-gray-50 border-gray-300 text-gray-700
+					disabled:bg-gray-100 dark:disabled:bg-gray-800/50
+					disabled:border-gray-200 dark:disabled:border-gray-700
+					disabled:text-gray-400 dark:disabled:text-gray-500
+					disabled:cursor-not-allowed
+					focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500"
 				>
 					{#if loading}
 						<span class="flex items-center justify-center">
@@ -269,9 +273,14 @@
 				type="button"
 				on:click={handleGoogleLogin}
 				class="w-full flex items-center justify-center gap-2 p-3 rounded-lg border transition-colors duration-200
-                     dark:bg-gray-700 dark:hover:bg-gray-600 dark:border-gray-600 dark:text-white
-                     bg-white hover:bg-gray-50 border-gray-200 text-gray-700
-                     focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                     dark:bg-gray-800 dark:hover:bg-gray-700 dark:border-gray-600 dark:text-white
+                     bg-white hover:bg-gray-50 border-gray-300 text-gray-700
+                     disabled:bg-gray-100 dark:disabled:bg-gray-800/50
+                     disabled:border-gray-200 dark:disabled:border-gray-700
+                     disabled:text-gray-400 dark:disabled:text-gray-500
+                     disabled:cursor-not-allowed
+                     focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500"
+                disabled={loading}
 			>
 				<img src="https://authjs.dev/img/providers/google.svg" alt="Google" class="w-5 h-5" />
 				<span>Continue with Google</span>
