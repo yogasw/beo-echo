@@ -73,8 +73,11 @@ Choose your preferred visual experience:
 ### 🔐 Login Page
 ![Login Page](./images/login.png)
 
-### 📊 Dashboard View
-![Dashboard](./images/dashboard.png)
+### 📊 Logs Tab
+![Logs Tab](./images/logs.png)
+
+### 🛣️ Routes Tab
+![Routes Tab](./images/routes.png)
 
 ---
 
@@ -179,17 +182,6 @@ Beo Echo uses a dual-approach theme system:
 This provides an elegant interface for users to switch between dark and light modes, with the selected preference persisted across sessions.
 
 ---
-
-## 🛠️ Recent Updates
-
-Based on recent commits:
-- Optimized frontend build process with memory limits
-- Removed Traefik configuration in favor of Caddy for simplified deployment
-- Enhanced log display with execution mode badges
-- Improved request handling to accurately reflect match status
-- Updated project mode descriptions for better clarity
-- Streamlined authentication process
-- Implemented consistent theming across components
 
 ---
 
