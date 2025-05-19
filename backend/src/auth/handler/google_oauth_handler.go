@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"fmt"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -79,7 +80,14 @@ func (h *GoogleOAuthHandler) HandleCallback(c *gin.Context) {
 		return
 	}
 
-	user, token, err := h.service.HandleOAuthCallback(code)
+	// Get scheme and host from request
+	scheme := "http"
+	if c.Request.TLS != nil || c.Request.Header.Get("X-Forwarded-Proto") == "https" {
+		scheme = "https"
+	}
+	baseURL := fmt.Sprintf("%s://%s", scheme, c.Request.Host)
+
+	_, token, err := h.service.HandleOAuthCallback(code, baseURL)
 	if err != nil {
 		if err.Error() == "auto-registration is disabled and user does not exist" {
 			// Redirect to login page with error message

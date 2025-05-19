@@ -142,9 +142,9 @@ type GoogleUserInfo struct {
 }
 
 // HandleOAuthCallback processes the OAuth callback flow
-func (s *GoogleOAuthService) HandleOAuthCallback(code string) (*database.User, string, error) {
+func (s *GoogleOAuthService) HandleOAuthCallback(code string, baseURL string) (*database.User, string, error) {
 	// 1. Exchange code for tokens
-	tokens, err := s.exchangeCodeForTokens(code)
+	tokens, err := s.exchangeCodeForTokens(code, baseURL)
 	if err != nil {
 		return nil, "", fmt.Errorf("failed to exchange code for tokens: %w", err)
 	}
@@ -177,7 +177,7 @@ func (s *GoogleOAuthService) HandleOAuthCallback(code string) (*database.User, s
 
 // Internal helper functions
 
-func (s *GoogleOAuthService) exchangeCodeForTokens(code string) (*oauth2.Token, error) {
+func (s *GoogleOAuthService) exchangeCodeForTokens(code string, baseURL string) (*oauth2.Token, error) {
 	config, err := s.GetConfig()
 	if err != nil {
 		return nil, err
@@ -186,7 +186,7 @@ func (s *GoogleOAuthService) exchangeCodeForTokens(code string) (*oauth2.Token, 
 	oauth2Config := &oauth2.Config{
 		ClientID:     config.ClientID,
 		ClientSecret: config.ClientSecret,
-		RedirectURL:  "http://localhost:8080/mock/api/auth/google/callback", // TODO: Make configurable
+		RedirectURL:  fmt.Sprintf("%s/mock/api/auth/google/callback", baseURL),
 		Scopes: []string{
 			"https://www.googleapis.com/auth/userinfo.email",
 			"https://www.googleapis.com/auth/userinfo.profile",
