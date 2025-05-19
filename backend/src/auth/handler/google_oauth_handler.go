@@ -71,7 +71,7 @@ func (h *GoogleOAuthHandler) UpdateState(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "Google OAuth state updated successfully"})
 }
 
-// HandleGoogleCallback handles OAuth callback from Google
+// HandleCallback handles OAuth callback from Google
 func (h *GoogleOAuthHandler) HandleCallback(c *gin.Context) {
 	code := c.Query("code")
 	if code == "" {
@@ -79,13 +79,27 @@ func (h *GoogleOAuthHandler) HandleCallback(c *gin.Context) {
 		return
 	}
 
-	// TODO: Implement OAuth flow completion
-	// 1. Exchange code for tokens
-	// 2. Get user info from Google
-	// 3. Validate email domain
-	// 4. Create/update user and identity
-	// 5. Generate JWT token
-	// 6. Return token or redirect with token
+	user, token, err := h.service.HandleOAuthCallback(code)
+	if err != nil {
+		if err.Error() == "auto-registration is disabled and user does not exist" {
+			// Redirect to login page with error message
+			c.Redirect(http.StatusTemporaryRedirect, "/login?error=registration_disabled")
+			return
+		}
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
 
-	c.JSON(http.StatusOK, gin.H{"message": "OAuth callback received"})
+	// Success! Set token in cookie and redirect to root path
+	c.SetCookie(
+		"jwt_token",
+		token,
+		86400, // 24 hours
+		"/",
+		"",   // domain
+		true, // secure
+		true, // httpOnly
+	)
+
+	c.Redirect(http.StatusTemporaryRedirect, "/")
 }

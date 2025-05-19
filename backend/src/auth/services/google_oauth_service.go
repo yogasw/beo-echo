@@ -1,13 +1,22 @@
 package services
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
+	"net/http"
 	"strings"
 
 	"beo-echo/backend/src/database"
+	"beo-echo/backend/src/lib"
+	systemConfig "beo-echo/backend/src/systemConfigs"
 
+	"time"
+
+	"github.com/dgrijalva/jwt-go"
+	"golang.org/x/oauth2"
+	"golang.org/x/oauth2/google"
 	"gorm.io/gorm"
 )
 
@@ -124,4 +133,190 @@ func (s *GoogleOAuthService) ValidateDomain(email string) (bool, error) {
 	}
 
 	return false, nil
+}
+
+// GoogleUserInfo represents user information from Google
+type GoogleUserInfo struct {
+	Sub           string `json:"sub"`
+	Email         string `json:"email"`
+	Name          string `json:"name"`
+	Picture       string `json:"picture"`
+	EmailVerified bool   `json:"email_verified"`
+}
+
+// HandleOAuthCallback processes the OAuth callback flow
+func (s *GoogleOAuthService) HandleOAuthCallback(code string) (*database.User, string, error) {
+	// 1. Exchange code for tokens
+	tokens, err := s.exchangeCodeForTokens(code)
+	if err != nil {
+		return nil, "", fmt.Errorf("failed to exchange code for tokens: %w", err)
+	}
+
+	// 2. Get user info
+	userInfo, err := s.fetchGoogleUserInfo(tokens.AccessToken)
+	if err != nil {
+		return nil, "", fmt.Errorf("failed to get user info: %w", err)
+	}
+
+	// 3. Validate domain
+	if err := s.validateUserDomain(userInfo.Email); err != nil {
+		return nil, "", err
+	}
+
+	// 4. Create/update user and identity with auto-register check
+	user, err := s.handleUserCreation(userInfo, tokens.AccessToken)
+	if err != nil {
+		return nil, "", fmt.Errorf("failed to handle user creation: %w", err)
+	}
+
+	// 5. Generate JWT token
+	token, err := s.generateJWTToken(user)
+	if err != nil {
+		return nil, "", fmt.Errorf("failed to generate JWT token: %w", err)
+	}
+
+	return user, token, nil
+}
+
+// Internal helper functions
+
+func (s *GoogleOAuthService) exchangeCodeForTokens(code string) (*oauth2.Token, error) {
+	config, err := s.GetConfig()
+	if err != nil {
+		return nil, err
+	}
+
+	oauth2Config := &oauth2.Config{
+		ClientID:     config.ClientID,
+		ClientSecret: config.ClientSecret,
+		RedirectURL:  "http://localhost:8080/mock/api/auth/google/callback", // TODO: Make configurable
+		Scopes: []string{
+			"https://www.googleapis.com/auth/userinfo.email",
+			"https://www.googleapis.com/auth/userinfo.profile",
+		},
+		Endpoint: google.Endpoint,
+	}
+
+	token, err := oauth2Config.Exchange(context.Background(), code)
+	if err != nil {
+		return nil, fmt.Errorf("failed to exchange code: %w", err)
+	}
+
+	return token, nil
+}
+
+func (s *GoogleOAuthService) fetchGoogleUserInfo(accessToken string) (*GoogleUserInfo, error) {
+	client := &http.Client{}
+	req, err := http.NewRequest("GET", "https://www.googleapis.com/oauth2/v3/userinfo", nil)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Set("Authorization", "Bearer "+accessToken)
+	resp, err := client.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("failed to get user info: %d", resp.StatusCode)
+	}
+
+	var userInfo GoogleUserInfo
+	if err := json.NewDecoder(resp.Body).Decode(&userInfo); err != nil {
+		return nil, err
+	}
+
+	return &userInfo, nil
+}
+
+func (s *GoogleOAuthService) validateUserDomain(email string) error {
+	isValid, err := s.ValidateDomain(email)
+	if err != nil {
+		return fmt.Errorf("failed to validate domain: %w", err)
+	}
+
+	if !isValid {
+		return fmt.Errorf("email domain not allowed")
+	}
+
+	return nil
+}
+
+func (s *GoogleOAuthService) handleUserCreation(userInfo *GoogleUserInfo, accessToken string) (*database.User, error) {
+	// Check if user exists by identity
+	var identity database.UserIdentity
+	err := s.db.Where("provider = ? AND provider_id = ?", "google", userInfo.Sub).
+		Preload("User").First(&identity).Error
+
+	if err == nil {
+		// Update existing identity
+		identity.AccessToken = accessToken
+		identity.Email = userInfo.Email
+		identity.Name = userInfo.Name
+		identity.AvatarURL = userInfo.Picture
+		if err := s.db.Save(&identity).Error; err != nil {
+			return nil, err
+		}
+		return &identity.User, nil
+	}
+
+	autoRegisterEnabled, err := systemConfig.GetSystemConfigWithType[bool](systemConfig.FEATURE_OAUTH_AUTO_REGISTER)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get auto-register config: %w", err)
+	}
+
+	if !autoRegisterEnabled {
+		return nil, fmt.Errorf("auto-registration is disabled and user does not exist")
+	}
+
+	// Create new user and identity
+	newUser := &database.User{
+		Email:     userInfo.Email,
+		Name:      userInfo.Name,
+		IsEnabled: true,
+	}
+
+	// Start transaction
+	tx := s.db.Begin()
+
+	if err := tx.Create(newUser).Error; err != nil {
+		tx.Rollback()
+		return nil, err
+	}
+
+	newIdentity := &database.UserIdentity{
+		UserID:      newUser.ID,
+		Provider:    "google",
+		ProviderID:  userInfo.Sub,
+		Email:       userInfo.Email,
+		Name:        userInfo.Name,
+		AvatarURL:   userInfo.Picture,
+		AccessToken: accessToken,
+	}
+
+	if err := tx.Create(newIdentity).Error; err != nil {
+		tx.Rollback()
+		return nil, err
+	}
+
+	if err := tx.Commit().Error; err != nil {
+		return nil, err
+	}
+
+	return newUser, nil
+}
+
+func (s *GoogleOAuthService) generateJWTToken(user *database.User) (string, error) {
+	// You'll need to implement this based on your JWT generation logic
+	// Example:
+	token := jwt.New(jwt.SigningMethodHS256)
+	claims := token.Claims.(jwt.MapClaims)
+	claims["user_id"] = user.ID
+	claims["email"] = user.Email
+	claims["is_owner"] = user.IsOwner
+	claims["exp"] = time.Now().Add(time.Hour * 24).Unix()
+
+	return token.SignedString([]byte(lib.JWT_SECRET))
 }
