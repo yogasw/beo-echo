@@ -47,7 +47,7 @@ var DefaultConfigSettings = map[SystemConfigKey]ConfigSetting{
 	},
 	FEATURE_REGISTER_EMAIL_ENABLED: {
 		Type:        TypeBoolean,
-		Value:       "false",
+		Value:       "true",
 		Description: "Enable email registration confirmation",
 		Category:    "Features",
 	},
