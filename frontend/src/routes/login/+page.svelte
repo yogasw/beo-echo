@@ -5,6 +5,7 @@
 	import { auth, isAuthenticated } from '$lib/stores/auth';
 	import * as ThemeUtils from '$lib/utils/themeUtils';
 	import { theme, toggleTheme } from '$lib/stores/theme';
+	import Button from '$lib/components/ui/Button.svelte';
 
 	// For backwards compatibility with old login system
 	import { setLocalStorage } from '$lib/utils/localStorage';
@@ -201,46 +202,14 @@
 					</div>
 				{/if}
 
-				<button
+				<Button
 					type="submit"
 					disabled={loading || (!isLogin && !name) || !email || !password}
-					class="w-full flex items-center justify-center gap-2 p-3 rounded-lg border transition-colors duration-200
-					dark:bg-gray-800 dark:hover:bg-gray-700 dark:border-gray-600 dark:text-white
-					bg-white hover:bg-gray-50 border-gray-300 text-gray-700
-					disabled:bg-gray-100 dark:disabled:bg-gray-800/50
-					disabled:border-gray-200 dark:disabled:border-gray-700
-					disabled:text-gray-400 dark:disabled:text-gray-500
-					disabled:cursor-not-allowed
-					focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500"
+					loading={loading}
+					fullWidth
 				>
-					{#if loading}
-						<span class="flex items-center justify-center">
-							<svg
-								class="animate-spin -ml-1 mr-2 h-4 w-4 text-white"
-								xmlns="http://www.w3.org/2000/svg"
-								fill="none"
-								viewBox="0 0 24 24"
-							>
-								<circle
-									class="opacity-25"
-									cx="12"
-									cy="12"
-									r="10"
-									stroke="currentColor"
-									stroke-width="4"
-								></circle>
-								<path
-									class="opacity-75"
-									fill="currentColor"
-									d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-								></path>
-							</svg>
-							{isLogin ? 'Signing in...' : 'Creating account...'}
-						</span>
-					{:else}
-						{isLogin ? 'Sign In' : 'Create Account'}
-					{/if}
-				</button>
+					{isLogin ? 'Sign In' : 'Create Account'}
+				</Button>
 
 				<!-- Toggle auth mode -->
 				{#if getFeatureToggle(FeatureFlags.FEATURE_REGISTER_EMAIL_ENABLED)}
@@ -269,22 +238,16 @@
 
 		<!-- Social Login Buttons -->
 		<div class="space-y-3">
-			<button
-				type="button"
+			<Button
+				variant="outline"
 				on:click={handleGoogleLogin}
-				class="w-full flex items-center justify-center gap-2 p-3 rounded-lg border transition-colors duration-200
-                     dark:bg-gray-800 dark:hover:bg-gray-700 dark:border-gray-600 dark:text-white
-                     bg-white hover:bg-gray-50 border-gray-300 text-gray-700
-                     disabled:bg-gray-100 dark:disabled:bg-gray-800/50
-                     disabled:border-gray-200 dark:disabled:border-gray-700
-                     disabled:text-gray-400 dark:disabled:text-gray-500
-                     disabled:cursor-not-allowed
-                     focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500"
-                disabled={loading}
+				disabled={loading}
+				loading={loading}
+				fullWidth
 			>
 				<img src="https://authjs.dev/img/providers/google.svg" alt="Google" class="w-5 h-5" />
 				<span>Continue with Google</span>
-			</button>
+			</Button>
 		</div>
 	</div>
 </div>
