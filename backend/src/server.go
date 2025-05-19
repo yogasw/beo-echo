@@ -82,7 +82,6 @@ func SetupRouter() *gin.Engine {
 
 	// Authentication routes
 	router.POST("/mock/api/auth/login", authHandler.LoginHandler)
-	router.POST("/mock/api/auth/register", authHandler.RegisterHandler)
 
 	// Protected API routes group
 	apiGroup := router.Group("/mock/api")

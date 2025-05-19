@@ -168,57 +168,7 @@ export const auth = {
       throw error;
     }
   },
-
-  // Register
-  register: async (name: string, email: string, password: string) => {
-    authStore.update(state => ({ ...state, isLoading: true, error: null }));
-    
-    try {
-      const response = await fetch(`${BASE_URL_API}/auth/register`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ name, email, password })
-      });
-      
-      const data = await response.json();
-      
-      if (!response.ok) {
-        throw new Error(data.message || 'Registration failed');
-      }
-      
-      // Save token to local storage
-      if (browser && data.token) {
-        localStorage.setItem('auth_token', data.token);
-      }
-      
-      // Update store with user data
-      authStore.update(state => ({
-        ...state,
-        token: data.token,
-        user: data.user,
-        isAuthenticated: true,
-        isLoading: false
-      }));
-      
-      // Sync feature flags if available in user data
-      if (data.user && data.user.feature_flags) {
-        syncFeatureFlags(data.user.feature_flags);
-      }
-      
-      return data.user;
-    } catch (error: any) {
-      authStore.update(state => ({
-        ...state,
-        isLoading: false,
-        error: error.message || 'Registration failed'
-      }));
-      
-      throw error;
-    }
-  },
-
+  
   // Logout
   logout: () => {
     // Remove token from local storage
