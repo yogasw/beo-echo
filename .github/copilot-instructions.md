@@ -423,14 +423,6 @@ Add these utility classes to your app.css for easier theme class application:
 - Use Svelte stores for shared state
 - Follow TypeScript best practices with proper typing
 
-### Backend Development
-- When creating new functions in the backend, always write corresponding unit tests
-- Run all tests with `go test ./...` before committing changes to ensure existing functionality is not affected
-- Tests should cover both success scenarios and error handling
-- Use mocks when testing functions that depend on external services
-- Follow Go testing conventions by creating `*_test.go` files alongside the code being tested
-- Use table-driven tests for functions with multiple input/output scenarios
-
 ### API Integration
 - All API calls should be centralized in the `$lib/api` directory
 - Handle loading states and error conditions consistently
