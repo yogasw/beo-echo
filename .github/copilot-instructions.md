@@ -3,40 +3,71 @@
 ## Project Overview
 This project is a Beo Echo API mocking service with a Golang backend and Svelte frontend. It includes features for creating mock APIs, forwarding requests, and managing API behaviors, similar to tools like Beeceptor and Mockoon.
 
+### Key Features
+- **Mock API Creation**: Define custom API endpoints with configurable responses
+- **Request Forwarding**: Forward requests to actual backend services when needed
+- **Response Templating**: Create dynamic responses with templates and variables
+- **Request Logging**: Comprehensive logging of all requests and responses
+- **User Management**: Multi-user support with workspace isolation
+- **Dark/Light Mode**: Fully responsive UI with themeing support
+
 ## Project Structure
 ```
 /beo-echo/
 ├── .github/           # GitHub Actions and workflows
 ├── .vscode/           # VSCode settings
 ├── backend/           # Golang Backend (BE)
-│   └── ...            # Go files for the backend service
+│   ├── cmd/           # Command-line entry points
+│   ├── src/           # Core application code
+│   │   ├── auth/      # Authentication components
+│   │   ├── database/  # Database models and connections
+│   │   ├── mocks/     # Mock API management
+│   │   └── ...        # Other modules
+│   ├── configs/       # Configuration files
+│   ├── go.mod         # Go modules definition
+│   └── Makefile       # Build automation
+├── docs/              # Documentation files
 └── frontend/          # Svelte Frontend (FE)
-    └── ...            # Svelte and TypeScript files
+    ├── src/           # Source code
+    │   ├── lib/       # Shared libraries/components
+    │   │   ├── api/   # API clients
+    │   │   ├── components/ # UI components
+    │   │   ├── stores/     # Svelte stores
+    │   │   └── utils/      # Utility functions
+    │   └── routes/    # Application routes (pages)
+    ├── static/        # Static assets
+    └── ...            # Configuration files
 ```
 
 ## Technology Stack
 
 ### Backend (BE)
-- **Language**: Go
-- **Framework**: Gin
+- **Language**: Go (1.21+)
+- **Framework**: Gin Web Framework
 - **ORM**: GORM
-- **Database**: SQLite (configurable)
+- **Database**: SQLite (configurable to other databases)
+- **Authentication**: JWT + OAuth (Google)
 - **Features**:
   - RESTful API endpoints
   - Mock API management
-  - Request logging
-  - API authentication
+  - Request logging and filtering
+  - Multi-user authentication and authorization
+  - Workspace isolation
+  - Real-time proxy forwarding
 
 ### Frontend (FE)
 - **Framework**: SvelteKit
-- **Styling**: Tailwind CSS
+- **Styling**: Tailwind CSS with custom theming
 - **Language**: TypeScript
 - **State Management**: Svelte stores
+- **API Client**: Custom fetch wrappers with type safety
 - **Features**:
   - Responsive UI with mobile support
   - Dark/Light mode theming (default: dark)
   - Interactive mock API configuration
-  - Request logging visualization
+  - Request logging visualization with filtering
+  - Live request monitoring
+  - Request/response body formatting
 
 ## UI/UX Design Guidelines
 
@@ -430,19 +461,97 @@ Add these utility classes to your app.css for easier theme class application:
 ## Backend Development Guidelines
 
 ### Project Structure
-The backend follows a modular architecture where each feature is organized in its own module:
+```
+backend/                   # Golang Backend
+├── cmd/                   # Application entry points
+│   ├── root.go            # Root command definitions
+│   └── server.go          # Server startup command
+├── logs/                  # Log output directory
+├── src/                   # Core application code
+│   ├── auth/              # Authentication module
+│   │   ├── handler/       # HTTP handlers for auth routes
+│   │   └── services/      # Authentication business logic
+│   ├── database/          # Database operations
+│   │   ├── models.go      # Central data model definitions
+│   │   └── db.go          # Database connection management
+│   ├── middlewares/       # HTTP middleware components
+│   ├── mocks/             # Mock API management
+│   │   ├── handler/       # HTTP handlers for mock endpoints
+│   │   ├── services/      # Mock routing business logic
+│   │   └── repositories/  # Data access layer
+│   ├── logs/              # Request logging module
+│   │   ├── handlers/      # HTTP handlers for logs
+│   │   └── services/      # Log processing logic
+│   ├── types/             # Common type definitions
+│   └── utils/             # Utility functions
+├── uploads/               # File upload storage
+├── configs/               # Configuration files
+└── Makefile               # Build commands and automation
+```
 
-```
-backend/
-├── src/
-│   ├── module1/
-│   │   ├── handler/      # HTTP handlers
-│   │   ├── service/      # Business logic
-│   │   ├── repository/   # Data access layer (optional)
-│   │   └── types/        # Type definitions
-│   └── module2/
-│       └── ...
-```
+### Data Model Reference
+
+All database models are defined in `backend/src/database/models.go`. This file serves as the **central reference** for all data models in the application. When working with data in the backend:
+
+1. **Always reference existing models**: Before creating new data-related functions, always check the models defined in `models.go` to understand the existing schema and relationships.
+
+2. **Field documentation requirements**: When adding new fields to existing models or creating new models, each field must include proper documentation comments explaining:
+   - Purpose of the field
+   - Format requirements if applicable
+   - Relationship to other models
+   - Default values if applicable
+   - Any validation requirements
+
+3. **Key Data Models**:
+   - `SystemConfig`: System-wide configuration settings
+   - `Project`: API mock project definition with endpoints and settings
+   - `MockEndpoint`: Specific API endpoint configurations 
+   - `MockResponse`: Response configuration for endpoints
+   - `RequestLog`: Detailed request/response logging
+   - `User`: User account information
+   - `Workspace`: Shared workspace for projects
+   - `UserWorkspace`: User membership in workspaces
+
+4. **Model reference example**:
+   ```go
+   // ProjectMode defines operation mode of mock system per project
+   type ProjectMode string
+   
+   const (
+     ModeMock      ProjectMode = "mock"      // Serves predefined mock responses only
+     ModeProxy     ProjectMode = "proxy"     // Uses mocks when available, otherwise forwards requests
+     ModeForwarder ProjectMode = "forwarder" // Always forwards all requests to target endpoint
+     ModeDisabled  ProjectMode = "disabled"  // Endpoint inactive - no responses served
+   )
+   ```
+
+5. **Field documentation example**:
+   ```go
+   type Project struct {
+     ID            string         `gorm:"type:string;primaryKey" json:"id"`
+     Name          string         `gorm:"type:string" json:"name"`
+     WorkspaceID   string         `gorm:"type:string;index" json:"workspace_id"`       // Foreign key to the associated workspace
+     Mode          ProjectMode    `gorm:"type:string;default:'mock'" json:"mode"`      // default: mock
+     Status        string         `gorm:"type:string;default:'running'" json:"status"` // running, stopped, error
+     ActiveProxyID *string        `gorm:"type:string" json:"active_proxy_id"`          // Current active proxy configuration
+     Alias         string         `gorm:"type:string;uniqueIndex;not null" json:"alias"` // Subdomain or alias for the project
+     URL           string         `json:"url"`                                           // URL for the project UI display
+     // ... other fields
+   }
+   ```
+
+6. **Model Relationships**: Always document relationships between models for clarity:
+   ```go
+   // RequestLog stores detailed information about each incoming HTTP request.
+   type RequestLog struct {
+     ID            string      `gorm:"type:string;primaryKey" json:"id"`
+     ProjectID     string      `gorm:"type:string;index" json:"project_id"` // Foreign key to the associated project
+     // ... other fields
+  
+     // Association to the Project
+     Project Project `gorm:"foreignKey:ProjectID;constraint:OnDelete:CASCADE" json:"-"`
+   }
+   ```
 
 ### Module Organization
 Each feature module should follow this structure:
@@ -518,10 +627,11 @@ func TestServiceMethod(t *testing.T) {
    - Log errors appropriately
 
 3. **Logging**:
-   - Use zero logger for all logging operations
+   - Use zerolog package for all logging operations 
    - Always include context in every function
    - Follow structured logging pattern
    - Log levels must be appropriate for the message
+   
    Example:
    ```go
    // Initialize logger in main or init
@@ -564,6 +674,11 @@ func TestServiceMethod(t *testing.T) {
    - Pass context through all layers (handler → service → repository)
    - Add relevant request information to context (user ID, request ID, etc.)
    - Use context timeouts for external operations
+   
+   Security Guidelines:
+   - Never log sensitive information (passwords, tokens, personal data)
+   - Mask or truncate potentially sensitive IDs in logs
+   - Use appropriate log levels to avoid exposing detailed errors in production
 
 4. **Documentation**:
    - Document all exported functions and types
@@ -643,3 +758,87 @@ func TestFeature(t *testing.T) {
 - Define clear interfaces
 - Use mocks for testing
 - Keep dependencies minimal and focused
+
+### Running Tests
+The project includes predefined VS Code tasks to facilitate testing:
+
+```bash
+# Run all backend tests
+cd backend && go test ./...
+
+# Run specific package tests
+cd backend && go test ./src/database
+
+# With code coverage report
+cd backend && go test -cover ./...
+```
+
+You can also use the VS Code task "Run all Tests in Backend" to execute all tests in the backend directory.
+
+## Frontend Development Guidelines
+
+The frontend is built with SvelteKit and follows a specific structure:
+
+```
+frontend/                  # JavaScript/TypeScript frontend with Svelte and Tailwind
+├── src/                   # Source code directory
+│   ├── lib/               # Library code (components, utils, etc.)
+│   │   ├── api/           # API client code for backend communication
+│   │   ├── components/    # Reusable UI components
+│   │   │   ├── common/    # General UI components (buttons, cards, etc.)
+│   │   │   ├── layout/    # Layout components (headers, footers, etc.)
+│   │   │   └── specific/  # Feature-specific components
+│   │   ├── images/        # Image assets used in components
+│   │   ├── services/      # Frontend service layers
+│   │   ├── stores/        # Svelte stores for state management
+│   │   ├── styles/        # Global and shared styles
+│   │   ├── types/         # TypeScript type definitions
+│   │   └── utils/         # Utility functions and helpers
+│   ├── routes/            # SvelteKit routes (pages)
+│   │   ├── home/          # Home page routes
+│   │   ├── login/         # Authentication routes
+│   │   └── ...            # Other feature routes
+│   ├── app.css            # Global CSS
+│   └── app.html           # HTML template
+├── static/                # Static assets served as-is
+│   ├── favicon.png        # Site favicon
+│   └── robots.txt         # Robots crawling instructions
+└── build/                 # Compiled output (generated)
+```
+
+### Frontend Development Best Practices
+
+1. **Component Organization**
+   - Keep components small and focused on a single responsibility
+   - Place shared components in the appropriate lib/components subdirectory
+   - Use props validation for all component inputs
+   - Document complex components with JSDoc comments
+
+2. **API Integration**
+   - All API calls should be centralized in the `$lib/api` directory
+   - Use TypeScript interfaces matching backend models
+   - Implement proper error handling with user-friendly messages
+   - Use loading states for all async operations
+
+3. **State Management**
+   - Use Svelte stores for global state management
+   - Document store responsibilities and usage
+   - Follow the pattern in existing stores for consistent implementation
+   - Consider component-local state for isolated features
+
+4. **Performance Considerations**
+   - Lazy-load routes and heavy components
+   - Use proper Svelte lifecycle methods
+   - Avoid unnecessary re-renders
+   - Use efficient event handlers with proper cleanup
+
+5. **Testing**
+   - Write unit tests for critical components and utilities
+   - Implement integration tests for complex page interactions
+   - Ensure accessibility testing (a11y) is part of the process
+
+### Key Frontend Technologies
+- **SvelteKit**: For routing and server-side rendering
+- **Tailwind CSS**: For styling with utility classes
+- **TypeScript**: For type safety and better developer experience
+- **Font Awesome**: For consistent iconography
