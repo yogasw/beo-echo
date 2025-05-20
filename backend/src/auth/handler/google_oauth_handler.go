@@ -170,7 +170,7 @@ func (h *GoogleOAuthHandler) InitiateLogin(c *gin.Context) {
 // HandleCallback handles OAuth callback from Google
 func (h *GoogleOAuthHandler) HandleCallback(c *gin.Context) {
 	code := c.Query("code")
-	state := c.Query("state")
+	encodedState := c.Query("state")
 	if code == "" {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"success": false,
@@ -179,8 +179,18 @@ func (h *GoogleOAuthHandler) HandleCallback(c *gin.Context) {
 		return
 	}
 
+	// URL decode the state parameter
+	state, err := url.QueryUnescape(encodedState)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"success": false,
+			"message": "invalid state parameter: could not decode",
+		})
+		return
+	}
+
 	// Extract frontend redirect URL from state
-	stateParts := strings.Split(state, ":")
+	stateParts := strings.Split(state, "&")
 	if len(stateParts) != 2 {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"success": false,

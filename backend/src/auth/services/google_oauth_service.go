@@ -201,7 +201,7 @@ func (s *GoogleOAuthService) GetLoginURL(backendCallbackURI string, frontendRedi
 	if _, err := rand.Read(stateBytes); err != nil {
 		return "", fmt.Errorf("failed to generate state: %w", err)
 	}
-	stateStr := fmt.Sprintf("%x:%s", stateBytes, frontendRedirectURI)
+	stateStr := fmt.Sprintf("%x&%s", stateBytes, frontendRedirectURI)
 
 	oauth2Config := &oauth2.Config{
 		ClientID:     config.ClientID,
