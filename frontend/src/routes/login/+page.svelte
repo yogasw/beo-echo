@@ -3,20 +3,15 @@
 	import { browser } from '$app/environment';
 	import { onMount } from 'svelte';
 	import { auth, isAuthenticated } from '$lib/stores/auth';
-	import * as ThemeUtils from '$lib/utils/themeUtils';
 	import { theme, toggleTheme } from '$lib/stores/theme';
 	import Button from '$lib/components/ui/Button.svelte';
-
-	// For backwards compatibility with old login system
-	import { setLocalStorage } from '$lib/utils/localStorage';
-	import featureToggles, { FeatureFlags, getFeatureToggle } from '$lib/stores/featureToggles';
+	import { BASE_URL_API } from '$lib/utils/authUtils';
 
 	let email = '';
 	let password = '';
 	let error = '';
 	let loading = false;
 	let showPassword = false;
-	let hasThirdPartyLogin = false; // This will be set based on API response
 
 	onMount(async () => {
 		if ($isAuthenticated) {
@@ -54,18 +49,38 @@
 		showPassword = !showPassword;
 	}
 
+	// Check for OAuth error on page load
+	onMount(() => {
+		if ($isAuthenticated) {
+			goto('/');
+			return;
+		}
+
+		const params = new URLSearchParams(window.location.search);
+		const oauthError = params.get('error');
+		const errorMessage = params.get('message');
+
+		if (oauthError) {
+			error = errorMessage || 'Authentication failed. Please contact an administrator.';
+		}
+
+		// Clean up URL
+		if (oauthError) {
+			window.history.replaceState({}, '', '/login');
+		}
+	});
+
 	// Handler for Google login
-	async function handleGoogleLogin() {
+	function handleGoogleLogin() {
 		loading = true;
 		error = '';
 		try {
-			// TODO: Implement Google login when API is ready
-			// await auth.loginWithGoogle();
-			// await goto('/');
+			// Redirect directly to Google OAuth endpoint
+			const currentURL = window.location.origin;
+			window.location.href = `${BASE_URL_API}/oauth/google/login?redirect_uri=${encodeURIComponent(currentURL)}`;
 		} catch (err: any) {
-			error = err?.message || 'Google authentication failed. Please try again.';
-		} finally {
 			loading = false;
+			error = err?.message || 'Google authentication failed. Please try again.';
 		}
 	}
 </script>
@@ -84,7 +99,7 @@
 	<div class="w-full max-w-md p-8">
 		<div class="text-center mb-8">
 			<h1 class="text-4xl font-bold theme-text-primary mb-2">Beo Echo</h1>
-			<p class="theme-text-secondary">Sign in to your workspace</p>
+			<p class="theme-text-secondary">Login or register to your workspace</p>
 		</div>
 
 		<div class="theme-bg-primary rounded-lg theme-shadow p-8">

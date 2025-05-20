@@ -82,13 +82,17 @@ func SetupRouter() *gin.Engine {
 	// Health check route
 	router.GET("/mock/api/health", health.HealthCheckHandler)
 
-	// Initialize OAuth service and handler
+	// Initialize OAuth service and handlers
 	googleOAuthService := authServices.NewGoogleOAuthService(database.DB)
 	googleOAuthHandler := authHandler.NewGoogleOAuthHandler(googleOAuthService)
+	oauthConfigHandler := authHandler.NewOAuthConfigHandler(database.DB)
 
 	// Authentication routes
 	router.POST("/mock/api/auth/login", authHandler.LoginHandler)
-	router.GET("/mock/api/auth/google/callback", googleOAuthHandler.HandleCallback)
+
+	// Public OAuth routes
+	router.GET("/mock/api/oauth/google/login", googleOAuthHandler.InitiateLogin)
+	router.GET("/mock/api/oauth/google/callback", googleOAuthHandler.HandleCallback)
 
 	// Protected API routes group
 	apiGroup := router.Group("/mock/api")
@@ -102,10 +106,13 @@ func SetupRouter() *gin.Engine {
 			apiGroup.GET("/system-configs", systemConfigHandler.GetAllSystemConfigsHandler)
 			ownerGroup.PUT("/system-config/:key", systemConfigHandler.UpdateSystemConfigHandler)
 
-			// Google OAuth Configuration Routes
-			ownerGroup.GET("/auth/google/config", googleOAuthHandler.GetConfig)
-			ownerGroup.PUT("/auth/google/config", googleOAuthHandler.UpdateConfig)
-			ownerGroup.PUT("/auth/google/state", googleOAuthHandler.UpdateState)
+			// OAuth Configuration Routes
+			ownerGroup.GET("/oauth/config", oauthConfigHandler.ListConfigs)
+
+			// Provider-specific OAuth Configuration Routes
+			ownerGroup.GET("/oauth/google/config", googleOAuthHandler.GetConfig)
+			ownerGroup.PUT("/oauth/google/config", googleOAuthHandler.UpdateConfig)
+			ownerGroup.PUT("/oauth/google/state", googleOAuthHandler.UpdateState)
 		}
 
 		// User-related routes

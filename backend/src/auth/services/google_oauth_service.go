@@ -2,6 +2,7 @@ package services
 
 import (
 	"context"
+	"crypto/rand"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -175,6 +176,50 @@ func (s *GoogleOAuthService) HandleOAuthCallback(code string, baseURL string) (*
 	return user, token, nil
 }
 
+// GetLoginURL generates the Google OAuth login URL
+func (s *GoogleOAuthService) GetLoginURL(redirectURI string) (string, error) {
+	config, err := s.GetConfig()
+	if err != nil {
+		return "", fmt.Errorf("failed to get OAuth config: %w", err)
+	}
+
+	if config == nil || config.ClientID == "" || config.ClientSecret == "" {
+		return "", fmt.Errorf("google oauth credentials are not configured; please contact your administrator")
+	}
+
+	enabled, err := s.GetState()
+	if err != nil {
+		return "", fmt.Errorf("failed to check OAuth state: %w", err)
+	}
+
+	if !enabled {
+		return "", fmt.Errorf("Google OAuth service is disabled. Please contact your administrator")
+	}
+
+	oauth2Config := &oauth2.Config{
+		ClientID:     config.ClientID,
+		ClientSecret: config.ClientSecret,
+		RedirectURL:  fmt.Sprintf("%s/mock/api/oauth/google/callback", redirectURI),
+		Scopes: []string{
+			"https://www.googleapis.com/auth/userinfo.email",
+			"https://www.googleapis.com/auth/userinfo.profile",
+		},
+		Endpoint: google.Endpoint,
+	}
+
+	// Generate random state
+	stateBytes := make([]byte, 32)
+	if _, err := rand.Read(stateBytes); err != nil {
+		return "", fmt.Errorf("failed to generate state: %w", err)
+	}
+	state := fmt.Sprintf("%x", stateBytes)
+
+	// Store state in session/db if needed for verification
+	// TODO: Implement state verification in callback
+
+	return oauth2Config.AuthCodeURL(state, oauth2.AccessTypeOffline), nil
+}
+
 // Internal helper functions
 
 func (s *GoogleOAuthService) exchangeCodeForTokens(code string, baseURL string) (*oauth2.Token, error) {
@@ -217,7 +262,7 @@ func (s *GoogleOAuthService) fetchGoogleUserInfo(accessToken string) (*GoogleUse
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("failed to get user info: %d", resp.StatusCode)
+		return nil, fmt.Errorf("Failed to get user info from Google. Please try again later")
 	}
 
 	var userInfo GoogleUserInfo
