@@ -62,7 +62,6 @@ func runServer() error {
 	log.Println("🚀 All systems initialized, starting HTTP server...")
 
 	// Initialize default system configuration
-	// Initialize default system configuration
 	if err := systemConfig.InitializeDefaultConfig(); err != nil {
 		log.Printf("❌ Failed to initialize default system configuration: %v", err)
 	}
