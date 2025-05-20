@@ -72,6 +72,7 @@
 
 	// Handler for Google login
 	function handleGoogleLogin() {
+		console.log('Google login clicked');
 		loading = true;
 		error = '';
 		try {

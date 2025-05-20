@@ -7,8 +7,6 @@
   export let disabled = false;
   export let loading = false;
   export let fullWidth = false;
-  export let onClick: (() => void) | undefined = undefined;
-
   const baseClasses = "flex items-center justify-center gap-2 p-3 rounded-lg border transition-colors duration-200 font-medium focus:outline-none focus:ring-2 focus:ring-offset-2";
   
   const variants = {
@@ -42,7 +40,7 @@
 <button
   {type}
   class={`${variants[variant]} ${fullWidth ? 'w-full' : ''}`}
-  on:click={onClick}
+  on:click
   {disabled}
   {...$$restProps}
 >
