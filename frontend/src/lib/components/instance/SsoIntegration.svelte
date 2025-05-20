@@ -65,16 +65,6 @@
 			{/if}
 
 			<div>
-				<div class="flex items-center justify-between mb-3">
-					<h3 class="theme-text-primary font-medium">SSO Providers</h3>
-					<div>
-						<button class="px-3 py-2 theme-bg-secondary hover:bg-gray-600 theme-text-primary rounded-md text-sm flex items-center gap-2">
-							<i class="fas fa-plus"></i>
-							<span>Add Provider</span>
-						</button>
-					</div>
-				</div>
-				
 				<div class="space-y-4">
 					<!-- Google SSO -->
 					<div class="theme-bg-secondary p-3 rounded-lg">
@@ -121,7 +111,7 @@
 					/>
 					
 					<!-- GitHub SSO -->
-					<div class="theme-bg-secondary p-3 rounded-lg">
+					<div class="theme-bg-secondary p-3 rounded-lg opacity-60">
 						<div class="flex items-center justify-between">
 							<div class="flex items-center gap-3">
 								<div class="w-8 h-8 bg-gray-900 rounded flex items-center justify-center">
@@ -129,11 +119,11 @@
 								</div>
 								<div>
 									<h4 class="theme-text-primary text-sm font-medium">GitHub</h4>
-									<p class="theme-text-muted text-xs">Not configured</p>
+									<p class="theme-text-muted text-xs">Coming soon</p>
 								</div>
 							</div>
 							<div>
-								<button class="px-3 py-1 bg-gray-600 hover:bg-gray-500 text-white rounded text-xs">
+								<button class="px-3 py-1 bg-gray-600 hover:bg-gray-500 text-white rounded text-xs" disabled>
 									Configure
 								</button>
 							</div>
@@ -141,7 +131,7 @@
 					</div>
 					
 					<!-- Microsoft SSO -->
-					<div class="theme-bg-secondary p-3 rounded-lg">
+					<div class="theme-bg-secondary p-3 rounded-lg opacity-60">
 						<div class="flex items-center justify-between">
 							<div class="flex items-center gap-3">
 								<div class="w-8 h-8 bg-blue-500 rounded flex items-center justify-center">
@@ -149,11 +139,11 @@
 								</div>
 								<div>
 									<h4 class="theme-text-primary text-sm font-medium">Microsoft</h4>
-									<p class="theme-text-muted text-xs">Not configured</p>
+									<p class="theme-text-muted text-xs">Coming soon</p>
 								</div>
 							</div>
 							<div>
-								<button class="px-3 py-1 bg-gray-600 hover:bg-gray-500 text-white rounded text-xs">
+								<button class="px-3 py-1 bg-gray-600 hover:bg-gray-500 text-white rounded text-xs" disabled>
 									Configure
 								</button>
 							</div>
@@ -161,7 +151,7 @@
 					</div>
 					
 					<!-- SAML SSO -->
-					<div class="theme-bg-secondary p-3 rounded-lg">
+					<div class="theme-bg-secondary p-3 rounded-lg opacity-60">
 						<div class="flex items-center justify-between">
 							<div class="flex items-center gap-3">
 								<div class="w-8 h-8 bg-blue-600 rounded flex items-center justify-center">
@@ -169,11 +159,11 @@
 								</div>
 								<div>
 									<h4 class="theme-text-primary text-sm font-medium">SAML</h4>
-									<p class="theme-text-muted text-xs">Not configured</p>
+									<p class="theme-text-muted text-xs">Coming soon</p>
 								</div>
 							</div>
 							<div>
-								<button class="px-3 py-1 bg-gray-600 hover:bg-gray-500 text-white rounded text-xs">
+								<button class="px-3 py-1 bg-gray-600 hover:bg-gray-500 text-white rounded text-xs" disabled>
 									Configure
 								</button>
 							</div>
