@@ -322,8 +322,8 @@ Create a reusable theme toggle component:
       rounded-full peer peer-focus:outline-none peer-focus:ring-2 
       peer-focus:ring-blue-300 dark:peer-focus:ring-blue-600 
       peer-checked:after:translate-x-full peer-checked:after:border-white 
-      after:content-[''] after:absolute after:top-[2px] after:start-[2px] 
-      after:bg-white after:rounded-full after:h-5 after:w-5 
+      after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white 
+      after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 
       after:transition-all dark:border-gray-600"
     >
     </div>
@@ -427,55 +427,219 @@ Add these utility classes to your app.css for easier theme class application:
 - All API calls should be centralized in the `$lib/api` directory
 - Handle loading states and error conditions consistently
 
-## Development Workflow
+## Backend Development Guidelines
 
-### Getting Started
-1. Clone the repository
-2. Install dependencies:
+### Project Structure
+The backend follows a modular architecture where each feature is organized in its own module:
+
+```
+backend/
+├── src/
+│   ├── module1/
+│   │   ├── handler/      # HTTP handlers
+│   │   ├── service/      # Business logic
+│   │   ├── repository/   # Data access layer (optional)
+│   │   └── types/        # Type definitions
+│   └── module2/
+│       └── ...
+```
+
+### Module Organization
+Each feature module should follow this structure:
+1. **Handler Layer** (`handler/`):
+   - Handles HTTP requests and responses
+   - Validates input
+   - Calls appropriate service methods
+   - Returns responses
+   - Files should be named `*_handler.go`
+
+2. **Service Layer** (`service/`):
+   - Contains business logic
+   - Orchestrates data flow
+   - Handles complex operations
+   - Files should be named `*_service.go`
+
+3. **Repository Layer** (`repository/`, optional):
+   - Handles data persistence
+   - Database operations
+   - Files should be named `*_repository.go`
+
+### Testing Requirements
+- Every new feature must include unit tests
+- Use testify for assertions and mocking
+- Use mockery for generating mocks
+- Test coverage should be maintained or improved
+- Run all tests after any changes
+
+#### Test Structure
+```go
+func TestServiceMethod(t *testing.T) {
+    // Given
+    mockRepo := mocks.NewMockRepository(t)
+    svc := NewService(mockRepo)
+    
+    // When
+    mockRepo.EXPECT().Method().Return(expectedValue)
+    result, err := svc.Method()
+    
+    // Then
+    assert.NoError(t, err)
+    assert.Equal(t, expectedValue, result)
+}
+```
+
+### Database Guidelines
+- Use SQLite for development
+- Use GORM for database operations
+- Define clear models with proper tags
+- Include database migrations
+- Test database operations
+
+### Mock Generation
+- Use mockery to generate mocks
+- Generate mocks for interfaces
+- Keep mocks up to date with interfaces
+- Example mockery command:
+  ```bash
+  mockery --name=InterfaceName --dir=path/to/interface --output=path/to/mocks
+  ```
+
+### Code Quality Requirements
+1. **Testing**:
+   - Run tests before committing: `go test ./...`
+   - Write tests for new features
+   - Update tests when modifying existing features
+   - Use table-driven tests where appropriate
+
+2. **Error Handling**:
+   - Use custom error types
+   - Return meaningful error messages
+   - Handle all error cases
+   - Log errors appropriately
+
+3. **Logging**:
+   - Use zero logger for all logging operations
+   - Always include context in every function
+   - Follow structured logging pattern
+   - Log levels must be appropriate for the message
+   Example:
+   ```go
+   // Initialize logger in main or init
+   logger := zerolog.New(os.Stdout).With().Timestamp().Logger()
+   ctx = logger.WithContext(ctx)
+
+   // In functions, always accept and use context
+   func (s *service) DoSomething(ctx context.Context, input Input) error {
+       log := zerolog.Ctx(ctx)
+       
+       log.Info().
+           Str("input_id", input.ID).
+           Str("user", input.UserID).
+           Msg("processing request")
+           
+       // ... function logic ...
+       
+       if err != nil {
+           log.Error().
+               Err(err).
+               Str("input_id", input.ID).
+               Msg("failed to process request")
+           return err
+       }
+       
+       return nil
+   }
    ```
-   # Backend
-   cd backend
-   go mod download
-   
-   # Frontend
-   cd frontend
-   npm install
+
+   Log Level Guidelines:
+   - `Trace()`: For very detailed debugging
+   - `Debug()`: For development debugging
+   - `Info()`: For tracking normal operations
+   - `Warn()`: For handled issues that might need attention
+   - `Error()`: For unhandled errors that need immediate attention
+   - `Fatal()`: For errors that prevent application startup
+
+   Context Guidelines:
+   - Every function must accept `context.Context` as first parameter
+   - Pass context through all layers (handler → service → repository)
+   - Add relevant request information to context (user ID, request ID, etc.)
+   - Use context timeouts for external operations
+
+4. **Documentation**:
+   - Document all exported functions and types
+   - Include examples in documentation
+   - Keep README.md up to date
+   - Document configuration options
+
+5. **Code Style**:
+   - Follow Go best practices
+   - Use consistent naming
+   - Keep functions focused and small
+   - Use meaningful variable names
+
+### Example Module Structure
+For a new REST API feature:
+
+```go
+// handler/feature_handler.go
+type FeatureHandler struct {
+    service FeatureService
+}
+
+func (h *FeatureHandler) HandleFeature(c *gin.Context) {
+    // Handle HTTP request
+}
+
+// service/feature_service.go
+type FeatureService interface {
+    DoFeature(ctx context.Context, input Input) (Output, error)
+}
+
+type featureService struct {
+    repo FeatureRepository
+}
+
+func (s *featureService) DoFeature(ctx context.Context, input Input) (Output, error) {
+    // Business logic
+}
+
+// repository/feature_repository.go (if needed)
+type FeatureRepository interface {
+    Store(ctx context.Context, data Data) error
+}
+
+type featureRepository struct {
+    db *gorm.DB
+}
+
+// types/feature_types.go
+type Input struct {
+    // Input fields
+}
+
+type Output struct {
+    // Output fields
+}
+
+// feature_test.go
+func TestFeature(t *testing.T) {
+    // Test cases
+}
+```
+
+### Development Workflow
+1. Create new feature module with proper structure
+2. Implement interfaces and types
+3. Generate mocks using mockery
+4. Implement business logic with tests
+5. Add HTTP handlers with tests
+6. Run all tests before committing:
+   ```bash
+   cd backend && go test ./...
    ```
-3. Run development servers:
-   ```
-   # Backend
-   cd backend
-   go run main.go
-   
-   # Frontend
-   cd frontend
-   npm run dev
-   ```
 
-### Development Best Practices
-- Follow the established UI patterns from the LogsTab and ConfigurationTab
-- Test on mobile devices or with responsive device emulation
-- Ensure both light and dark modes look polished
-- Maintain consistent spacing and component sizing
-
-## Component Library Reference
-Based on the existing LogsTab and ConfigurationTab components, follow these established patterns:
-
-### Page Structure
-1. Main container with `w-full bg-gray-800 p-4 relative`
-2. Header section with title, subtitle, and action buttons
-3. Content area with appropriate spacing between sections
-4. Optional notification system for feedback
-
-### Common Elements
-- **Section Headers**: Include an icon in a colored background with title
-- **Expandable Sections**: Toggle visibility with chevron indicators
-- **Search Fields**: Include icon prefix and clear, descriptive placeholder text
-- **Status Indicators**: Use color-coding for status representation
-- **Data Displays**: Use structured layouts with proper labeling
-
-### Mobile Responsiveness
-- Ensure touch targets are sufficiently large (min 44px)
-- Stack elements vertically on small screens
-- Use responsive grids: `grid-cols-1 md:grid-cols-2`
-- Test on various screen sizes
+### Dependencies
+- Use proper dependency injection
+- Define clear interfaces
+- Use mocks for testing
+- Keep dependencies minimal and focused
