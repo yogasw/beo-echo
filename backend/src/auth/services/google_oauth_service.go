@@ -177,7 +177,7 @@ func (s *GoogleOAuthService) HandleOAuthCallback(code string, baseURL string) (*
 }
 
 // GetLoginURL generates the Google OAuth login URL
-func (s *GoogleOAuthService) GetLoginURL(redirectURI string) (string, error) {
+func (s *GoogleOAuthService) GetLoginURL(backendCallbackURI string, frontendRedirectURI string) (string, error) {
 	config, err := s.GetConfig()
 	if err != nil {
 		return "", fmt.Errorf("failed to get OAuth config: %w", err)
@@ -196,10 +196,17 @@ func (s *GoogleOAuthService) GetLoginURL(redirectURI string) (string, error) {
 		return "", fmt.Errorf("Google OAuth service is disabled. Please contact your administrator")
 	}
 
+	// Generate a random state to prevent CSRF and include frontend redirect URL
+	stateBytes := make([]byte, 16)
+	if _, err := rand.Read(stateBytes); err != nil {
+		return "", fmt.Errorf("failed to generate state: %w", err)
+	}
+	stateStr := fmt.Sprintf("%x:%s", stateBytes, frontendRedirectURI)
+
 	oauth2Config := &oauth2.Config{
 		ClientID:     config.ClientID,
 		ClientSecret: config.ClientSecret,
-		RedirectURL:  fmt.Sprintf("%s/mock/api/oauth/google/callback", redirectURI),
+		RedirectURL:  backendCallbackURI,
 		Scopes: []string{
 			"https://www.googleapis.com/auth/userinfo.email",
 			"https://www.googleapis.com/auth/userinfo.profile",
@@ -207,17 +214,7 @@ func (s *GoogleOAuthService) GetLoginURL(redirectURI string) (string, error) {
 		Endpoint: google.Endpoint,
 	}
 
-	// Generate random state
-	stateBytes := make([]byte, 32)
-	if _, err := rand.Read(stateBytes); err != nil {
-		return "", fmt.Errorf("failed to generate state: %w", err)
-	}
-	state := fmt.Sprintf("%x", stateBytes)
-
-	// Store state in session/db if needed for verification
-	// TODO: Implement state verification in callback
-
-	return oauth2Config.AuthCodeURL(state, oauth2.AccessTypeOffline), nil
+	return oauth2Config.AuthCodeURL(stateStr), nil
 }
 
 // Internal helper functions
