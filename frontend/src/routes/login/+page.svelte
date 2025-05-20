@@ -49,7 +49,7 @@
 		showPassword = !showPassword;
 	}
 
-	// Check for OAuth error on page load
+	// Check for OAuth response on page load
 	onMount(() => {
 		if ($isAuthenticated) {
 			goto('/');
@@ -59,14 +59,41 @@
 		const params = new URLSearchParams(window.location.search);
 		const oauthError = params.get('error');
 		const errorMessage = params.get('message');
+		const token = params.get('token');
+		const success = params.get('success');
+		const user = params.get('user');
+		const sso = params.get('sso');
+		
+		// Preserve any returnUrl or other important params
+		const returnUrl = params.get('returnUrl');
+		const preservedParams = new URLSearchParams();
+		if (returnUrl) {
+			preservedParams.set('returnUrl', returnUrl);
+		}
 
 		if (oauthError) {
 			error = errorMessage || 'Authentication failed. Please contact an administrator.';
+		} else if (success && token && user) {
+			// Store the token and additional info
+			localStorage.setItem('sso_provider', sso || '');
+			auth.setToken(token);
+			
+			// If we have a returnUrl, go there, otherwise go to home
+			if (returnUrl) {
+				goto(returnUrl);
+			} else {
+				goto('/');
+			}
+			return;
 		}
 
-		// Clean up URL
-		if (oauthError) {
-			window.history.replaceState({}, '', '/login');
+		// Clean up sensitive params but preserve others
+		const cleanUrl = preservedParams.toString() 
+			? `/login?${preservedParams.toString()}`
+			: '/login';
+		
+		if (oauthError || success) {
+			window.history.replaceState({}, '', cleanUrl);
 		}
 	});
 
@@ -76,8 +103,8 @@
 		loading = true;
 		error = '';
 		try {
-			// Redirect directly to Google OAuth endpoint
-			const currentURL = window.location.origin;
+			// Get current URL with all its parameters
+			const currentURL = window.location.origin + '/login' + window.location.search;
 			window.location.href = `${BASE_URL_API}/oauth/google/login?redirect_uri=${encodeURIComponent(currentURL)}`;
 		} catch (err: any) {
 			loading = false;

@@ -218,19 +218,10 @@ func (h *GoogleOAuthHandler) HandleCallback(c *gin.Context) {
 		return
 	}
 
-	// Success! Set token in cookie and redirect to frontend success URL
-	c.SetCookie(
-		"jwt_token",
-		token,
-		86400, // 24 hours
-		"/",
-		"",   // domain
-		true, // secure
-		true, // httpOnly
-	)
-
-	successURL := fmt.Sprintf("%s?success=true&user=%s",
+	// Send token in URL for frontend to handle with SSO flag
+	successURL := fmt.Sprintf("%s?success=true&token=%s&user=%s&sso=google",
 		frontendRedirectURI,
+		url.QueryEscape(token),
 		url.QueryEscape(user.Email))
 	c.Redirect(http.StatusTemporaryRedirect, successURL)
 }
