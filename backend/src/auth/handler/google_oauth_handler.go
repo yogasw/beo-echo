@@ -170,21 +170,11 @@ func (h *GoogleOAuthHandler) InitiateLogin(c *gin.Context) {
 // HandleCallback handles OAuth callback from Google
 func (h *GoogleOAuthHandler) HandleCallback(c *gin.Context) {
 	code := c.Query("code")
-	encodedState := c.Query("state")
+	state := c.Query("state")
 	if code == "" {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"success": false,
 			"message": "no authorization code provided",
-		})
-		return
-	}
-
-	// URL decode the state parameter
-	state, err := url.QueryUnescape(encodedState)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"success": false,
-			"message": "invalid state parameter: could not decode",
 		})
 		return
 	}

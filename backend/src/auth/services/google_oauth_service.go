@@ -228,7 +228,7 @@ func (s *GoogleOAuthService) exchangeCodeForTokens(code string, baseURL string) 
 	oauth2Config := &oauth2.Config{
 		ClientID:     config.ClientID,
 		ClientSecret: config.ClientSecret,
-		RedirectURL:  fmt.Sprintf("%s/mock/api/auth/google/callback", baseURL),
+		RedirectURL:  fmt.Sprintf("%s/mock/api/oauth/google/callback", baseURL),
 		Scopes: []string{
 			"https://www.googleapis.com/auth/userinfo.email",
 			"https://www.googleapis.com/auth/userinfo.profile",
