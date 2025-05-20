@@ -30,6 +30,8 @@
     // Try to format headers as JSON if they aren't already
     try {
       const parsedHeaders = JSON.parse(log.response_headers);
+      // Remove Content-Length header if it exists
+      delete parsedHeaders['Content-Length'];
       headers = JSON.stringify(parsedHeaders, null, 2);
     } catch (e) {
       headers = log.response_headers;
@@ -98,13 +100,14 @@
   <div
     class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
     transition:fade={{ duration: 200 }}
-    on:click={handleBackdropClick}
     role="dialog"
     aria-modal="true"
+    tabindex="-1"
   >
     <div 
       class="bg-gray-800 rounded-lg w-full max-w-3xl max-h-[90vh] overflow-y-auto shadow-xl"
-      on:click|stopPropagation={() => {}}
+      role="dialog"
+      aria-modal="true"
     >
       <!-- Header -->
       <div class="p-4 border-b border-gray-700 flex justify-between items-center">
