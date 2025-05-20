@@ -48,12 +48,12 @@ export const auth = {
   // Initialize authentication state from token (if exists)
   initialize: async () => {
     authStore.update(state => ({ ...state, isLoading: true }));
-    
+
     const currentState = { ...initialState };
     authStore.subscribe(state => {
       currentState.token = state.token;
     })();
-    
+
     if (currentState.token) {
       // Parse token to get basic user details and check expiration
       const payload = parseJwt(currentState.token);
@@ -61,7 +61,7 @@ export const auth = {
         // Check if token is expired
         const expiryDate = new Date(payload.exp * 1000);
         const now = new Date();
-        
+
         if (expiryDate > now) {
           // Token is still valid, get initial basic user info
           const basicUser: User = {
@@ -70,7 +70,7 @@ export const auth = {
             name: payload.name,
             isOwner: false // Will be updated from API
           };
-          
+
           // Update with basic info first
           authStore.update(state => ({
             ...state,
@@ -78,7 +78,7 @@ export const auth = {
             isAuthenticated: true,
             isLoading: true
           }));
-          
+
           // Then fetch complete profile including owner status
           try {
             const fullUser = await fetchUserProfile(currentState.token!);
@@ -90,12 +90,12 @@ export const auth = {
               user: fullUser,
               isLoading: false
             }));
-            
+
             // Sync feature flags if available
             if (fullUser && fullUser.feature_flags) {
               syncFeatureFlags(fullUser.feature_flags);
             }
-            
+
           } catch (error) {
             console.error('Failed to fetch user profile:', error);
             authStore.update(state => ({ ...state, isLoading: false }));
@@ -122,7 +122,7 @@ export const auth = {
   // Login
   login: async (email: string, password: string) => {
     authStore.update(state => ({ ...state, isLoading: true, error: null }));
-    
+
     try {
       const response = await fetch(`${BASE_URL_API}/auth/login`, {
         method: 'POST',
@@ -131,18 +131,18 @@ export const auth = {
         },
         body: JSON.stringify({ email, password })
       });
-      
+
       const data = await response.json();
-      
+
       if (!response.ok) {
         throw new Error(data.message || 'Failed to login');
       }
-      
+
       // Save token to local storage
       if (browser && data.token) {
         localStorage.setItem('auth_token', data.token);
       }
-      
+
       // Update store with user data
       authStore.update(state => ({
         ...state,
@@ -151,12 +151,12 @@ export const auth = {
         isAuthenticated: true,
         isLoading: false
       }));
-      
+
       // Sync feature flags if available in user data
       if (data.user && data.user.feature_flags) {
         syncFeatureFlags(data.user.feature_flags);
       }
-      
+
       return data.user;
     } catch (error: any) {
       authStore.update(state => ({
@@ -164,57 +164,7 @@ export const auth = {
         isLoading: false,
         error: error.message || 'Login failed'
       }));
-      
-      throw error;
-    }
-  },
 
-  // Register
-  register: async (name: string, email: string, password: string) => {
-    authStore.update(state => ({ ...state, isLoading: true, error: null }));
-    
-    try {
-      const response = await fetch(`${BASE_URL_API}/auth/register`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ name, email, password })
-      });
-      
-      const data = await response.json();
-      
-      if (!response.ok) {
-        throw new Error(data.message || 'Registration failed');
-      }
-      
-      // Save token to local storage
-      if (browser && data.token) {
-        localStorage.setItem('auth_token', data.token);
-      }
-      
-      // Update store with user data
-      authStore.update(state => ({
-        ...state,
-        token: data.token,
-        user: data.user,
-        isAuthenticated: true,
-        isLoading: false
-      }));
-      
-      // Sync feature flags if available in user data
-      if (data.user && data.user.feature_flags) {
-        syncFeatureFlags(data.user.feature_flags);
-      }
-      
-      return data.user;
-    } catch (error: any) {
-      authStore.update(state => ({
-        ...state,
-        isLoading: false,
-        error: error.message || 'Registration failed'
-      }));
-      
       throw error;
     }
   },
@@ -225,13 +175,13 @@ export const auth = {
     if (browser) {
       localStorage.removeItem('auth_token');
     }
-    
+
     // Reset auth store
     authStore.set({
       ...initialState,
       token: null
     });
-    
+
     // Redirect to login page
     goto('/login');
   },
@@ -253,7 +203,7 @@ export const auth = {
     })();
     return isOwner;
   },
-  
+
   // Update current user data
   updateUserData: (userData: Partial<User>): void => {
     authStore.update(state => {
@@ -268,6 +218,20 @@ export const auth = {
       }
       return state;
     });
+  },
+
+  // update token from sso
+  setToken: (token: string): void => {
+    authStore.update(state => ({
+      ...state,
+      token: token,
+      isAuthenticated: true
+    }));
+
+    // Save token to local storage
+    if (browser) {
+      localStorage.setItem('auth_token', token);
+    }
   }
 };
 

@@ -97,7 +97,7 @@ export type ProxyTarget = {
 }
 
 // Create axios instance with default config
-const api = axios.create({
+export const HttpApi = axios.create({
 	baseURL: BASE_URL_API,
 	headers: {
 		'Content-Type': 'application/json'
@@ -105,7 +105,7 @@ const api = axios.create({
 });
 
 // Add request interceptor to add auth header with JWT token
-api.interceptors.request.use(
+HttpApi.interceptors.request.use(
 	(config) => {
 		// Get JWT token from auth store
 		const token = auth.getToken();
@@ -122,7 +122,7 @@ api.interceptors.request.use(
 
 let isRedirectingToLogin = false;
 // Add response interceptor for handling auth errors
-api.interceptors.response.use(
+HttpApi.interceptors.response.use(
 	response => response,
 	error => {
 		console.log('route', error.response?.config.url);
@@ -143,24 +143,24 @@ api.interceptors.response.use(
 );
 
 export const getMockStatus = async (): Promise<ConfigResponse[]> => {
-	const response = await api.get('/status');
+	const response = await HttpApi.get('/status');
 	return response.data.data;
 };
 
 export const getWorkspaces = async (): Promise<Workspace[]> => {
-	const response = await api.get('/workspaces');
+	const response = await HttpApi.get('/workspaces');
 	return response.data.data;
 };
 
 export const createWorkspace = async (name: string): Promise<Workspace> => {
-	const response = await api.post('/workspaces', {
+	const response = await HttpApi.post('/workspaces', {
 		name
 	});
 	return response.data.data;
 };
 
 export const deleteWorkspace = async (workspaceId: string): Promise<any> => {
-	const response = await api.delete(`/workspaces/${workspaceId}`);
+	const response = await HttpApi.delete(`/workspaces/${workspaceId}`);
 	return response.data;
 }
 
@@ -170,29 +170,29 @@ export const getProjects = async (workspaceId?: string): Promise<Project[]> => {
 		console.error('No workspace ID provided for getProjects');
 		return [];
 	}
-	const response = await api.get(`/workspaces/${workspaceId}/projects`);
+	const response = await HttpApi.get(`/workspaces/${workspaceId}/projects`);
 	return response.data.data;
 };
 
 export const deleteProject = async (projectId: string): Promise<any> => {
 	let workspaceId = getCurrentWorkspaceId();
-	const response = await api.delete(`/workspaces/${workspaceId}/projects/${projectId}`);
+	const response = await HttpApi.delete(`/workspaces/${workspaceId}/projects/${projectId}`);
 	return response.data;
 };
 export const deleteEndpoint = async (projectId: string, endpointId: string): Promise<any> => {
 	let workspaceId = getCurrentWorkspaceId();
-	const response = await api.delete(`/workspaces/${workspaceId}/projects/${projectId}/endpoints/${endpointId}`);
+	const response = await HttpApi.delete(`/workspaces/${workspaceId}/projects/${projectId}/endpoints/${endpointId}`);
 	return response.data;
 }
 export const deleteResponse = async (projectId: string, endpointId: string, responseId: string): Promise<any> => {
 	const workspaceId = getCurrentWorkspaceId();
-	const response = await api.delete(`/workspaces/${workspaceId}/projects/${projectId}/endpoints/${endpointId}/responses/${responseId}`);
+	const response = await HttpApi.delete(`/workspaces/${workspaceId}/projects/${projectId}/endpoints/${endpointId}/responses/${responseId}`);
 	return response.data;
 }
 
 export const updateProjectStatus = async (projectId: string, status: string): Promise<Project> => {
 	let workspaceId = getCurrentWorkspaceId();
-	const response = await api.put(`/workspaces/${workspaceId}/projects/${projectId}`, {
+	const response = await HttpApi.put(`/workspaces/${workspaceId}/projects/${projectId}`, {
 		status: status
 	});
 	return response.data.data;
@@ -200,7 +200,7 @@ export const updateProjectStatus = async (projectId: string, status: string): Pr
 
 export const addProject = async (name: string, alias: string): Promise<Project> => {
 	let workspaceId = getCurrentWorkspaceId();
-	const response = await api.post(`/workspaces/${workspaceId}/projects`, {
+	const response = await HttpApi.post(`/workspaces/${workspaceId}/projects`, {
 		name,
 		alias
 	});
@@ -209,7 +209,7 @@ export const addProject = async (name: string, alias: string): Promise<Project> 
 
 export const addEndpoint = async (projectId: string, method: string, path: string): Promise<Endpoint> => {
 	let workspaceId = getCurrentWorkspaceId();
-	const response = await api.post(`/workspaces/${workspaceId}/projects/${projectId}/endpoints`, {
+	const response = await HttpApi.post(`/workspaces/${workspaceId}/projects/${projectId}/endpoints`, {
 		method,
 		path,
 		enabled: true,
@@ -220,7 +220,7 @@ export const addEndpoint = async (projectId: string, method: string, path: strin
 
 export const addResponse = async (projectId: string, endpointId: string, statusCode: number, body: string, headers: string, documentation: string): Promise<Response> => {
 	let workspaceId = getCurrentWorkspaceId();
-	const response = await api.post(`/workspaces/${workspaceId}/projects/${projectId}/endpoints/${endpointId}/responses`, {
+	const response = await HttpApi.post(`/workspaces/${workspaceId}/projects/${projectId}/endpoints/${endpointId}/responses`, {
 		statusCode,
 		body,
 		headers,
@@ -234,7 +234,7 @@ export const addResponse = async (projectId: string, endpointId: string, statusC
 };
 
 export const uploadConfig = async (formData: FormData): Promise<any> => {
-	const response = await api.post('/upload', formData, {
+	const response = await HttpApi.post('/upload', formData, {
 		headers: {
 			'Content-Type': 'multipart/form-data'
 		}
@@ -244,12 +244,12 @@ export const uploadConfig = async (formData: FormData): Promise<any> => {
 
 export const getProjectDetail = async (projectId: string): Promise<Project> => {
 	let workspaceId = getCurrentWorkspaceId();
-	const response = await api.get(`/workspaces/${workspaceId}/projects/${projectId}`);
+	const response = await HttpApi.get(`/workspaces/${workspaceId}/projects/${projectId}`);
 	return response.data.data;
 }
 
 export const startMockServer = async (port: number, configFile: string, uuid: string): Promise<any> => {
-	const response = await api.post('/start', {
+	const response = await HttpApi.post('/start', {
 		uuid,
 		port,
 		configFile
@@ -258,14 +258,14 @@ export const startMockServer = async (port: number, configFile: string, uuid: st
 };
 
 export const stopMockServer = async (port: number): Promise<any> => {
-	const response = await api.post('/stop', {
+	const response = await HttpApi.post('/stop', {
 		port
 	});
 	return response.data;
 };
 
 export const deleteConfig = async (filename: string): Promise<any> => {
-	const response = await api.delete(`/configs/${filename}`);
+	const response = await HttpApi.delete(`/configs/${filename}`);
 	return response.data;
 };
 
@@ -282,7 +282,7 @@ export const login = async (credentials: AuthCredentials): Promise<boolean> => {
 };
 
 export const getConfigDetails = async (uuid: string): Promise<ConfigResponse> => {
-	const response = await api.get(`/configs/${uuid}`);
+	const response = await HttpApi.get(`/configs/${uuid}`);
 	return response.data.data;
 };
 
@@ -294,7 +294,7 @@ export const saveGitConfig = async (config: {
 	sshKey: string;
 	gitUrl: string;
 }): Promise<{ success: boolean; message: string }> => {
-	const response = await api.post('/git/save-config', config);
+	const response = await HttpApi.post('/git/save-config', config);
 	return response.data;
 };
 
@@ -305,7 +305,7 @@ export const saveAndTestSyncGit = async (config: {
 	sshKey: string;
 	gitUrl: string;
 }): Promise<{ success: boolean; message: string }> => {
-	const response = await api.post('/git/save-and-test-sync', config);
+	const response = await HttpApi.post('/git/save-and-test-sync', config);
 	return response.data;
 };
 
@@ -320,7 +320,7 @@ export const getGitConfig = async (): Promise<{
 	};
 	message?: string;
 }> => {
-	const response = await api.get('/git/config');
+	const response = await HttpApi.get('/git/config');
 	return response.data;
 };
 
@@ -334,7 +334,7 @@ export const updateEndpoint = async (projectId: string, endpointId: string, data
 	proxy_target_id?: string | null;
 }): Promise<Endpoint> => {
 	let workspaceId = getCurrentWorkspaceId();
-	const response = await api.put(`/workspaces/${workspaceId}/projects/${projectId}/endpoints/${endpointId}`, data);
+	const response = await HttpApi.put(`/workspaces/${workspaceId}/projects/${projectId}/endpoints/${endpointId}`, data);
 	return response.data.data;
 };
 
@@ -348,7 +348,7 @@ export const updateResponse = async (projectId: string, endpointId: string, resp
 	enabled?: boolean;
 }): Promise<Response> => {
 	let workspaceId = getCurrentWorkspaceId();
-	const response = await api.put(`/workspaces/${workspaceId}/projects/${projectId}/endpoints/${endpointId}/responses/${responseId}`, data);
+	const response = await HttpApi.put(`/workspaces/${workspaceId}/projects/${projectId}/endpoints/${endpointId}/responses/${responseId}`, data);
 	return response.data.data;
 };
 
@@ -360,7 +360,7 @@ export const getLogs = async (page: number = 1, pageSize: number = 100, projectI
 		pageSize: pageSize.toString()
 	};
 
-	const response = await api.get(`/workspaces/${workspaceId}/projects/${projectId}/logs`, { params });
+	const response = await HttpApi.get(`/workspaces/${workspaceId}/projects/${projectId}/logs`, { params });
 	return {
 		logs: response.data.logs,
 		total: response.data.total
@@ -394,13 +394,13 @@ export const createLogStream = (projectId: string, limit: number = 100): EventSo
 // Proxy management APIs
 export const listProxyTargets = async (projectId: string): Promise<ProxyTarget[]> => {
 	let workspaceId = getCurrentWorkspaceId();
-	const response = await api.get(`/workspaces/${workspaceId}/projects/${projectId}/proxies`);
+	const response = await HttpApi.get(`/workspaces/${workspaceId}/projects/${projectId}/proxies`);
 	return response.data.data;
 };
 
 export const createProxyTarget = async (projectId: string, label: string, url: string): Promise<ProxyTarget> => {
 	let workspaceId = getCurrentWorkspaceId();
-	const response = await api.post(`/workspaces/${workspaceId}/projects/${projectId}/proxies`, {
+	const response = await HttpApi.post(`/workspaces/${workspaceId}/projects/${projectId}/proxies`, {
 		label,
 		url
 	});
@@ -412,26 +412,26 @@ export const updateProxyTarget = async (projectId: string, proxyId: string, data
 	url?: string;
 }): Promise<ProxyTarget> => {
 	let workspaceId = getCurrentWorkspaceId();
-	const response = await api.put(`/workspaces/${workspaceId}/projects/${projectId}/proxies/${proxyId}`, data);
+	const response = await HttpApi.put(`/workspaces/${workspaceId}/projects/${projectId}/proxies/${proxyId}`, data);
 	return response.data.data;
 };
 
 export const deleteProxyTarget = async (projectId: string, proxyId: string): Promise<any> => {
 	let workspaceId = getCurrentWorkspaceId();
-	const response = await api.delete(`/workspaces/${workspaceId}/projects/${projectId}/proxies/${proxyId}`);
+	const response = await HttpApi.delete(`/workspaces/${workspaceId}/projects/${projectId}/proxies/${proxyId}`);
 	return response.data;
 };
 
 export const getProxyTarget = async (projectId: string, proxyId: string): Promise<ProxyTarget> => {
 	let workspaceId = getCurrentWorkspaceId();
-	const response = await api.get(`/workspaces/${workspaceId}/projects/${projectId}/proxies/${proxyId}`);
+	const response = await HttpApi.get(`/workspaces/${workspaceId}/projects/${projectId}/proxies/${proxyId}`);
 	return response.data.data;
 };
 
 // Update project mode function (for switching between 'mock' and 'proxy' modes)
 export const updateProjectMode = async (projectId: string, mode: string): Promise<Project> => {
 	let workspaceId = getCurrentWorkspaceId();
-	const response = await api.put(`/workspaces/${workspaceId}/projects/${projectId}`, {
+	const response = await HttpApi.put(`/workspaces/${workspaceId}/projects/${projectId}`, {
 		mode: mode
 	});
 	return response.data.data;
@@ -447,7 +447,7 @@ export const updateProject = async (projectId: string, data: {
 	active_proxy_id?: string;
 }): Promise<Project> => {
 	let workspaceId = getCurrentWorkspaceId();
-	const response = await api.put(`/workspaces/${workspaceId}/projects/${projectId}`, data);
+	const response = await HttpApi.put(`/workspaces/${workspaceId}/projects/${projectId}`, data);
 	return response.data.data;
 };
 
@@ -455,7 +455,7 @@ export const updateProject = async (projectId: string, data: {
 
 export const getProxyTargets = async (projectId: string): Promise<ProxyTarget[]> => {
 	let workspaceId = getCurrentWorkspaceId();
-	const response = await api.get(`/workspaces/${workspaceId}/projects/${projectId}/proxies`);
+	const response = await HttpApi.get(`/workspaces/${workspaceId}/projects/${projectId}/proxies`);
 	return response.data.data;
 };
 
@@ -489,7 +489,7 @@ export interface SystemConfigItem {
  * @returns Updated user data
  */
 export const updateUserProfile = async (userId: string, data: UpdateUserPayload): Promise<User> => {
-  const response = await api.patch(`/users/${userId}`, data);
+  const response = await HttpApi.patch(`/users/${userId}`, data);
   
   // Update auth store with the new user data
   if (response.data.success && response.data.data) {
@@ -511,7 +511,7 @@ export const updatePassword = async (currentPassword: string, newPassword: strin
     new_password: newPassword
   };
   
-  const response = await api.post('/users/change-password', payload);
+  const response = await HttpApi.post('/users/change-password', payload);
   return {
     success: response.data.success,
     message: response.data.message
@@ -524,7 +524,7 @@ export const updatePassword = async (currentPassword: string, newPassword: strin
  * @returns SystemConfigItem
  */
 export const getSystemConfig = async (key: string): Promise<SystemConfigItem> => {
-  const response = await api.get(`/system-config/${key}`);
+  const response = await HttpApi.get(`/system-config/${key}`);
   return response.data.data;
 };
 
@@ -533,7 +533,7 @@ export const getSystemConfig = async (key: string): Promise<SystemConfigItem> =>
  * @returns Array of SystemConfigItem
  */
 export const getAllSystemConfigs = async (): Promise<SystemConfigItem[]> => {
-  const response = await api.get('/system-configs');
+  const response = await HttpApi.get('/system-configs');
   return response.data.data;
 };
 
@@ -544,7 +544,7 @@ export const getAllSystemConfigs = async (): Promise<SystemConfigItem[]> => {
  * @returns Updated configuration
  */
 export const updateSystemConfig = async (key: string, value: string): Promise<SystemConfigItem> => {
-  const response = await api.put(`/system-config/${key}`, { value });
+  const response = await HttpApi.put(`/system-config/${key}`, { value });
   return response.data.data;
 };
 
@@ -575,7 +575,7 @@ export const isFeatureEnabled = async (key: string, defaultValue = false): Promi
  */
 export const getBookmarks = async (projectId: string): Promise<RequestLog[]> => {
   const workspaceId = getCurrentWorkspaceId();
-  const response = await api.get(`/workspaces/${workspaceId}/projects/${projectId}/logs/bookmark`);
+  const response = await HttpApi.get(`/workspaces/${workspaceId}/projects/${projectId}/logs/bookmark`);
   
   if (!response.data.success) {
     throw new Error(response.data.message || 'Failed to get bookmarks');
@@ -591,7 +591,7 @@ export const getBookmarks = async (projectId: string): Promise<RequestLog[]> => 
  */
 export const addBookmark = async (projectId: string, log: RequestLog): Promise<void> => {
   const workspaceId = getCurrentWorkspaceId();
-  const response = await api.post(`/workspaces/${workspaceId}/projects/${projectId}/logs/bookmark`, {
+  const response = await HttpApi.post(`/workspaces/${workspaceId}/projects/${projectId}/logs/bookmark`, {
     logs: JSON.stringify(log) // Send the full log object as a JSON string
   });
   
@@ -610,7 +610,7 @@ export const addBookmark = async (projectId: string, log: RequestLog): Promise<v
  */
 export const deleteBookmark = async (projectId: string, logId: string): Promise<void> => {
   const workspaceId = getCurrentWorkspaceId();
-  const response = await api.delete(`/workspaces/${workspaceId}/projects/${projectId}/logs/bookmark/${logId}`);
+  const response = await HttpApi.delete(`/workspaces/${workspaceId}/projects/${projectId}/logs/bookmark/${logId}`);
   
   if (!response.data.success) {
     throw new Error(response.data.message || 'Failed to delete bookmark');
