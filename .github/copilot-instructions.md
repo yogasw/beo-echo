@@ -17,26 +17,8 @@ This project is a Beo Echo API mocking service with a Golang backend and Svelte 
 ├── .github/           # GitHub Actions and workflows
 ├── .vscode/           # VSCode settings
 ├── backend/           # Golang Backend (BE)
-│   ├── cmd/           # Command-line entry points
-│   ├── src/           # Core application code
-│   │   ├── auth/      # Authentication components
-│   │   ├── database/  # Database models and connections
-│   │   ├── mocks/     # Mock API management
-│   │   └── ...        # Other modules
-│   ├── configs/       # Configuration files
-│   ├── go.mod         # Go modules definition
-│   └── Makefile       # Build automation
 ├── docs/              # Documentation files
 └── frontend/          # Svelte Frontend (FE)
-    ├── src/           # Source code
-    │   ├── lib/       # Shared libraries/components
-    │   │   ├── api/   # API clients
-    │   │   ├── components/ # UI components
-    │   │   ├── stores/     # Svelte stores
-    │   │   └── utils/      # Utility functions
-    │   └── routes/    # Application routes (pages)
-    ├── static/        # Static assets
-    └── ...            # Configuration files
 ```
 
 ## Technology Stack
@@ -458,322 +440,6 @@ Add these utility classes to your app.css for easier theme class application:
 - All API calls should be centralized in the `$lib/api` directory
 - Handle loading states and error conditions consistently
 
-## Backend Development Guidelines
-
-### Project Structure
-```
-backend/                   # Golang Backend
-├── cmd/                   # Application entry points
-│   ├── root.go            # Root command definitions
-│   └── server.go          # Server startup command
-├── logs/                  # Log output directory
-├── src/                   # Core application code
-│   ├── auth/              # Authentication module
-│   │   ├── handler/       # HTTP handlers for auth routes
-│   │   └── services/      # Authentication business logic
-│   ├── database/          # Database operations
-│   │   ├── models.go      # Central data model definitions
-│   │   └── db.go          # Database connection management
-│   ├── middlewares/       # HTTP middleware components
-│   ├── mocks/             # Mock API management
-│   │   ├── handler/       # HTTP handlers for mock endpoints
-│   │   ├── services/      # Mock routing business logic
-│   │   └── repositories/  # Data access layer
-│   ├── logs/              # Request logging module
-│   │   ├── handlers/      # HTTP handlers for logs
-│   │   └── services/      # Log processing logic
-│   ├── types/             # Common type definitions
-│   └── utils/             # Utility functions
-├── uploads/               # File upload storage
-├── configs/               # Configuration files
-└── Makefile               # Build commands and automation
-```
-
-### Data Model Reference
-
-All database models are defined in `backend/src/database/models.go`. This file serves as the **central reference** for all data models in the application. When working with data in the backend:
-
-1. **Always reference existing models**: Before creating new data-related functions, always check the models defined in `models.go` to understand the existing schema and relationships.
-
-2. **Field documentation requirements**: When adding new fields to existing models or creating new models, each field must include proper documentation comments explaining:
-   - Purpose of the field
-   - Format requirements if applicable
-   - Relationship to other models
-   - Default values if applicable
-   - Any validation requirements
-
-3. **Key Data Models**:
-   - `SystemConfig`: System-wide configuration settings
-   - `Project`: API mock project definition with endpoints and settings
-   - `MockEndpoint`: Specific API endpoint configurations 
-   - `MockResponse`: Response configuration for endpoints
-   - `RequestLog`: Detailed request/response logging
-   - `User`: User account information
-   - `Workspace`: Shared workspace for projects
-   - `UserWorkspace`: User membership in workspaces
-
-4. **Model reference example**:
-   ```go
-   // ProjectMode defines operation mode of mock system per project
-   type ProjectMode string
-   
-   const (
-     ModeMock      ProjectMode = "mock"      // Serves predefined mock responses only
-     ModeProxy     ProjectMode = "proxy"     // Uses mocks when available, otherwise forwards requests
-     ModeForwarder ProjectMode = "forwarder" // Always forwards all requests to target endpoint
-     ModeDisabled  ProjectMode = "disabled"  // Endpoint inactive - no responses served
-   )
-   ```
-
-5. **Field documentation example**:
-   ```go
-   type Project struct {
-     ID            string         `gorm:"type:string;primaryKey" json:"id"`
-     Name          string         `gorm:"type:string" json:"name"`
-     WorkspaceID   string         `gorm:"type:string;index" json:"workspace_id"`       // Foreign key to the associated workspace
-     Mode          ProjectMode    `gorm:"type:string;default:'mock'" json:"mode"`      // default: mock
-     Status        string         `gorm:"type:string;default:'running'" json:"status"` // running, stopped, error
-     ActiveProxyID *string        `gorm:"type:string" json:"active_proxy_id"`          // Current active proxy configuration
-     Alias         string         `gorm:"type:string;uniqueIndex;not null" json:"alias"` // Subdomain or alias for the project
-     URL           string         `json:"url"`                                           // URL for the project UI display
-     // ... other fields
-   }
-   ```
-
-6. **Model Relationships**: Always document relationships between models for clarity:
-   ```go
-   // RequestLog stores detailed information about each incoming HTTP request.
-   type RequestLog struct {
-     ID            string      `gorm:"type:string;primaryKey" json:"id"`
-     ProjectID     string      `gorm:"type:string;index" json:"project_id"` // Foreign key to the associated project
-     // ... other fields
-  
-     // Association to the Project
-     Project Project `gorm:"foreignKey:ProjectID;constraint:OnDelete:CASCADE" json:"-"`
-   }
-   ```
-
-### Module Organization
-Each feature module should follow this structure:
-1. **Handler Layer** (`handler/`):
-   - Handles HTTP requests and responses
-   - Validates input
-   - Calls appropriate service methods
-   - Returns responses
-   - Files should be named `*_handler.go`
-
-2. **Service Layer** (`service/`):
-   - Contains business logic
-   - Orchestrates data flow
-   - Handles complex operations
-   - Files should be named `*_service.go`
-
-3. **Repository Layer** (`repository/`, optional):
-   - Handles data persistence
-   - Database operations
-   - Files should be named `*_repository.go`
-
-### Testing Requirements
-- Every new feature must include unit tests
-- Use testify for assertions and mocking
-- Use mockery for generating mocks
-- Test coverage should be maintained or improved
-- Run all tests after any changes
-
-#### Test Structure
-```go
-func TestServiceMethod(t *testing.T) {
-    // Given
-    mockRepo := mocks.NewMockRepository(t)
-    svc := NewService(mockRepo)
-    
-    // When
-    mockRepo.EXPECT().Method().Return(expectedValue)
-    result, err := svc.Method()
-    
-    // Then
-    assert.NoError(t, err)
-    assert.Equal(t, expectedValue, result)
-}
-```
-
-### Database Guidelines
-- Use SQLite for development
-- Use GORM for database operations
-- Define clear models with proper tags
-- Include database migrations
-- Test database operations
-
-### Mock Generation
-- Use mockery to generate mocks
-- Generate mocks for interfaces
-- Keep mocks up to date with interfaces
-- Example mockery command:
-  ```bash
-  mockery --name=InterfaceName --dir=path/to/interface --output=path/to/mocks
-  ```
-
-### Code Quality Requirements
-1. **Testing**:
-   - Run tests before committing: `go test ./...`
-   - Write tests for new features
-   - Update tests when modifying existing features
-   - Use table-driven tests where appropriate
-
-2. **Error Handling**:
-   - Use custom error types
-   - Return meaningful error messages
-   - Handle all error cases
-   - Log errors appropriately
-
-3. **Logging**:
-   - Use zerolog package for all logging operations 
-   - Always include context in every function
-   - Follow structured logging pattern
-   - Log levels must be appropriate for the message
-   
-   Example:
-   ```go
-   // Initialize logger in main or init
-   logger := zerolog.New(os.Stdout).With().Timestamp().Logger()
-   ctx = logger.WithContext(ctx)
-
-   // In functions, always accept and use context
-   func (s *service) DoSomething(ctx context.Context, input Input) error {
-       log := zerolog.Ctx(ctx)
-       
-       log.Info().
-           Str("input_id", input.ID).
-           Str("user", input.UserID).
-           Msg("processing request")
-           
-       // ... function logic ...
-       
-       if err != nil {
-           log.Error().
-               Err(err).
-               Str("input_id", input.ID).
-               Msg("failed to process request")
-           return err
-       }
-       
-       return nil
-   }
-   ```
-
-   Log Level Guidelines:
-   - `Trace()`: For very detailed debugging
-   - `Debug()`: For development debugging
-   - `Info()`: For tracking normal operations
-   - `Warn()`: For handled issues that might need attention
-   - `Error()`: For unhandled errors that need immediate attention
-   - `Fatal()`: For errors that prevent application startup
-
-   Context Guidelines:
-   - Every function must accept `context.Context` as first parameter
-   - Pass context through all layers (handler → service → repository)
-   - Add relevant request information to context (user ID, request ID, etc.)
-   - Use context timeouts for external operations
-   
-   Security Guidelines:
-   - Never log sensitive information (passwords, tokens, personal data)
-   - Mask or truncate potentially sensitive IDs in logs
-   - Use appropriate log levels to avoid exposing detailed errors in production
-
-4. **Documentation**:
-   - Document all exported functions and types
-   - Include examples in documentation
-   - Keep README.md up to date
-   - Document configuration options
-
-5. **Code Style**:
-   - Follow Go best practices
-   - Use consistent naming
-   - Keep functions focused and small
-   - Use meaningful variable names
-
-### Example Module Structure
-For a new REST API feature:
-
-```go
-// handler/feature_handler.go
-type FeatureHandler struct {
-    service FeatureService
-}
-
-func (h *FeatureHandler) HandleFeature(c *gin.Context) {
-    // Handle HTTP request
-}
-
-// service/feature_service.go
-type FeatureService interface {
-    DoFeature(ctx context.Context, input Input) (Output, error)
-}
-
-type featureService struct {
-    repo FeatureRepository
-}
-
-func (s *featureService) DoFeature(ctx context.Context, input Input) (Output, error) {
-    // Business logic
-}
-
-// repository/feature_repository.go (if needed)
-type FeatureRepository interface {
-    Store(ctx context.Context, data Data) error
-}
-
-type featureRepository struct {
-    db *gorm.DB
-}
-
-// types/feature_types.go
-type Input struct {
-    // Input fields
-}
-
-type Output struct {
-    // Output fields
-}
-
-// feature_test.go
-func TestFeature(t *testing.T) {
-    // Test cases
-}
-```
-
-### Development Workflow
-1. Create new feature module with proper structure
-2. Implement interfaces and types
-3. Generate mocks using mockery
-4. Implement business logic with tests
-5. Add HTTP handlers with tests
-6. Run all tests before committing:
-   ```bash
-   cd backend && go test ./...
-   ```
-
-### Dependencies
-- Use proper dependency injection
-- Define clear interfaces
-- Use mocks for testing
-- Keep dependencies minimal and focused
-
-### Running Tests
-The project includes predefined VS Code tasks to facilitate testing:
-
-```bash
-# Run all backend tests
-cd backend && go test ./...
-
-# Run specific package tests
-cd backend && go test ./src/database
-
-# With code coverage report
-cd backend && go test -cover ./...
-```
-
-You can also use the VS Code task "Run all Tests in Backend" to execute all tests in the backend directory.
 
 ## Frontend Development Guidelines
 
@@ -842,3 +508,403 @@ frontend/                  # JavaScript/TypeScript frontend with Svelte and Tail
 - **Tailwind CSS**: For styling with utility classes
 - **TypeScript**: For type safety and better developer experience
 - **Font Awesome**: For consistent iconography
+
+
+----------------------------
+
+# Simplified Backend Architecture Guide
+
+## Dependency Inversion Principle (DIP)
+
+The backend follows a clean architecture using the Dependency Inversion Principle:
+
+> High-level modules should not depend on low-level modules. Both should depend on abstractions.
+> Abstractions should not depend on details. Details should depend on abstractions.
+
+## Layer Structure
+
+```
+┌────────────────┐
+│    Handler     │  HTTP interface, uses Service interfaces
+├────────────────┤
+│    Service     │  Business logic, defines & uses Repository interfaces
+├────────────────┤
+│   Repository   │  Data access, implements interfaces defined by Service
+└────────────────┘
+```
+
+## Directory Structure
+
+```
+backend/                   # Golang Backend
+├── cmd/                   # Application entry points
+│   ├── root.go            # Root command definitions
+│   └── server.go          # Server startup command
+├── logs/                  # Log output directory
+├── src/                   # Core application code
+│   ├── auth/              # Authentication module
+│   │   ├── handler/       # HTTP handlers for auth routes
+│   │   └── services/      # Authentication business logic
+│   ├── database/          # Database operations
+│   │   ├── models.go      # Central data model definitions
+│   │   ├── db.go          # Database connection management
+│   │   └── *_repo.go      # Repository implementations
+│   ├── middlewares/       # HTTP middleware components
+│   ├── mocks/             # Mock API management
+│   │   ├── handler/       # HTTP handlers for mock endpoints
+│   │   ├── services/      # Mock routing business logic
+│   │   └── repositories/  # Data access layer
+│   ├── logs/              # Request logging module
+│   │   ├── handlers.go    # HTTP handlers for logs
+│   │   └── services.go    # Log processing logic
+│   ├── types/             # Common type definitions
+│   └── utils/             # Utility functions
+├── uploads/               # File upload storage
+├── configs/               # Configuration files
+└── Makefile               # Build commands and automation
+
+## Data Model Reference
+
+All database models are defined in `backend/src/database/models.go`. This file serves as the **central reference** for all data models in the application. When working with data in the backend:
+
+1. **Always reference existing models**: Before creating new data-related functions, always check the models defined in `models.go` to understand the existing schema and relationships.
+
+2. **Field documentation requirements**: When adding new fields to existing models or creating new models, each field must include proper documentation comments explaining:
+   - Purpose of the field
+   - Format requirements if applicable
+   - Relationship to other models
+   - Default values if applicable
+   - Any validation requirements
+
+3. **Key Data Models**:
+   - `SystemConfig`: System-wide configuration settings
+   - `Project`: API mock project definition with endpoints and settings
+   - `MockEndpoint`: Specific API endpoint configurations 
+   - `MockResponse`: Response configuration for endpoints
+   - `RequestLog`: Detailed request/response logging
+   - `User`: User account information
+   - `Workspace`: Shared workspace for projects
+   - `UserWorkspace`: User membership in workspaces
+
+4. **Model reference example**:
+   ```go
+   // ProjectMode defines operation mode of mock system per project
+   type ProjectMode string
+   
+   const (
+     ModeMock      ProjectMode = "mock"      // Serves predefined mock responses only
+     ModeProxy     ProjectMode = "proxy"     // Uses mocks when available, otherwise forwards requests
+     ModeForwarder ProjectMode = "forwarder" // Always forwards all requests to target endpoint
+     ModeDisabled  ProjectMode = "disabled"  // Endpoint inactive - no responses served
+   )
+   ```
+
+5. **Field documentation example**:
+   ```go
+   type Project struct {
+     ID            string         `gorm:"type:string;primaryKey" json:"id"`
+     Name          string         `gorm:"type:string" json:"name"`
+     WorkspaceID   string         `gorm:"type:string;index" json:"workspace_id"`       // Foreign key to the associated workspace
+     Mode          ProjectMode    `gorm:"type:string;default:'mock'" json:"mode"`      // default: mock
+     Status        string         `gorm:"type:string;default:'running'" json:"status"` // running, stopped, error
+     ActiveProxyID *string        `gorm:"type:string" json:"active_proxy_id"`          // Current active proxy configuration
+     Alias         string         `gorm:"type:string;uniqueIndex;not null" json:"alias"` // Subdomain or alias for the project
+     URL           string         `json:"url"`                                           // URL for the project UI display
+   }
+   ```
+
+## Module Organization
+
+Each feature module follows a structure implementing the **Dependency Inversion Principle** (DIP), where higher-level modules depend on abstractions, not concrete implementations:
+
+1. **Handler Layer** (`handler/`):
+   - Processes HTTP requests and produces responses
+   - Validates and transforms input data
+   - Depends on service interfaces, not implementations
+   - Converts domain errors to appropriate HTTP status codes
+   - Files named `*_handler.go`
+
+2. **Service Layer** (`service/`):
+   - Contains core business logic and domain rules
+   - Defines repository interfaces that it needs
+   - Orchestrates operations across multiple repositories
+   - Files named `*_service.go`
+   - Only depends on abstractions (interfaces)
+
+3. **Repository Interfaces** (`service/`):
+   - Defined in service packages where they're used
+   - Specify data access requirements for each service
+   - Clean separation from database implementation details
+
+4. **Repository Implementations** (`database/repositories/`):
+   - Implement the interfaces defined in service packages
+   - Handle database operations and queries
+   - Convert between domain and database models
+   - All database operations are centralized here
+   - Files should be named `*_repository.go`
+   - Each file implements a specific repository interface
+
+## Key Principles
+
+1. **Dependency Inversion**
+   - High-level modules (services) depend on abstractions
+   - Low-level modules (repositories) implement those abstractions
+   - Interfaces are defined where they are needed (in services)
+
+2. **Layer Responsibilities**
+   - **Handlers**: Handle external requests and input validation
+   - **Services**: Implement business logic and define data needs
+   - **Repository Interfaces**: Define data access requirements (in services)
+   - **Repository Implementations**: Implement database access (in database/)
+
+## Implementation Guidelines
+
+### Step 1: Define Service and Repository Interface
+
+```go
+// service/user_service.go
+package service
+
+import (
+    "context"
+    "beo-echo/backend/src/database"
+)
+
+// UserRepository defines data access requirements
+type UserRepository interface {
+    FindByID(ctx context.Context, id string) (*database.User, error)
+    Create(ctx context.Context, user *database.User) error
+}
+
+// UserService handles user business operations
+type UserService interface {
+    GetUser(ctx context.Context, id string) (*database.User, error)
+    CreateUser(ctx context.Context, user *database.User) error
+}
+
+// userService implements UserService
+type userService struct {
+    repo UserRepository
+}
+
+// NewUserService creates a new user service
+func NewUserService(repo UserRepository) UserService {
+    return &userService{repo: repo}
+}
+
+// Implement the UserService methods...
+```
+
+### Step 2: Create Handler
+
+```go
+// handler/user_handler.go
+package handler
+
+import (
+    "github.com/gin-gonic/gin"
+    "beo-echo/backend/src/users/service"
+)
+
+// UserHandler handles HTTP requests for users
+type UserHandler struct {
+    service service.UserService
+}
+
+// NewUserHandler creates a new user handler
+func NewUserHandler(service service.UserService) *UserHandler {
+    return &UserHandler{service: service}
+}
+
+// Implement handler methods...
+```
+
+### Step 3: Implement Repository
+
+```go
+// database/repositories/user_repo.go
+package repositories
+
+import (
+    "context"
+    "gorm.io/gorm"
+    
+    "beo-echo/backend/src/database"
+    "beo-echo/backend/src/users/service"
+)
+
+// userRepository implements service.UserRepository
+type userRepository struct {
+    db *gorm.DB
+}
+
+// NewUserRepository creates a new user repository
+func NewUserRepository(db *gorm.DB) service.UserRepository {
+    return &userRepository{db: db}
+}
+
+// Implement repository methods...
+```
+
+### Step 4: Register Dependencies
+
+```go
+// In server.go or main.go
+func SetupRoutes(router *gin.Engine) {
+    db := database.GetDB()
+    
+    // Create repository
+    userRepo := repositories.NewUserRepository(db)
+    
+    // Create service with repository
+    userService := service.NewUserService(userRepo)
+    
+    // Create handler with service
+    userHandler := handler.NewUserHandler(userService)
+    
+    // Register routes
+    router.GET("/users/:id", userHandler.GetUser)
+    router.POST("/users", userHandler.CreateUser)
+}
+```
+
+## Key Benefits
+
+1. **Testability**: Mock repositories easily for unit testing
+2. **Modularity**: Change implementations without affecting services
+3. **Clean Architecture**: Clear separation of concerns
+4. **Consistent Patterns**: Standard approach for all features
+
+## Testing Requirements
+- Every new feature must include unit tests
+- Use testify for assertions and mocking
+- Use mockery for generating mocks
+- Test coverage should be maintained or improved
+- Run all tests after any changes
+
+### Test Structure
+```go
+func TestServiceMethod(t *testing.T) {
+    // Given - Setup test dependencies and expectations
+    mockRepo := mocks.NewMockRepository(t)
+    mockRepo.EXPECT().Method(mock.Anything, "input").Return(expectedValue, nil)
+    
+    svc := NewService(mockRepo)
+    
+    // When - Call the method under test
+    result, err := svc.Method(context.Background(), "input")
+    
+    // Then - Verify results and behaviors
+    assert.NoError(t, err)
+    assert.Equal(t, expectedValue, result)
+    mockRepo.AssertExpectations(t) // Verify all expected calls were made
+}
+```
+
+## Code Quality Requirements
+
+### 1. Testing
+- Run tests before committing: `go test ./...`
+- Write tests for new features
+- Update tests when modifying existing features
+- Use table-driven tests where appropriate
+
+### 2. Error Handling
+- Use custom error types
+- Return meaningful error messages
+- Handle all error cases
+- Log errors appropriately
+
+### 3. Logging
+- Use zerolog package for all logging operations 
+- Always include context in every function
+- Follow structured logging pattern
+- Log levels must be appropriate for the message
+   
+Example:
+```go
+// Initialize logger in main or init
+logger := zerolog.New(os.Stdout).With().Timestamp().Logger()
+ctx = logger.WithContext(ctx)
+
+// In functions, always accept and use context
+func (s *service) DoSomething(ctx context.Context, input Input) error {
+    log := zerolog.Ctx(ctx)
+    
+    log.Info().
+        Str("input_id", input.ID).
+        Str("user", input.UserID).
+        Msg("processing request")
+        
+    // ... function logic ...
+    
+    if err != nil {
+        log.Error().
+            Err(err).
+            Str("input_id", input.ID).
+            Msg("failed to process request")
+        return err
+    }
+    
+    return nil
+}
+```
+
+Log Level Guidelines:
+- `Trace()`: For very detailed debugging
+- `Debug()`: For development debugging
+- `Info()`: For tracking normal operations
+- `Warn()`: For handled issues that might need attention
+- `Error()`: For unhandled errors that need immediate attention
+- `Fatal()`: For errors that prevent application startup
+
+Context Guidelines:
+- Every function must accept `context.Context` as first parameter
+- Pass context through all layers (handler → service → repository)
+- Add relevant request information to context (user ID, request ID, etc.)
+- Use context timeouts for external operations
+
+Security Guidelines:
+- Never log sensitive information (passwords, tokens, personal data)
+- Mask or truncate potentially sensitive IDs in logs
+- Use appropriate log levels to avoid exposing detailed errors in production
+
+### 4. Documentation
+- Document all exported functions and types
+- Include examples in documentation
+- Keep README.md up to date
+- Document configuration options
+
+### 5. Code Style
+- Follow Go best practices
+- Use consistent naming
+- Keep functions focused and small
+- Use meaningful variable names
+
+## Development Workflow
+
+1. Create new feature module with proper structure
+2. Implement interfaces and types
+3. Generate mocks using mockery
+4. Implement business logic with tests
+5. Add HTTP handlers with tests
+6. Run all tests before committing:
+   ```bash
+   cd backend && go test ./...
+   ```
+
+### Running Tests
+The project includes predefined VS Code tasks to facilitate testing:
+
+```bash
+# Run all backend tests
+cd backend && go test ./...
+
+# Run specific package tests
+cd backend && go test ./src/database
+
+# With code coverage report
+cd backend && go test -cover ./...
+```
+
+You can also use the VS Code task "Run all Tests in Backend" to execute all tests in the backend directory.
