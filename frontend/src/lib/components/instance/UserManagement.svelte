@@ -4,6 +4,7 @@
 	import { onMount } from 'svelte';
 	import type { User } from '$lib/types/User';
 	import { userManagementApi } from '$lib/api/userManagement';
+	import ToggleSwitch from '$lib/components/common/ToggleSwitch.svelte';
 
 	let users: User[] = [];
 	let loading = true;
@@ -15,7 +16,12 @@
 	let selectedUser: User | null = null;
 
 	// Form data for add/edit
-	let formData = {
+	let formData: {
+		name: string;
+		email: string;
+		is_active: boolean;
+		status?: string;
+	} = {
 		name: '',
 		email: '',
 		is_active: false
@@ -53,7 +59,7 @@
 		formData = {
 			name: '',
 			email: '',
-			is_active: false
+			is_active: true // Default to active for new users
 		};
 		showAddModal = true;
 	}
@@ -64,7 +70,7 @@
 		formData = {
 			name: user.name,
 			email: user.email,
-			is_active: user.is_active || false
+			is_active: user.is_active !== false
 		};
 		showEditModal = true;
 	}
@@ -85,6 +91,11 @@
 
 	// Handle adding a new user
 	async function handleAddUser() {
+		if (!formData.name) {
+			toast.error('Name is required');
+			return;
+		}
+		
 		if (!formData.email) {
 			toast.error('Email is required');
 			return;
@@ -171,9 +182,7 @@
 									<td class="px-4 py-3 theme-text-secondary">{user.email}</td>
 									<td class="px-4 py-3">
 										<span
-											class="{activeStyles[
-												String(user.is_active !== false)
-											]} px-2 py-1 rounded-full text-xs"
+											class="{user.is_active !== false ? activeStyles.true : activeStyles.false} px-2 py-1 rounded-full text-xs"
 										>
 											{user.is_active !== false ? 'Active' : 'Inactive'}
 										</span>
@@ -233,6 +242,17 @@
 			<div class="p-4">
 				<form on:submit|preventDefault={handleAddUser}>
 					<div class="mb-4">
+						<label for="name" class="block theme-text-secondary text-sm mb-2">Name</label>
+						<input
+							type="text"
+							id="name"
+							class="block w-full p-2 text-sm rounded-lg theme-bg-secondary border theme-border theme-text-primary focus:ring-blue-500 focus:border-blue-500"
+							placeholder="Enter user's name"
+							bind:value={formData.name}
+							required
+						/>
+					</div>
+					<div class="mb-4">
 						<label for="email" class="block theme-text-secondary text-sm mb-2">Email</label>
 						<input
 							type="email"
@@ -245,6 +265,18 @@
 						<p class="mt-1 text-xs theme-text-secondary">
 							The user will be invited to join this instance.
 						</p>
+					</div>
+					<div class="mb-4">
+						<label for="add-status" class="block theme-text-secondary text-sm mb-2">Status</label>
+						<div class="flex items-center">
+							<ToggleSwitch
+								id="add-status"
+								bind:checked={formData.is_active}
+								ariaLabel="User status toggle"
+							>
+								<span class="theme-text-primary text-sm">{formData.is_active ? 'Active' : 'Inactive'}</span>
+							</ToggleSwitch>
+						</div>
 					</div>
 					<div class="flex justify-end gap-3 mt-6">
 						<button
@@ -309,26 +341,13 @@
 					<div class="mb-4">
 						<label for="edit-status" class="block theme-text-secondary text-sm mb-2">Status</label>
 						<div class="flex items-center">
-							<label class="inline-flex items-center cursor-pointer">
-								<input
-									type="checkbox"
-									id="edit-status"
-									checked={formData.status === 'Active'}
-									on:change={() =>
-										(formData.status = formData.status === 'Active' ? 'Inactive' : 'Active')}
-									class="sr-only peer"
-								/>
-								<div
-									class="w-11 h-6 bg-gray-300 dark:bg-gray-700 peer-checked:bg-green-500
-									rounded-full peer peer-focus:outline-none peer-focus:ring-2
-									peer-focus:ring-blue-300 dark:peer-focus:ring-blue-600
-									peer-checked:after:translate-x-full peer-checked:after:border-white
-									after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white
-									after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5
-									after:transition-all dark:border-gray-600"
-								></div>
-								<span class="ml-3 theme-text-primary text-sm">{formData.status}</span>
-							</label>
+							<ToggleSwitch
+								id="edit-status"
+								bind:checked={formData.is_active}
+								ariaLabel="User status toggle"
+							>
+								<span class="theme-text-primary text-sm">{formData.is_active ? 'Active' : 'Inactive'}</span>
+							</ToggleSwitch>
 						</div>
 					</div>
 					<div class="flex justify-end gap-3 mt-6">
