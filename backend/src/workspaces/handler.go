@@ -1,4 +1,4 @@
-package handler
+package workspaces
 
 import (
 	"net/http"
@@ -9,8 +9,18 @@ import (
 	"beo-echo/backend/src/database"
 )
 
-// GetUserWorkspacesHandler returns all workspaces accessible to the authenticated user
-func GetUserWorkspacesHandler(c *gin.Context) {
+// WorkspaceHandler handles HTTP requests for workspaces
+type WorkspaceHandler struct {
+	service *WorkspaceService
+}
+
+// NewWorkspaceHandler creates a new workspace handler
+func NewWorkspaceHandler(service *WorkspaceService) *WorkspaceHandler {
+	return &WorkspaceHandler{service: service}
+}
+
+// GetUserWorkspaces returns all workspaces accessible to the authenticated user
+func (h *WorkspaceHandler) GetUserWorkspaces(c *gin.Context) {
 	// Get user ID from context (set by JWTAuthMiddleware)
 	userID, exists := c.Get("userID")
 	if !exists {
@@ -22,7 +32,7 @@ func GetUserWorkspacesHandler(c *gin.Context) {
 	}
 
 	// Fetch user's workspaces
-	workspaces, err := database.GetUserWorkspaces(userID.(string))
+	workspaces, err := h.service.GetUserWorkspaces(c.Request.Context(), userID.(string))
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"success": false,
@@ -37,8 +47,8 @@ func GetUserWorkspacesHandler(c *gin.Context) {
 	})
 }
 
-// CreateWorkspaceHandler creates a new workspace
-func CreateWorkspaceHandler(c *gin.Context) {
+// CreateWorkspace creates a new workspace
+func (h *WorkspaceHandler) CreateWorkspace(c *gin.Context) {
 	// Only system admins or authorized users can create workspaces
 	userID, exists := c.Get("userID")
 	if !exists {
@@ -62,44 +72,15 @@ func CreateWorkspaceHandler(c *gin.Context) {
 		return
 	}
 
-	// Create workspace in a transaction
-	tx := database.DB.Begin()
-
-	// Create the workspace
+	// Create workspace
 	workspace := database.Workspace{
 		Name: request.Name,
 	}
 
-	if err := tx.Create(&workspace).Error; err != nil {
-		tx.Rollback()
+	if err := h.service.CreateWorkspace(c.Request.Context(), &workspace, userID.(string)); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"success": false,
 			"message": "Failed to create workspace: " + err.Error(),
-		})
-		return
-	}
-
-	// Add the current user as an admin of this workspace
-	userWorkspace := database.UserWorkspace{
-		UserID:      userID.(string),
-		WorkspaceID: workspace.ID,
-		Role:        "admin",
-	}
-
-	if err := tx.Create(&userWorkspace).Error; err != nil {
-		tx.Rollback()
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"success": false,
-			"message": "Failed to assign user to workspace: " + err.Error(),
-		})
-		return
-	}
-
-	// Commit the transaction
-	if err := tx.Commit().Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"success": false,
-			"message": "Failed to complete workspace creation: " + err.Error(),
 		})
 		return
 	}
@@ -111,8 +92,8 @@ func CreateWorkspaceHandler(c *gin.Context) {
 	})
 }
 
-// CheckWorkspaceRoleHandler returns the user's role in a specific workspace
-func CheckWorkspaceRoleHandler(c *gin.Context) {
+// CheckWorkspaceRole returns the user's role in a specific workspace
+func (h *WorkspaceHandler) CheckWorkspaceRole(c *gin.Context) {
 	workspaceID := c.Param("workspaceID")
 	if workspaceID == "" {
 		c.JSON(http.StatusBadRequest, gin.H{
@@ -156,7 +137,7 @@ func CheckWorkspaceRoleHandler(c *gin.Context) {
 
 		if !isSystemOwner {
 			// Not a system admin, check if workspace admin
-			isAdmin, err := database.IsUserWorkspaceAdmin(userIDValue.(string), workspaceID)
+			isAdmin, err := h.service.IsUserWorkspaceAdmin(c.Request.Context(), userIDValue.(string), workspaceID)
 			if err != nil || !isAdmin {
 				c.JSON(http.StatusForbidden, gin.H{
 					"success": false,
@@ -168,8 +149,7 @@ func CheckWorkspaceRoleHandler(c *gin.Context) {
 	}
 
 	// Now check the requested user's role
-	var userWorkspace database.UserWorkspace
-	err := database.DB.Where("user_id = ? AND workspace_id = ?", requestedUserID, workspaceID).First(&userWorkspace).Error
+	userWorkspace, err := h.service.CheckWorkspaceRole(c.Request.Context(), requestedUserID, workspaceID)
 
 	if err != nil {
 		if err == gorm.ErrRecordNotFound {
@@ -198,4 +178,16 @@ func CheckWorkspaceRoleHandler(c *gin.Context) {
 			"role":         userWorkspace.Role,
 		},
 	})
+}
+
+// RegisterRoutes registers workspace routes to the given router group
+func RegisterRoutes(r *gin.RouterGroup, service *WorkspaceService) {
+	handler := NewWorkspaceHandler(service)
+
+	workspacesGroup := r.Group("/workspaces")
+	{
+		workspacesGroup.GET("", handler.GetUserWorkspaces)
+		workspacesGroup.POST("", handler.CreateWorkspace)
+		workspacesGroup.GET("/:workspaceID/role", handler.CheckWorkspaceRole)
+	}
 }

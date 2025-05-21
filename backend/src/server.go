@@ -16,6 +16,7 @@ import (
 
 	"beo-echo/backend/src/caddy/scripts"
 	"beo-echo/backend/src/database"
+	"beo-echo/backend/src/database/repositories"
 	"beo-echo/backend/src/health"
 	"beo-echo/backend/src/lib"
 	"beo-echo/backend/src/middlewares"
@@ -25,6 +26,7 @@ import (
 	"beo-echo/backend/src/mocks/handler/proxy"
 	"beo-echo/backend/src/mocks/handler/response"
 	"beo-echo/backend/src/utils"
+	"beo-echo/backend/src/workspaces"
 
 	// New imports for auth and workspace management
 	authHandler "beo-echo/backend/src/auth/handler"
@@ -120,10 +122,12 @@ func SetupRouter() *gin.Engine {
 		apiGroup.PATCH("/users/:userId", authHandler.UpdateUserHandler)
 		apiGroup.POST("/users/change-password", authHandler.UpdatePasswordHandler)
 
-		// General workspace-related routes
-		apiGroup.GET("/workspaces", authHandler.GetUserWorkspacesHandler)
-		apiGroup.POST("/workspaces", authHandler.CreateWorkspaceHandler)
-		apiGroup.GET("/workspaces/:workspaceID/role", authHandler.CheckWorkspaceRoleHandler)
+		// Initialize workspace module
+		workspaceRepo := repositories.NewWorkspaceRepository(database.DB)
+		workspaceService := workspaces.NewWorkspaceService(workspaceRepo)
+
+		// Register workspace routes
+		workspaces.RegisterRoutes(apiGroup, workspaceService)
 
 		// Workspace-project hierarchy routes (nested)
 		workspaceRoutes := apiGroup.Group("/workspaces/:workspaceID")
