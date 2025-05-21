@@ -59,8 +59,9 @@ func (r *workspaceRepository) GetUserWorkspacesWithRoles(ctx context.Context, us
 	workspacesWithRoles := make([]workspaces.WorkspaceWithRole, len(result))
 	for i, item := range result {
 		workspacesWithRoles[i] = workspaces.WorkspaceWithRole{
-			Workspace: item.Workspace,
-			UserRole:  item.Role,
+			ID:   item.ID,
+			Name: item.Name,
+			Role: item.Role,
 		}
 	}
 

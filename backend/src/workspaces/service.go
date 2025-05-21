@@ -7,8 +7,9 @@ import (
 
 // WorkspaceWithRole extends Workspace with user role information
 type WorkspaceWithRole struct {
-	database.Workspace
-	UserRole string `json:"user_role"` // Role of the current user in this workspace
+	ID   string `json:"id"` // Unique identifier for the workspace
+	Name string `json:"name"`
+	Role string `json:"role"` // Role of the current user in this workspace
 }
 
 // WorkspaceRepository defines the data access requirements for workspace operations

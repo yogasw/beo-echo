@@ -18,6 +18,7 @@
 	// Initialize form with current workspace data
 	$: if ($currentWorkspace && !editMode) {
 		workspaceName = $currentWorkspace.name;
+		console.log('Current workspace:', $currentWorkspace);
 	}
 	
 	// Toggle edit mode
@@ -159,13 +160,6 @@
 					{$currentWorkspace?.name || 'No workspace selected'}
 				</div>
 			{/if}
-		</div>
-		
-		<div class="mb-4">
-			<label for="workspace-id" class="block theme-text-secondary text-sm mb-1">Workspace ID</label>
-			<div id="workspace-id" class={ThemeUtils.themeBgSecondary('w-full p-2 rounded theme-border theme-text-primary')}>
-				{$currentWorkspace?.id || 'N/A'}
-			</div>
 		</div>
 		
 		<div class="mb-4">
