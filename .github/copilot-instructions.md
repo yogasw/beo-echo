@@ -188,6 +188,22 @@ This project is a Beo Echo API mocking service with a Golang backend and Svelte 
   ```
 - Include appropriate icons: `fas fa-check-circle text-green-400` or `fas fa-exclamation-circle text-red-400`
 - Use Svelte transitions for smooth appearance: `transition:fade={{ duration: 200 }}`
+- Use the centralized toast store from `$lib/stores/toast.ts` for all notifications:
+  ```typescript
+  import { toast } from '$lib/stores/toast';
+  
+  // Success notifications
+  toast.success('Operation completed successfully');
+  
+  // Error notifications - supports multiple formats
+  toast.error('Something went wrong'); // Simple string error
+  toast.error(errorObject); // Error object or HTTP error response
+  
+  // Warning and info notifications
+  toast.warning('Warning message');
+  toast.info('Informational message');
+  ```
+- For HTTP errors, the toast error handler automatically extracts error messages from response data
 
 #### Icons
 - Use Font Awesome icons consistently
@@ -483,7 +499,20 @@ frontend/                  # JavaScript/TypeScript frontend with Svelte and Tail
 2. **API Integration**
    - All API calls should be centralized in the `$lib/api` directory
    - Use TypeScript interfaces matching backend models
-   - Implement proper error handling with user-friendly messages
+   - Implement proper error handling with user-friendly messages using the toast store:
+     ```typescript
+     import { toast } from '$lib/stores/toast';
+     
+     try {
+       const result = await apiService.someOperation();
+       toast.success('Operation successful');
+       return result;
+     } catch (error) {
+       toast.error(error); // Automatically extracts error message from HTTP responses
+       // No need to parse error manually - toast.error supports Error objects and HTTP errors
+       // Handles different error formats: string, Error object, or HTTP response with error data
+     }
+     ```
    - Use loading states for all async operations
 
 3. **State Management**
