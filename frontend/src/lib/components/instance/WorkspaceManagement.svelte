@@ -4,6 +4,7 @@
 	import { currentUser } from '$lib/stores/auth';
 	import type { Workspace } from '$lib/types/Workspace';
 	import { workspaces as workspaceStore } from '$lib/stores/workspace';
+	import WorkspaceAutoInvite from '$lib/components/workspace/WorkspaceAutoInvite.svelte';
 
 	// API imports
 	import { workspaceApi } from '$lib/api/workspaceApi';
@@ -16,6 +17,10 @@
 	let searchQuery = '';
 	let isLoading = false;
 	let error: string | null = null;
+	
+	// Auto-invite modal state
+	let showAutoInviteModal = false;
+	let selectedWorkspace: Workspace | null = null;
 	
 	// Pagination
 	let currentPage = 1;
@@ -125,9 +130,9 @@
 	}
 	
 	function manageAutoInvite(workspace: Workspace) {
-		// Callback to parent component to manage auto-invite settings
-		// onManageAutoInvite(workspace);
-		toast.info(`Manage auto-invite settings for workspace: ${workspace.name}`);
+		// Show the auto-invite management modal for this workspace
+		selectedWorkspace = workspace;
+		showAutoInviteModal = true;
 	}
 </script>
 
@@ -318,3 +323,17 @@
 		<!-- No workspace actions in instance scope -->
 	</div>
 </div>
+
+<!-- Auto-invite configuration modal -->
+{#if showAutoInviteModal && selectedWorkspace}
+	<WorkspaceAutoInvite
+		workspaceId={selectedWorkspace.id}
+		isOwner={$currentUser?.is_owner || false}
+		onClose={() => {
+			showAutoInviteModal = false;
+			selectedWorkspace = null;
+			// Refresh workspaces list to show updated auto-invite settings
+			loadWorkspaces();
+		}}
+	/>
+{/if}
