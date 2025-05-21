@@ -56,8 +56,8 @@ type UpdatePasswordRequest struct {
 	NewPassword     string `json:"new_password" binding:"required,min=6"`
 }
 
-// UpdateUserRequest represents the update user profile request
-type UpdateUserRequest struct {
+// UpdateProfileRequest represents the update user profile request
+type UpdateProfileRequest struct {
 	Name  string `json:"name"`
 	Email string `json:"email"`
 }
@@ -99,7 +99,7 @@ func (h *UserHandler) UpdatePassword(c *gin.Context) {
 }
 
 // UpdateUser handles user profile updates
-func (h *UserHandler) UpdateUser(c *gin.Context) {
+func (h *UserHandler) UpdateProfile(c *gin.Context) {
 	userID, exists := c.Get("userID")
 	if !exists {
 		c.JSON(http.StatusUnauthorized, gin.H{
@@ -109,7 +109,7 @@ func (h *UserHandler) UpdateUser(c *gin.Context) {
 		return
 	}
 
-	var req UpdateUserRequest
+	var req UpdateProfileRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"success": false,
@@ -368,24 +368,6 @@ func (h *UserHandler) DeleteUser(c *gin.Context) {
 		return
 	}
 
-	// Check if current user is an owner
-	currentUser, _, err := h.service.GetCurrentUser(c.Request.Context(), currentUserID.(string))
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"success": false,
-			"message": "Failed to retrieve user: " + err.Error(),
-		})
-		return
-	}
-
-	if !currentUser.IsOwner {
-		c.JSON(http.StatusForbidden, gin.H{
-			"success": false,
-			"message": "Permission denied: Only instance owners can delete users",
-		})
-		return
-	}
-
 	// Prevent self-deletion
 	if currentUserID.(string) == req.UserID {
 		c.JSON(http.StatusBadRequest, gin.H{
@@ -395,7 +377,7 @@ func (h *UserHandler) DeleteUser(c *gin.Context) {
 		return
 	}
 
-	err = h.service.DeleteUser(c.Request.Context(), req.UserID)
+	err := h.service.DeleteUser(c.Request.Context(), req.UserID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"success": false,
@@ -473,31 +455,16 @@ func (h *UserHandler) UpdateWorkspaceUserRole(c *gin.Context) {
 }
 
 // UpdateUserOwnerRequest represents the request to update a user's owner status
-type UpdateUserOwnerRequest struct {
-	IsOwner bool `json:"is_owner" binding:"required"`
+type UpdateUserRequest struct {
+	IsOwner  bool `json:"is_owner" omitempty:"true"`
+	IsActive bool `json:"is_active" omitempty:"true"`
 }
 
-// UpdateUserOwner handles updating a user's owner status
-func (h *UserHandler) UpdateUserOwner(c *gin.Context) {
-	currentUserID, exists := c.Get("userID")
-	if !exists {
-		c.JSON(http.StatusUnauthorized, gin.H{
-			"success": false,
-			"message": "User not authenticated",
-		})
-		return
-	}
+// UpdateUser handles updating a user's owner status
+func (h *UserHandler) UpdateUser(c *gin.Context) {
+	userID := c.Param("user_id")
 
-	var pathParams DeleteUserRequest
-	if err := c.ShouldBindUri(&pathParams); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"success": false,
-			"message": "Invalid user ID",
-		})
-		return
-	}
-
-	var req UpdateUserOwnerRequest
+	var req UpdateUserRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"success": false,
@@ -505,32 +472,15 @@ func (h *UserHandler) UpdateUserOwner(c *gin.Context) {
 		})
 		return
 	}
-
-	// Check if current user is an owner
-	currentUser, _, err := h.service.GetCurrentUser(c.Request.Context(), currentUserID.(string))
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"success": false,
-			"message": "Failed to retrieve user: " + err.Error(),
-		})
-		return
+	updates := make(map[string]interface{})
+	if req.IsOwner {
+		updates["is_owner"] = req.IsOwner
+	}
+	if req.IsActive {
+		updates["is_active"] = req.IsActive
 	}
 
-	if !currentUser.IsOwner {
-		c.JSON(http.StatusForbidden, gin.H{
-			"success": false,
-			"message": "Permission denied: Only instance owners can modify owner status",
-		})
-		return
-	}
-
-	// Update the user
-	updates := map[string]interface{}{
-		"is_owner": req.IsOwner,
-	}
-
-	err = h.service.UpdateUserFields(c.Request.Context(), pathParams.UserID, updates)
-	if err != nil {
+	if err := h.service.UpdateUserFields(c.Request.Context(), userID, updates); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"success": false,
 			"message": "Failed to update user: " + err.Error(),

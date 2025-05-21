@@ -479,7 +479,7 @@ export interface SystemConfigItem {
  * @returns Updated user data
  */
 export const updateUserProfile = async (userId: string, data: UpdateUserPayload): Promise<User> => {
-	const response = await apiClient.patch(`/users/${userId}`, data);
+	const response = await apiClient.patch(`/users/profile`, data);
 
 	// Update auth store with the new user data
 	if (response.data.success && response.data.data) {

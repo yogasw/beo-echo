@@ -131,13 +131,13 @@ func SetupRouter() *gin.Engine {
 
 		// User-related routes
 		apiGroup.GET("/auth/me", userHandler.GetCurrentUser)
-		apiGroup.PATCH("/users/profile", userHandler.UpdateUser)
+		apiGroup.PATCH("/users/profile", userHandler.UpdateProfile)
 		apiGroup.POST("/users/change-password", userHandler.UpdatePassword)
 
 		// Admin/Owner only user management
 		ownerGroup.GET("/users", userHandler.GetAllUsers)
 		ownerGroup.DELETE("/users/:user_id", userHandler.DeleteUser)
-		ownerGroup.PATCH("/users/:user_id/owner", userHandler.UpdateUserOwner)
+		ownerGroup.PATCH("/users/:user_id", userHandler.UpdateUser)
 
 		// Workspace-User management
 		apiGroup.GET("/workspaces/:workspaceID/users", userHandler.GetWorkspaceUsers)

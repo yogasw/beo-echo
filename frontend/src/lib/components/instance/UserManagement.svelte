@@ -8,16 +8,16 @@
 
 	let users: User[] = [];
 	let loading = true;
-	
+
 	// Pagination state
 	let currentPage = 1;
 	let itemsPerPage = 10;
 	let totalPages = 1;
-	
+
 	// Search state
 	let searchQuery = '';
 	let filteredUsers: User[] = [];
-	
+
 	// Computed filtered and paginated users
 	$: {
 		// Filter users based on search query
@@ -25,24 +25,24 @@
 			filteredUsers = [...users];
 		} else {
 			const query = searchQuery.toLowerCase();
-			filteredUsers = users.filter(user => 
-				user.name.toLowerCase().includes(query) || 
-				user.email.toLowerCase().includes(query)
+			filteredUsers = users.filter(
+				(user) =>
+					user.name.toLowerCase().includes(query) || user.email.toLowerCase().includes(query)
 			);
 		}
-		
+
 		// Calculate total pages
 		totalPages = Math.max(1, Math.ceil(filteredUsers.length / itemsPerPage));
-		
+
 		// Adjust current page if it's out of bounds after filtering
 		if (currentPage > totalPages) {
 			currentPage = totalPages;
 		}
 	}
-	
+
 	// Get current page users
 	$: paginatedUsers = filteredUsers.slice(
-		(currentPage - 1) * itemsPerPage, 
+		(currentPage - 1) * itemsPerPage,
 		currentPage * itemsPerPage
 	);
 
@@ -57,11 +57,12 @@
 		name: string;
 		email: string;
 		is_active: boolean;
-		status?: string;
+		is_owner: boolean;
 	} = {
 		name: '',
 		email: '',
-		is_active: false
+		is_active: false,
+		is_owner: false
 	};
 
 	// Status style mapping for badge colors (now based on is_active)
@@ -96,7 +97,8 @@
 		formData = {
 			name: '',
 			email: '',
-			is_active: true // Default to active for new users
+			is_active: true, // Default to active for new users
+			is_owner: false // Default to not owner for new users
 		};
 		showAddModal = true;
 	}
@@ -107,9 +109,10 @@
 		formData = {
 			name: user.name,
 			email: user.email,
-			is_active: user.is_active !== false
+			is_active: user.is_active !== false,
+			is_owner: user.is_owner === true
 		};
-		showEditModal = true;
+		showEditModal = true; // Refresh users to ensure the latest data is shown
 	}
 
 	// Open delete confirmation modal
@@ -132,12 +135,18 @@
 			toast.error('Name is required');
 			return;
 		}
-		
+
 		if (!formData.email) {
 			toast.error('Email is required');
 			return;
 		}
 
+		try {
+			// Add user via API
+		} catch (error) {
+			// Error is already shown by the API function
+			return;
+		}
 		try {
 			// Reload users to get the updated list
 			await loadUsers();
@@ -153,6 +162,11 @@
 		if (selectedUser) {
 			try {
 				// Update user via API
+				await userManagementApi.updateUser(selectedUser.id, {
+					is_active: formData.is_active,
+					is_owner: formData.is_owner
+				});
+				
 				// Reload users to get the updated list
 				await loadUsers();
 				toast.success('User updated successfully');
@@ -168,6 +182,7 @@
 		if (selectedUser) {
 			try {
 				// Remove user
+				await userManagementApi.deleteUser(selectedUser.id);
 
 				// Reload users to get the updated list
 				await loadUsers();
@@ -178,33 +193,32 @@
 			}
 		}
 	}
-	
+
 	// Pagination functions
 	function goToPage(page: number) {
 		if (page >= 1 && page <= totalPages) {
 			currentPage = page;
 		}
 	}
-	
+
 	function nextPage() {
 		if (currentPage < totalPages) {
 			currentPage++;
 		}
 	}
-	
+
 	function prevPage() {
 		if (currentPage > 1) {
 			currentPage--;
 		}
 	}
-	
+
 	// Handle search
 	function handleSearch() {
 		// Reset to first page when searching
 		currentPage = 1;
 		// Filtering happens reactively in the computed value above
 	}
-
 </script>
 
 <div class="p-4" transition:fade={{ duration: 200 }}>
@@ -244,7 +258,9 @@
 			<div class="overflow-x-auto mb-4">
 				{#if filteredUsers.length === 0}
 					<div class="text-center p-4 theme-text-secondary">
-						{users.length === 0 ? 'No users found in this instance.' : 'No users match your search.'}
+						{users.length === 0
+							? 'No users found in this instance.'
+							: 'No users match your search.'}
 					</div>
 				{:else}
 					<table class="w-full text-sm text-left">
@@ -271,7 +287,9 @@
 									<td class="px-4 py-3 theme-text-secondary">{user.email}</td>
 									<td class="px-4 py-3">
 										<span
-											class="{user.is_active !== false ? activeStyles.true : activeStyles.false} px-2 py-1 rounded-full text-xs"
+											class="{user.is_active !== false
+												? activeStyles.true
+												: activeStyles.false} px-2 py-1 rounded-full text-xs"
 										>
 											{user.is_active !== false ? 'Active' : 'Inactive'}
 										</span>
@@ -298,27 +316,33 @@
 							{/each}
 						</tbody>
 					</table>
-					
+
 					<!-- Pagination controls -->
 					<div class="flex items-center justify-between border-t theme-border pt-3 mt-3">
 						<div class="text-sm theme-text-secondary">
-							Showing {paginatedUsers.length > 0 ? (currentPage - 1) * itemsPerPage + 1 : 0} to {Math.min(currentPage * itemsPerPage, filteredUsers.length)} of {filteredUsers.length} users
+							Showing {paginatedUsers.length > 0 ? (currentPage - 1) * itemsPerPage + 1 : 0} to {Math.min(
+								currentPage * itemsPerPage,
+								filteredUsers.length
+							)} of {filteredUsers.length} users
 						</div>
 						<div class="flex space-x-1">
-							<button 
-								class="p-2 theme-bg-secondary rounded hover:bg-gray-200 dark:hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed" 
+							<button
+								class="p-2 theme-bg-secondary rounded hover:bg-gray-200 dark:hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed"
 								on:click={prevPage}
 								disabled={currentPage === 1}
 								aria-label="Previous page"
 							>
 								<i class="fas fa-chevron-left text-sm theme-text-secondary"></i>
 							</button>
-							
+
 							{#if totalPages > 1}
 								{#each Array(Math.min(5, totalPages)) as _, i}
 									{#if i + 1 <= totalPages}
-										<button 
-											class="p-2 w-8 h-8 flex items-center justify-center rounded {currentPage === i + 1 ? 'bg-blue-600 text-white' : 'theme-bg-secondary theme-text-secondary hover:bg-gray-200 dark:hover:bg-gray-600'}" 
+										<button
+											class="p-2 w-8 h-8 flex items-center justify-center rounded {currentPage ===
+											i + 1
+												? 'bg-blue-600 text-white'
+												: 'theme-bg-secondary theme-text-secondary hover:bg-gray-200 dark:hover:bg-gray-600'}"
 											on:click={() => goToPage(i + 1)}
 											aria-label="Go to page {i + 1}"
 										>
@@ -327,9 +351,9 @@
 									{/if}
 								{/each}
 							{/if}
-							
-							<button 
-								class="p-2 theme-bg-secondary rounded hover:bg-gray-200 dark:hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed" 
+
+							<button
+								class="p-2 theme-bg-secondary rounded hover:bg-gray-200 dark:hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed"
 								on:click={nextPage}
 								disabled={currentPage === totalPages}
 								aria-label="Next page"
@@ -341,13 +365,13 @@
 				{/if}
 			</div>
 		{/if}
-		<button
+		<!-- <button
 			class="px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md text-sm flex items-center gap-2"
 			on:click={openAddModal}
 		>
 			<i class="fas fa-plus"></i>
 			<span>Add User</span>
-		</button>
+		</button> -->
 	</div>
 </div>
 
@@ -403,7 +427,9 @@
 								bind:checked={formData.is_active}
 								ariaLabel="User status toggle"
 							>
-								<span class="theme-text-primary text-sm">{formData.is_active ? 'Active' : 'Inactive'}</span>
+								<span class="theme-text-primary text-sm"
+									>{formData.is_active ? 'Active' : 'Inactive'}</span
+								>
 							</ToggleSwitch>
 						</div>
 					</div>
@@ -475,8 +501,29 @@
 								bind:checked={formData.is_active}
 								ariaLabel="User status toggle"
 							>
-								<span class="theme-text-primary text-sm">{formData.is_active ? 'Active' : 'Inactive'}</span>
+								<span class="theme-text-primary text-sm"
+									>{formData.is_active ? 'Active' : 'Inactive'}</span
+								>
 							</ToggleSwitch>
+						</div>
+					</div>
+					<div class="mb-4">
+						<label for="edit-owner" class="block theme-text-secondary text-sm mb-2"
+							>Owner Privileges</label
+						>
+						<div class="flex items-center">
+							<ToggleSwitch
+								id="edit-owner"
+								bind:checked={formData.is_owner}
+								ariaLabel="Owner status toggle"
+							>
+								<span class="theme-text-primary text-sm"
+									>{formData.is_owner ? 'Owner' : 'Not Owner'}</span
+								>
+							</ToggleSwitch>
+							<p class="ml-3 text-xs theme-text-secondary">
+								Owners have full administrative access to the entire system.
+							</p>
 						</div>
 					</div>
 					<div class="flex justify-end gap-3 mt-6">

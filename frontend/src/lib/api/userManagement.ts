@@ -17,7 +17,7 @@ export const userManagementApi = {
             return [];
         }
     },
-    
+
     /**
      * Get all users in a workspace
      * @param workspaceId The ID of the workspace
@@ -26,7 +26,7 @@ export const userManagementApi = {
         try {
             const { data } = await apiClient.get(`/workspaces/${workspaceId}/users`);
             console.log('API response:', data);
-            
+
             // Transform backend data to User type
             const users = data.data || [];
             return users.map((user: any) => ({
@@ -43,7 +43,7 @@ export const userManagementApi = {
             return [];
         }
     },
-    
+
     /**
      * Add a user to a workspace
      * @param workspaceId The ID of the workspace
@@ -63,7 +63,7 @@ export const userManagementApi = {
             return false;
         }
     },
-    
+
     /**
      * Update a user's role in a workspace
      * @param workspaceId The ID of the workspace
@@ -82,7 +82,7 @@ export const userManagementApi = {
             return false;
         }
     },
-    
+
     /**
      * Remove a user from a workspace
      * @param workspaceId The ID of the workspace
@@ -95,6 +95,45 @@ export const userManagementApi = {
         } catch (error) {
             toast.error('Failed to remove user from workspace');
             console.error('Failed to remove user from workspace:', error);
+            return false;
+        }
+    },
+    /**
+     * Update a user's owner status
+     * @param userId The ID of the user to update
+     * @param is_owner Whether the user should be an owner or not
+     */
+    updateUser: async (userId: string, {
+        is_owner,
+        is_active
+    }: {
+        is_owner: boolean,
+        is_active: boolean
+    }): Promise<boolean> => {
+        try {
+            await apiClient.patch(`/users/${userId}`, {
+                is_owner,
+                is_active
+            });
+            return true;
+        } catch (error) {
+            toast.error('Failed to update user');
+            console.error('Failed to update user:', error);
+            return false;
+        }
+    },
+
+    /**
+     * Delete a user from the system
+     * @param userId The ID of the user to delete
+     */
+    deleteUser: async (userId: string): Promise<boolean> => {
+        try {
+            await apiClient.delete(`/users/${userId}`);
+            return true;
+        } catch (error) {
+            toast.error('Failed to delete user');
+            console.error('Failed to delete user:', error);
             return false;
         }
     }
@@ -115,7 +154,7 @@ function mapRoleToFrontendRole(role: string): 'Admin' | 'User' | 'Viewer' {
  */
 function generateInitials(name: string): string {
     const nameParts = name.split(' ');
-    const initials = nameParts.length > 1 
+    const initials = nameParts.length > 1
         ? `${nameParts[0][0]}${nameParts[1][0]}`
         : name.substring(0, 2);
     return initials.toUpperCase();
