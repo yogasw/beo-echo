@@ -180,14 +180,4 @@ func (h *WorkspaceHandler) CheckWorkspaceRole(c *gin.Context) {
 	})
 }
 
-// RegisterRoutes registers workspace routes to the given router group
-func RegisterRoutes(r *gin.RouterGroup, service *WorkspaceService) {
-	handler := NewWorkspaceHandler(service)
-
-	workspacesGroup := r.Group("/workspaces")
-	{
-		workspacesGroup.GET("", handler.GetUserWorkspaces)
-		workspacesGroup.POST("", handler.CreateWorkspace)
-		workspacesGroup.GET("/:workspaceID/role", handler.CheckWorkspaceRole)
-	}
-}
+// Note: Routes are registered directly in src/server.go

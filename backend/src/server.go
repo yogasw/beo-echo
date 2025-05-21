@@ -125,9 +125,15 @@ func SetupRouter() *gin.Engine {
 		// Initialize workspace module
 		workspaceRepo := repositories.NewWorkspaceRepository(database.DB)
 		workspaceService := workspaces.NewWorkspaceService(workspaceRepo)
+		workspaceHandler := workspaces.NewWorkspaceHandler(workspaceService)
 
-		// Register workspace routes
-		workspaces.RegisterRoutes(apiGroup, workspaceService)
+		// Register workspace routes directly
+		workspacesGroup := apiGroup.Group("/workspaces")
+		{
+			workspacesGroup.GET("", workspaceHandler.GetUserWorkspaces)
+			workspacesGroup.POST("", workspaceHandler.CreateWorkspace)
+			workspacesGroup.GET("/:workspaceID/role", workspaceHandler.CheckWorkspaceRole)
+		}
 
 		// Workspace-project hierarchy routes (nested)
 		workspaceRoutes := apiGroup.Group("/workspaces/:workspaceID")

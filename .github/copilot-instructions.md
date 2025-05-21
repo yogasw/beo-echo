@@ -772,25 +772,48 @@ func (r *userRepository) Create(ctx context.Context, user *database.User) error 
 }
 ```
 
-### Step 4: Register Dependencies
+### Step 4: Register Dependencies and Routes
+
+All routes must be registered in the central `src/server.go` file in the `SetupRouter()` function. Do not create separate route registration functions in feature modules:
 
 ```go
-// In server.go or main.go
-func SetupRoutes(router *gin.Engine) {
-    db := database.GetDB()
+// In src/server.go
+func SetupRouter() *gin.Engine {
+    // Create Gin router
+    router := gin.Default()
     
-    // Create repository
-    userRepo := repositories.NewUserRepository(db)
+    // Setup middleware
+    // ...
     
-    // Create service with repository
-    userService := users.NewUserService(userRepo)
+    // API routes group
+    apiGroup := router.Group("/api")
+    apiGroup.Use(middlewares.JWTAuthMiddleware())
+    {
+        // Get database
+        db := database.DB
+        
+        // Create repository
+        userRepo := repositories.NewUserRepository(db)
+        
+        // Create service with repository
+        userService := users.NewUserService(userRepo)
+        
+        // Create handler with service
+        userHandler := users.NewUserHandler(userService)
+        
+        // Register routes directly in server.go
+        apiGroup.GET("/users/:id", userHandler.GetUser)
+        apiGroup.POST("/users", userHandler.CreateUser)
+        
+        // For complex feature modules, group them together
+        usersGroup := apiGroup.Group("/users")
+        {
+            usersGroup.GET("/profile", userHandler.GetProfile)
+            usersGroup.PUT("/settings", userHandler.UpdateSettings)
+        }
+    }
     
-    // Create handler with service
-    userHandler := users.NewUserHandler(userService)
-    
-    // Register routes
-    router.GET("/users/:id", userHandler.GetUser)
-    router.POST("/users", userHandler.CreateUser)
+    return router
 }
 ```
 
