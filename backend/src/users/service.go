@@ -142,7 +142,35 @@ func (s *UserService) RemoveUserFromWorkspace(ctx context.Context, workspaceID s
 }
 
 // DeleteUser completely removes a user from the system
+// This will also cascade delete all UserIdentity and UserWorkspace records
 func (s *UserService) DeleteUser(ctx context.Context, userID string) error {
+	// Check if user exists and get their information
+	user, err := s.repo.GetUserByID(ctx, userID)
+	if err != nil {
+		return err
+	}
+
+	// Check if user is system owner. If they are, make sure there's at least one other owner.
+	if user.IsOwner {
+		// Get all users who are owners
+		allUsers, err := s.repo.GetAllUsers(ctx)
+		if err != nil {
+			return err
+		}
+
+		ownerCount := 0
+		for _, u := range allUsers {
+			if u.IsOwner && u.ID != userID {
+				ownerCount++
+			}
+		}
+
+		if ownerCount == 0 {
+			return errors.New("cannot delete the last system owner")
+		}
+	}
+
+	// Delete the user (this will cascade to related tables)
 	return s.repo.DeleteUser(ctx, userID)
 }
 

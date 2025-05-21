@@ -66,8 +66,36 @@ func (r *userRepository) UpdateUserFields(ctx context.Context, userID string, up
 }
 
 // DeleteUser completely removes a user from the system
+// This will also cascade delete related UserIdentity and UserWorkspace records
+// due to the constraint:OnDelete:CASCADE in the model definitions
 func (r *userRepository) DeleteUser(ctx context.Context, userID string) error {
-	return r.db.Delete(&database.User{}, "id = ?", userID).Error
+	tx := r.db.Begin()
+
+	// Check if user exists
+	var user database.User
+	if err := tx.Where("id = ?", userID).First(&user).Error; err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	// First delete related records manually to ensure they are removed
+	if err := tx.Unscoped().Where("user_id = ?", userID).Delete(&database.UserIdentity{}).Error; err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	if err := tx.Unscoped().Where("user_id = ?", userID).Delete(&database.UserWorkspace{}).Error; err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	// Now delete the user
+	if err := tx.Unscoped().Delete(&database.User{}, "id = ?", userID).Error; err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	return tx.Commit().Error
 }
 
 // VerifyPassword checks if the provided password matches the hashed password in the database

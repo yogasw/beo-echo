@@ -379,9 +379,21 @@ func (h *UserHandler) DeleteUser(c *gin.Context) {
 
 	err := h.service.DeleteUser(c.Request.Context(), req.UserID)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
+		statusCode := http.StatusInternalServerError
+		message := "Failed to delete user: " + err.Error()
+
+		// Handle specific error cases
+		if err.Error() == "record not found" {
+			statusCode = http.StatusNotFound
+			message = "User not found"
+		} else if err.Error() == "cannot delete the last system owner" {
+			statusCode = http.StatusBadRequest
+			message = "Cannot delete the last system owner"
+		}
+
+		c.JSON(statusCode, gin.H{
 			"success": false,
-			"message": "Failed to delete user: " + err.Error(),
+			"message": message,
 		})
 		return
 	}

@@ -200,14 +200,14 @@ func (rl *RequestLog) BeforeCreate(tx *gorm.DB) error {
 // Salt is generated using unixtime + random number (8 bytes total).
 // NOT recommended for cryptographic use — better to use crypto/rand if possible.
 type User struct {
-	ID         string          `gorm:"type:string;primaryKey" json:"id"`    // Unique user ID
-	Email      string          `gorm:"uniqueIndex" json:"email"`            // Unique email (used for login/identity)
-	Name       string          `json:"name"`                                // Display name
-	Password   string          `json:"-"`                                   // Argon2id hashed password (when using password login)
-	IsOwner    bool            `gorm:"default:false" json:"is_owner"`       // System-wide owner (can manage SSO configs, manage all workspaces and etc)
-	IsActive   bool            `gorm:"default:true" json:"is_active"`       // Whether this user account is active
-	Identities []UserIdentity  `gorm:"foreignKey:UserID" json:"identities"` // Linked SSO accounts
-	Workspaces []UserWorkspace `gorm:"foreignKey:UserID" json:"workspaces"` // Memberships in workspaces
+	ID         string          `gorm:"type:string;primaryKey" json:"id"`                                // Unique user ID
+	Email      string          `gorm:"uniqueIndex" json:"email"`                                        // Unique email (used for login/identity)
+	Name       string          `json:"name"`                                                            // Display name
+	Password   string          `json:"-"`                                                               // Argon2id hashed password (when using password login)
+	IsOwner    bool            `gorm:"default:false" json:"is_owner"`                                   // System-wide owner (can manage SSO configs, manage all workspaces and etc)
+	IsActive   bool            `gorm:"default:true" json:"is_active"`                                   // Whether this user account is active
+	Identities []UserIdentity  `gorm:"foreignKey:UserID;constraint:OnDelete:CASCADE" json:"identities"` // Linked SSO accounts
+	Workspaces []UserWorkspace `gorm:"foreignKey:UserID;constraint:OnDelete:CASCADE" json:"workspaces"` // Memberships in workspaces
 	CreatedAt  time.Time       `gorm:"autoCreateTime" json:"created_at"`
 	UpdatedAt  time.Time       `gorm:"autoUpdateTime" json:"updated_at"`
 }
