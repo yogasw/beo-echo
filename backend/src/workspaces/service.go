@@ -5,9 +5,16 @@ import (
 	"context"
 )
 
+// WorkspaceWithRole extends Workspace with user role information
+type WorkspaceWithRole struct {
+	database.Workspace
+	UserRole string `json:"user_role"` // Role of the current user in this workspace
+}
+
 // WorkspaceRepository defines the data access requirements for workspace operations
 type WorkspaceRepository interface {
 	GetUserWorkspaces(ctx context.Context, userID string) ([]database.Workspace, error)
+	GetUserWorkspacesWithRoles(ctx context.Context, userID string) ([]WorkspaceWithRole, error)
 	CreateWorkspace(ctx context.Context, workspace *database.Workspace, userID string) error
 	CheckWorkspaceRole(ctx context.Context, userID string, workspaceID string) (*database.UserWorkspace, error)
 	IsUserWorkspaceAdmin(ctx context.Context, userID string, workspaceID string) (bool, error)
@@ -26,6 +33,11 @@ func NewWorkspaceService(repo WorkspaceRepository) *WorkspaceService {
 // GetUserWorkspaces retrieves all workspaces accessible to a user
 func (s *WorkspaceService) GetUserWorkspaces(ctx context.Context, userID string) ([]database.Workspace, error) {
 	return s.repo.GetUserWorkspaces(ctx, userID)
+}
+
+// GetUserWorkspacesWithRoles retrieves all workspaces accessible to a user along with their role in each workspace
+func (s *WorkspaceService) GetUserWorkspacesWithRoles(ctx context.Context, userID string) ([]WorkspaceWithRole, error) {
+	return s.repo.GetUserWorkspacesWithRoles(ctx, userID)
 }
 
 // CreateWorkspace creates a new workspace and adds the user as an admin

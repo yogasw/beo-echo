@@ -19,8 +19,8 @@ func NewWorkspaceHandler(service *WorkspaceService) *WorkspaceHandler {
 	return &WorkspaceHandler{service: service}
 }
 
-// GetUserWorkspaces returns all workspaces accessible to the authenticated user
-func (h *WorkspaceHandler) GetUserWorkspaces(c *gin.Context) {
+// GetUserWorkspacesWithRoles returns all workspaces accessible to the authenticated user with their roles
+func (h *WorkspaceHandler) GetUserWorkspacesWithRoles(c *gin.Context) {
 	// Get user ID from context (set by JWTAuthMiddleware)
 	userID, exists := c.Get("userID")
 	if !exists {
@@ -31,8 +31,8 @@ func (h *WorkspaceHandler) GetUserWorkspaces(c *gin.Context) {
 		return
 	}
 
-	// Fetch user's workspaces
-	workspaces, err := h.service.GetUserWorkspaces(c.Request.Context(), userID.(string))
+	// Fetch user's workspaces with roles
+	workspacesWithRoles, err := h.service.GetUserWorkspacesWithRoles(c.Request.Context(), userID.(string))
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"success": false,
@@ -43,7 +43,7 @@ func (h *WorkspaceHandler) GetUserWorkspaces(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{
 		"success": true,
-		"data":    workspaces,
+		"data":    workspacesWithRoles,
 	})
 }
 

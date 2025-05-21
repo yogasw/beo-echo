@@ -28,6 +28,35 @@ func (r *workspaceRepository) GetUserWorkspaces(ctx context.Context, userID stri
 	return workspaces, err
 }
 
+// GetUserWorkspacesWithRoles retrieves all workspaces accessible to a user along with their role in each workspace
+func (r *workspaceRepository) GetUserWorkspacesWithRoles(ctx context.Context, userID string) ([]workspaces.WorkspaceWithRole, error) {
+	var result []struct {
+		database.Workspace
+		Role string
+	}
+
+	err := r.db.Table("workspaces").
+		Select("workspaces.*, user_workspaces.role").
+		Joins("JOIN user_workspaces ON user_workspaces.workspace_id = workspaces.id").
+		Where("user_workspaces.user_id = ?", userID).
+		Scan(&result).Error
+
+	if err != nil {
+		return nil, err
+	}
+
+	// Convert to WorkspaceWithRole
+	workspacesWithRoles := make([]workspaces.WorkspaceWithRole, len(result))
+	for i, item := range result {
+		workspacesWithRoles[i] = workspaces.WorkspaceWithRole{
+			Workspace: item.Workspace,
+			UserRole:  item.Role,
+		}
+	}
+
+	return workspacesWithRoles, nil
+}
+
 // CreateWorkspace creates a new workspace and adds the user as an admin
 func (r *workspaceRepository) CreateWorkspace(ctx context.Context, workspace *database.Workspace, userID string) error {
 	// Create workspace in a transaction

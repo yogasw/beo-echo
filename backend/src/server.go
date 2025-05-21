@@ -130,7 +130,7 @@ func SetupRouter() *gin.Engine {
 		// Register workspace routes directly
 		workspacesGroup := apiGroup.Group("/workspaces")
 		{
-			workspacesGroup.GET("", workspaceHandler.GetUserWorkspaces)
+			workspacesGroup.GET("", workspaceHandler.GetUserWorkspacesWithRoles)
 			workspacesGroup.POST("", workspaceHandler.CreateWorkspace)
 			workspacesGroup.GET("/:workspaceID/role", workspaceHandler.CheckWorkspaceRole)
 		}
