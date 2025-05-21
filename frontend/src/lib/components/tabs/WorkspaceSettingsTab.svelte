@@ -7,6 +7,11 @@
 	let editMode = false;
 	let workspaceName = '';
 	let isLoading = false;
+	let showInviteModal = false;
+	let inviteEmail = '';
+	let inviteRole = 'member';
+	let isInviteLoading = false;
+	
 	interface Member {
 		id: string;
 		name: string;
@@ -38,15 +43,30 @@
 			return;
 		}
 		
+		if (!$currentWorkspace) {
+			toast.error('No workspace selected');
+			return;
+		}
+		
 		isLoading = true;
 		
 		try {
-			// TODO: Implement API call to update workspace
-			// await updateWorkspace($currentWorkspace.id, { name: workspaceName });
-			
-			// For now, just show success message
+			await workspaceApi.updateWorkspace($currentWorkspace.id, { name: workspaceName });
 			toast.success('Workspace settings updated successfully');
 			editMode = false;
+			
+			// Update workspace in store
+			workspaceStore.update(state => ({
+				...state,
+				currentWorkspace: state.currentWorkspace ? {
+					...state.currentWorkspace,
+					name: workspaceName
+				} : null,
+				// Also update in the workspaces array
+				workspaces: state.workspaces.map(w => 
+					w.id === $currentWorkspace?.id ? { ...w, name: workspaceName } : w
+				)
+			}));
 		} catch (error) {
 			toast.error('Failed to update workspace settings');
 			console.error('Failed to update workspace:', error);
@@ -75,10 +95,13 @@
 	
 	// Update member role
 	async function updateMemberRole(memberId: string, role: string) {
+		if (!$currentWorkspace) {
+			toast.error('No workspace selected');
+			return;
+		}
+		
 		try {
-			// TODO: Implement API call to update member role
-			// await updateWorkspaceMemberRole($currentWorkspace.id, memberId, role);
-			
+			await workspaceApi.updateUserRole($currentWorkspace.id, memberId, role);
 			toast.success('Member role updated successfully');
 			
 			// Update local state
@@ -93,10 +116,13 @@
 	
 	// Remove member from workspace
 	async function removeMember(memberId: string) {
+		if (!$currentWorkspace) {
+			toast.error('No workspace selected');
+			return;
+		}
+		
 		try {
-			// TODO: Implement API call to remove member
-			// await removeWorkspaceMember($currentWorkspace.id, memberId);
-			
+			await workspaceApi.removeUserFromWorkspace($currentWorkspace.id, memberId);
 			toast.success('Member removed successfully');
 			
 			// Update local state
@@ -104,6 +130,80 @@
 		} catch (error) {
 			toast.error('Failed to remove member');
 			console.error('Failed to remove member:', error);
+		}
+	}
+	
+	// Toggle invite modal
+	function toggleInviteModal() {
+		showInviteModal = !showInviteModal;
+		// Reset form when closing
+		if (!showInviteModal) {
+			inviteEmail = '';
+			inviteRole = 'member';
+		}
+	}
+	
+	// Invite new member
+	async function inviteMember() {
+		if (!inviteEmail.trim() || !inviteEmail.includes('@')) {
+			toast.error('Please enter a valid email address');
+			return;
+		}
+		
+		if (!$currentWorkspace) {
+			toast.error('No workspace selected');
+			return;
+		}
+		
+		isInviteLoading = true;
+		
+		try {
+			await workspaceApi.inviteMember($currentWorkspace.id, {
+				email: inviteEmail,
+				role: inviteRole
+			});
+			
+			toast.success(`Invitation sent to ${inviteEmail}`);
+			toggleInviteModal();
+			
+			// Refresh member list
+			await loadWorkspaceMembers();
+		} catch (error) {
+			toast.error('Failed to send invitation');
+			console.error('Failed to send invitation:', error);
+		} finally {
+			isInviteLoading = false;
+		}
+	}
+	
+	// Delete workspace
+	async function deleteWorkspace() {
+		if (!$currentWorkspace) {
+			toast.error('No workspace selected');
+			return;
+		}
+		
+		// Show confirmation dialog
+		if (!confirm(`Are you sure you want to delete the workspace "${$currentWorkspace.name}"? This action cannot be undone and will delete all associated data.`)) {
+			return;
+		}
+		
+		try {
+			await workspaceApi.deleteWorkspace($currentWorkspace.id);
+			toast.success('Workspace deleted successfully');
+			
+			// Remove workspace from store and redirect
+			workspaceStore.update(state => ({
+				...state,
+				currentWorkspace: null,
+				workspaces: state.workspaces.filter(w => w.id !== $currentWorkspace?.id)
+			}));
+			
+			// Redirect to workspaces list
+			window.location.href = '/workspaces';
+		} catch (error) {
+			toast.error('Failed to delete workspace');
+			console.error('Failed to delete workspace:', error);
 		}
 	}
 	
@@ -254,6 +354,7 @@
 			{#if editMode && $currentWorkspace?.role === 'admin'}
 				<div class="mt-4">
 					<button
+						on:click={toggleInviteModal}
 						class={ThemeUtils.themeBgSecondary('px-4 py-2 rounded-md hover:bg-blue-500/20 flex items-center gap-2')}
 					>
 						<i class="fas fa-user-plus text-blue-400"></i>
@@ -285,6 +386,7 @@
 				</div>
 				
 				<button
+					on:click={deleteWorkspace}
 					class="bg-red-600 hover:bg-red-700 text-white py-2 px-4 rounded-md flex items-center gap-2"
 				>
 					<i class="fas fa-trash-alt"></i>
@@ -294,3 +396,76 @@
 		</div>
 	{/if}
 </div>
+
+<!-- Invite Member Modal -->
+{#if showInviteModal}
+	<div class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+		<div class={ThemeUtils.card('max-w-md w-full mx-4 p-6')}>
+			<div class="flex justify-between items-center mb-4">
+				<h3 class="text-lg font-semibold theme-text-primary">Invite Member</h3>
+				<button 
+					on:click={toggleInviteModal}
+					class="theme-text-primary hover:text-gray-500 dark:hover:text-gray-300"
+					aria-label="Close modal"
+				>
+					<i class="fas fa-times"></i>
+				</button>
+			</div>
+			
+			<form on:submit|preventDefault={inviteMember}>
+				<div class="mb-4">
+					<label for="invite-email" class="block theme-text-secondary text-sm mb-1">Email Address</label>
+					<input
+						id="invite-email"
+						type="email"
+						bind:value={inviteEmail}
+						placeholder="Enter email address"
+						required
+						class={ThemeUtils.themeBgSecondary('w-full p-2 rounded theme-border theme-text-primary')}
+					/>
+				</div>
+				
+				<div class="mb-6">
+					<label for="invite-role" class="block theme-text-secondary text-sm mb-1">Role</label>
+					<select
+						id="invite-role"
+						bind:value={inviteRole}
+						class={ThemeUtils.themeBgSecondary('w-full p-2 rounded theme-border theme-text-primary')}
+					>
+						<option value="admin">Admin</option>
+						<option value="member">Member</option>
+						<option value="readonly">Read Only</option>
+					</select>
+					<p class="text-xs theme-text-secondary mt-1">
+						<strong>Admin:</strong> Can manage workspace settings and members<br>
+						<strong>Member:</strong> Can create and edit projects<br>
+						<strong>Read Only:</strong> Can only view projects
+					</p>
+				</div>
+				
+				<div class="flex justify-end">
+					<button
+						type="button"
+						on:click={toggleInviteModal}
+						class={ThemeUtils.themeBgSecondary('px-4 py-2 rounded-md mr-2')}
+					>
+						Cancel
+					</button>
+					<button
+						type="submit"
+						disabled={isInviteLoading}
+						class={`bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded-md 
+							flex items-center gap-2 ${isInviteLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
+					>
+						{#if isInviteLoading}
+							<i class="fas fa-spinner fa-spin"></i>
+						{:else}
+							<i class="fas fa-paper-plane"></i>
+						{/if}
+						Send Invitation
+					</button>
+				</div>
+			</form>
+		</div>
+	</div>
+{/if}
