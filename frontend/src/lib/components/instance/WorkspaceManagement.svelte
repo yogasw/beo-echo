@@ -75,19 +75,11 @@
 			workspace.auto_invite_enabled = newStatus;
 			
 			// Show notification
-			createToast({
-				type: 'success',
-				message: `Auto-invite ${newStatus ? 'enabled' : 'disabled'} for "${workspace.name}"`,
-				autoHide: true
-			});
+			toast.info(`Auto-invite ${newStatus ? 'enabled' : 'disabled'} for "${workspace.name}"`);
 			
 		} catch (err) {
 			console.error('Failed to toggle auto-invite:', err);
-			createToast({
-				type: 'error',
-				message: `Failed to update auto-invite settings for "${workspace.name}"`,
-				autoHide: true
-			});
+			toast.error(err)
 		}
 	}
 	
