@@ -173,6 +173,7 @@
 											on:click={() => manageMembers(workspace.id)} 
 											class="p-2 theme-bg-secondary rounded-full hover:bg-blue-500/20" 
 											title="Manage Members"
+											aria-label="Manage Members"
 										>
 											<i class="fas fa-users theme-text-secondary"></i>
 										</button>
@@ -181,6 +182,7 @@
 											on:click={() => editWorkspace(workspace.id)} 
 											class="p-2 theme-bg-secondary rounded-full hover:bg-blue-500/20" 
 											title="Edit"
+											aria-label="Edit Workspace"
 										>
 											<i class="fas fa-edit theme-text-secondary"></i>
 										</button>
@@ -189,6 +191,7 @@
 											on:click={() => deleteWorkspace(workspace.id, workspace.name)} 
 											class="p-2 theme-bg-secondary rounded-full hover:bg-red-500/20" 
 											title="Delete"
+											aria-label="Delete Workspace"
 										>
 											<i class="fas fa-trash theme-text-secondary"></i>
 										</button>
