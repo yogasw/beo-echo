@@ -7,10 +7,10 @@
 	let editMode = false;
 	let workspaceName = '';
 	let isLoading = false;
-	let showInviteModal = false;
-	let inviteEmail = '';
-	let inviteRole = 'member';
-	let isInviteLoading = false;
+	let showAddMemberModal = false;
+	let memberEmail = '';
+	let memberRole = 'member';
+	let isAddingMember = false;
 	
 	interface Member {
 		id: string;
@@ -133,19 +133,19 @@
 		}
 	}
 	
-	// Toggle invite modal
-	function toggleInviteModal() {
-		showInviteModal = !showInviteModal;
+	// Toggle add member modal
+	function toggleAddMemberModal() {
+		showAddMemberModal = !showAddMemberModal;
 		// Reset form when closing
-		if (!showInviteModal) {
-			inviteEmail = '';
-			inviteRole = 'member';
+		if (!showAddMemberModal) {
+			memberEmail = '';
+			memberRole = 'member';
 		}
 	}
 	
-	// Invite new member
-	async function inviteMember() {
-		if (!inviteEmail.trim() || !inviteEmail.includes('@')) {
+	// Add member to workspace
+	async function addMember() {
+		if (!memberEmail.trim() || !memberEmail.includes('@')) {
 			toast.error('Please enter a valid email address');
 			return;
 		}
@@ -155,24 +155,24 @@
 			return;
 		}
 		
-		isInviteLoading = true;
+		isAddingMember = true;
 		
 		try {
-			await workspaceApi.inviteMember($currentWorkspace.id, {
-				email: inviteEmail,
-				role: inviteRole
+			await workspaceApi.addMember($currentWorkspace.id, {
+				email: memberEmail,
+				role: memberRole
 			});
 			
-			toast.success(`Invitation sent to ${inviteEmail}`);
-			toggleInviteModal();
+			toast.success(`Member ${memberEmail} added to workspace`);
+			toggleAddMemberModal();
 			
 			// Refresh member list
 			await loadWorkspaceMembers();
 		} catch (error) {
-			toast.error('Failed to send invitation');
-			console.error('Failed to send invitation:', error);
+			toast.error(error || 'Failed to add member. Only existing users can be added to workspaces.');
+			console.error('Failed to add member:', error);
 		} finally {
-			isInviteLoading = false;
+			isAddingMember = false;
 		}
 	}
 	
@@ -354,11 +354,11 @@
 			{#if editMode && $currentWorkspace?.role === 'admin'}
 				<div class="mt-4">
 					<button
-						on:click={toggleInviteModal}
+						on:click={toggleAddMemberModal}
 						class={ThemeUtils.themeBgSecondary('px-4 py-2 rounded-md hover:bg-blue-500/20 flex items-center gap-2')}
 					>
 						<i class="fas fa-user-plus text-blue-400"></i>
-						<span class="theme-text-primary">Invite Member</span>
+						<span class="theme-text-primary">Add Member</span>
 					</button>
 				</div>
 			{/if}
@@ -397,14 +397,14 @@
 	{/if}
 </div>
 
-<!-- Invite Member Modal -->
-{#if showInviteModal}
+<!-- Add Member Modal -->
+{#if showAddMemberModal}
 	<div class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
 		<div class={ThemeUtils.card('max-w-md w-full mx-4 p-6')}>
 			<div class="flex justify-between items-center mb-4">
-				<h3 class="text-lg font-semibold theme-text-primary">Invite Member</h3>
+				<h3 class="text-lg font-semibold theme-text-primary">Add Member</h3>
 				<button 
-					on:click={toggleInviteModal}
+					on:click={toggleAddMemberModal}
 					class="theme-text-primary hover:text-gray-500 dark:hover:text-gray-300"
 					aria-label="Close modal"
 				>
@@ -412,24 +412,27 @@
 				</button>
 			</div>
 			
-			<form on:submit|preventDefault={inviteMember}>
+			<form on:submit|preventDefault={addMember}>
 				<div class="mb-4">
-					<label for="invite-email" class="block theme-text-secondary text-sm mb-1">Email Address</label>
+					<label for="member-email" class="block theme-text-secondary text-sm mb-1">Email Address</label>
 					<input
-						id="invite-email"
+						id="member-email"
 						type="email"
-						bind:value={inviteEmail}
-						placeholder="Enter email address"
+						bind:value={memberEmail}
+						placeholder="Enter email address of existing user"
 						required
 						class={ThemeUtils.themeBgSecondary('w-full p-2 rounded theme-border theme-text-primary')}
 					/>
+					<p class="text-xs theme-text-secondary mt-1">
+						Note: Only existing users can be added to workspaces
+					</p>
 				</div>
 				
 				<div class="mb-6">
-					<label for="invite-role" class="block theme-text-secondary text-sm mb-1">Role</label>
+					<label for="member-role" class="block theme-text-secondary text-sm mb-1">Role</label>
 					<select
-						id="invite-role"
-						bind:value={inviteRole}
+						id="member-role"
+						bind:value={memberRole}
 						class={ThemeUtils.themeBgSecondary('w-full p-2 rounded theme-border theme-text-primary')}
 					>
 						<option value="admin">Admin</option>
@@ -446,23 +449,23 @@
 				<div class="flex justify-end">
 					<button
 						type="button"
-						on:click={toggleInviteModal}
+						on:click={toggleAddMemberModal}
 						class={ThemeUtils.themeBgSecondary('px-4 py-2 rounded-md mr-2')}
 					>
 						Cancel
 					</button>
 					<button
 						type="submit"
-						disabled={isInviteLoading}
+						disabled={isAddingMember}
 						class={`bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded-md 
-							flex items-center gap-2 ${isInviteLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
+							flex items-center gap-2 ${isAddingMember ? 'opacity-50 cursor-not-allowed' : ''}`}
 					>
-						{#if isInviteLoading}
+						{#if isAddingMember}
 							<i class="fas fa-spinner fa-spin"></i>
 						{:else}
-							<i class="fas fa-paper-plane"></i>
+							<i class="fas fa-user-plus"></i>
 						{/if}
-						Send Invitation
+						Add Member
 					</button>
 				</div>
 			</form>

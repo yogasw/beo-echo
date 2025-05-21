@@ -12,6 +12,14 @@ type WorkspaceWithRole struct {
 	Role string `json:"role"` // Role of the current user in this workspace
 }
 
+// WorkspaceMember represents a member of a workspace with user details
+type WorkspaceMember struct {
+	ID    string `json:"id"`
+	Name  string `json:"name"`
+	Email string `json:"email"`
+	Role  string `json:"role"`
+}
+
 // WorkspaceRepository defines the data access requirements for workspace operations
 type WorkspaceRepository interface {
 	GetUserWorkspaces(ctx context.Context, userID string) ([]database.Workspace, error)
@@ -20,6 +28,10 @@ type WorkspaceRepository interface {
 	CheckWorkspaceRole(ctx context.Context, userID string, workspaceID string) (*database.UserWorkspace, error)
 	IsUserWorkspaceAdmin(ctx context.Context, userID string, workspaceID string) (bool, error)
 	GetAllWorkspaces(ctx context.Context) ([]database.Workspace, error)
+	// New methods for invitation
+	GetUserByEmail(ctx context.Context, email string) (*database.User, error)
+	AddUserToWorkspace(ctx context.Context, workspaceID string, userID string, role string) error
+	GetWorkspaceMembers(ctx context.Context, workspaceID string) ([]WorkspaceMember, error)
 }
 
 // WorkspaceService implements the workspace business operations
@@ -59,4 +71,46 @@ func (s *WorkspaceService) IsUserWorkspaceAdmin(ctx context.Context, userID stri
 
 func (s *WorkspaceService) GetAllWorkspaces(ctx context.Context) ([]database.Workspace, error) {
 	return s.repo.GetAllWorkspaces(ctx)
+}
+
+// GetWorkspaceMembers retrieves all members of a workspace with their details
+func (s *WorkspaceService) GetWorkspaceMembers(ctx context.Context, workspaceID string) ([]WorkspaceMember, error) {
+	return s.repo.GetWorkspaceMembers(ctx, workspaceID)
+}
+
+// AddMember adds an existing user to a workspace
+// Returns an error if the user doesn't exist
+func (s *WorkspaceService) AddMember(ctx context.Context, workspaceID string, email string, role string) (map[string]interface{}, error) {
+	// Check if the user already exists
+	user, err := s.repo.GetUserByEmail(ctx, email)
+
+	// If user not found, return an error
+	if err != nil || user == nil {
+		return nil, err
+	}
+
+	// User found - check if already in workspace
+	existingRole, err := s.repo.CheckWorkspaceRole(ctx, user.ID, workspaceID)
+	if err == nil && existingRole != nil {
+		// User is already in the workspace
+		return map[string]interface{}{
+			"user_id": user.ID,
+			"email":   email,
+			"status":  "already_member",
+			"role":    existingRole.Role,
+		}, nil
+	}
+
+	// Add the user to the workspace
+	err = s.repo.AddUserToWorkspace(ctx, workspaceID, user.ID, role)
+	if err != nil {
+		return nil, err
+	}
+
+	return map[string]interface{}{
+		"user_id": user.ID,
+		"email":   email,
+		"status":  "added",
+		"role":    role,
+	}, nil
 }

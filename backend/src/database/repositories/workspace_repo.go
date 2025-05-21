@@ -116,3 +116,71 @@ func (r *workspaceRepository) IsUserWorkspaceAdmin(ctx context.Context, userID s
 
 	return userWorkspace.Role == "admin", nil
 }
+
+// GetUserByEmail retrieves a user by their email address
+func (r *workspaceRepository) GetUserByEmail(ctx context.Context, email string) (*database.User, error) {
+	var user database.User
+	err := r.db.Where("email = ?", email).First(&user).Error
+	if err != nil {
+		return nil, err
+	}
+	return &user, nil
+}
+
+// AddUserToWorkspace adds a user to a workspace with the specified role
+func (r *workspaceRepository) AddUserToWorkspace(ctx context.Context, workspaceID string, userID string, role string) error {
+	userWorkspace := database.UserWorkspace{
+		UserID:      userID,
+		WorkspaceID: workspaceID,
+		Role:        role,
+	}
+
+	// First check if the user is already in the workspace
+	var existing database.UserWorkspace
+	result := r.db.Where("user_id = ? AND workspace_id = ?", userID, workspaceID).First(&existing)
+
+	if result.Error == nil {
+		// User already exists in workspace, update their role
+		return r.db.Model(&existing).Update("role", role).Error
+	} else if result.Error == gorm.ErrRecordNotFound {
+		// User is not in the workspace, add them
+		return r.db.Create(&userWorkspace).Error
+	}
+
+	// Some other error occurred
+	return result.Error
+}
+
+// GetWorkspaceMembers retrieves all members of a workspace with their user details
+func (r *workspaceRepository) GetWorkspaceMembers(ctx context.Context, workspaceID string) ([]workspaces.WorkspaceMember, error) {
+	// Join users and user_workspaces tables to get user details with their roles
+	var results []struct {
+		UserID string
+		Name   string
+		Email  string
+		Role   string
+	}
+
+	err := r.db.Table("users").
+		Select("users.id as user_id, users.name, users.email, user_workspaces.role").
+		Joins("JOIN user_workspaces ON user_workspaces.user_id = users.id").
+		Where("user_workspaces.workspace_id = ?", workspaceID).
+		Scan(&results).Error
+
+	if err != nil {
+		return nil, err
+	}
+
+	// Convert to WorkspaceMember slice
+	members := make([]workspaces.WorkspaceMember, len(results))
+	for i, result := range results {
+		members[i] = workspaces.WorkspaceMember{
+			ID:    result.UserID,
+			Name:  result.Name,
+			Email: result.Email,
+			Role:  result.Role,
+		}
+	}
+
+	return members, nil
+}

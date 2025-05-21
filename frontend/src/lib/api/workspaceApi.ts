@@ -144,15 +144,15 @@ export const workspaceApi = {
     },
     
     /**
-     * Invite a new member to a workspace by email
+     * Add an existing member to a workspace by email
      * @param workspaceId Workspace ID
-     * @param data Invitation data (email and role)
+     * @param data Member data (email and role)
      */
-    inviteMember: async (workspaceId: string, data: { email: string, role: string }): Promise<any> => {
+    addMember: async (workspaceId: string, data: { email: string, role: string }): Promise<any> => {
         const response = await apiClient.post<{
             success: boolean;
             data: any;
-        }>(`/workspaces/${workspaceId}/invite`, data);
+        }>(`/workspaces/${workspaceId}/members`, data);
         return response.data.data;
     }
 };

@@ -87,11 +87,21 @@ func SetupRouter() *gin.Engine {
 
 	// Initialize user repository for auth service
 	userRepo := repositories.NewUserRepository(database.DB)
+	userService := users.NewUserService(userRepo)
+	userHandler := users.NewUserHandler(userService)
 
 	// Initialize OAuth and Auth services
 	googleOAuthService := authServices.NewGoogleOAuthService(database.DB)
 	googleOAuthHandler := authHandler.NewGoogleOAuthHandler(googleOAuthService)
 	oauthConfigHandler := authHandler.NewOAuthConfigHandler(database.DB)
+
+	// Initialize workspace module
+	workspaceRepo := repositories.NewWorkspaceRepository(database.DB)
+	workspaceService := workspaces.NewWorkspaceService(workspaceRepo)
+	workspaceHandler := workspaces.NewWorkspaceHandler(workspaceService)
+
+	// Initialize auto-invite handler
+	autoInviteHandler := workspaces.NewAutoInviteHandler(database.DB)
 
 	// Initialize Auth service with user repository
 	authHandler.InitAuthService(database.DB, userRepo)
@@ -124,11 +134,6 @@ func SetupRouter() *gin.Engine {
 			ownerGroup.PUT("/oauth/google/state", googleOAuthHandler.UpdateState)
 		}
 
-		// Initialize users module
-		userRepo := repositories.NewUserRepository(database.DB)
-		userService := users.NewUserService(userRepo)
-		userHandler := users.NewUserHandler(userService)
-
 		// User-related routes
 		apiGroup.GET("/auth/me", userHandler.GetCurrentUser)
 		apiGroup.PATCH("/users/profile", userHandler.UpdateProfile)
@@ -139,7 +144,7 @@ func SetupRouter() *gin.Engine {
 		ownerGroup.DELETE("/users/:user_id", userHandler.DeleteUser)
 		ownerGroup.PATCH("/users/:user_id", userHandler.UpdateUser)
 
-		// Routes that require workspace admin permissions
+		// Member invitation and management (accessible by workspace admins and system owners)
 		workspaceAdminGroup := apiGroup.Group("/workspaces/:workspaceID")
 		workspaceAdminGroup.Use(middlewares.OwnerOrWorkspaceAdminMiddleware())
 		{
@@ -147,15 +152,9 @@ func SetupRouter() *gin.Engine {
 			workspaceAdminGroup.PATCH("/users/:user_id/role", userHandler.UpdateWorkspaceUserRole)
 			// Workspace-User management
 			workspaceAdminGroup.GET("/users", userHandler.GetWorkspaceUsers)
+			workspaceAdminGroup.POST("/members", workspaceHandler.AddMember)
+
 		}
-
-		// Initialize workspace module
-		workspaceRepo := repositories.NewWorkspaceRepository(database.DB)
-		workspaceService := workspaces.NewWorkspaceService(workspaceRepo)
-		workspaceHandler := workspaces.NewWorkspaceHandler(workspaceService)
-
-		// Initialize auto-invite handler
-		autoInviteHandler := workspaces.NewAutoInviteHandler(database.DB)
 
 		// Register workspace routes directly
 		workspacesGroup := apiGroup.Group("/workspaces")
