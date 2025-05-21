@@ -5,10 +5,6 @@
 	import { goto } from '$app/navigation';
 	import type { Workspace } from '$lib/types/Workspace';
 	
-	// Component imports
-	import WorkspaceAutoInvite from '$lib/components/workspace/WorkspaceAutoInvite.svelte';
-	import AutoInviteLink from '$lib/components/workspace/AutoInviteLink.svelte';
-	
 	// API imports
 	import { workspaceApi } from '$lib/api/workspaceApi';
 	import { toast } from '$lib/stores/toast';
@@ -181,16 +177,6 @@
 											<i class="fas fa-users theme-text-secondary"></i>
 										</button>
 										
-										{#if $currentUser?.is_owner}
-											<AutoInviteLink
-												workspaceId={workspace.id} 
-												workspaceName={workspace.name}
-												compact={true}
-												isOwner={true}
-												on:click={openAutoInviteModal}
-											/>
-										{/if}
-										
 										<button 
 											on:click={() => editWorkspace(workspace.id)} 
 											class="p-2 theme-bg-secondary rounded-full hover:bg-blue-500/20" 
@@ -234,12 +220,4 @@
 			</button>
 		</div>
 	</div>
-
-	{#if showAutoInviteModal && selectedWorkspace}
-		<WorkspaceAutoInvite 
-			workspaceId={selectedWorkspace.id} 
-			isOwner={$currentUser?.is_owner || false}
-			onClose={closeAutoInviteModal}
-		/>
-	{/if}
 </div>
