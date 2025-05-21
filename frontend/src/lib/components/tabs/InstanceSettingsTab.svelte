@@ -89,6 +89,32 @@
 			</div>
 		</div>
 	</div>
+	<!-- 1. User Management -->
+	<div class={ThemeUtils.card('overflow-hidden')}>
+		<div
+			class="flex justify-between items-center p-3 hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer bg-gray-100 dark:bg-gray-750"
+			on:click={() => (sectionsVisible.users = !sectionsVisible.users)}
+			on:keydown={(e) => e.key === 'Enter' && (sectionsVisible.users = !sectionsVisible.users)}
+			tabindex="0"
+			role="button"
+		>
+			<div class="flex items-center">
+				<div class="bg-blue-500/20 p-1.5 rounded mr-2">
+					<i class="fas fa-users text-blue-400"></i>
+				</div>
+				<h3 class="font-medium theme-text-primary">User Management</h3>
+			</div>
+			<i class="fas {sectionsVisible.users ? 'fa-chevron-up' : 'fa-chevron-down'} theme-text-muted"
+			></i>
+		</div>
+
+		{#if sectionsVisible.users}
+			<div transition:fade={{ duration: 150 }} class="border-t theme-border">
+				<UserManagement />
+			</div>
+		{/if}
+	</div>
+
 	<!-- 2. Workspace Management -->
 	<div class={ThemeUtils.card('overflow-hidden')}>
 		<div
@@ -182,35 +208,6 @@
 							<FeatureDebug />
 						</div>
 					{/if}
-				</div>
-			{/if}
-		</div>
-
-		<!-- 1. User Management -->
-		<div class={ThemeUtils.card('overflow-hidden')}>
-			<div
-				class="flex justify-between items-center p-3 hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer bg-gray-100 dark:bg-gray-750"
-				on:click={() => (sectionsVisible.users = !sectionsVisible.users)}
-				on:keydown={(e) => e.key === 'Enter' && (sectionsVisible.users = !sectionsVisible.users)}
-				tabindex="0"
-				role="button"
-			>
-				<div class="flex items-center">
-					<div class="bg-blue-500/20 p-1.5 rounded mr-2">
-						<i class="fas fa-users text-blue-400"></i>
-					</div>
-					<h3 class="font-medium theme-text-primary">User Management</h3>
-					<span class="ml-3 px-2 py-0.5 text-xs bg-blue-600 text-white rounded-md">Coming Soon</span
-					>
-				</div>
-				<i
-					class="fas {sectionsVisible.users ? 'fa-chevron-up' : 'fa-chevron-down'} theme-text-muted"
-				></i>
-			</div>
-
-			{#if sectionsVisible.users}
-				<div transition:fade={{ duration: 150 }} class="border-t theme-border">
-					<UserManagement visible={true} />
 				</div>
 			{/if}
 		</div>
