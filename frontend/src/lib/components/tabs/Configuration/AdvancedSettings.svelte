@@ -54,7 +54,8 @@
 			<div class="bg-purple-600/10 p-1.5 rounded mr-2">
 				<i class="fas fa-sliders-h text-purple-500"></i>
 			</div>
-			<h3 class="font-medium theme-text-primary">Advanced Settings (TODO)</h3>
+			<h3 class="font-medium theme-text-primary">Advanced Settings</h3>
+			<span class="ml-3 px-2 py-0.5 text-xs bg-blue-600 text-white rounded-md">Coming Soon</span>
 		</div>
 		<i class="fas {isExpanded ? 'fa-chevron-up' : 'fa-chevron-down'} theme-text-muted"></i>
 	</div>
