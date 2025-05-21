@@ -25,6 +25,7 @@ import (
 	"beo-echo/backend/src/mocks/handler/project"
 	"beo-echo/backend/src/mocks/handler/proxy"
 	"beo-echo/backend/src/mocks/handler/response"
+	"beo-echo/backend/src/users"
 	"beo-echo/backend/src/utils"
 	"beo-echo/backend/src/workspaces"
 
@@ -84,10 +85,16 @@ func SetupRouter() *gin.Engine {
 	// Health check route
 	router.GET("/mock/api/health", health.HealthCheckHandler)
 
-	// Initialize OAuth service and handlers
+	// Initialize user repository for auth service
+	userRepo := repositories.NewUserRepository(database.DB)
+
+	// Initialize OAuth and Auth services
 	googleOAuthService := authServices.NewGoogleOAuthService(database.DB)
 	googleOAuthHandler := authHandler.NewGoogleOAuthHandler(googleOAuthService)
 	oauthConfigHandler := authHandler.NewOAuthConfigHandler(database.DB)
+
+	// Initialize Auth service with user repository
+	authHandler.InitAuthService(database.DB, userRepo)
 
 	// Authentication routes
 	router.POST("/mock/api/auth/login", authHandler.LoginHandler)
@@ -117,10 +124,31 @@ func SetupRouter() *gin.Engine {
 			ownerGroup.PUT("/oauth/google/state", googleOAuthHandler.UpdateState)
 		}
 
+		// Initialize users module
+		userRepo := repositories.NewUserRepository(database.DB)
+		userService := users.NewUserService(userRepo)
+		userHandler := users.NewUserHandler(userService)
+
 		// User-related routes
-		apiGroup.GET("/auth/me", authHandler.GetCurrentUserHandler)
-		apiGroup.PATCH("/users/:userId", authHandler.UpdateUserHandler)
-		apiGroup.POST("/users/change-password", authHandler.UpdatePasswordHandler)
+		apiGroup.GET("/auth/me", userHandler.GetCurrentUser)
+		apiGroup.PATCH("/users/profile", userHandler.UpdateUser)
+		apiGroup.POST("/users/change-password", userHandler.UpdatePassword)
+
+		// Admin/Owner only user management
+		ownerGroup.GET("/users", userHandler.GetAllUsers)
+		ownerGroup.DELETE("/users/:user_id", userHandler.DeleteUser)
+		ownerGroup.PATCH("/users/:user_id/owner", userHandler.UpdateUserOwner)
+
+		// Workspace-User management
+		apiGroup.GET("/workspaces/:workspaceID/users", userHandler.GetWorkspaceUsers)
+
+		// Routes that require workspace admin permissions
+		workspaceAdminGroup := apiGroup.Group("/workspaces/:workspaceID")
+		workspaceAdminGroup.Use(middlewares.OwnerOrWorkspaceAdminMiddleware())
+		{
+			workspaceAdminGroup.DELETE("/users/:user_id", userHandler.RemoveWorkspaceUser)
+			workspaceAdminGroup.PATCH("/users/:user_id/role", userHandler.UpdateWorkspaceUserRole)
+		}
 
 		// Initialize workspace module
 		workspaceRepo := repositories.NewWorkspaceRepository(database.DB)
