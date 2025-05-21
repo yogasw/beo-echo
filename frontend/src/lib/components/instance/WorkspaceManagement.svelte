@@ -90,15 +90,7 @@
 		const date = new Date(dateString);
 		return date.toLocaleDateString();
 	}
-	
-	function openAutoInviteModal(event: CustomEvent<{ workspaceId: string, workspaceName: string }>) {
 
-	}
-	
-	function closeAutoInviteModal() {
-		
-		loadWorkspaces();
-	}
 	
 	async function toggleAutoInvite(workspace: Workspace) {
 		try {
@@ -115,8 +107,9 @@
 			workspaces = workspaces.map(ws => 
 				ws.id === workspace.id ? { ...ws, auto_invite_enabled: newStatus } : ws
 			);
-
-			console.log(workspaces);
+			
+			// Refresh the displayed workspaces
+			applyFiltersAndPagination();
 		} catch (err) {
 			console.error('Failed to toggle auto-invite:', err);
 			toast.error(err)
@@ -133,7 +126,6 @@
 	}
 	
 	function manageAutoInvite(id: string) {
-		openAutoInviteModal({ detail: { workspaceId: id, workspaceName: workspaces.find(ws => ws.id === id)?.name || '' } });
 	}
 </script>
 
