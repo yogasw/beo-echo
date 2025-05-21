@@ -127,12 +127,19 @@ func SetupRouter() *gin.Engine {
 		workspaceService := workspaces.NewWorkspaceService(workspaceRepo)
 		workspaceHandler := workspaces.NewWorkspaceHandler(workspaceService)
 
+		// Initialize auto-invite handler
+		autoInviteHandler := workspaces.NewAutoInviteHandler(database.DB)
+
 		// Register workspace routes directly
 		workspacesGroup := apiGroup.Group("/workspaces")
 		{
 			workspacesGroup.GET("", workspaceHandler.GetUserWorkspacesWithRoles)
 			workspacesGroup.POST("", workspaceHandler.CreateWorkspace)
 			workspacesGroup.GET("/:workspaceID/role", workspaceHandler.CheckWorkspaceRole)
+
+			// Auto-invite configuration (only accessible by system owners)
+			workspacesGroup.GET("/:workspaceID/auto-invite", middlewares.OwnerOnlyMiddleware(), autoInviteHandler.GetAutoInviteConfig)
+			workspacesGroup.PUT("/:workspaceID/auto-invite", middlewares.OwnerOnlyMiddleware(), autoInviteHandler.UpdateAutoInviteConfig)
 		}
 
 		// Workspace-project hierarchy routes (nested)

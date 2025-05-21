@@ -246,12 +246,15 @@ func (ui *UserIdentity) BeforeCreate(tx *gorm.DB) error {
 // Workspace represents a shared space (team or organization) that can contain projects.
 // A user can belong to multiple workspaces, and each workspace can have multiple users.
 type Workspace struct {
-	ID        string          `gorm:"type:string;primaryKey" json:"id"`                                   // Unique workspace ID
-	Name      string          `json:"name"`                                                               // Unique workspace name
-	Projects  []Project       `gorm:"foreignKey:WorkspaceID;constraint:OnDelete:CASCADE" json:"projects"` // Projects under this workspace
-	Members   []UserWorkspace `gorm:"foreignKey:WorkspaceID" json:"members"`                              // User membership records
-	CreatedAt time.Time       `gorm:"autoCreateTime" json:"created_at"`
-	UpdatedAt time.Time       `gorm:"autoUpdateTime" json:"updated_at"`
+	ID                string          `gorm:"type:string;primaryKey" json:"id"`                                   // Unique workspace ID
+	Name              string          `json:"name"`                                                               // Unique workspace name
+	Projects          []Project       `gorm:"foreignKey:WorkspaceID;constraint:OnDelete:CASCADE" json:"projects"` // Projects under this workspace
+	Members           []UserWorkspace `gorm:"foreignKey:WorkspaceID" json:"members"`                              // User membership records
+	AutoInviteDomains string          `gorm:"type:text" json:"auto_invite_domains"`                               // Comma-separated list of email domains for auto-invitation
+	AutoInviteEnabled bool            `gorm:"default:false" json:"auto_invite_enabled"`                           // Whether auto-invitation is enabled for this workspace
+	AutoInviteRole    string          `gorm:"default:'member'" json:"auto_invite_role"`                           // Role assigned to auto-invited users ("admin" or "member")
+	CreatedAt         time.Time       `gorm:"autoCreateTime" json:"created_at"`
+	UpdatedAt         time.Time       `gorm:"autoUpdateTime" json:"updated_at"`
 }
 
 func (w *Workspace) BeforeCreate(tx *gorm.DB) error {
