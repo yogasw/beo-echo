@@ -381,9 +381,9 @@ func (s *GoogleOAuthService) handleUserCreation(userInfo *GoogleUserInfo, access
 
 	// Create new user and identity
 	newUser := &database.User{
-		Email:     userInfo.Email,
-		Name:      userInfo.Name,
-		IsEnabled: true,
+		Email:    userInfo.Email,
+		Name:     userInfo.Name,
+		IsActive: true,
 	}
 
 	// Start transaction

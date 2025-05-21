@@ -44,9 +44,7 @@ func (h *UserHandler) GetCurrentUser(c *gin.Context) {
 			"email":         user.Email,
 			"name":          user.Name,
 			"is_owner":      user.IsOwner,
-			"is_enabled":    user.IsEnabled,
-			"created_at":    user.CreatedAt,
-			"updated_at":    user.UpdatedAt,
+			"is_active":     user.IsActive,
 			"feature_flags": featureFlags,
 		},
 	})
@@ -154,11 +152,11 @@ func (h *UserHandler) UpdateUser(c *gin.Context) {
 		"success": true,
 		"message": "User updated successfully",
 		"data": gin.H{
-			"id":         updatedUser.ID,
-			"email":      updatedUser.Email,
-			"name":       updatedUser.Name,
-			"is_owner":   updatedUser.IsOwner,
-			"is_enabled": updatedUser.IsEnabled,
+			"id":        updatedUser.ID,
+			"email":     updatedUser.Email,
+			"name":      updatedUser.Name,
+			"is_owner":  updatedUser.IsOwner,
+			"is_active": updatedUser.IsActive,
 		},
 	})
 }
@@ -210,7 +208,7 @@ func (h *UserHandler) GetAllUsers(c *gin.Context) {
 			"email":      user.Email,
 			"name":       user.Name,
 			"is_owner":   user.IsOwner,
-			"is_enabled": user.IsEnabled,
+			"is_active":  user.IsActive,
 			"created_at": user.CreatedAt,
 		})
 	}
