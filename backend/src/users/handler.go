@@ -1,7 +1,6 @@
 package users
 
 import (
-	"beo-echo/backend/src/database"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -219,42 +218,18 @@ func (h *UserHandler) GetAllUsers(c *gin.Context) {
 	})
 }
 
-// GetWorkspaceUsersRequest represents the request to get users in a workspace
-type WorkspaceUserRequest struct {
-	WorkspaceID string `uri:"workspace_id" binding:"required"`
-}
-
 // GetWorkspaceUsers handles retrieving all users in a workspace
 func (h *UserHandler) GetWorkspaceUsers(c *gin.Context) {
-	userID, exists := c.Get("userID")
-	if !exists {
-		c.JSON(http.StatusUnauthorized, gin.H{
-			"success": false,
-			"message": "User not authenticated",
-		})
-		return
-	}
-
-	var req WorkspaceUserRequest
-	if err := c.ShouldBindUri(&req); err != nil {
+	workspaceID := c.Param("workspaceID")
+	if workspaceID == "" {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"success": false,
-			"message": "Invalid workspace ID",
+			"message": "Workspace ID is required",
 		})
 		return
 	}
 
-	// Check if user has access to this workspace
-	var userWorkspace database.UserWorkspace
-	if err := database.DB.Where("user_id = ? AND workspace_id = ?", userID, req.WorkspaceID).First(&userWorkspace).Error; err != nil {
-		c.JSON(http.StatusForbidden, gin.H{
-			"success": false,
-			"message": "You do not have access to this workspace",
-		})
-		return
-	}
-
-	users, err := h.service.GetWorkspaceUsers(c.Request.Context(), req.WorkspaceID)
+	users, err := h.service.GetWorkspaceUsers(c.Request.Context(), workspaceID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"success": false,
@@ -269,7 +244,7 @@ func (h *UserHandler) GetWorkspaceUsers(c *gin.Context) {
 		// Find user's role in this workspace
 		var role string = "member"
 		for _, workspace := range user.Workspaces {
-			if workspace.WorkspaceID == req.WorkspaceID {
+			if workspace.WorkspaceID == workspaceID {
 				role = workspace.Role
 				break
 			}

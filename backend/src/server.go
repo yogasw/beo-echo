@@ -139,15 +139,14 @@ func SetupRouter() *gin.Engine {
 		ownerGroup.DELETE("/users/:user_id", userHandler.DeleteUser)
 		ownerGroup.PATCH("/users/:user_id", userHandler.UpdateUser)
 
-		// Workspace-User management
-		apiGroup.GET("/workspaces/:workspaceID/users", userHandler.GetWorkspaceUsers)
-
 		// Routes that require workspace admin permissions
 		workspaceAdminGroup := apiGroup.Group("/workspaces/:workspaceID")
 		workspaceAdminGroup.Use(middlewares.OwnerOrWorkspaceAdminMiddleware())
 		{
 			workspaceAdminGroup.DELETE("/users/:user_id", userHandler.RemoveWorkspaceUser)
 			workspaceAdminGroup.PATCH("/users/:user_id/role", userHandler.UpdateWorkspaceUserRole)
+			// Workspace-User management
+			workspaceAdminGroup.GET("/users", userHandler.GetWorkspaceUsers)
 		}
 
 		// Initialize workspace module

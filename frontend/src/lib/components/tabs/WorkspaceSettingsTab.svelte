@@ -2,6 +2,7 @@
 	import { currentWorkspace, workspaceStore } from '$lib/stores/workspace';
 	import * as ThemeUtils from '$lib/utils/themeUtils';
 	import { toast } from '$lib/stores/toast';
+	import { workspaceApi } from '$lib/api/workspaceApi';
 	
 	let editMode = false;
 	let workspaceName = '';
@@ -12,9 +13,9 @@
 		email: string;
 		role: string;
 	}
-	
+
 	let members: Member[] = [];
-	
+
 	// Initialize form with current workspace data
 	$: if ($currentWorkspace && !editMode) {
 		workspaceName = $currentWorkspace.name;
@@ -54,20 +55,19 @@
 		}
 	}
 	
-	// Load workspace members
+	// Load workspace 
 	async function loadWorkspaceMembers() {
 		if (!$currentWorkspace) return;
 		
 		try {
-			// TODO: Implement API call to get workspace members
-			// const response = await getWorkspaceMembers($currentWorkspace.id);
-			// members = response.data;
-			
-			// For now, use mock data
-			members = [
-				{ id: '1', name: 'John Doe', email: 'john@example.com', role: 'admin' },
-				{ id: '2', name: 'Jane Smith', email: 'jane@example.com', role: 'member' }
-			];
+			workspaceApi.getWorkspaceMembers($currentWorkspace.id)
+				.then(response => {
+					members = response;
+				})
+				.catch(error => {
+					toast.error('Failed to load workspace members');
+					console.error('Failed to load workspace members:', error);
+				});
 		} catch (error) {
 			console.error('Failed to load workspace members:', error);
 		}
@@ -239,6 +239,7 @@
 											on:click={() => removeMember(member.id)}
 											class="text-red-400 hover:text-red-600 p-1"
 											title="Remove member"
+											aria-label="Remove member"
 										>
 											<i class="fas fa-trash-alt"></i>
 										</button>
