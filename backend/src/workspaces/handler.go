@@ -180,4 +180,20 @@ func (h *WorkspaceHandler) CheckWorkspaceRole(c *gin.Context) {
 	})
 }
 
-// Note: Routes are registered directly in src/server.go
+// get all workspaces for owner
+func (h *WorkspaceHandler) GetAllWorkspaces(c *gin.Context) {
+	// Fetch all workspaces for the owner
+	workspaces, err := h.service.GetAllWorkspaces(c.Request.Context())
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"success": false,
+			"message": "Failed to fetch workspaces: " + err.Error(),
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"success": true,
+		"data":    workspaces,
+	})
+}

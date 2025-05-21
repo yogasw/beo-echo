@@ -13,6 +13,16 @@ type workspaceRepository struct {
 	db *gorm.DB
 }
 
+// GetAllWorkspaces implements workspaces.WorkspaceRepository.
+func (r *workspaceRepository) GetAllWorkspaces(ctx context.Context) ([]database.Workspace, error) {
+	var workspaces []database.Workspace
+	err := r.db.Find(&workspaces).Error
+	if err != nil {
+		return nil, err
+	}
+	return workspaces, nil
+}
+
 // NewWorkspaceRepository creates a new workspace repository
 func NewWorkspaceRepository(db *gorm.DB) workspaces.WorkspaceRepository {
 	return &workspaceRepository{db: db}

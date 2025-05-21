@@ -18,6 +18,7 @@ type WorkspaceRepository interface {
 	CreateWorkspace(ctx context.Context, workspace *database.Workspace, userID string) error
 	CheckWorkspaceRole(ctx context.Context, userID string, workspaceID string) (*database.UserWorkspace, error)
 	IsUserWorkspaceAdmin(ctx context.Context, userID string, workspaceID string) (bool, error)
+	GetAllWorkspaces(ctx context.Context) ([]database.Workspace, error)
 }
 
 // WorkspaceService implements the workspace business operations
@@ -53,4 +54,8 @@ func (s *WorkspaceService) CheckWorkspaceRole(ctx context.Context, userID string
 // IsUserWorkspaceAdmin checks if a user is an admin in a specific workspace
 func (s *WorkspaceService) IsUserWorkspaceAdmin(ctx context.Context, userID string, workspaceID string) (bool, error) {
 	return s.repo.IsUserWorkspaceAdmin(ctx, userID, workspaceID)
+}
+
+func (s *WorkspaceService) GetAllWorkspaces(ctx context.Context) ([]database.Workspace, error) {
+	return s.repo.GetAllWorkspaces(ctx)
 }

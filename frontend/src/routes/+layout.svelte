@@ -1,7 +1,7 @@
 <script lang="ts">
 	// Import necessary modules and components
 	import '../app.css';
-	import { workspaces, allWorkspaces, currentWorkspace } from '$lib/stores/workspace';
+	import { workspaces } from '$lib/stores/workspace';
 
 	import { page } from '$app/stores';
 	import { goto } from '$app/navigation';

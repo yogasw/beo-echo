@@ -136,6 +136,7 @@ func SetupRouter() *gin.Engine {
 			workspacesGroup.GET("", workspaceHandler.GetUserWorkspacesWithRoles)
 			workspacesGroup.POST("", workspaceHandler.CreateWorkspace)
 			workspacesGroup.GET("/:workspaceID/role", workspaceHandler.CheckWorkspaceRole)
+			workspacesGroup.GET("/all", middlewares.OwnerOnlyMiddleware(), workspaceHandler.GetAllWorkspaces)
 
 			// Auto-invite configuration (only accessible by system owners)
 			workspacesGroup.GET("/:workspaceID/auto-invite", middlewares.OwnerOnlyMiddleware(), autoInviteHandler.GetAutoInviteConfig)

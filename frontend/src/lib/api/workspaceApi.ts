@@ -12,7 +12,7 @@ export const workspaceApi = {
         const response = await apiClient.get<{
             success: boolean;
             data: Workspace[];
-        }>('/workspaces');
+        }>('/workspaces/all');
         return response.data.data;
     },
     
