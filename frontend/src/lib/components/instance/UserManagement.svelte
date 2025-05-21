@@ -8,6 +8,43 @@
 
 	let users: User[] = [];
 	let loading = true;
+	
+	// Pagination state
+	let currentPage = 1;
+	let itemsPerPage = 10;
+	let totalPages = 1;
+	
+	// Search state
+	let searchQuery = '';
+	let filteredUsers: User[] = [];
+	
+	// Computed filtered and paginated users
+	$: {
+		// Filter users based on search query
+		if (searchQuery.trim() === '') {
+			filteredUsers = [...users];
+		} else {
+			const query = searchQuery.toLowerCase();
+			filteredUsers = users.filter(user => 
+				user.name.toLowerCase().includes(query) || 
+				user.email.toLowerCase().includes(query)
+			);
+		}
+		
+		// Calculate total pages
+		totalPages = Math.max(1, Math.ceil(filteredUsers.length / itemsPerPage));
+		
+		// Adjust current page if it's out of bounds after filtering
+		if (currentPage > totalPages) {
+			currentPage = totalPages;
+		}
+	}
+	
+	// Get current page users
+	$: paginatedUsers = filteredUsers.slice(
+		(currentPage - 1) * itemsPerPage, 
+		currentPage * itemsPerPage
+	);
 
 	// Modal state management
 	let showAddModal = false;
@@ -141,13 +178,63 @@
 			}
 		}
 	}
+	
+	// Pagination functions
+	function goToPage(page: number) {
+		if (page >= 1 && page <= totalPages) {
+			currentPage = page;
+		}
+	}
+	
+	function nextPage() {
+		if (currentPage < totalPages) {
+			currentPage++;
+		}
+	}
+	
+	function prevPage() {
+		if (currentPage > 1) {
+			currentPage--;
+		}
+	}
+	
+	// Handle search
+	function handleSearch() {
+		// Reset to first page when searching
+		currentPage = 1;
+		// Filtering happens reactively in the computed value above
+	}
 
-	export let visible = false;
 </script>
 
 <div class="p-4" transition:fade={{ duration: 200 }}>
 	<div class="theme-bg-primary p-4 rounded-lg border theme-border mb-4">
 		<h3 class="theme-text-primary font-medium mb-3">Users</h3>
+
+		<!-- Search form -->
+		<div class="mb-4">
+			<form on:submit|preventDefault={handleSearch} class="flex gap-2">
+				<div class="relative flex-grow">
+					<div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+						<i class="fas fa-search text-gray-500 dark:text-gray-400"></i>
+					</div>
+					<input
+						type="text"
+						id="search-users"
+						class="block w-full p-2 pl-10 text-sm rounded-lg theme-bg-secondary border theme-border theme-text-primary focus:ring-blue-500 focus:border-blue-500"
+						placeholder="Search by name or email"
+						bind:value={searchQuery}
+						on:input={handleSearch}
+					/>
+				</div>
+				<button
+					type="submit"
+					class="px-3 py-2 theme-bg-secondary theme-text-primary rounded-md text-sm hover:bg-gray-200 dark:hover:bg-gray-600"
+				>
+					Search
+				</button>
+			</form>
+		</div>
 
 		{#if loading}
 			<div class="flex justify-center items-center p-8">
@@ -155,8 +242,10 @@
 			</div>
 		{:else}
 			<div class="overflow-x-auto mb-4">
-				{#if users.length === 0}
-					<div class="text-center p-4 theme-text-secondary">No users found in this instance.</div>
+				{#if filteredUsers.length === 0}
+					<div class="text-center p-4 theme-text-secondary">
+						{users.length === 0 ? 'No users found in this instance.' : 'No users match your search.'}
+					</div>
 				{:else}
 					<table class="w-full text-sm text-left">
 						<thead class="text-xs uppercase theme-text-secondary">
@@ -168,7 +257,7 @@
 							</tr>
 						</thead>
 						<tbody>
-							{#each users as user}
+							{#each paginatedUsers as user}
 								<tr class="theme-border-subtle border-b">
 									<td class="px-4 py-3 flex items-center gap-3">
 										<span class="theme-text-primary">{user.name}</span>
@@ -209,6 +298,46 @@
 							{/each}
 						</tbody>
 					</table>
+					
+					<!-- Pagination controls -->
+					<div class="flex items-center justify-between border-t theme-border pt-3 mt-3">
+						<div class="text-sm theme-text-secondary">
+							Showing {paginatedUsers.length > 0 ? (currentPage - 1) * itemsPerPage + 1 : 0} to {Math.min(currentPage * itemsPerPage, filteredUsers.length)} of {filteredUsers.length} users
+						</div>
+						<div class="flex space-x-1">
+							<button 
+								class="p-2 theme-bg-secondary rounded hover:bg-gray-200 dark:hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed" 
+								on:click={prevPage}
+								disabled={currentPage === 1}
+								aria-label="Previous page"
+							>
+								<i class="fas fa-chevron-left text-sm theme-text-secondary"></i>
+							</button>
+							
+							{#if totalPages > 1}
+								{#each Array(Math.min(5, totalPages)) as _, i}
+									{#if i + 1 <= totalPages}
+										<button 
+											class="p-2 w-8 h-8 flex items-center justify-center rounded {currentPage === i + 1 ? 'bg-blue-600 text-white' : 'theme-bg-secondary theme-text-secondary hover:bg-gray-200 dark:hover:bg-gray-600'}" 
+											on:click={() => goToPage(i + 1)}
+											aria-label="Go to page {i + 1}"
+										>
+											{i + 1}
+										</button>
+									{/if}
+								{/each}
+							{/if}
+							
+							<button 
+								class="p-2 theme-bg-secondary rounded hover:bg-gray-200 dark:hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed" 
+								on:click={nextPage}
+								disabled={currentPage === totalPages}
+								aria-label="Next page"
+							>
+								<i class="fas fa-chevron-right text-sm theme-text-secondary"></i>
+							</button>
+						</div>
+					</div>
 				{/if}
 			</div>
 		{/if}
