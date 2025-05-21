@@ -116,7 +116,6 @@
 		}
 	}
 	
-	// Delete function removed in instance scope
 	
 	function selectWorkspace(workspace: Workspace) {
 		// Callback to parent component to switch to the selected workspace
@@ -125,7 +124,10 @@
 		toast.info(`Switched to workspace: ${workspace.name}`);
 	}
 	
-	function manageAutoInvite(id: string) {
+	function manageAutoInvite(workspace: Workspace) {
+		// Callback to parent component to manage auto-invite settings
+		// onManageAutoInvite(workspace);
+		toast.info(`Manage auto-invite settings for workspace: ${workspace.name}`);
 	}
 </script>
 
@@ -223,7 +225,7 @@
 										</button>
 										
 										<button 
-											on:click={() => manageAutoInvite(workspace.id)} 
+											on:click={() => manageAutoInvite(workspace)} 
 											class="p-2 theme-bg-secondary rounded-full hover:bg-blue-500/20" 
 											title="Manage Auto-Invite Settings"
 											aria-label="Manage Auto-Invite Settings"
