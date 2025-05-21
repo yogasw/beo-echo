@@ -615,108 +615,124 @@ All database models are defined in `backend/src/database/models.go`. This file s
 
 ## Module Organization
 
-Each feature module follows a structure implementing the **Dependency Inversion Principle** (DIP), where higher-level modules depend on abstractions, not concrete implementations:
+Each feature module follows a simplified structure with concrete implementations:
 
-1. **Handler Layer** (`handler/`):
+1. **Handler Layer** (`modules/handler.go`):
    - Processes HTTP requests and produces responses
-   - Validates and transforms input data
-   - Depends on service interfaces, not implementations
+   - Validates and transforms input data 
+   - Uses the concrete service implementation
    - Converts domain errors to appropriate HTTP status codes
-   - Files named `*_handler.go`
+   - One file per module, example: `workspaces/handler.go`
 
-2. **Service Layer** (`service/`):
+2. **Service Layer** (`modules/service.go`):
    - Contains core business logic and domain rules
    - Defines repository interfaces that it needs
+   - Implements concrete service implementation
    - Orchestrates operations across multiple repositories
-   - Files named `*_service.go`
-   - Only depends on abstractions (interfaces)
+   - One file per module, example: `workspaces/service.go`
 
-3. **Repository Interfaces** (`service/`):
-   - Defined in service packages where they're used
+3. **Repository Interfaces**:
+   - Defined in the service file alongside the service implementation
    - Specify data access requirements for each service
    - Clean separation from database implementation details
 
 4. **Repository Implementations** (`database/repositories/`):
-   - Implement the interfaces defined in service packages
+   - Implement the interfaces defined in service files
    - Handle database operations and queries
    - Convert between domain and database models
    - All database operations are centralized here
-   - Files should be named `*_repository.go`
-   - Each file implements a specific repository interface
+   - Files should be named `*_repo.go`
 
 ## Key Principles
 
-1. **Dependency Inversion**
-   - High-level modules (services) depend on abstractions
-   - Low-level modules (repositories) implement those abstractions
-   - Interfaces are defined where they are needed (in services)
+1. **Simplified Structure**
+   - Concrete service implementations directly in the module directory
+   - Repository interfaces defined in the same file as the service that uses them
+   - Clear dependency flow from handler → service → repository
 
 2. **Layer Responsibilities**
    - **Handlers**: Handle external requests and input validation
    - **Services**: Implement business logic and define data needs
-   - **Repository Interfaces**: Define data access requirements (in services)
+   - **Repository Interfaces**: Define data access requirements (in service.go)
    - **Repository Implementations**: Implement database access (in database/)
 
 ## Implementation Guidelines
 
-### Step 1: Define Service and Repository Interface
+### Step 1: Define Service with Repository Interface
 
 ```go
-// service/user_service.go
-package service
+// users/service.go
+package users
 
 import (
     "context"
     "beo-echo/backend/src/database"
 )
 
-// UserRepository defines data access requirements
+// UserRepository defines data access requirements for user operations
 type UserRepository interface {
     FindByID(ctx context.Context, id string) (*database.User, error)
     Create(ctx context.Context, user *database.User) error
 }
 
-// UserService handles user business operations
-type UserService interface {
-    GetUser(ctx context.Context, id string) (*database.User, error)
-    CreateUser(ctx context.Context, user *database.User) error
-}
-
-// userService implements UserService
-type userService struct {
+// UserService implements user business operations
+type UserService struct {
     repo UserRepository
 }
 
 // NewUserService creates a new user service
-func NewUserService(repo UserRepository) UserService {
-    return &userService{repo: repo}
+func NewUserService(repo UserRepository) *UserService {
+    return &UserService{repo: repo}
 }
 
-// Implement the UserService methods...
+// GetUser retrieves a user by ID
+func (s *UserService) GetUser(ctx context.Context, id string) (*database.User, error) {
+    return s.repo.FindByID(ctx, id)
+}
+
+// CreateUser creates a new user
+func (s *UserService) CreateUser(ctx context.Context, user *database.User) error {
+    return s.repo.Create(ctx, user)
+}
 ```
 
 ### Step 2: Create Handler
 
 ```go
-// handler/user_handler.go
-package handler
+// users/handler.go
+package users
 
 import (
     "github.com/gin-gonic/gin"
-    "beo-echo/backend/src/users/service"
+    "net/http"
 )
 
 // UserHandler handles HTTP requests for users
 type UserHandler struct {
-    service service.UserService
+    service *UserService
 }
 
 // NewUserHandler creates a new user handler
-func NewUserHandler(service service.UserService) *UserHandler {
+func NewUserHandler(service *UserService) *UserHandler {
     return &UserHandler{service: service}
 }
 
-// Implement handler methods...
+// GetUser handles GET /users/:id
+func (h *UserHandler) GetUser(c *gin.Context) {
+    userID := c.Param("id")
+    user, err := h.service.GetUser(c.Request.Context(), userID)
+    if err != nil {
+        c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+        return
+    }
+    
+    c.JSON(http.StatusOK, user)
+}
+
+// CreateUser handles POST /users
+func (h *UserHandler) CreateUser(c *gin.Context) {
+    // Implementation details...
+}
 ```
 
 ### Step 3: Implement Repository
@@ -730,20 +746,30 @@ import (
     "gorm.io/gorm"
     
     "beo-echo/backend/src/database"
-    "beo-echo/backend/src/users/service"
+    "beo-echo/backend/src/users"  // Import the package, not a subpackage
 )
 
-// userRepository implements service.UserRepository
+// userRepository implements users.UserRepository
 type userRepository struct {
     db *gorm.DB
 }
 
 // NewUserRepository creates a new user repository
-func NewUserRepository(db *gorm.DB) service.UserRepository {
+func NewUserRepository(db *gorm.DB) users.UserRepository {
     return &userRepository{db: db}
 }
 
-// Implement repository methods...
+// FindByID finds a user by ID
+func (r *userRepository) FindByID(ctx context.Context, id string) (*database.User, error) {
+    // Implementation details...
+    return nil, nil
+}
+
+// Create creates a new user
+func (r *userRepository) Create(ctx context.Context, user *database.User) error {
+    // Implementation details...
+    return nil
+}
 ```
 
 ### Step 4: Register Dependencies
@@ -757,10 +783,10 @@ func SetupRoutes(router *gin.Engine) {
     userRepo := repositories.NewUserRepository(db)
     
     // Create service with repository
-    userService := service.NewUserService(userRepo)
+    userService := users.NewUserService(userRepo)
     
     // Create handler with service
-    userHandler := handler.NewUserHandler(userService)
+    userHandler := users.NewUserHandler(userService)
     
     // Register routes
     router.GET("/users/:id", userHandler.GetUser)
