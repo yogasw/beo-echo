@@ -473,12 +473,8 @@ func (h *UserHandler) UpdateUser(c *gin.Context) {
 		return
 	}
 	updates := make(map[string]interface{})
-	if req.IsOwner {
-		updates["is_owner"] = req.IsOwner
-	}
-	if req.IsActive {
-		updates["is_active"] = req.IsActive
-	}
+	updates["is_owner"] = req.IsOwner
+	updates["is_active"] = req.IsActive
 
 	if err := h.service.UpdateUserFields(c.Request.Context(), userID, updates); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
