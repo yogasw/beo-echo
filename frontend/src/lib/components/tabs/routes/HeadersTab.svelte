@@ -2,6 +2,7 @@
 	import * as ThemeUtils from '$lib/utils/themeUtils';
 	import { theme } from '$lib/stores/theme';
 	import { createEventDispatcher } from 'svelte';
+	import { tick } from 'svelte';
 	
 	export let headers: string;
 	export let editable: boolean = true;
@@ -15,7 +16,9 @@
 	let localHeaders: Array<{key: string, value: string, isNew?: boolean}> = [];
 	let isEditing = false;
 	let hasChanges = false;
-	
+	// References for input elements to enable focusing
+	let valueInputs: HTMLInputElement[] = [];
+	let keyInputs: HTMLInputElement[] = [];	
 	// Parse JSON headers string into an array of key-value objects
 	$: {
 		try {
@@ -34,15 +37,29 @@
 	}
 	
 	// Add a new header entry
-	function addHeader() {
+	async function addHeader() {
+		const newIndex = localHeaders.length;
 		localHeaders = [...localHeaders, { key: '', value: '', isNew: true }];
 		hasChanges = true;
 		isEditing = true;
+		
+		// Wait for DOM update, then focus on the new input
+		await tick();
+		if (keyInputs[newIndex]) {
+			keyInputs[newIndex].focus();
+		}
 	}
 	
 	// Remove a header entry
 	function removeHeader(index: number) {
 		localHeaders = localHeaders.filter((_, i) => i !== index);
+		hasChanges = true;
+	}
+	
+	// Duplicate a header entry
+	function duplicateHeader(index: number) {
+		const header = localHeaders[index];
+		localHeaders = [...localHeaders.slice(0, index + 1), { key: '', value: '', isNew: true }, ...localHeaders.slice(index + 1)];
 		hasChanges = true;
 	}
 	
@@ -58,6 +75,15 @@
 		localHeaders[index].value = newValue;
 		hasChanges = true;
 		localHeaders = [...localHeaders]; // Trigger reactivity
+	}
+	
+	// Handle key press events
+	async function handleKeyDown(event: KeyboardEvent, index: number) {
+		// If Enter key is pressed in the last row's value input, add a new header
+		if (event.key === 'Enter' && index === localHeaders.length - 1) {
+			event.preventDefault(); // Prevent form submission
+			await addHeader();
+		}
 	}
 	
 	// Save changes to headers
@@ -190,6 +216,7 @@
 											placeholder="Header name"
 											class="block w-full py-1 px-2 text-xs rounded bg-white dark:bg-gray-700 border {ThemeUtils.themeBorder()} {ThemeUtils.themeTextPrimary()} focus:ring-1 focus:ring-blue-500/50 focus:border-blue-500"
 											aria-label="Header name"
+											bind:this={keyInputs[i]}
 										/>
 									</td>
 									<td class="px-4 py-2 align-top relative">
@@ -202,8 +229,21 @@
 													placeholder="Value"
 													class="block w-full py-1 px-2 text-xs rounded bg-white dark:bg-gray-700 border {ThemeUtils.themeBorder()} {ThemeUtils.themeTextPrimary()} focus:ring-1 focus:ring-blue-500/50 focus:border-blue-500"
 													aria-label="Header value"
+													bind:this={valueInputs[i]}
+													on:keydown={(e) => handleKeyDown(e, i)}
 												/>
 											</div>
+											{#if i === localHeaders.length - 1}
+												<button
+													on:click={() => addHeader()}
+													title="Add new header"
+													class="h-6 w-6 flex-shrink-0 flex items-center justify-center text-blue-600 hover:bg-blue-100 dark:hover:bg-blue-900/30 dark:text-blue-400 dark:hover:text-blue-300 rounded-full"
+													type="button"
+													aria-label="Add new header"
+												>
+													<i class="fas fa-plus text-xs"></i>
+												</button>
+											{/if}
 											<button
 												on:click={() => removeHeader(i)}
 												title="Remove header"
@@ -219,19 +259,6 @@
 							{/each}
 						</tbody>
 					</table>
-				</div>
-				
-				<!-- Add New Header Button -->
-				<div class="border-t dark:border-gray-700 p-2">
-					<button
-						on:click={addHeader}
-						class="{ThemeUtils.utilityButton('py-1 px-2 text-xs gap-1')}"
-						type="button"
-						aria-label="Add new header"
-					>
-						<i class="fas fa-plus text-xs mr-1"></i>
-						<span>Add Header</span>
-					</button>
 				</div>
 			{/if}
 		{/if}
