@@ -2,11 +2,13 @@
     import { featureToggles, updateFeatureToggle } from '$lib/stores/featureToggles';
     import { fade } from 'svelte/transition';
     import { toast } from '$lib/stores/toast';
+    import FeatureToggle from '$lib/components/common/FeatureToggle.svelte';
     
     let saving = false;
     
     // Update a feature toggle with backend integration
-    async function handleFeatureToggle(feature: string, enabled: boolean) {
+    async function handleFeatureToggle(event: CustomEvent<{key: string, value: boolean}>) {
+        const { key, value } = event.detail;
         saving = true;
         
         try {
@@ -15,16 +17,16 @@
             // await fetch('/api/feature-toggles', {
             //   method: 'POST',
             //   headers: { 'Content-Type': 'application/json' },
-            //   body: JSON.stringify({ feature, enabled })
+            //   body: JSON.stringify({ feature: key, enabled: value })
             // });
             
             // For now, just update the local store directly
-            updateFeatureToggle(feature as keyof typeof $featureToggles, enabled);
+            updateFeatureToggle(key as keyof typeof $featureToggles, value);
             
             // Simulate API latency
             await new Promise(resolve => setTimeout(resolve, 300));
             
-            toast.success(`Feature "${feature}" ${enabled ? 'enabled' : 'disabled'}`);
+            toast.success(`Feature "${key}" ${value ? 'enabled' : 'disabled'}`);
         } catch (error) {
             toast.error('Failed to update feature toggle');
             console.error('Failed to update feature toggle:', error);
@@ -47,29 +49,15 @@
     <!-- Feature toggles section -->
     <div class="space-y-4">
         <!-- Password Requirements Toggle -->
-        <div class="flex items-center justify-between py-3 border-b theme-border">
-            <div>
-                <h4 class="font-medium theme-text-primary">Password Requirements</h4>
-                <p class="text-sm theme-text-secondary">Show password complexity requirements when changing passwords</p>
-            </div>
-            <label class="inline-flex items-center cursor-pointer">
-                <input 
-                    type="checkbox" 
-                    bind:checked={$featureToggles.showPasswordRequirements} 
-                    on:change={() => handleFeatureToggle('showPasswordRequirements', $featureToggles.showPasswordRequirements)}
-                    class="sr-only peer"
-                    disabled={saving}
-                >
-                <div class="w-11 h-6 bg-gray-300 dark:bg-gray-700 peer-checked:bg-blue-600 
-                    rounded-full peer peer-focus:outline-none peer-focus:ring-2 
-                    peer-focus:ring-blue-300 dark:peer-focus:ring-blue-600 
-                    peer-checked:after:translate-x-full peer-checked:after:border-white 
-                    after:content-[''] after:absolute after:top-[2px] after:start-[2px] 
-                    after:bg-white after:rounded-full after:h-5 after:w-5 
-                    after:transition-all dark:border-gray-600 relative">
-                </div>
-            </label>
-        </div>
+        <FeatureToggle
+            title="Password Requirements"
+            description="Show password complexity requirements when changing passwords"
+            bind:checked={$featureToggles.showPasswordRequirements}
+            featureKey="showPasswordRequirements"
+            on:change={handleFeatureToggle}
+            disabled={saving}
+            ariaLabel="Toggle password requirements"
+        />
         
         <!-- You can add more feature toggles here -->
     </div>

@@ -91,90 +91,11 @@ func InitializeDefaultUserAndWorkspace(db *gorm.DB) error {
 }
 
 // VerifyPassword checks if the provided password matches the hashed password in the database
+// This method is maintained here for model method functionality
 func (user *User) VerifyPassword(password string) bool {
 	err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(password))
 	return err == nil
 }
 
-// HashPassword creates a bcrypt hash of the password
-func HashPassword(password string) (string, error) {
-	bytes, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
-	return string(bytes), err
-}
-
-// GetUserByEmail retrieves a user by their email address
-func GetUserByEmail(email string) (*User, error) {
-	var user User
-	result := DB.Where("email = ?", email).First(&user)
-	if result.Error != nil {
-		return nil, result.Error
-	}
-	return &user, nil
-}
-
-// GetUserWorkspaces returns all workspaces that the user is a member of
-func GetUserWorkspaces(userID string) ([]Workspace, error) {
-	var workspaces []Workspace
-	err := DB.Joins("JOIN user_workspaces ON user_workspaces.workspace_id = workspaces.id").
-		Where("user_workspaces.user_id = ?", userID).
-		Find(&workspaces).Error
-
-	return workspaces, err
-}
-
-// GetWorkspaceProjects returns all projects in a workspace
-func GetWorkspaceProjects(workspaceID string) ([]Project, error) {
-	var projects []Project
-	err := DB.Where("workspace_id = ?", workspaceID).Find(&projects).Error
-	return projects, err
-}
-
-// IsUserWorkspaceAdmin checks if a user is an admin in a specific workspace
-func IsUserWorkspaceAdmin(userID string, workspaceID string) (bool, error) {
-	var userWorkspace UserWorkspace
-	result := DB.Where("user_id = ? AND workspace_id = ?", userID, workspaceID).First(&userWorkspace)
-
-	if result.Error != nil {
-		if result.Error == gorm.ErrRecordNotFound {
-			return false, nil
-		}
-		return false, result.Error
-	}
-
-	return userWorkspace.Role == "admin", nil
-}
-
-// UpdatePassword updates a user's password with a bcrypt hash
-func UpdatePassword(userID string, newPassword string) error {
-	// Hash the new password
-	hashedPassword, err := HashPassword(newPassword)
-	if err != nil {
-		return err
-	}
-
-	// Update the user's password
-	result := DB.Model(&User{}).
-		Where("id = ?", userID).
-		Update("password", hashedPassword)
-
-	return result.Error
-}
-
-// UpdateUserFields updates specified user fields
-func UpdateUserFields(userID string, updates map[string]interface{}) error {
-	result := DB.Model(&User{}).
-		Where("id = ?", userID).
-		Updates(updates)
-
-	return result.Error
-}
-
-// GetUserByID retrieves a user by ID
-func GetUserByID(id string) (*User, error) {
-	var user User
-	result := DB.Where("id = ?", id).First(&user)
-	if result.Error != nil {
-		return nil, result.Error
-	}
-	return &user, nil
-}
+// Note: All other user management functions have been moved to repositories/user_repo.go
+// and are accessed via the users module services.

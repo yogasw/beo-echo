@@ -89,6 +89,87 @@
 			</div>
 		</div>
 	</div>
+	<!-- 1. User Management -->
+	<div class={ThemeUtils.card('overflow-hidden')}>
+		<div
+			class="flex justify-between items-center p-3 hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer bg-gray-100 dark:bg-gray-750"
+			on:click={() => (sectionsVisible.users = !sectionsVisible.users)}
+			on:keydown={(e) => e.key === 'Enter' && (sectionsVisible.users = !sectionsVisible.users)}
+			tabindex="0"
+			role="button"
+		>
+			<div class="flex items-center">
+				<div class="bg-blue-500/20 p-1.5 rounded mr-2">
+					<i class="fas fa-users text-blue-400"></i>
+				</div>
+				<h3 class="font-medium theme-text-primary">User Management</h3>
+			</div>
+			<i class="fas {sectionsVisible.users ? 'fa-chevron-up' : 'fa-chevron-down'} theme-text-muted"
+			></i>
+		</div>
+
+		{#if sectionsVisible.users}
+			<div transition:fade={{ duration: 150 }} class="border-t theme-border">
+				<UserManagement />
+			</div>
+		{/if}
+	</div>
+
+	<!-- 2. Workspace Management -->
+	<div class={ThemeUtils.card('overflow-hidden')}>
+		<div
+			class="flex justify-between items-center p-3 hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer bg-gray-100 dark:bg-gray-750"
+			on:click={() => (sectionsVisible.workspaces = !sectionsVisible.workspaces)}
+			on:keydown={(e) =>
+				e.key === 'Enter' && (sectionsVisible.workspaces = !sectionsVisible.workspaces)}
+			tabindex="0"
+			role="button"
+		>
+			<div class="flex items-center">
+				<div class="bg-purple-500/20 p-1.5 rounded mr-2">
+					<i class="fas fa-building text-purple-400"></i>
+				</div>
+				<h3 class="font-medium theme-text-primary">Workspace Management</h3>
+			</div>
+			<i
+				class="fas {sectionsVisible.workspaces
+					? 'fa-chevron-up'
+					: 'fa-chevron-down'} theme-text-muted"
+			></i>
+		</div>
+
+		{#if sectionsVisible.workspaces}
+			<div transition:fade={{ duration: 150 }} class="border-t theme-border">
+				<WorkspaceManagement visible={true} />
+			</div>
+		{/if}
+	</div>
+
+	<!-- 5. SSO Integration -->
+	<div class={ThemeUtils.card('overflow-hidden')}>
+		<div
+			class="flex justify-between items-center p-3 hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer bg-gray-100 dark:bg-gray-750"
+			on:click={() => (sectionsVisible.sso = !sectionsVisible.sso)}
+			on:keydown={(e) => e.key === 'Enter' && (sectionsVisible.sso = !sectionsVisible.sso)}
+			tabindex="0"
+			role="button"
+		>
+			<div class="flex items-center">
+				<div class="bg-red-500/20 p-1.5 rounded mr-2">
+					<i class="fas fa-key text-red-400"></i>
+				</div>
+				<h3 class="font-medium theme-text-primary">SSO Integration</h3>
+			</div>
+			<i class="fas {sectionsVisible.sso ? 'fa-chevron-up' : 'fa-chevron-down'} theme-text-muted"
+			></i>
+		</div>
+
+		{#if sectionsVisible.sso}
+			<div transition:fade={{ duration: 150 }} class="border-t theme-border">
+				<SsoIntegration visible={true} />
+			</div>
+		{/if}
+	</div>
 
 	<!-- Settings Sections -->
 	<div class="space-y-5">
@@ -107,6 +188,8 @@
 						<i class="fas fa-toggle-on text-amber-400"></i>
 					</div>
 					<h3 class="font-medium theme-text-primary">Feature Configuration</h3>
+					<span class="ml-3 px-2 py-0.5 text-xs bg-blue-600 text-white rounded-md">Coming Soon</span
+					>
 				</div>
 				<i
 					class="fas {sectionsVisible.features
@@ -129,63 +212,6 @@
 			{/if}
 		</div>
 
-		<!-- 1. User Management -->
-		<div class={ThemeUtils.card('overflow-hidden')}>
-			<div
-				class="flex justify-between items-center p-3 hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer bg-gray-100 dark:bg-gray-750"
-				on:click={() => (sectionsVisible.users = !sectionsVisible.users)}
-				on:keydown={(e) => e.key === 'Enter' && (sectionsVisible.users = !sectionsVisible.users)}
-				tabindex="0"
-				role="button"
-			>
-				<div class="flex items-center">
-					<div class="bg-blue-500/20 p-1.5 rounded mr-2">
-						<i class="fas fa-users text-blue-400"></i>
-					</div>
-					<h3 class="font-medium theme-text-primary">User Management</h3>
-				</div>
-				<i
-					class="fas {sectionsVisible.users ? 'fa-chevron-up' : 'fa-chevron-down'} theme-text-muted"
-				></i>
-			</div>
-
-			{#if sectionsVisible.users}
-				<div transition:fade={{ duration: 150 }} class="border-t theme-border">
-					<UserManagement visible={true} />
-				</div>
-			{/if}
-		</div>
-
-		<!-- 2. Workspace Management -->
-		<div class={ThemeUtils.card('overflow-hidden')}>
-			<div
-				class="flex justify-between items-center p-3 hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer bg-gray-100 dark:bg-gray-750"
-				on:click={() => (sectionsVisible.workspaces = !sectionsVisible.workspaces)}
-				on:keydown={(e) =>
-					e.key === 'Enter' && (sectionsVisible.workspaces = !sectionsVisible.workspaces)}
-				tabindex="0"
-				role="button"
-			>
-				<div class="flex items-center">
-					<div class="bg-purple-500/20 p-1.5 rounded mr-2">
-						<i class="fas fa-building text-purple-400"></i>
-					</div>
-					<h3 class="font-medium theme-text-primary">Workspace Management</h3>
-				</div>
-				<i
-					class="fas {sectionsVisible.workspaces
-						? 'fa-chevron-up'
-						: 'fa-chevron-down'} theme-text-muted"
-				></i>
-			</div>
-
-			{#if sectionsVisible.workspaces}
-				<div transition:fade={{ duration: 150 }} class="border-t theme-border">
-					<WorkspaceManagement visible={true} />
-				</div>
-			{/if}
-		</div>
-
 		<!-- 3. Security Settings -->
 		<div class={ThemeUtils.card('overflow-hidden')}>
 			<div
@@ -201,6 +227,8 @@
 						<i class="fas fa-shield-alt text-green-400"></i>
 					</div>
 					<h3 class="font-medium theme-text-primary">Security Settings</h3>
+					<span class="ml-3 px-2 py-0.5 text-xs bg-blue-600 text-white rounded-md">Coming Soon</span
+					>
 				</div>
 				<i
 					class="fas {sectionsVisible.security
@@ -230,6 +258,8 @@
 						<i class="fas fa-globe text-yellow-400"></i>
 					</div>
 					<h3 class="font-medium theme-text-primary">Custom Domain</h3>
+					<span class="ml-3 px-2 py-0.5 text-xs bg-blue-600 text-white rounded-md">Coming Soon</span
+					>
 				</div>
 				<i
 					class="fas {sectionsVisible.domain
@@ -241,32 +271,6 @@
 			{#if sectionsVisible.domain}
 				<div transition:fade={{ duration: 150 }} class="border-t theme-border">
 					<CustomDomain visible={true} />
-				</div>
-			{/if}
-		</div>
-
-		<!-- 5. SSO Integration -->
-		<div class={ThemeUtils.card('overflow-hidden')}>
-			<div
-				class="flex justify-between items-center p-3 hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer bg-gray-100 dark:bg-gray-750"
-				on:click={() => (sectionsVisible.sso = !sectionsVisible.sso)}
-				on:keydown={(e) => e.key === 'Enter' && (sectionsVisible.sso = !sectionsVisible.sso)}
-				tabindex="0"
-				role="button"
-			>
-				<div class="flex items-center">
-					<div class="bg-red-500/20 p-1.5 rounded mr-2">
-						<i class="fas fa-key text-red-400"></i>
-					</div>
-					<h3 class="font-medium theme-text-primary">SSO Integration</h3>
-				</div>
-				<i class="fas {sectionsVisible.sso ? 'fa-chevron-up' : 'fa-chevron-down'} theme-text-muted"
-				></i>
-			</div>
-
-			{#if sectionsVisible.sso}
-				<div transition:fade={{ duration: 150 }} class="border-t theme-border">
-					<SsoIntegration visible={true} />
 				</div>
 			{/if}
 		</div>
@@ -286,6 +290,8 @@
 						<i class="fas fa-cog text-blue-400"></i>
 					</div>
 					<h3 class="font-medium theme-text-primary">General Settings</h3>
+					<span class="ml-3 px-2 py-0.5 text-xs bg-blue-600 text-white rounded-md">Coming Soon</span
+					>
 				</div>
 				<i
 					class="fas {sectionsVisible.general

@@ -167,7 +167,15 @@ func (s *GoogleOAuthService) HandleOAuthCallback(code string, baseURL string) (*
 		return nil, "", fmt.Errorf("failed to handle user creation: %w", err)
 	}
 
-	// 5. Generate JWT token
+	// 5. Process auto-invite based on email domain
+	// We need the AutoInviteService, but to avoid circular dependencies,
+	// We'll handle the auto-invite directly here
+	if err := s.processAutoInvite(user); err != nil {
+		// Log but don't fail the auth flow
+		fmt.Printf("Warning: Failed to process auto-invite for user %s: %v\n", user.ID, err)
+	}
+
+	// 6. Generate JWT token
 	token, err := auth.GenerateToken(user)
 	if err != nil {
 		return nil, "", fmt.Errorf("failed to generate JWT token: %w", err)
@@ -283,6 +291,67 @@ func (s *GoogleOAuthService) validateUserDomain(email string) error {
 	return nil
 }
 
+// processAutoInvite checks if a user should be automatically invited to any workspaces
+// based on their email domain, and creates the necessary UserWorkspace records if needed
+func (s *GoogleOAuthService) processAutoInvite(user *database.User) error {
+	if user == nil || user.Email == "" {
+		return nil // No user or email, nothing to do
+	}
+
+	// Extract the domain from the user's email
+	parts := strings.Split(user.Email, "@")
+	if len(parts) != 2 {
+		return nil // Invalid email format, nothing to do
+	}
+	userDomain := strings.ToLower(parts[1]) // Convert to lowercase for case-insensitive comparison
+
+	// Find all workspaces with auto-invite enabled
+	var workspaces []database.Workspace
+	if err := s.db.Where("auto_invite_enabled = ?", true).Find(&workspaces).Error; err != nil {
+		return fmt.Errorf("failed to get workspaces for auto-invite: %w", err)
+	}
+
+	for _, workspace := range workspaces {
+		// Check if user is already a member of this workspace
+		var existingMembership database.UserWorkspace
+		existingMembershipCount := s.db.Where("user_id = ? AND workspace_id = ?", user.ID, workspace.ID).
+			First(&existingMembership).RowsAffected
+
+		if existingMembershipCount > 0 {
+			// User already has a membership record for this workspace, skip
+			continue
+		}
+
+		// Check if the user's domain matches any in the workspace's auto-invite domains
+		if workspace.AutoInviteDomains == "" {
+			continue // No domains configured
+		}
+
+		domains := strings.Split(workspace.AutoInviteDomains, ",")
+		for _, domain := range domains {
+			// Trim whitespace and convert to lowercase for comparison
+			domainToCheck := strings.ToLower(strings.TrimSpace(domain))
+
+			if domainToCheck == userDomain {
+				// Create a new UserWorkspace record
+				newMembership := database.UserWorkspace{
+					UserID:      user.ID,
+					WorkspaceID: workspace.ID,
+					Role:        workspace.AutoInviteRole,
+				}
+
+				if err := s.db.Create(&newMembership).Error; err != nil {
+					return fmt.Errorf("failed to create auto-invite membership for workspace %s: %w", workspace.ID, err)
+				}
+
+				break // No need to check other domains for this workspace
+			}
+		}
+	}
+
+	return nil
+}
+
 func (s *GoogleOAuthService) handleUserCreation(userInfo *GoogleUserInfo, accessToken string) (*database.User, error) {
 	// Check if user exists by identity
 	var identity database.UserIdentity
@@ -312,9 +381,9 @@ func (s *GoogleOAuthService) handleUserCreation(userInfo *GoogleUserInfo, access
 
 	// Create new user and identity
 	newUser := &database.User{
-		Email:     userInfo.Email,
-		Name:      userInfo.Name,
-		IsEnabled: true,
+		Email:    userInfo.Email,
+		Name:     userInfo.Name,
+		IsActive: true,
 	}
 
 	// Start transaction

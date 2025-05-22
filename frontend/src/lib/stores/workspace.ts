@@ -135,6 +135,15 @@ export const workspaces = {
     });
   },
 
+  switchWorkspace: (workspace: Workspace) => {
+    console.log('Switching to workspace:', workspace);
+    setCurrentWorkspaceId(workspace.id);
+    workspaceStore.update(state => ({
+      ...state,
+      currentWorkspace: workspace
+    }));
+  },
+
   // Check user role in a workspace
   checkRole: async (workspaceId: string, userId?: string) => {
     try {

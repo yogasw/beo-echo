@@ -73,9 +73,8 @@ func ListProjectsHandler(c *gin.Context) {
 		}
 	}
 
-	// Get all projects in the workspace
-	projects, err := database.GetWorkspaceProjects(workspaceID)
-	if err != nil {
+	var projects []database.Project
+	if err := database.DB.Where("workspace_id = ?", workspaceID).Find(&projects).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"success": false,
 			"message": "Failed to fetch projects: " + err.Error(),

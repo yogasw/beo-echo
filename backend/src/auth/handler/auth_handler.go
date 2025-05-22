@@ -7,8 +7,16 @@ import (
 	"gorm.io/gorm"
 
 	"beo-echo/backend/src/auth"
-	"beo-echo/backend/src/database"
+	"beo-echo/backend/src/auth/services"
 )
+
+// Global auth service instance
+var authService *services.AuthService
+
+// InitAuthService initializes the auth service
+func InitAuthService(db *gorm.DB, userRepo services.UserRepository) {
+	authService = services.NewAuthService(userRepo, db)
+}
 
 // LoginRequest represents the login form data
 type LoginRequest struct {
@@ -34,8 +42,9 @@ func LoginHandler(c *gin.Context) {
 		return
 	}
 
-	// Find the user by email
-	user, err := database.GetUserByEmail(request.Email)
+	// Find the user by email - using direct DB method for now
+	// TODO: Update to use context-based method in future
+	user, err := authService.GetUserByEmailDirect(request.Email)
 	if err != nil {
 		if err == gorm.ErrRecordNotFound {
 			c.JSON(http.StatusUnauthorized, gin.H{
@@ -77,11 +86,11 @@ func LoginHandler(c *gin.Context) {
 		"message": "Login successful",
 		"token":   token,
 		"user": gin.H{
-			"id":         user.ID,
-			"email":      user.Email,
-			"name":       user.Name,
-			"is_owner":   user.IsOwner,
-			"is_enabled": user.IsEnabled,
+			"id":        user.ID,
+			"email":     user.Email,
+			"name":      user.Name,
+			"is_owner":  user.IsOwner,
+			"is_active": user.IsActive,
 		},
 	})
 }
