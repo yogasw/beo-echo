@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"errors"
 	"fmt"
 	"net/http"
 	"net/url"
@@ -25,7 +26,8 @@ func (h *GoogleOAuthHandler) GetConfig(c *gin.Context) {
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"success": false,
-			"message": "Failed to fetch Google OAuth config",
+			"message": "failed to fetch Google OAuth config",
+			"error":   services.ErrOAuthConfigRetrieval,
 		})
 		return
 	}
@@ -34,7 +36,8 @@ func (h *GoogleOAuthHandler) GetConfig(c *gin.Context) {
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"success": false,
-			"message": "Failed to fetch Google OAuth state",
+			"message": "failed to fetch Google OAuth state",
+			"error":   services.ErrOAuthConfigRetrieval,
 		})
 		return
 	}
@@ -52,17 +55,21 @@ func (h *GoogleOAuthHandler) GetConfig(c *gin.Context) {
 func (h *GoogleOAuthHandler) UpdateConfig(c *gin.Context) {
 	var config services.GoogleOAuthConfig
 	if err := c.ShouldBindJSON(&config); err != nil {
+		oauthErr := services.NewInvalidRequestBodyError()
 		c.JSON(http.StatusBadRequest, gin.H{
 			"success": false,
-			"message": "Invalid request body",
+			"message": oauthErr.Error(),
+			"error":   services.ErrInvalidRequestBody,
 		})
 		return
 	}
 
 	if err := h.service.SaveConfig(config); err != nil {
+		oauthErr := services.NewOAuthConfigRetrievalError("failed to save configuration")
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"success": false,
-			"message": "Failed to save Google OAuth config",
+			"message": oauthErr.Error(),
+			"error":   services.ErrOAuthConfigRetrieval,
 		})
 		return
 	}
@@ -80,17 +87,21 @@ func (h *GoogleOAuthHandler) UpdateState(c *gin.Context) {
 	}
 
 	if err := c.ShouldBindJSON(&req); err != nil {
+		oauthErr := services.NewInvalidRequestBodyError()
 		c.JSON(http.StatusBadRequest, gin.H{
 			"success": false,
-			"message": "Invalid request body",
+			"message": oauthErr.Error(),
+			"error":   services.ErrInvalidRequestBody,
 		})
 		return
 	}
 
 	if err := h.service.UpdateState(req.Enabled); err != nil {
+		oauthErr := services.NewOAuthConfigRetrievalError("failed to update state")
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"success": false,
-			"message": "Failed to update Google OAuth state",
+			"message": oauthErr.Error(),
+			"error":   services.ErrOAuthConfigRetrieval,
 		})
 		return
 	}
@@ -106,9 +117,11 @@ func (h *GoogleOAuthHandler) InitiateLogin(c *gin.Context) {
 	// Get frontend redirect URL from query
 	frontendRedirectURI := c.Query("redirect_uri")
 	if frontendRedirectURI == "" {
+		oauthErr := services.NewMissingRedirectURIError()
 		c.JSON(http.StatusBadRequest, gin.H{
 			"success": false,
-			"message": "redirect_uri is required",
+			"message": oauthErr.Error(),
+			"error":   services.ErrMissingRedirectURI,
 		})
 		return
 	}
@@ -124,8 +137,19 @@ func (h *GoogleOAuthHandler) InitiateLogin(c *gin.Context) {
 	// Check if OAuth is configured
 	config, err := h.service.GetConfig()
 	if err != nil || config == nil {
-		errorURL := fmt.Sprintf("%s?error=google_oauth_not_configured&message=%s",
-			frontendRedirectURI, "Google OAuth credentials are not configured. Please contact your administrator.")
+		// Create a proper error object and cast it to OAuthError to access GetType()
+		oauthErr := services.NewGoogleOAuthNotConfiguredError()
+		typedErr, ok := oauthErr.(*services.OAuthError)
+		errorType := services.ErrGoogleOAuthNotConfigured
+		if ok {
+			errorType = typedErr.GetType()
+		}
+
+		// Use our error constants for consistent error handling
+		errorURL := fmt.Sprintf("%s?error=%s&message=%s",
+			frontendRedirectURI,
+			errorType,
+			url.QueryEscape(oauthErr.Error()))
 		c.Redirect(http.StatusTemporaryRedirect, errorURL)
 		return
 	}
@@ -133,8 +157,19 @@ func (h *GoogleOAuthHandler) InitiateLogin(c *gin.Context) {
 	// Check if OAuth is enabled
 	enabled, err := h.service.GetState()
 	if err != nil || !enabled {
-		errorURL := fmt.Sprintf("%s?error=google_oauth_not_configured&message=%s",
-			frontendRedirectURI, "Google OAuth service is disabled. Please contact your administrator.")
+		// Create a proper error object and cast it to OAuthError to access GetType()
+		oauthErr := services.NewGoogleOAuthDisabledError()
+		typedErr, ok := oauthErr.(*services.OAuthError)
+		errorType := services.ErrGoogleOAuthDisabled
+		if ok {
+			errorType = typedErr.GetType()
+		}
+
+		// Use our error constants for consistent error handling
+		errorURL := fmt.Sprintf("%s?error=%s&message=%s",
+			frontendRedirectURI,
+			errorType,
+			url.QueryEscape(oauthErr.Error()))
 		c.Redirect(http.StatusTemporaryRedirect, errorURL)
 		return
 	}
@@ -143,20 +178,27 @@ func (h *GoogleOAuthHandler) InitiateLogin(c *gin.Context) {
 	loginURL, err := h.service.GetLoginURL(backendCallbackURI, frontendRedirectURI)
 	if err != nil {
 		var errorURL string
+		var oauthError *services.OAuthError
 
-		switch err.Error() {
-		case "google OAuth service is disabled":
-			errorURL = fmt.Sprintf("%s?error=google_oauth_not_configured&message=%s",
-				frontendRedirectURI, "Google OAuth service is disabled. Please contact your administrator.")
-		case "google OAuth credentials are not configured":
-			errorURL = fmt.Sprintf("%s?error=google_oauth_not_configured&message=%s",
-				frontendRedirectURI, "Google OAuth credentials are not configured. Please contact your administrator.")
-		case "failed to get OAuth config":
-			errorURL = fmt.Sprintf("%s?error=google_oauth_not_configured&message=%s",
-				frontendRedirectURI, "Failed to retrieve Google OAuth configuration. Please contact your administrator.")
-		default:
+		if errors.As(err, &oauthError) {
+			switch oauthError.GetType() {
+			case services.ErrGoogleOAuthDisabled:
+				errorURL = fmt.Sprintf("%s?error=google_oauth_disabled&message=%s",
+					frontendRedirectURI, url.QueryEscape(oauthError.Error()))
+			case services.ErrGoogleOAuthNotConfigured:
+				errorURL = fmt.Sprintf("%s?error=google_oauth_not_configured&message=%s",
+					frontendRedirectURI, url.QueryEscape(oauthError.Error()))
+			case services.ErrOAuthConfigRetrieval:
+				errorURL = fmt.Sprintf("%s?error=google_oauth_config_error&message=%s",
+					frontendRedirectURI, url.QueryEscape(oauthError.Error()))
+			default:
+				errorURL = fmt.Sprintf("%s?error=google_oauth_error&message=%s",
+					frontendRedirectURI, url.QueryEscape(err.Error()))
+			}
+		} else {
+			// Fallback for non-typed errors
 			errorURL = fmt.Sprintf("%s?error=google_oauth_error&message=%s",
-				frontendRedirectURI, err.Error())
+				frontendRedirectURI, url.QueryEscape(err.Error()))
 		}
 
 		c.Redirect(http.StatusTemporaryRedirect, errorURL)
@@ -172,9 +214,11 @@ func (h *GoogleOAuthHandler) HandleCallback(c *gin.Context) {
 	code := c.Query("code")
 	state := c.Query("state")
 	if code == "" {
+		oauthErr := services.NewMissingCodeError()
 		c.JSON(http.StatusBadRequest, gin.H{
 			"success": false,
-			"message": "no authorization code provided",
+			"message": oauthErr.Error(),
+			"error":   services.ErrMissingCode,
 		})
 		return
 	}
@@ -182,9 +226,11 @@ func (h *GoogleOAuthHandler) HandleCallback(c *gin.Context) {
 	// Extract frontend redirect URL from state
 	stateParts := strings.Split(state, "&")
 	if len(stateParts) != 2 {
+		oauthErr := services.NewInvalidStateError()
 		c.JSON(http.StatusBadRequest, gin.H{
 			"success": false,
-			"message": "invalid state parameter",
+			"message": oauthErr.Error(),
+			"error":   services.ErrInvalidState,
 		})
 		return
 	}
@@ -200,20 +246,30 @@ func (h *GoogleOAuthHandler) HandleCallback(c *gin.Context) {
 	user, token, err := h.service.HandleOAuthCallback(code, baseURL)
 	if err != nil {
 		var errorURL string
-		switch err.Error() {
-		case "auto-registration is disabled and user does not exist":
-			errorURL = fmt.Sprintf("%s?error=registration_disabled&message=%s",
-				frontendRedirectURI, "auto-registration is disabled. Please contact your administrator.")
-		case "email domain not allowed":
-			errorURL = fmt.Sprintf("%s?error=domain_not_allowed&message=%s",
-				frontendRedirectURI, "your email domain is not allowed. Please contact your administrator.")
-		case "google oauth service is disabled":
-			errorURL = fmt.Sprintf("%s?error=google_oauth_not_configured&message=%s",
-				frontendRedirectURI, "google oauth service is disabled. Please contact your administrator.")
-		default:
+
+		// Try to cast to OAuthError to get more specific information
+		var oauthError *services.OAuthError
+		if errors.As(err, &oauthError) {
+			switch oauthError.GetType() {
+			case services.ErrAutoRegistrationDisabled:
+				errorURL = fmt.Sprintf("%s?error=registration_disabled&message=%s",
+					frontendRedirectURI, url.QueryEscape(oauthError.Error()))
+			case services.ErrDomainNotAllowed:
+				errorURL = fmt.Sprintf("%s?error=domain_not_allowed&message=%s",
+					frontendRedirectURI, url.QueryEscape(oauthError.Error()))
+			case services.ErrGoogleOAuthDisabled:
+				errorURL = fmt.Sprintf("%s?error=google_oauth_disabled&message=%s",
+					frontendRedirectURI, url.QueryEscape(oauthError.Error()))
+			default:
+				errorURL = fmt.Sprintf("%s?error=google_oauth_error&message=%s",
+					frontendRedirectURI, url.QueryEscape(err.Error()))
+			}
+		} else {
+			// Fallback for non-typed errors
 			errorURL = fmt.Sprintf("%s?error=google_oauth_error&message=%s",
-				frontendRedirectURI, err.Error())
+				frontendRedirectURI, url.QueryEscape(err.Error()))
 		}
+
 		c.Redirect(http.StatusTemporaryRedirect, errorURL)
 		return
 	}
