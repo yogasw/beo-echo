@@ -29,15 +29,18 @@
 	function toggleLogExpansion(logId: string) {
 		expandedLogs[logId] = !expandedLogs[logId];
 		if (expandedLogs[logId] && !activeTabs[logId]) {
-			activeTabs[logId] = 'request';
+			activeTabs[logId] = lastActiveTab; // Use the last active tab instead of hardcoded 'request'
 		}
 		expandedLogs = expandedLogs; // Force Svelte reactivity update
 		activeTabs = activeTabs; // Force Svelte reactivity update
 	}
 
 	// Function to switch between request and response tabs
+	let lastActiveTab: 'request' | 'response' = 'request'; // Store the last active tab
+	
 	function switchTab(logId: string, tab: 'request' | 'response') {
 		activeTabs[logId] = tab;
+		lastActiveTab = tab; // Remember this tab as the last used one
 		activeTabs = activeTabs; // Force Svelte reactivity update
 	}
 	
