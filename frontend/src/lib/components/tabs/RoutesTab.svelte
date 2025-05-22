@@ -24,8 +24,14 @@
 		if ($selectedProject) {
 			endpoints = $selectedProject.endpoints || [];
 			activeConfigName = $selectedProject.name || '';
-			selectedEndpoint = null; // Reset selected endpoint when project changes
-			selectedResponse = null; // Reset selected response when project changes
+			
+			// Automatically select the first endpoint if available
+			if (endpoints.length > 0) {
+				selectRoute(endpoints[0]);
+			} else {
+				selectedEndpoint = null; // Reset selected endpoint when no endpoints available
+				selectedResponse = null; // Reset selected response when no endpoints available
+			}
 		}
 		console.log('Selected selectedProject:', $selectedProject);
 	}
@@ -44,7 +50,13 @@
 		selectedEndpoint = route;
 		// Reset endpoints update list when changing endpoints
 		resetEndpointsList();
-		// selectedResponse = route.responses[0] || null; // Select the first response by default
+		
+		// Automatically select the first response if available
+		if (route.responses && route.responses.length > 0) {
+			selectedResponse = route.responses[0];
+		} else {
+			selectedResponse = null;
+		}
 	}
 
 	function handleRouteStatusChange(route: Endpoint) {
