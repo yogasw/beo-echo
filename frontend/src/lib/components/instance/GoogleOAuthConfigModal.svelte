@@ -4,13 +4,15 @@
     import { ssoApi } from '$lib/api/ssoApi';
     import { onMount } from 'svelte';
     import { fade } from 'svelte/transition';
+    import DomainManager from '$lib/components/common/DomainManager.svelte';
+    import ToggleSwitch from '$lib/components/common/ToggleSwitch.svelte';
 
     export let visible = false;
     export let onClose = () => {};
 
     let clientId = '';
     let clientSecret = '';
-    let allowDomains = '';
+    let allowedDomains: string[] = [];
     let isEnabled = false;
     let saving = false;
     let error = '';
@@ -21,7 +23,7 @@
             if (config) {
                 clientId = config.config.client_id;
                 clientSecret = config.config.client_secret;
-                allowDomains = config.config.allow_domains?.join(',') || '';
+                allowedDomains = config.config.allow_domains || [];
                 isEnabled = config.enabled;
             }
         } catch (err) {
@@ -37,7 +39,7 @@
             await ssoApi.updateGoogleConfig({
                 client_id: clientId,
                 client_secret: clientSecret,
-                allow_domains: allowDomains.split(',').map(d => d.trim()).filter(Boolean),
+                allow_domains: allowedDomains,
                 instructions: ''
             });
 
@@ -47,7 +49,7 @@
             ssoStore.setGoogleConfig({
                 client_id: clientId,
                 client_secret: clientSecret,
-                allow_domains: allowDomains.split(',').map(d => d.trim()).filter(Boolean),
+                allow_domains: allowedDomains,
                 instructions: ''
             });
             ssoStore.setGoogleEnabled(isEnabled);
@@ -125,35 +127,17 @@
             </div>
 
             <div class="space-y-2">
-                <label for="allowDomains" class="block theme-text-primary text-sm font-medium">
-                    Allowed Domains
-                </label>
-                <input 
-                    type="text" 
-                    id="allowDomains"
-                    bind:value={allowDomains}
-                    class="block w-full p-2.5 theme-bg-secondary theme-border border rounded-lg 
-                           text-sm theme-text-primary focus:ring-1 focus:ring-blue-500"
-                    placeholder="example.com,another.com (leave empty to allow all)"
+                <DomainManager 
+                    bind:domains={allowedDomains}
+                    label="Allowed Domains"
+                    helpText="Only users with these email domains will be allowed to sign in with Google SSO. Leave empty to allow all domains."
+                    emptyText="No domains restrictions - all users can sign in."
+                    placeholder="example.com, yourdomain.com"
                 />
-                <p class="theme-text-muted text-xs">
-                    Comma-separated list of allowed email domains. Leave empty to allow all domains.
-                </p>
             </div>
 
             <div class="flex items-center space-x-3 pt-2">
-                <label class="relative inline-flex items-center cursor-pointer">
-                    <input type="checkbox" 
-                           class="sr-only peer" 
-                           bind:checked={isEnabled}>
-                    <div class="w-11 h-6 bg-gray-700 peer-focus:outline-none peer-focus:ring-4 
-                                peer-focus:ring-blue-800 rounded-full peer peer-checked:after:translate-x-full 
-                                rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white 
-                                after:content-[''] after:absolute after:top-[2px] after:start-[2px] 
-                                after:bg-white after:border-gray-300 after:border after:rounded-full 
-                                after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600">
-                    </div>
-                </label>
+                <ToggleSwitch bind:checked={isEnabled} />
                 <span class="theme-text-primary text-sm">Enable Google SSO</span>
             </div>
 

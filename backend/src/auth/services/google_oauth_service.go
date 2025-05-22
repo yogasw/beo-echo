@@ -122,10 +122,15 @@ func (s *GoogleOAuthService) ValidateDomain(email string) (bool, error) {
 	}
 
 	// Extract domain from email
-	domain := email[len(email)-strings.Index(email, "@"):]
+	parts := strings.Split(email, "@")
+	if len(parts) != 2 {
+		return false, fmt.Errorf("invalid email format: %s", email)
+	}
+
+	domain := parts[1]
 
 	for _, allowedDomain := range config.AllowDomains {
-		if allowedDomain == domain {
+		if strings.EqualFold(allowedDomain, domain) { // Case-insensitive comparison
 			return true, nil
 		}
 	}
@@ -192,7 +197,7 @@ func (s *GoogleOAuthService) GetLoginURL(backendCallbackURI string, frontendRedi
 	}
 
 	if config == nil || config.ClientID == "" || config.ClientSecret == "" {
-		return "", fmt.Errorf("google oauth credentials are not configured; please contact your administrator")
+		return "", NewGoogleOAuthNotConfiguredError()
 	}
 
 	enabled, err := s.GetState()
@@ -201,7 +206,7 @@ func (s *GoogleOAuthService) GetLoginURL(backendCallbackURI string, frontendRedi
 	}
 
 	if !enabled {
-		return "", fmt.Errorf("Google OAuth service is disabled. Please contact your administrator")
+		return "", NewGoogleOAuthDisabledError()
 	}
 
 	// Generate a random state to prevent CSRF and include frontend redirect URL
@@ -267,7 +272,7 @@ func (s *GoogleOAuthService) fetchGoogleUserInfo(accessToken string) (*GoogleUse
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("Failed to get user info from Google. Please try again later")
+		return nil, NewOAuthUserInfoRetrievalError()
 	}
 
 	var userInfo GoogleUserInfo
@@ -285,7 +290,13 @@ func (s *GoogleOAuthService) validateUserDomain(email string) error {
 	}
 
 	if !isValid {
-		return fmt.Errorf("email domain not allowed")
+		// Extract the domain part from the email
+		parts := strings.Split(email, "@")
+		if len(parts) != 2 {
+			return fmt.Errorf("invalid email format")
+		}
+		domain := parts[1]
+		return NewDomainNotAllowedError(domain)
 	}
 
 	return nil
@@ -376,7 +387,7 @@ func (s *GoogleOAuthService) handleUserCreation(userInfo *GoogleUserInfo, access
 	}
 
 	if !autoRegisterEnabled {
-		return nil, fmt.Errorf("auto-registration is disabled and user does not exist")
+		return nil, NewAutoRegistrationDisabledError()
 	}
 
 	// Create new user and identity
