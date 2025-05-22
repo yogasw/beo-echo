@@ -114,19 +114,19 @@ func (me *MockEndpoint) BeforeCreate(tx *gorm.DB) error {
 
 // MockResponse represents possible responses from an endpoint
 type MockResponse struct {
-	ID            string     `gorm:"type:string;primaryKey" json:"id"`
-	EndpointID    string     `gorm:"type:string" json:"endpoint_id"`
-	StatusCode    int        `json:"status_code"`                    // HTTP status code
-	Body          string     `gorm:"type:text" json:"body"`          // Response body, stored as JSON
-	Headers       string     `gorm:"type:text" json:"headers"`       // Headers stored as JSON
-	Priority      int        `json:"priority"`                       // Priority if ResponseMode = static
-	DelayMS       int        `json:"delay_ms"`                       // Delay before response (milliseconds)
-	Stream        bool       `json:"stream"`                         // True if response is stream (e.g. SSE, chunked)
-	Documentation string     `gorm:"type:text" json:"documentation"` // Documentation URL or text
-	Enabled       bool       `json:"enabled" gorm:"default:true"`    // Whether enabled or not
-	Rules         []MockRule `gorm:"foreignKey:ResponseID;constraint:OnDelete:CASCADE" json:"rules"`
-	CreatedAt     time.Time  `gorm:"autoCreateTime" json:"created_at"`
-	UpdatedAt     time.Time  `gorm:"autoUpdateTime" json:"updated_at"`
+	ID         string     `gorm:"type:string;primaryKey" json:"id"`
+	EndpointID string     `gorm:"type:string" json:"endpoint_id"`
+	StatusCode int        `json:"status_code"`                 // HTTP status code
+	Body       string     `gorm:"type:text" json:"body"`       // Response body, stored as JSON
+	Headers    string     `gorm:"type:text" json:"headers"`    // Headers stored as JSON
+	Priority   int        `json:"priority"`                    // Priority if ResponseMode = static
+	DelayMS    int        `json:"delay_ms"`                    // Delay before response (milliseconds)
+	Stream     bool       `json:"stream"`                      // True if response is stream (e.g. SSE, chunked)
+	Note       string     `gorm:"type:text" json:"note"`       // Optional note for the response
+	Enabled    bool       `json:"enabled" gorm:"default:true"` // Whether enabled or not
+	Rules      []MockRule `gorm:"foreignKey:ResponseID;constraint:OnDelete:CASCADE" json:"rules"`
+	CreatedAt  time.Time  `gorm:"autoCreateTime" json:"created_at"`
+	UpdatedAt  time.Time  `gorm:"autoUpdateTime" json:"updated_at"`
 }
 
 // BeforeCreate hook to generate UUID string

@@ -15,7 +15,7 @@
 	};
 
 	const selectResponse = (index: number, value: Response): void => {
-		selectedValue = `Response ${index + 1} (${value.status_code}) ${value.documentation}`;
+		selectedValue = `Response ${index + 1} (${value.status_code}) ${value.note}`;
 		const selectedElement = document.getElementById('selectedValue');
 		if (selectedElement) {
 			selectedElement.innerText = selectedValue;
@@ -59,7 +59,7 @@
 
 	$: {
 		if (selectedResponse) {
-			selectedValue = `Response 1 (${selectedResponse.status_code}) ${selectedResponse.documentation}`;
+			selectedValue = `Response 1 (${selectedResponse.status_code}) ${selectedResponse.note}`;
 		} else {
 			selectedValue = 'No Response';
 		}
@@ -90,7 +90,7 @@
 							<li>
 								<button type="button" class="w-full text-left px-4 py-2 {ThemeUtils.themeHover()} cursor-pointer"
 												on:click={() => { selectResponse(index, response) }}>
-									Response {index + 1} ({response.status_code}) {response?.documentation}
+									Response {index + 1} ({response.status_code}) {response?.note}
 								</button>
 							</li>
 						{/each}
