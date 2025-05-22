@@ -325,11 +325,10 @@
 										>
 											<option value="admin">Admin</option>
 											<option value="member">Member</option>
-											<option value="readonly">Read Only</option>
 										</select>
 									{:else}
 										<span class="theme-text-primary">
-											{member.role === 'admin' ? 'Admin' : member.role === 'readonly' ? 'Read Only' : 'Member'}
+											{member.role === 'admin' ? 'Admin' : 'Member'}
 										</span>
 									{/if}
 								</td>
@@ -437,12 +436,10 @@
 					>
 						<option value="admin">Admin</option>
 						<option value="member">Member</option>
-						<option value="readonly">Read Only</option>
 					</select>
 					<p class="text-xs theme-text-secondary mt-1">
 						<strong>Admin:</strong> Can manage workspace settings and members<br>
 						<strong>Member:</strong> Can create and edit projects<br>
-						<strong>Read Only:</strong> Can only view projects
 					</p>
 				</div>
 				
