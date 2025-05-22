@@ -3,6 +3,7 @@
     import { autoInviteApi } from '$lib/api/autoInviteApi';
     import type { AutoInviteConfig } from '$lib/types/autoInviteTypes';
 	import { toast } from '$lib/stores/toast';
+    import ToggleSwitch from '$lib/components/common/ToggleSwitch.svelte';
     
     export let workspaceId: string;
     export let isOwner: boolean = false;
@@ -46,27 +47,40 @@
     function addDomain() {
         if (!newDomain || newDomain.trim() === '') return;
         
-        const domain = newDomain.trim();
+        // Split the input by commas and process each domain
+        const inputDomains = newDomain.split(',').map(d => d.trim()).filter(d => d !== '');
+        let hasErrors = false;
+        let newDomainsAdded = false;
         
-        // Basic validation
-        if (!domain.includes('.')) {
-            error = 'Please enter a valid domain (e.g. example.com)';
-            return;
+        for (const domain of inputDomains) {
+            // Basic validation
+            if (!domain.includes('.')) {
+                error = `Invalid domain: "${domain}" - missing dot (e.g. example.com)`;
+                hasErrors = true;
+                continue;
+            }
+            
+            if (domain.includes('@')) {
+                error = `Invalid domain: "${domain}" - contains @ symbol. Use example.com, not @example.com`;
+                hasErrors = true;
+                continue;
+            }
+            
+            if (domains.includes(domain)) {
+                continue; // Skip duplicates silently
+            }
+            
+            domains = [...domains, domain];
+            newDomainsAdded = true;
         }
         
-        if (domain.includes('@')) {
-            error = 'Do not include @ in domain. Use example.com, not @example.com';
-            return;
+        if (!hasErrors && newDomainsAdded) {
+            error = null;
+        } else if (!hasErrors && !newDomainsAdded) {
+            error = 'All domains are already in the list.';
         }
         
-        if (domains.includes(domain)) {
-            error = 'This domain is already in the list.';
-            return;
-        }
-        
-        domains = [...domains, domain];
-        newDomain = '';
-        error = null;
+        newDomain = ''; // Clear the input field after processing
     }
     
     function removeDomain(domain: string) {
@@ -107,6 +121,7 @@
             </h3>
             <button 
                 on:click={onClose}
+                aria-label="Close auto-invite configuration"
                 class="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-white"
             >
                 <i class="fas fa-times"></i>
@@ -139,32 +154,23 @@
                                 Automatically invite new users based on email domains
                             </p>
                         </div>
-                        <label class="inline-flex items-center cursor-pointer">
-                            <input type="checkbox" bind:checked={enabled} class="sr-only peer">
-                            <div class="w-11 h-6 bg-gray-300 dark:bg-gray-700 peer-checked:bg-blue-600 
-                                rounded-full peer peer-focus:ring-2 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 
-                                peer-checked:after:translate-x-full peer-checked:after:border-white 
-                                after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white 
-                                after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 
-                                after:transition-all dark:border-gray-600">
-                            </div>
-                        </label>
+                        <ToggleSwitch bind:checked={enabled} />
                     </div>
                     
                     <!-- Role selection -->
                     <div class="mb-4">
-                        <label class="block text-gray-800 dark:text-white font-medium mb-2">
+                        <label for="role-group" class="block text-gray-800 dark:text-white font-medium mb-2">
                             Role for Auto-Invited Users
                         </label>
-                        <div class="flex gap-4">
+                        <div class="flex gap-4" id="role-group" role="radiogroup">
                             <label class="inline-flex items-center">
-                                <input type="radio" bind:group={role} value="member" class="form-radio h-4 w-4 
+                                <input type="radio" bind:group={role} value="member" id="role-member" class="form-radio h-4 w-4 
                                     text-blue-600 bg-gray-100 dark:bg-gray-700 border-gray-300 dark:border-gray-600 
                                     focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-600">
                                 <span class="ml-2 text-gray-700 dark:text-gray-300">Member</span>
                             </label>
                             <label class="inline-flex items-center">
-                                <input type="radio" bind:group={role} value="admin" class="form-radio h-4 w-4 
+                                <input type="radio" bind:group={role} value="admin" id="role-admin" class="form-radio h-4 w-4 
                                     text-blue-600 bg-gray-100 dark:bg-gray-700 border-gray-300 dark:border-gray-600 
                                     focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-600">
                                 <span class="ml-2 text-gray-700 dark:text-gray-300">Admin</span>
@@ -174,7 +180,7 @@
                     
                     <!-- Domain list -->
                     <div>
-                        <label class="block text-gray-800 dark:text-white font-medium mb-2">
+                        <label for="domainInput" class="block text-gray-800 dark:text-white font-medium mb-2">
                             Email Domains
                         </label>
                         <p class="text-sm text-gray-500 dark:text-gray-400 mb-3">
@@ -184,9 +190,10 @@
                         <!-- Add domain input -->
                         <div class="flex mb-3">
                             <input 
+                                id="domainInput"
                                 type="text" 
                                 bind:value={newDomain} 
-                                placeholder="example.com" 
+                                placeholder="example.com, gmail.com, company.net" 
                                 class="flex-1 rounded-l-lg p-2.5 bg-gray-50 dark:bg-gray-700 border 
                                     border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white
                                     focus:ring-blue-500 focus:border-blue-500"
@@ -199,6 +206,12 @@
                                 Add
                             </button>
                         </div>
+
+                        <!-- Add a helper text below the input -->
+                        <p class="text-xs text-gray-500 dark:text-gray-400 mb-3">
+                            <i class="fas fa-info-circle mr-1"></i>
+                            You can enter multiple domains separated by commas
+                        </p>
                         
                         <!-- Domains list -->
                         {#if domains.length === 0}
@@ -215,6 +228,7 @@
                                             type="button"
                                             on:click={() => removeDomain(domain)}
                                             class="text-gray-500 dark:text-gray-400 hover:text-red-600 dark:hover:text-red-500"
+                                            aria-label={`Remove domain ${domain}`}
                                         >
                                             <i class="fas fa-times"></i>
                                         </button>
