@@ -104,7 +104,26 @@
 					<option value="DELETE">DELETE</option>
 					<option value="PATCH">PATCH</option>
 				</select>
-				<span class="{ThemeUtils.themeTextMuted()} hidden md:block">{$selectedProject?.url}</span>
+				<div class="flex items-center relative">
+					<div class="hidden md:flex items-center rounded-md border border-blue-400/30 bg-blue-500/10 px-3 py-1 shadow-sm hover:border-blue-500/40 hover:bg-blue-500/15 transition-colors">
+						<i class="fas fa-globe-americas text-blue-400 mr-1.5 text-[10px]"></i>
+						<span class="text-blue-400 font-medium text-xs">API HOST</span>
+						<div class="group relative ml-1.5">
+							<i class="fas fa-info-circle text-blue-400 hover:text-blue-300 cursor-pointer transition-colors"></i>
+							<div class="absolute z-10 hidden group-hover:block bg-gray-800 text-white text-xs rounded-md p-3 left-1/2 -translate-x-1/2 mt-2 w-auto min-w-[200px] max-w-xs whitespace-normal break-all shadow-lg border border-gray-700 transition-all duration-200 ease-in-out">
+								<!-- Triangle pointer -->
+								<div class="absolute -top-2 left-1/2 -translate-x-1/2 w-0 h-0 border-l-[6px] border-l-transparent border-r-[6px] border-r-transparent border-b-[6px] border-b-gray-800"></div>
+								<div class="flex flex-col space-y-2">
+									<div class="flex items-start">
+										<i class="fas fa-link text-blue-400 mr-2 mt-0.5"></i>
+										<span>{$selectedProject?.url || "No API host defined"}</span>
+									</div>
+									<div class="text-[10px] text-gray-400 italic">This is the base URL for all endpoints in this project</div>
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
 				<input
 					type="text"
 					class="w-full md:flex-1 rounded {ThemeUtils.themeBgSecondary()} px-4 py-2 {ThemeUtils.themeTextPrimary()}"
