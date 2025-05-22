@@ -97,19 +97,52 @@
 	}
 </script>
 
-<div class="w-full {!isEditing ? 'rounded-md overflow-hidden shadow-sm' : ThemeUtils.card('w-full')}">
+<div class="w-full rounded-md overflow-hidden shadow-sm">
 	<div class="p-0">
+		<div class="bg-gray-100 dark:bg-gray-700 border-b dark:border-gray-600 flex justify-between items-center">
+			<div class="flex">
+				<div class="text-left px-4 py-3 text-xs font-semibold {ThemeUtils.themeTextPrimary()}">Header Name</div>
+				<div class="text-left pr-4 py-3 text-xs font-semibold {ThemeUtils.themeTextPrimary()}">Value</div>
+			</div>
+			
+			{#if editable}
+				<div class="flex pr-4">
+					<button 
+						on:click={isEditing ? saveChanges : startEditing} 
+						class="{isEditing && !hasChanges ? ThemeUtils.secondaryButton('py-1 px-2 text-xs opacity-60') : isEditing ? ThemeUtils.primaryButton('py-1 px-2 text-xs') : ThemeUtils.utilityButton('py-1 px-2 text-xs')}"
+						type="button"
+						disabled={isEditing && !hasChanges}
+						aria-label={isEditing ? "Save headers" : "Edit headers"}
+					>
+						{#if isEditing}
+							<i class="fas fa-save text-xs mr-1"></i>
+							<span>Save</span>
+						{:else}
+							<i class="fas fa-edit text-xs mr-1"></i>
+							<span>Edit</span>
+						{/if}
+					</button>
+					
+					{#if isEditing}
+						<button 
+							on:click={cancelEdit} 
+							class="{ThemeUtils.utilityButton('py-1 px-2 text-xs ml-1')}"
+							type="button"
+							aria-label="Cancel editing"
+						>
+							Cancel
+						</button>
+					{/if}
+				</div>
+			{/if}
+		</div>
+		
 		<!-- View Mode -->
 		{#if !isEditing}
 			{#if localHeaders && localHeaders.length > 0}
 				<div class="max-h-[350px] overflow-y-auto">
 					<table class="w-full border-collapse">
-						<thead class="sticky top-0 z-10">
-							<tr class="bg-gray-100 dark:bg-gray-700 border-b dark:border-gray-600">
-								<th class="text-left px-4 py-3 text-xs font-semibold {ThemeUtils.themeTextPrimary()}">Header Name</th>
-								<th class="text-left px-4 py-3 text-xs font-semibold {ThemeUtils.themeTextPrimary()}">Value</th>
-							</tr>
-						</thead>
+						<tbody class="divide-y dark:divide-gray-700">
 						<tbody class="divide-y dark:divide-gray-700">
 							{#each localHeaders as header, index}
 								<tr class="{index % 2 === 0 ? 'bg-white dark:bg-gray-800' : 'bg-gray-50/50 dark:bg-gray-750'}">
@@ -123,130 +156,84 @@
 					</table>
 				</div>
 				
-				{#if editable}
-					<div class="flex justify-end mt-2">
-						<button 
-							on:click={startEditing} 
-							class="{ThemeUtils.utilityButton('py-1 px-2 text-xs')}"
-							type="button"
-							aria-label="Edit headers"
-						>
-							<i class="fas fa-edit text-xs mr-1"></i>
-							<span>Edit</span>
-						</button>
-					</div>
-				{/if}
 			{:else}
 				<div class="text-center py-6 rounded-lg border border-dashed {ThemeUtils.themeBorder()}">
 					<i class="fas fa-info-circle mb-2 text-lg {ThemeUtils.themeTextMuted()}"></i>
 					<div class="{ThemeUtils.themeTextMuted()} italic">No headers available.</div>
-					
-					{#if editable}
-						<button 
-							on:click={startEditing} 
-							class="{ThemeUtils.secondaryButton('py-1.5 px-3 text-xs mt-3')}"
-							type="button"
-						>
-							<i class="fas fa-plus text-xs mr-1"></i>
-							<span>Add Headers</span>
-						</button>
-					{/if}
 				</div>
 			{/if}
 		
 		<!-- Edit Mode -->
 		{:else}
-			<div class="space-y-2">
-				{#if localHeaders.length === 0}
-					<div class="flex justify-center py-4">
-						<button
-							on:click={addHeader}
-							class="{ThemeUtils.secondaryButton('py-2 px-4 text-sm gap-2')}"
-							type="button"
-						>
-							<i class="fas fa-plus"></i>
-							<span>Add First Header</span>
-						</button>
-					</div>
-				{:else}
-					<div class="max-h-[350px] overflow-y-auto px-1 py-1 border dark:border-gray-700 rounded-md">
-						{#each localHeaders as header, i}
-							<div class="flex items-center gap-2 px-3 py-2 {i !== 0 ? 'border-t dark:border-gray-700/50' : ''} {i % 2 === 0 ? '' : 'bg-gray-50/50 dark:bg-gray-750/50'}">
-								<!-- Key Input -->
-								<div class="flex-1">
-									<input 
-										type="text"
-										bind:value={header.key}
-										on:input={() => handleKeyChange(i, header.key)}
-										placeholder="Header name"
-										class="block w-full p-1.5 text-xs rounded bg-white dark:bg-gray-700 border {ThemeUtils.themeBorder()} {ThemeUtils.themeTextPrimary()} focus:ring-1 focus:ring-blue-500/50 focus:border-blue-500"
-										aria-label="Header name"
-									/>
-								</div>
-								
-								<!-- Value Input -->
-								<div class="flex-1">
-									<input 
-										type="text" 
-										bind:value={header.value}
-										on:input={() => handleValueChange(i, header.value)}
-										placeholder="Value"
-										class="block w-full p-1.5 text-xs rounded bg-white dark:bg-gray-700 border {ThemeUtils.themeBorder()} {ThemeUtils.themeTextPrimary()} focus:ring-1 focus:ring-blue-500/50 focus:border-blue-500"
-										aria-label="Header value"
-									/>
-								</div>
-								
-								<!-- Delete Button -->
-								<button
-									on:click={() => removeHeader(i)}
-									title="Remove header"
-									class="h-6 w-6 flex items-center justify-center text-red-500 hover:bg-red-100 dark:hover:bg-red-900/30 dark:text-red-400 dark:hover:text-red-300 rounded-full"
-									type="button"
-									aria-label="Remove header"
-								>
-									<i class="fas fa-trash-alt text-xs"></i>
-								</button>
-							</div>
-						{/each}
-					</div>
-					
-					<!-- Add New Header Button -->
-					<div>
-						<button
-							on:click={addHeader}
-							class="{ThemeUtils.utilityButton('py-1 px-2 text-xs gap-1')}"
-							type="button"
-							aria-label="Add new header"
-						>
-							<i class="fas fa-plus text-xs"></i>
-							<span>Add Header</span>
-						</button>
-					</div>
-				{/if}
-				
-				<!-- Action Buttons -->
-				<div class="flex justify-end items-center gap-2 pt-4 mt-2 border-t {ThemeUtils.themeBorderLight()}">
+			{#if localHeaders.length === 0}
+				<div class="text-center py-6">
 					<button
-						on:click={cancelEdit}
-						class="{ThemeUtils.utilityButton('py-1.5 px-3 text-xs')}"
+						on:click={addHeader}
+						class="{ThemeUtils.secondaryButton('py-1.5 px-3 text-xs')}"
 						type="button"
-						aria-label="Cancel editing"
 					>
-						Cancel
-					</button>
-					
-					<button
-						on:click={saveChanges}
-						class="{hasChanges ? ThemeUtils.primaryButton('py-1.5 px-3 text-xs') : ThemeUtils.secondaryButton('py-1.5 px-3 text-xs opacity-60')}"
-						type="button"
-						disabled={!hasChanges}
-						aria-label="Save changes"
-					>
-						<i class="fas fa-save mr-1"></i>
-						Save
+						<i class="fas fa-plus text-xs mr-1"></i>
+						<span>Add First Header</span>
 					</button>
 				</div>
-			</div>
+			{:else}
+				<div class="max-h-[350px] overflow-y-auto">
+					<table class="w-full border-collapse">
+						<tbody class="divide-y dark:divide-gray-700">
+							{#each localHeaders as header, i}
+								<tr class="{i % 2 === 0 ? 'bg-white dark:bg-gray-800' : 'bg-gray-50/50 dark:bg-gray-750'}">
+									<td class="px-4 py-2 align-top" style="width: 50%">
+										<input 
+											type="text"
+											bind:value={header.key}
+											on:input={() => handleKeyChange(i, header.key)}
+											placeholder="Header name"
+											class="block w-full py-1 px-2 text-xs rounded bg-white dark:bg-gray-700 border {ThemeUtils.themeBorder()} {ThemeUtils.themeTextPrimary()} focus:ring-1 focus:ring-blue-500/50 focus:border-blue-500"
+											aria-label="Header name"
+										/>
+									</td>
+									<td class="px-4 py-2 align-top relative">
+										<div class="flex items-center gap-2 w-full">
+											<div class="flex-1">
+												<input 
+													type="text" 
+													bind:value={header.value}
+													on:input={() => handleValueChange(i, header.value)}
+													placeholder="Value"
+													class="block w-full py-1 px-2 text-xs rounded bg-white dark:bg-gray-700 border {ThemeUtils.themeBorder()} {ThemeUtils.themeTextPrimary()} focus:ring-1 focus:ring-blue-500/50 focus:border-blue-500"
+													aria-label="Header value"
+												/>
+											</div>
+											<button
+												on:click={() => removeHeader(i)}
+												title="Remove header"
+												class="h-6 w-6 flex-shrink-0 flex items-center justify-center text-red-500 hover:bg-red-100 dark:hover:bg-red-900/30 dark:text-red-400 dark:hover:text-red-300 rounded-full"
+												type="button"
+												aria-label="Remove header"
+											>
+												<i class="fas fa-trash-alt text-xs"></i>
+											</button>
+										</div>
+									</td>
+								</tr>
+							{/each}
+						</tbody>
+					</table>
+				</div>
+				
+				<!-- Add New Header Button -->
+				<div class="border-t dark:border-gray-700 p-2">
+					<button
+						on:click={addHeader}
+						class="{ThemeUtils.utilityButton('py-1 px-2 text-xs gap-1')}"
+						type="button"
+						aria-label="Add new header"
+					>
+						<i class="fas fa-plus text-xs mr-1"></i>
+						<span>Add Header</span>
+					</button>
+				</div>
+			{/if}
 		{/if}
 	</div>
 </div>
