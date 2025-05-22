@@ -4,6 +4,7 @@
     import type { AutoInviteConfig } from '$lib/types/autoInviteTypes';
 	import { toast } from '$lib/stores/toast';
     import ToggleSwitch from '$lib/components/common/ToggleSwitch.svelte';
+    import DomainManager from '$lib/components/common/DomainManager.svelte';
     
     export let workspaceId: string;
     export let isOwner: boolean = false;
@@ -17,7 +18,6 @@
     // Form state
     let enabled = false;
     let domains: string[] = [];
-    let newDomain = '';
     let role: 'member' | 'admin' = 'member';
     
     onMount(async () => {
@@ -44,48 +44,7 @@
         }
     }
     
-    function addDomain() {
-        if (!newDomain || newDomain.trim() === '') return;
-        
-        // Split the input by commas and process each domain
-        const inputDomains = newDomain.split(',').map(d => d.trim()).filter(d => d !== '');
-        let hasErrors = false;
-        let newDomainsAdded = false;
-        
-        for (const domain of inputDomains) {
-            // Basic validation
-            if (!domain.includes('.')) {
-                error = `Invalid domain: "${domain}" - missing dot (e.g. example.com)`;
-                hasErrors = true;
-                continue;
-            }
-            
-            if (domain.includes('@')) {
-                error = `Invalid domain: "${domain}" - contains @ symbol. Use example.com, not @example.com`;
-                hasErrors = true;
-                continue;
-            }
-            
-            if (domains.includes(domain)) {
-                continue; // Skip duplicates silently
-            }
-            
-            domains = [...domains, domain];
-            newDomainsAdded = true;
-        }
-        
-        if (!hasErrors && newDomainsAdded) {
-            error = null;
-        } else if (!hasErrors && !newDomainsAdded) {
-            error = 'All domains are already in the list.';
-        }
-        
-        newDomain = ''; // Clear the input field after processing
-    }
-    
-    function removeDomain(domain: string) {
-        domains = domains.filter(d => d !== domain);
-    }
+    // Domain management is now handled by the DomainManager component
     
     async function saveConfig() {
         if (saving) return;
@@ -180,62 +139,12 @@
                     
                     <!-- Domain list -->
                     <div>
-                        <label for="domainInput" class="block text-gray-800 dark:text-white font-medium mb-2">
-                            Email Domains
-                        </label>
-                        <p class="text-sm text-gray-500 dark:text-gray-400 mb-3">
-                            Users with these email domains will be automatically added to this workspace
-                        </p>
-                        
-                        <!-- Add domain input -->
-                        <div class="flex mb-3">
-                            <input 
-                                id="domainInput"
-                                type="text" 
-                                bind:value={newDomain} 
-                                placeholder="example.com, gmail.com, company.net" 
-                                class="flex-1 rounded-l-lg p-2.5 bg-gray-50 dark:bg-gray-700 border 
-                                    border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white
-                                    focus:ring-blue-500 focus:border-blue-500"
-                            />
-                            <button 
-                                type="button" 
-                                on:click={addDomain} 
-                                class="rounded-r-lg px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white"
-                            >
-                                Add
-                            </button>
-                        </div>
-
-                        <!-- Add a helper text below the input -->
-                        <p class="text-xs text-gray-500 dark:text-gray-400 mb-3">
-                            <i class="fas fa-info-circle mr-1"></i>
-                            You can enter multiple domains separated by commas
-                        </p>
-                        
-                        <!-- Domains list -->
-                        {#if domains.length === 0}
-                            <p class="text-gray-500 dark:text-gray-400 text-sm italic">
-                                No domains added yet.
-                            </p>
-                        {:else}
-                            <ul class="space-y-2 max-h-60 overflow-y-auto">
-                                {#each domains as domain}
-                                    <li class="flex justify-between items-center py-2 px-3 rounded-md
-                                        bg-gray-50 dark:bg-gray-750 border border-gray-200 dark:border-gray-700">
-                                        <span class="text-gray-800 dark:text-white">{domain}</span>
-                                        <button 
-                                            type="button"
-                                            on:click={() => removeDomain(domain)}
-                                            class="text-gray-500 dark:text-gray-400 hover:text-red-600 dark:hover:text-red-500"
-                                            aria-label={`Remove domain ${domain}`}
-                                        >
-                                            <i class="fas fa-times"></i>
-                                        </button>
-                                    </li>
-                                {/each}
-                            </ul>
-                        {/if}
+                        <DomainManager 
+                            bind:domains={domains}
+                            label="Email Domains"
+                            helpText="Users with these email domains will be automatically added to this workspace"
+                            emptyText="No domains added yet."
+                        />
                     </div>
                     
                     <div class="mt-3 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded text-blue-700 dark:text-blue-300 text-sm">
