@@ -16,10 +16,19 @@
 
 	let showAddEndpointModal = false;
 	let activeMenuEndpointId: string | null = null;
+	// Reference to the endpoints container for scrolling
+	let endpointsContainer: HTMLDivElement;
 
 	function onEndpointCreated(event: CustomEvent<Endpoint>) {
 		handleAddEndpoint(event.detail);
 		showAddEndpointModal = false;
+		
+		// Scroll to the bottom of the endpoints list after a short delay to ensure rendering is complete
+		setTimeout(() => {
+			if (endpointsContainer) {
+				endpointsContainer.scrollTop = endpointsContainer.scrollHeight;
+			}
+		}, 150);
 	}
 
 	function toggleMenu(event: MouseEvent, endpointId: string) {
@@ -127,7 +136,7 @@
 		on:close={() => (showAddEndpointModal = false)}
 	/>
 
-	<div class="flex-1 overflow-y-auto hide-scrollbar">
+	<div class="flex-1 overflow-y-auto hide-scrollbar" bind:this={endpointsContainer}>
 		<div class="space-y-4 pr-2 py-2">
 			{#each filteredEndpoints as endpoint}
 				<div

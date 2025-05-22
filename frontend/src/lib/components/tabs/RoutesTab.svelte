@@ -61,19 +61,53 @@
 
 	function handleRouteStatusChange(route: Endpoint) {
 		console.log('Route status changed:', route);
-		const index = endpoints.findIndex((r) => r.path === route.path && r.method === route.method);
+		const index = endpoints.findIndex((r) => r.id === route.id);
 		if (index !== -1) {
 			endpoints[index] = {
 				...route
 			};
-			endpoints = endpoints; // Trigger reactivity
+			endpoints = [...endpoints]; // Trigger reactivity with a new array reference
+			
+			// Also update in the selectedProject store
+			if ($selectedProject && $selectedProject.endpoints) {
+				const projectEndpointIndex = $selectedProject.endpoints.findIndex(e => e.id === route.id);
+				if (projectEndpointIndex !== -1) {
+					$selectedProject.endpoints[projectEndpointIndex] = route;
+					selectedProject.set($selectedProject); // Trigger the store update
+				}
+			}
 		}
 	}
 
 	function handleAddEndpoint(newEndpoint: Endpoint) {
 		console.log('Endpoint added:', newEndpoint);
+		
+		// Add the new endpoint to the endpoints array
 		endpoints = [...endpoints, newEndpoint];
-		selectRoute(newEndpoint);
+		
+		// Also update the selectedProject endpoints to make the change persist
+		if ($selectedProject) {
+			// If selectedProject.endpoints is undefined, initialize it as an empty array
+			if (!$selectedProject.endpoints) {
+				$selectedProject.endpoints = [];
+			}
+			
+			// Add the new endpoint to the selectedProject's endpoints
+			$selectedProject.endpoints = [...$selectedProject.endpoints, newEndpoint];
+			
+			// Update the selectedProject store to trigger reactivity
+			selectedProject.set($selectedProject);
+		}
+		
+		// Clear any active filter to ensure the new endpoint is visible
+		if (filterText) {
+			filterText = '';
+		}
+		
+		setTimeout(() => {
+			// Automatically select the new endpoint after a short delay
+			selectRoute(newEndpoint);
+		}, 100); // Adjust the delay as needed
 	}
 
 	function handleProxyChange(updatedEndpoint: Endpoint) {
