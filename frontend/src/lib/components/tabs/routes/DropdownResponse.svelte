@@ -14,8 +14,23 @@
 		}
 	};
 
+	// Helper function to truncate text with ellipsis
+	function truncateText(text: string, maxLength: number = 25): string {
+		if (!text) return '';
+		return text.length > maxLength ? text.substring(0, maxLength) + '...' : text;
+	}
+
+	// Format response label for display
+	function formatResponseLabel(index: number, response: Response): string {
+		const statusText = `(${response.status_code})`;
+		let noteText = response.note ? ` ${response.note}` : '';
+		
+		// Format display with truncation
+		return `Response ${index + 1} ${statusText} ${truncateText(noteText)}`;
+	}
+
 	const selectResponse = (index: number, value: Response): void => {
-		selectedValue = `Response ${index + 1} (${value.status_code}) ${value.note}`;
+		selectedValue = formatResponseLabel(index, value);
 		const selectedElement = document.getElementById('selectedValue');
 		if (selectedElement) {
 			selectedElement.innerText = selectedValue;
@@ -59,7 +74,9 @@
 
 	$: {
 		if (selectedResponse) {
-			selectedValue = `Response 1 (${selectedResponse.status_code}) ${selectedResponse.note}`;
+			// Find the index of the selected response in the endpoint's responses
+			const index = selectedEndpoint?.responses?.findIndex(r => r.id === selectedResponse?.id) || 0;
+			selectedValue = formatResponseLabel(index, selectedResponse);
 		} else {
 			selectedValue = 'No Response';
 		}
@@ -90,7 +107,7 @@
 							<li>
 								<button type="button" class="w-full text-left px-4 py-2 {ThemeUtils.themeHover()} cursor-pointer"
 												on:click={() => { selectResponse(index, response) }}>
-									Response {index + 1} ({response.status_code}) {response?.note}
+									Response {index + 1} ({response.status_code}) {truncateText(response?.note)}
 								</button>
 							</li>
 						{/each}

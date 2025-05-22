@@ -6,6 +6,7 @@
 	import RulesTab from './routes/RulesTab.svelte';
 	import CallbacksTab from './routes/CallbacksTab.svelte';
 	import ProxyTab from './routes/ProxyTab.svelte';
+	import NotesTab from './routes/NotesTab.svelte';
 	import RoutesList from '$lib/components/tabs/routes/RoutesList.svelte';
 	import DropdownResponse from '$lib/components/tabs/routes/DropdownResponse.svelte';
 	import * as ThemeUtils from '$lib/utils/themeUtils';
@@ -185,7 +186,7 @@
 			<DropdownResponse bind:selectedEndpoint bind:selectedResponse />
 
 			<div class="flex space-x-2 mb-4">
-				{#each ['Status & Body', 'Headers', 'Rules', 'Callbacks'] as tab}
+				{#each ['Status & Body', 'Headers', 'Rules', 'Callbacks', 'Notes'] as tab}
 					{#if tab === activeContentTab}
 						<button
 							class="bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded"
@@ -242,6 +243,23 @@
 									<RulesTab rules={selectedResponse?.rules || []} rulesOperator="AND" />
 								{:else if activeContentTab === 'Callbacks'}
 									<CallbacksTab callbacks={[]} />
+								{:else if activeContentTab === 'Notes'}
+									<NotesTab 
+										notes={selectedResponse?.note || ''} 
+										onSaveNotes={(notes) => {
+											if (selectedResponse) {
+												console.log('Notes saved:', notes);
+												// Ensure we're not exceeding the backend character limit
+												const trimmedNotes = notes.substring(0, 500);
+												selectedResponse = updateResponse(
+													'note',
+													trimmedNotes,
+													selectedEndpoint,
+													selectedResponse
+												);
+											}
+										}}
+									/>
 								{/if}
 							{:else}
 								<div class={ThemeUtils.themeTextMuted()}>Select a route to view details.</div>
