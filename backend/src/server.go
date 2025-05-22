@@ -149,7 +149,7 @@ func SetupRouter() *gin.Engine {
 		workspaceAdminGroup.Use(middlewares.OwnerOrWorkspaceAdminMiddleware())
 		{
 			workspaceAdminGroup.DELETE("/users/:user_id", userHandler.RemoveWorkspaceUser)
-			workspaceAdminGroup.PATCH("/users/:user_id/role", userHandler.UpdateWorkspaceUserRole)
+			workspaceAdminGroup.PUT("/users/:user_id/role", userHandler.UpdateWorkspaceUserRole)
 			// Workspace-User management
 			workspaceAdminGroup.GET("/users", userHandler.GetWorkspaceUsers)
 			workspaceAdminGroup.POST("/members", workspaceHandler.AddMember)

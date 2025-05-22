@@ -413,9 +413,6 @@ func (h *UserHandler) UpdateWorkspaceUserRole(c *gin.Context) {
 		return
 	}
 
-	// TODO: Check if current user is admin in this workspace
-	// This would typically be handled by middleware
-
 	// If trying to update own role, prevent demoting self if last admin
 	if currentUserID.(string) == pathParams.UserID && req.Role == "member" {
 		// This check is also performed in the service, but we provide a clearer message here
