@@ -84,6 +84,7 @@
 		{#each filteredLogs as log (log.id)}
 			<LogItem 
 				{log}
+				{selectedProject}
 				isExpanded={!!expandedLogs[log.id]}
 				activeTab={activeTabs[log.id] || 'request'}
 				{toggleLogExpansion}
