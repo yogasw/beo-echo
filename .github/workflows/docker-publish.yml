@@ -150,8 +150,8 @@ jobs:
               // Sanitize commit message to remove or escape characters that could be interpreted as commands
               const cleanMessage = c.commit.message
                 .replace(/`/g, "'")             // Replace backticks with single quotes
-                .replace(/(/g, "'")             // Replace parentheses with single quotes
-                .replace(/)/g, "'")             // Replace parentheses with single quotes
+                .replace(/\(/g, "'")            // Replace parentheses with single quotes
+                .replace(/\)/g, "'")            // Replace parentheses with single quotes
                 .replace(/\$/g, "")             // Remove dollar signs
                 .replace(/\\/g, "")             // Remove backslashes
                 .replace(/;/g, ",");            // Replace semicolons with commas
