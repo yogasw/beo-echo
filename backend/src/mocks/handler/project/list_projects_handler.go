@@ -82,9 +82,14 @@ func ListProjectsHandler(c *gin.Context) {
 		return
 	}
 
+	scheme := c.Request.Header.Get("X-Forwarded-Scheme")
+	if scheme == "" {
+		scheme = "http"
+	}
+
 	// Add project URLs
 	for i := range projects {
-		projects[i].URL = handler.GetProjectURL(c.Request.Host, projects[i])
+		projects[i].URL = handler.GetProjectURL(scheme, c.Request.Host, projects[i])
 	}
 
 	c.JSON(http.StatusOK, gin.H{
