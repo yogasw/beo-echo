@@ -5,7 +5,7 @@
 	export let onSaveNotes: (notes: string) => void;
 	
 	// Set the maximum character limit for notes
-	const MAX_CHARS = 500;
+	const MAX_CHARS = 200;
 	
 	let currentNotes = notes;
 	let charCount = currentNotes.length;
