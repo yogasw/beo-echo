@@ -97,18 +97,34 @@ body, button, div, input, textarea, select {
 	width: 8px;
 }
 
+/* Light theme scrollbar styles (default) */
 ::-webkit-scrollbar-track {
-	background: #2d3748;
+	background: #e5e7eb; /* light gray for light mode */
 	border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb {
-	background: #4a5568;
+	background: #9ca3af; /* gray-400 */
 	border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-	background: #718096;
+	background: #6b7280; /* gray-500 */
+}
+
+/* Dark theme scrollbar styles */
+.dark ::-webkit-scrollbar-track {
+	background: #1f2937; /* gray-800 */
+	border-radius: 4px;
+}
+
+.dark ::-webkit-scrollbar-thumb {
+	background: #4b5563; /* gray-600 */
+	border-radius: 4px;
+}
+
+.dark ::-webkit-scrollbar-thumb:hover {
+	background: #6b7280; /* gray-500 */
 }
 
 :root {
