@@ -56,45 +56,50 @@
 			return;
 		}
 
-		const params = new URLSearchParams(window.location.search);
-		const oauthError = params.get('error');
-		const errorMessage = params.get('message');
-		const token = params.get('token');
-		const success = params.get('success');
-		const user = params.get('user');
-		const sso = params.get('sso');
-		
-		// Preserve any returnUrl or other important params
-		const returnUrl = params.get('returnUrl');
-		const preservedParams = new URLSearchParams();
-		if (returnUrl) {
-			preservedParams.set('returnUrl', returnUrl);
-		}
-
-		if (oauthError) {
-			error = errorMessage || 'Authentication failed. Please contact an administrator.';
-		} else if (success && token && user) {
-			// Store the token and additional info
-			localStorage.setItem('sso_provider', sso || '');
-			auth.setToken(token);
+		// Using setTimeout to ensure this runs after the component is fully mounted and
+		// the URL parameters are fully available in the static build
+		setTimeout(() => {
+			const params = new URLSearchParams(window.location.search);
+			const oauthError = params.get('error');
+			const errorMessage = params.get('message');
+			const token = params.get('token');
+			const success = params.get('success');
+			const user = params.get('user');
+			const sso = params.get('sso');
 			
-			// If we have a returnUrl, go there, otherwise go to home
+			// Preserve any returnUrl or other important params
+			const returnUrl = params.get('returnUrl');
+			const preservedParams = new URLSearchParams();
 			if (returnUrl) {
-				goto(returnUrl);
-			} else {
-				goto('/');
+				preservedParams.set('returnUrl', returnUrl);
 			}
-			return;
-		}
 
-		// Clean up sensitive params but preserve others
-		const cleanUrl = preservedParams.toString() 
-			? `/login?${preservedParams.toString()}`
-			: '/login';
-		
-		if (oauthError || success) {
-			window.history.replaceState({}, '', cleanUrl);
-		}
+			if (oauthError) {
+				console.log('OAuth error detected:', oauthError, errorMessage);
+				error = errorMessage || 'Authentication failed. Please contact an administrator.';
+			} else if (success && token && user) {
+				// Store the token and additional info
+				localStorage.setItem('sso_provider', sso || '');
+				auth.setToken(token);
+				
+				// If we have a returnUrl, go there, otherwise go to home
+				if (returnUrl) {
+					goto(returnUrl);
+				} else {
+					goto('/');
+				}
+				return;
+			}
+
+			// Clean up sensitive params but preserve others
+			const cleanUrl = preservedParams.toString() 
+				? `/login?${preservedParams.toString()}`
+				: '/login';
+			
+			if (oauthError || success) {
+				window.history.replaceState({}, '', cleanUrl);
+			}
+		}, 100); // Small delay to ensure URL is fully processed
 	});
 
 	// Handler for Google login
@@ -103,9 +108,22 @@
 		loading = true;
 		error = '';
 		try {
-			// Get current URL with all its parameters
-			const currentURL = window.location.origin + '/login' + window.location.search;
-			window.location.href = `${BASE_URL_API}/oauth/google/login?redirect_uri=${encodeURIComponent(currentURL)}`;
+			// Ensure we use the full absolute URL for redirects in production
+			const currentURL = window.location.origin + '/login';
+			// Append any existing query parameters except sensitive ones
+			const params = new URLSearchParams(window.location.search);
+			params.delete('error');
+			params.delete('message');
+			params.delete('token');
+			params.delete('success');
+			params.delete('user');
+			params.delete('sso');
+			
+			const queryString = params.toString() ? `?${params.toString()}` : '';
+			const redirectUri = `${currentURL}${queryString}`;
+			
+			console.log('Redirecting to Google OAuth with redirect URI:', redirectUri);
+			window.location.href = `${BASE_URL_API}/oauth/google/login?redirect_uri=${encodeURIComponent(redirectUri)}`;
 		} catch (err: any) {
 			loading = false;
 			error = err?.message || 'Google authentication failed. Please try again.';

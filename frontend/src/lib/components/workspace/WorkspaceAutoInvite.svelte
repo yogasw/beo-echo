@@ -3,6 +3,8 @@
     import { autoInviteApi } from '$lib/api/autoInviteApi';
     import type { AutoInviteConfig } from '$lib/types/autoInviteTypes';
 	import { toast } from '$lib/stores/toast';
+    import ToggleSwitch from '$lib/components/common/ToggleSwitch.svelte';
+    import DomainManager from '$lib/components/common/DomainManager.svelte';
     
     export let workspaceId: string;
     export let isOwner: boolean = false;
@@ -16,7 +18,6 @@
     // Form state
     let enabled = false;
     let domains: string[] = [];
-    let newDomain = '';
     let role: 'member' | 'admin' = 'member';
     
     onMount(async () => {
@@ -43,35 +44,7 @@
         }
     }
     
-    function addDomain() {
-        if (!newDomain || newDomain.trim() === '') return;
-        
-        const domain = newDomain.trim();
-        
-        // Basic validation
-        if (!domain.includes('.')) {
-            error = 'Please enter a valid domain (e.g. example.com)';
-            return;
-        }
-        
-        if (domain.includes('@')) {
-            error = 'Do not include @ in domain. Use example.com, not @example.com';
-            return;
-        }
-        
-        if (domains.includes(domain)) {
-            error = 'This domain is already in the list.';
-            return;
-        }
-        
-        domains = [...domains, domain];
-        newDomain = '';
-        error = null;
-    }
-    
-    function removeDomain(domain: string) {
-        domains = domains.filter(d => d !== domain);
-    }
+    // Domain management is now handled by the DomainManager component
     
     async function saveConfig() {
         if (saving) return;
@@ -107,6 +80,7 @@
             </h3>
             <button 
                 on:click={onClose}
+                aria-label="Close auto-invite configuration"
                 class="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-white"
             >
                 <i class="fas fa-times"></i>
@@ -139,32 +113,23 @@
                                 Automatically invite new users based on email domains
                             </p>
                         </div>
-                        <label class="inline-flex items-center cursor-pointer">
-                            <input type="checkbox" bind:checked={enabled} class="sr-only peer">
-                            <div class="w-11 h-6 bg-gray-300 dark:bg-gray-700 peer-checked:bg-blue-600 
-                                rounded-full peer peer-focus:ring-2 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 
-                                peer-checked:after:translate-x-full peer-checked:after:border-white 
-                                after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white 
-                                after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 
-                                after:transition-all dark:border-gray-600">
-                            </div>
-                        </label>
+                        <ToggleSwitch bind:checked={enabled} />
                     </div>
                     
                     <!-- Role selection -->
                     <div class="mb-4">
-                        <label class="block text-gray-800 dark:text-white font-medium mb-2">
+                        <label for="role-group" class="block text-gray-800 dark:text-white font-medium mb-2">
                             Role for Auto-Invited Users
                         </label>
-                        <div class="flex gap-4">
+                        <div class="flex gap-4" id="role-group" role="radiogroup">
                             <label class="inline-flex items-center">
-                                <input type="radio" bind:group={role} value="member" class="form-radio h-4 w-4 
+                                <input type="radio" bind:group={role} value="member" id="role-member" class="form-radio h-4 w-4 
                                     text-blue-600 bg-gray-100 dark:bg-gray-700 border-gray-300 dark:border-gray-600 
                                     focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-600">
                                 <span class="ml-2 text-gray-700 dark:text-gray-300">Member</span>
                             </label>
                             <label class="inline-flex items-center">
-                                <input type="radio" bind:group={role} value="admin" class="form-radio h-4 w-4 
+                                <input type="radio" bind:group={role} value="admin" id="role-admin" class="form-radio h-4 w-4 
                                     text-blue-600 bg-gray-100 dark:bg-gray-700 border-gray-300 dark:border-gray-600 
                                     focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-600">
                                 <span class="ml-2 text-gray-700 dark:text-gray-300">Admin</span>
@@ -174,54 +139,12 @@
                     
                     <!-- Domain list -->
                     <div>
-                        <label class="block text-gray-800 dark:text-white font-medium mb-2">
-                            Email Domains
-                        </label>
-                        <p class="text-sm text-gray-500 dark:text-gray-400 mb-3">
-                            Users with these email domains will be automatically added to this workspace
-                        </p>
-                        
-                        <!-- Add domain input -->
-                        <div class="flex mb-3">
-                            <input 
-                                type="text" 
-                                bind:value={newDomain} 
-                                placeholder="example.com" 
-                                class="flex-1 rounded-l-lg p-2.5 bg-gray-50 dark:bg-gray-700 border 
-                                    border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white
-                                    focus:ring-blue-500 focus:border-blue-500"
-                            />
-                            <button 
-                                type="button" 
-                                on:click={addDomain} 
-                                class="rounded-r-lg px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white"
-                            >
-                                Add
-                            </button>
-                        </div>
-                        
-                        <!-- Domains list -->
-                        {#if domains.length === 0}
-                            <p class="text-gray-500 dark:text-gray-400 text-sm italic">
-                                No domains added yet.
-                            </p>
-                        {:else}
-                            <ul class="space-y-2 max-h-60 overflow-y-auto">
-                                {#each domains as domain}
-                                    <li class="flex justify-between items-center py-2 px-3 rounded-md
-                                        bg-gray-50 dark:bg-gray-750 border border-gray-200 dark:border-gray-700">
-                                        <span class="text-gray-800 dark:text-white">{domain}</span>
-                                        <button 
-                                            type="button"
-                                            on:click={() => removeDomain(domain)}
-                                            class="text-gray-500 dark:text-gray-400 hover:text-red-600 dark:hover:text-red-500"
-                                        >
-                                            <i class="fas fa-times"></i>
-                                        </button>
-                                    </li>
-                                {/each}
-                            </ul>
-                        {/if}
+                        <DomainManager 
+                            bind:domains={domains}
+                            label="Email Domains"
+                            helpText="Users with these email domains will be automatically added to this workspace"
+                            emptyText="No domains added yet."
+                        />
                     </div>
                     
                     <div class="mt-3 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded text-blue-700 dark:text-blue-300 text-sm">
