@@ -10,6 +10,7 @@
 	import * as ThemeUtils from '$lib/utils/themeUtils';
 	import { updateEndpoint as storeUpdateEndpoint } from '$lib/stores/saveButton';
 	import { selectedProject } from '$lib/stores/selectedConfig';
+	import ToggleSwitch from '$lib/components/common/ToggleSwitch.svelte';
 
 	export let endpoint: Endpoint;
 	export let isLoading: boolean = false;
@@ -71,25 +72,16 @@
 		<div class="flex items-center justify-between mb-4">
 			<h3 class="text-lg font-semibold {ThemeUtils.themeTextPrimary()}">Endpoint Proxy</h3>
 
-			<label class="relative inline-flex items-center cursor-pointer">
-				<input
-					type="checkbox"
-					class="sr-only peer"
+			<div class="flex items-center">
+				<ToggleSwitch 
 					bind:checked={useProxy}
 					on:change={handleProxyToggle}
+					ariaLabel="Toggle proxy"
 				/>
-				<div
-					class="w-11 h-6 bg-gray-700 peer-focus:outline-none peer-focus:ring-4
-					peer-focus:ring-blue-800 rounded-full peer peer-checked:after:translate-x-full
-					rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white
-					after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white
-					after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5
-					after:transition-all peer-checked:bg-blue-600"
-				></div>
 				<span class="ml-3 text-sm font-medium {ThemeUtils.themeTextSecondary()}">
 					{endpoint.use_proxy ? 'Enabled' : 'Disabled'}
 				</span>
-			</label>
+			</div>
 		</div>
 
 		{#if endpoint.use_proxy}
