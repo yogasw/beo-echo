@@ -149,12 +149,12 @@ jobs:
             const messages = commits.data.map(c => {
               // Sanitize commit message to remove or escape characters that could be interpreted as commands
               const cleanMessage = c.commit.message
-                .replace(/`/g, "'")             // Replace backticks with single quotes
-                .replace(/\(/g, "'")            // Replace parentheses with single quotes
-                .replace(/\)/g, "'")            // Replace parentheses with single quotes
-                .replace(/\$/g, "")             // Remove dollar signs
-                .replace(/\\/g, "")             // Remove backslashes
-                .replace(/;/g, ",");            // Replace semicolons with commas
+                # .replace(/`/g, "'")             // Replace backticks with single quotes
+                # .replace(/\(/g, "'")            // Replace parentheses with single quotes
+                # .replace(/\)/g, "'")            // Replace parentheses with single quotes
+                # .replace(/\$/g, "")             // Remove dollar signs
+                # .replace(/\\/g, "")             // Remove backslashes
+                # .replace(/;/g, ",");            // Replace semicolons with commas
               return `- ${cleanMessage} (${c.commit.author.name})`;
             });
             core.setOutput("commit_log", messages.join('\\n'));
@@ -168,7 +168,7 @@ jobs:
           PR_BODY="${{ steps.pr_data.outputs.body }}"
           
           # Write commit logs to file to avoid shell interpretation issues
-          echo '${{ steps.pr_data.outputs.commit_log }}' > commit_log.txt
+          printf "%s\n" "${{ steps.pr_data.outputs.commit_log }}" > commit_log.txt
           COMMITS=$(cat commit_log.txt)
 
           PROMPT=$(printf "Release version: %s\n\nPull Request: %s\n\nDescription:\n%s\n\nCommits:\n%s\n\nYou are an agent responsible for generating GitHub release summaries from pull request commits. Write the summary using only a numbered list under the relevant categories: New Features, Improvements, or Bug Fixes. Only include categories that are present based on the commit messages. Do not add any introductory sentences like \"This release includes...\" or \"In this version...\". Go straight to the list, and describe each item as specifically as possible based on the available commit details. Maintain a clear, professional tone appropriate for public changelogs." "$VERSION" "$PR_TITLE" "$PR_BODY" "$COMMITS")
