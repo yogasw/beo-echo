@@ -18,7 +18,7 @@ export function themeBgSecondary(additionalClasses = '') {
 
 // Apply tertiary background class based on theme
 export function themeBgTertiary(additionalClasses = '') {
-  return `bg-gray-50 dark:bg-gray-900/50 ${additionalClasses}`;
+  return `bg-gray-50 dark:bg-gray-850 ${additionalClasses}`;
 }
 
 // Apply accent background class based on theme
@@ -73,7 +73,7 @@ export function themeShadow(additionalClasses = '') {
 
 // Full component style helpers
 export function inputField(additionalClasses = '') {
-  return `block w-full p-3 ps-10 text-sm rounded-lg ${themeBgSecondary()} 
+  return `block w-full p-3 ps-10 text-sm rounded-lg bg-white dark:bg-gray-800
     border ${themeBorder()} ${themeTextPrimary()} focus:ring-blue-500 
     focus:border-blue-500 placeholder-gray-500 dark:placeholder-gray-400 ${additionalClasses}`;
 }
@@ -155,7 +155,7 @@ export function card(additionalClasses = '') {
 }
 
 export function cardHeader(additionalClasses = '') {
-  return `flex justify-between items-center p-3 bg-gray-100 dark:bg-gray-750 ${additionalClasses}`;
+  return `flex justify-between items-center p-3 bg-gray-100 dark:bg-gray-700/80 border-b dark:border-gray-700 ${additionalClasses}`;
 }
 
 
