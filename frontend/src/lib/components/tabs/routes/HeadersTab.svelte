@@ -1,12 +1,13 @@
 <script lang="ts">
 	import * as ThemeUtils from '$lib/utils/themeUtils';
 	import { theme } from '$lib/stores/theme';
-	import { createEventDispatcher } from 'svelte';
+	import { createEventDispatcher, onMount, onDestroy } from 'svelte';
 	import { tick } from 'svelte';
 	
 	export let headers: string;
 	export let editable: boolean = true;
-	export let title: string = 'Headers';
+	export const title: string = 'Headers'; // Changed to const since it's not used internally
+	export let maxContentHeight: string = ''; // Optional explicit height
 	
 	const dispatch = createEventDispatcher<{
 		change: string;
@@ -18,13 +19,21 @@
 	let hasChanges = false;
 	// References for input elements to enable focusing
 	let valueInputs: HTMLInputElement[] = [];
-	let keyInputs: HTMLInputElement[] = [];	
+	let keyInputs: HTMLInputElement[] = [];
+	// Container references for height calculation
+	let containerElement: HTMLElement;
+	let tableContainer: HTMLElement;
+	let calculatedHeight = '300px'; // Default height
+	
 	// Parse JSON headers string into an array of key-value objects
 	$: {
 		try {
 			if (!isEditing) {
 				const headersObj = headers ? JSON.parse(headers) : {};
-				localHeaders = Object.entries(headersObj).map(([key, value]) => ({ key, value }));
+				localHeaders = Object.entries(headersObj).map(([key, value]) => ({ 
+					key, 
+					value: typeof value === 'string' ? value : String(value) 
+				}));
 				hasChanges = false;
 			}
 		} catch (error) {
@@ -35,6 +44,52 @@
 			}
 		}
 	}
+	
+	// Calculate the height based on the parent container
+	function calculateHeight() {
+		if (!containerElement || !tableContainer) return;
+		
+		// If explicit height is provided, use it
+		if (maxContentHeight) {
+			calculatedHeight = maxContentHeight;
+			return;
+		}
+		
+		// Get the position of the container relative to the viewport
+		const containerRect = containerElement.getBoundingClientRect();
+		// Determine how much space is available (viewport height minus container top position minus some padding)
+		const availableHeight = window.innerHeight - containerRect.top - 75;
+		// Ensure the height is at least 100px but not more than the available space
+		calculatedHeight = `${Math.max(100, Math.min(350, availableHeight))}px`;
+	}
+	
+	// Set up resize observer to recalculate height when container size changes
+	let resizeObserver: ResizeObserver;
+	
+	onMount(() => {
+		// Initial height calculation
+		calculateHeight();
+		
+		// Set up resize observer
+		resizeObserver = new ResizeObserver(() => {
+			calculateHeight();
+		});
+		
+		if (containerElement) {
+			resizeObserver.observe(containerElement);
+		}
+		
+		// Also listen to window resize events
+		window.addEventListener('resize', calculateHeight);
+	});
+	
+	onDestroy(() => {
+		// Clean up resize observer
+		if (resizeObserver) {
+			resizeObserver.disconnect();
+		}
+		window.removeEventListener('resize', calculateHeight);
+	});
 	
 	// Add a new header entry
 	async function addHeader() {
@@ -109,7 +164,10 @@
 		// Reset to the original headers
 		try {
 			const headersObj = headers ? JSON.parse(headers) : {};
-			localHeaders = Object.entries(headersObj).map(([key, value]) => ({ key, value }));
+			localHeaders = Object.entries(headersObj).map(([key, value]) => ({ 
+				key, 
+				value: typeof value === 'string' ? value : String(value) 
+			}));
 		} catch (error) {
 			localHeaders = [];
 		}
@@ -123,7 +181,7 @@
 	}
 </script>
 
-<div class="w-full rounded-md overflow-hidden shadow-sm">
+<div class="w-full rounded-md overflow-hidden shadow-sm" bind:this={containerElement}>
 	<div class="p-0">
 		<div class="bg-gray-100 dark:bg-gray-700 border-b dark:border-gray-600 flex justify-between items-center">
 			<div class="flex w-full">
@@ -166,7 +224,7 @@
 		<!-- View Mode -->
 		{#if !isEditing}
 			{#if localHeaders && localHeaders.length > 0}
-				<div class="max-h-[350px] overflow-y-auto">
+				<div bind:this={tableContainer} class="overflow-y-auto" style="max-height: {calculatedHeight}">
 					<table class="w-full border-collapse table-fixed">
 						<tbody class="divide-y dark:divide-gray-700">
 							{#each localHeaders as header, index}
@@ -204,7 +262,7 @@
 					</button>
 				</div>
 			{:else}
-				<div class="max-h-[350px] overflow-y-auto">
+				<div bind:this={tableContainer} class="overflow-y-auto" style="max-height: {calculatedHeight}">
 					<table class="w-full border-collapse table-fixed">
 						<tbody class="divide-y dark:divide-gray-700">
 							{#each localHeaders as header, i}
