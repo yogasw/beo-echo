@@ -3,7 +3,7 @@ export interface User {
   email: string;
   name: string;
   is_owner: boolean;
-  is_enabled?: boolean; // Flag to determine if user account is active or disabled
+  is_active?: boolean; // Flag to determine if user account is active or disabled
   feature_flags?: Record<string, boolean>; // Feature flags from the backend
 }
 

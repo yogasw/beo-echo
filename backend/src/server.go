@@ -16,6 +16,7 @@ import (
 
 	"beo-echo/backend/src/caddy/scripts"
 	"beo-echo/backend/src/database"
+	"beo-echo/backend/src/database/repositories"
 	"beo-echo/backend/src/health"
 	"beo-echo/backend/src/lib"
 	"beo-echo/backend/src/middlewares"
@@ -24,7 +25,9 @@ import (
 	"beo-echo/backend/src/mocks/handler/project"
 	"beo-echo/backend/src/mocks/handler/proxy"
 	"beo-echo/backend/src/mocks/handler/response"
+	"beo-echo/backend/src/users"
 	"beo-echo/backend/src/utils"
+	"beo-echo/backend/src/workspaces"
 
 	// New imports for auth and workspace management
 	authHandler "beo-echo/backend/src/auth/handler"
@@ -82,10 +85,26 @@ func SetupRouter() *gin.Engine {
 	// Health check route
 	router.GET("/mock/api/health", health.HealthCheckHandler)
 
-	// Initialize OAuth service and handlers
+	// Initialize user repository for auth service
+	userRepo := repositories.NewUserRepository(database.DB)
+	userService := users.NewUserService(userRepo)
+	userHandler := users.NewUserHandler(userService)
+
+	// Initialize OAuth and Auth services
 	googleOAuthService := authServices.NewGoogleOAuthService(database.DB)
 	googleOAuthHandler := authHandler.NewGoogleOAuthHandler(googleOAuthService)
 	oauthConfigHandler := authHandler.NewOAuthConfigHandler(database.DB)
+
+	// Initialize workspace module
+	workspaceRepo := repositories.NewWorkspaceRepository(database.DB)
+	workspaceService := workspaces.NewWorkspaceService(workspaceRepo)
+	workspaceHandler := workspaces.NewWorkspaceHandler(workspaceService)
+
+	// Initialize auto-invite handler
+	autoInviteHandler := workspaces.NewAutoInviteHandler(database.DB)
+
+	// Initialize Auth service with user repository
+	authHandler.InitAuthService(database.DB, userRepo)
 
 	// Authentication routes
 	router.POST("/mock/api/auth/login", authHandler.LoginHandler)
@@ -116,14 +135,39 @@ func SetupRouter() *gin.Engine {
 		}
 
 		// User-related routes
-		apiGroup.GET("/auth/me", authHandler.GetCurrentUserHandler)
-		apiGroup.PATCH("/users/:userId", authHandler.UpdateUserHandler)
-		apiGroup.POST("/users/change-password", authHandler.UpdatePasswordHandler)
+		apiGroup.GET("/auth/me", userHandler.GetCurrentUser)
+		apiGroup.PATCH("/users/profile", userHandler.UpdateProfile)
+		apiGroup.POST("/users/change-password", userHandler.UpdatePassword)
 
-		// General workspace-related routes
-		apiGroup.GET("/workspaces", authHandler.GetUserWorkspacesHandler)
-		apiGroup.POST("/workspaces", authHandler.CreateWorkspaceHandler)
-		apiGroup.GET("/workspaces/:workspaceID/role", authHandler.CheckWorkspaceRoleHandler)
+		// Admin/Owner only user management
+		ownerGroup.GET("/users", userHandler.GetAllUsers)
+		ownerGroup.DELETE("/users/:user_id", userHandler.DeleteUser)
+		ownerGroup.PATCH("/users/:user_id", userHandler.UpdateUser)
+
+		// Member invitation and management (accessible by workspace admins and system owners)
+		workspaceAdminGroup := apiGroup.Group("/workspaces/:workspaceID")
+		workspaceAdminGroup.Use(middlewares.OwnerOrWorkspaceAdminMiddleware())
+		{
+			workspaceAdminGroup.DELETE("/users/:user_id", userHandler.RemoveWorkspaceUser)
+			workspaceAdminGroup.PUT("/users/:user_id/role", userHandler.UpdateWorkspaceUserRole)
+			// Workspace-User management
+			workspaceAdminGroup.GET("/users", userHandler.GetWorkspaceUsers)
+			workspaceAdminGroup.POST("/members", workspaceHandler.AddMember)
+
+		}
+
+		// Register workspace routes directly
+		workspacesGroup := apiGroup.Group("/workspaces")
+		{
+			workspacesGroup.GET("", workspaceHandler.GetUserWorkspacesWithRoles)
+			workspacesGroup.POST("", workspaceHandler.CreateWorkspace)
+			workspacesGroup.GET("/:workspaceID/role", workspaceHandler.CheckWorkspaceRole)
+			workspacesGroup.GET("/all", middlewares.OwnerOnlyMiddleware(), workspaceHandler.GetAllWorkspaces)
+
+			// Auto-invite configuration (only accessible by system owners)
+			workspacesGroup.GET("/:workspaceID/auto-invite", middlewares.OwnerOnlyMiddleware(), autoInviteHandler.GetAutoInviteConfig)
+			workspacesGroup.PUT("/:workspaceID/auto-invite", middlewares.OwnerOnlyMiddleware(), autoInviteHandler.UpdateAutoInviteConfig)
+		}
 
 		// Workspace-project hierarchy routes (nested)
 		workspaceRoutes := apiGroup.Group("/workspaces/:workspaceID")

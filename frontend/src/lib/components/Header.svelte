@@ -6,6 +6,7 @@
 	import { logStatus } from '$lib/stores/logStatus';
 	import SaveButton from './SaveButton.svelte';
 	import WorkspaceManager from './workspace/WorkspaceManager.svelte';
+	import { currentUser } from '$lib/stores/auth';
 
 	export let handleLogout: () => void;
 
@@ -196,8 +197,8 @@
 								<i class="fas fa-user"></i>
 							</div>
 							<div class="flex-1">
-								<div class="theme-text-primary font-medium">User Name</div>
-								<div class="theme-text-secondary text-xs">user@example.com</div>
+								<div class="theme-text-primary font-medium">{$currentUser?.name || ""}</div>
+								<div class="theme-text-secondary text-xs">{$currentUser?.email || ""}</div>
 							</div>
 						</div>
 					</div>

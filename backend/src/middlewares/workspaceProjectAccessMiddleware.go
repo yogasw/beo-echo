@@ -84,6 +84,12 @@ func WorkspaceProjectAccessMiddleware() gin.HandlerFunc {
 				return
 			}
 
+			// Set workspace and project IDs in context for handlers
+			c.Set("workspaceID", workspaceID)
+			c.Set("projectID", projectID)
+			// System owners are treated as having admin role in all workspaces
+			c.Set("workspaceRole", "admin")
+
 			// Project exists and belongs to the workspace
 			c.Next()
 			return
@@ -132,9 +138,10 @@ func WorkspaceProjectAccessMiddleware() gin.HandlerFunc {
 			return
 		}
 
-		// Store the workspace ID and project ID in context for handlers
+		// Store the workspace ID, project ID, and role in context for handlers
 		c.Set("workspaceID", workspaceID)
 		c.Set("projectID", projectID)
+		c.Set("workspaceRole", userWorkspace.Role)
 
 		// User has access to the workspace and project, continue
 		c.Next()
