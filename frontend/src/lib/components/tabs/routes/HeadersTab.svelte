@@ -18,7 +18,7 @@
 	let isEditing = false;
 	let hasChanges = false;
 	// References for input elements to enable focusing
-	let valueInputs: HTMLInputElement[] = [];
+	let valueInputs: HTMLTextAreaElement[] = [];
 	let keyInputs: HTMLInputElement[] = [];
 	// Container references for height calculation
 	let containerElement: HTMLElement;
@@ -81,6 +81,17 @@
 		
 		// Also listen to window resize events
 		window.addEventListener('resize', calculateHeight);
+		
+		// Initialize textarea heights for existing values
+		if (isEditing) {
+			setTimeout(() => {
+				valueInputs.forEach(textarea => {
+					if (textarea) {
+						autoResizeTextarea(textarea);
+					}
+				});
+			}, 0);
+		}
 	});
 	
 	onDestroy(() => {
@@ -125,20 +136,32 @@
 		localHeaders = [...localHeaders]; // Trigger reactivity
 	}
 	
-	// Handle header value change
+	// Add a function to auto-resize textareas based on content
+	function autoResizeTextarea(textarea: HTMLTextAreaElement) {
+		if (!textarea) return;
+		// Reset height to auto to get the correct scrollHeight
+		textarea.style.height = 'auto';
+		// Set to the scrollHeight to show all content
+		textarea.style.height = textarea.scrollHeight + 'px';
+	}
+	
+	// Handle value changes and resize the textarea
 	function handleValueChange(index: number, newValue: string) {
 		localHeaders[index].value = newValue;
 		hasChanges = true;
 		localHeaders = [...localHeaders]; // Trigger reactivity
+		
+		// Resize the textarea after the value changes
+		setTimeout(() => {
+			if (valueInputs[index]) {
+				autoResizeTextarea(valueInputs[index]);
+			}
+		}, 0);
 	}
 	
 	// Handle key press events
 	async function handleKeyDown(event: KeyboardEvent, index: number) {
-		// If Enter key is pressed in the last row's value input, add a new header
-		if (event.key === 'Enter' && index === localHeaders.length - 1) {
-			event.preventDefault(); // Prevent form submission
-			await addHeader();
-		}
+		// Enter key handling is now directly in the textarea element
 	}
 	
 	// Save changes to headers
@@ -178,6 +201,15 @@
 	// Enable edit mode
 	function startEditing() {
 		isEditing = true;
+		
+		// Initialize textarea heights after switching to edit mode
+		setTimeout(() => {
+			valueInputs.forEach(textarea => {
+				if (textarea) {
+					autoResizeTextarea(textarea);
+				}
+			});
+		}, 0);
 	}
 </script>
 
@@ -233,7 +265,7 @@
 										<span class="font-medium whitespace-nowrap text-blue-600 dark:text-blue-400">{header.key}</span>
 									</td>
 									<td class="px-4 py-3 align-top" style="min-width: 200px">
-										<div class="break-all {ThemeUtils.themeTextSecondary()}" style="max-width: 100%; overflow-x: auto">{header.value}</div>
+										<div class="break-all whitespace-pre-wrap {ThemeUtils.themeTextSecondary()}" style="max-width: 100%; overflow-x: auto">{header.value}</div>
 									</td>
 								</tr>
 							{/each}
@@ -281,16 +313,32 @@
 									<td class="px-4 py-2 align-top relative" style="min-width: 200px">
 										<div class="flex items-center gap-2 w-full">
 											<div class="flex-1">
-												<input 
-													type="text" 
+												<textarea 
 													bind:value={header.value}
-													on:input={() => handleValueChange(i, header.value)}
+													on:input={(e) => {
+														handleValueChange(i, header.value);
+														// Auto-adjust height based on content
+														const textarea = e.target as HTMLTextAreaElement;
+														if (textarea) {
+															textarea.style.height = 'auto';
+															textarea.style.height = textarea.scrollHeight + 'px';
+														}
+													}}
 													placeholder="Value"
-													class="block w-full py-1 px-2 text-xs rounded bg-white dark:bg-gray-700 border {ThemeUtils.themeBorder()} {ThemeUtils.themeTextPrimary()} focus:ring-1 focus:ring-blue-500/50 focus:border-blue-500"
+													class="block w-full py-1 px-2 text-xs rounded bg-white dark:bg-gray-700 border {ThemeUtils.themeBorder()} {ThemeUtils.themeTextPrimary()} focus:ring-1 focus:ring-blue-500/50 focus:border-blue-500 resize-none"
+													style="min-height: 32px; height: auto; overflow: hidden;"
 													aria-label="Header value"
 													bind:this={valueInputs[i]}
-													on:keydown={(e) => handleKeyDown(e, i)}
-												/>
+													on:keydown={(e) => {
+														if (e.key === 'Enter') {
+															e.preventDefault();
+															if (i === localHeaders.length - 1) {
+																addHeader();
+															}
+														}
+														handleKeyDown(e, i);
+													}}
+												></textarea>
 											</div>
 											<div class="flex shrink-0">
 												{#if i === localHeaders.length - 1}
