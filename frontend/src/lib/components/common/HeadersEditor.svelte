@@ -25,22 +25,39 @@
 	let tableContainer: HTMLElement;
 	let calculatedHeight = '300px'; // Default height
 	
+	// Track previous headers to detect changes
+	let previousHeaders = headers;
+	
 	// Parse JSON headers string into an array of key-value objects
 	$: {
 		try {
-			if (!isEditing) {
+			console.log('Parsing headers:', headers);
+			// Check if headers have changed (new response loaded)
+			const headersChanged = headers !== previousHeaders;
+			
+			// Reset to view mode if new response loaded while editing
+			if (headersChanged && isEditing) {
+				isEditing = false;
+				hasChanges = false;
+			}
+			
+			// Update headers if not editing or headers changed
+			if (!isEditing || headersChanged) {
 				const headersObj = headers ? JSON.parse(headers) : {};
 				localHeaders = Object.entries(headersObj).map(([key, value]) => ({ 
 					key, 
 					value: typeof value === 'string' ? value : String(value) 
 				}));
 				hasChanges = false;
+				// Update previous headers to current
+				previousHeaders = headers;
 			}
 		} catch (error) {
 			console.error('Error parsing headers:', error);
-			if (!isEditing) {
+			if (!isEditing || headers !== previousHeaders) {
 				localHeaders = [];
 				hasChanges = false;
+				previousHeaders = headers;
 			}
 		}
 	}
