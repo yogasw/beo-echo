@@ -141,8 +141,7 @@
 			{#each filteredEndpoints as endpoint}
 				<div
 					class={ThemeUtils.themeBgSecondary(`flex items-center justify-between py-2 px-4 rounded cursor-pointer relative group 
-						${selectedEndpoint === endpoint ? 'border-2 border-blue-500' : 'theme-border'} 
-						${!endpoint.enabled ? 'opacity-75' : ''}`)}
+						${selectedEndpoint === endpoint ? 'border-2 border-blue-500' : 'theme-border'}`)}
 					on:click={() => selectRoute(endpoint)}
 					on:keydown={(e) => e.key === 'Enter' && selectRoute(endpoint)}
 					tabindex="0"
@@ -151,7 +150,7 @@
 					{#if !endpoint.enabled}
 						<div class="absolute left-0 top-0 bottom-0 w-1 bg-red-500 rounded-bl rounded-tl"></div>
 					{/if}
-					<span class={ThemeUtils.themeTextPrimary('flex items-center text-sm font-bold truncate')}>
+					<span class={ThemeUtils.themeTextPrimary(`flex items-center text-sm font-bold truncate ${!endpoint.enabled ? 'opacity-75' : ''}`)}>
 						<span class={ThemeUtils.methodBadge(endpoint.method, 'mr-2')}>
 							{endpoint.method}
 						</span>
