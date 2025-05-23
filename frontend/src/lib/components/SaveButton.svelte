@@ -1,8 +1,9 @@
 <script lang="ts">
 	import { showSaveButton, saveInprogress, saveButtonHandler, getEndpointsUpdateList, resetEndpointsList } from '$lib/stores/saveButton';
 	import { toast } from '$lib/stores/toast';
-	import { updateEndpoint as apiUpdateEndpoint, updateResponse as apiUpdateResponse } from '$lib/api/BeoApi';
+	import { updateEndpoint as apiUpdateEndpoint, updateResponse as apiUpdateResponse, getProjectDetail } from '$lib/api/BeoApi';
 	import { currentWorkspace } from '$lib/stores/workspace';
+	import { selectedProject } from '$lib/stores/selectedConfig';
 
 	async function handleSave() {
 		saveInprogress.set(true);
@@ -57,6 +58,12 @@
 			// Reset the list after successful save
 			resetEndpointsList();
 			toast.success('Changes saved successfully');
+			
+			// Refresh the selected project data to update the endpoints in the store
+			if ($selectedProject) {
+				const refreshedProject = await getProjectDetail($selectedProject.id);
+				selectedProject.set(refreshedProject);
+			}
 		} catch (error) {
 			console.error('Error saving changes:', error);
 			toast.error('Failed to save changes');
