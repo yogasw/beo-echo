@@ -18,6 +18,7 @@
 	let selectedEndpoint: Endpoint | null = null;
 	let selectedResponse: Response | null = null;
 	let filterText: string = ''; // Variable to store filter input
+	let localUseProxy: boolean = false; // Local state for proxy status
 
 	// Update endpoints and activeConfigName when selectedProject changes
 	$: {
@@ -36,6 +37,13 @@
 		console.log('Selected selectedProject:', $selectedProject);
 	}
 
+	// Update localUseProxy when selectedEndpoint changes
+	$: {
+		if (selectedEndpoint) {
+			localUseProxy = selectedEndpoint.use_proxy || false;
+		}
+	}
+
 	$: filteredEndpoints = endpoints.filter((endpoint) => {
 		if (!filterText.trim()) return true;
 		const filterParts = filterText.toLowerCase().split(' ');
@@ -50,6 +58,9 @@
 		selectedEndpoint = route;
 		// Reset endpoints update list when changing endpoints
 		resetEndpointsList();
+		
+		// Update local proxy state from the selected endpoint
+		localUseProxy = route.use_proxy || false;
 
 		// Automatically select the first response if available
 		if (route.responses && route.responses.length > 0) {
@@ -111,13 +122,9 @@
 	}
 
 	function handleProxyChange(updatedEndpoint: Endpoint) {
-		// Update the endpoint in the list
-		const index = endpoints.findIndex((e) => e.id === updatedEndpoint.id);
-		if (index !== -1) {
-			endpoints[index] = updatedEndpoint;
-			endpoints = [...endpoints]; // Trigger reactivity
-		}
-		selectedEndpoint = updatedEndpoint;
+		// Update local proxy state
+		localUseProxy = updatedEndpoint.use_proxy || false;
+		console.log('Proxy status updated, localUseProxy:', localUseProxy);
 	}
 
 
@@ -240,13 +247,17 @@
 
 		{#if selectedEndpoint}
 			<div class="mb-4 mt-4">
-				<!-- ProxyTab moved here, above DropdownResponse -->
-				<ProxyTab endpoint={selectedEndpoint} onChange={handleProxyChange} />
+				<!-- ProxyTab endpoint={selectedEndpoint} onChange={handleProxyChange} /-->
+				<ProxyTab
+					endpoint={selectedEndpoint}
+					onChange={handleProxyChange}
+					bind:use_proxy={localUseProxy}
+				/>
 			</div>
 		{/if}
 
 		<!-- Response section only shown when proxy is disabled -->
-		{#if !selectedEndpoint?.use_proxy}
+		{#if !localUseProxy}
 			<DropdownResponse bind:selectedEndpoint bind:selectedResponse />
 
 			<div class="flex space-x-2 mb-4">
