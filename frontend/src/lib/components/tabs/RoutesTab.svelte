@@ -3,7 +3,6 @@
 	import { updateEndpoint, resetEndpointsList, updateResponse } from '$lib/stores/saveButton';
 	import StatusBodyTab from './routes/StatusBodyTab.svelte';
 	import RulesTab from './routes/RulesTab.svelte';
-	import CallbacksTab from './routes/CallbacksTab.svelte';
 	import ProxyTab from './routes/ProxyTab.svelte';
 	import NotesTab from './routes/NotesTab.svelte';
 	import RoutesList from '$lib/components/tabs/routes/RoutesList.svelte';
@@ -268,7 +267,7 @@
 			<DropdownResponse bind:selectedEndpoint bind:selectedResponse />
 
 			<div class="flex space-x-2 mb-4">
-				{#each ['Status & Body', 'Headers', 'Rules', 'Callbacks', 'Notes'] as tab}
+				{#each ['Status & Body', 'Headers', 'Rules', 'Notes'] as tab}
 					{#if tab === activeContentTab}
 						<button
 							class="bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded"
@@ -326,8 +325,6 @@
 									 />
 								{:else if activeContentTab === 'Rules'}
 									<RulesTab rules={selectedResponse?.rules || []} rulesOperator="AND" />
-								{:else if activeContentTab === 'Callbacks'}
-									<CallbacksTab callbacks={[]} />
 								{:else if activeContentTab === 'Notes'}
 									<NotesTab
 										notes={selectedResponse?.note || ''}
