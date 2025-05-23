@@ -216,9 +216,8 @@
 <div class="w-full rounded-md overflow-hidden shadow-sm" bind:this={containerElement}>
 	<div class="p-0">
 		<div class="bg-gray-100 dark:bg-gray-700 border-b dark:border-gray-600 flex justify-between items-center">
-			<div class="flex w-full">
-				<div class="text-left px-4 py-3 text-xs font-semibold {ThemeUtils.themeTextPrimary()} w-1/2">Header Name</div>
-				<div class="text-left px-4 py-3 text-xs font-semibold {ThemeUtils.themeTextPrimary()}" style="flex: 1">Value</div>
+			<div class="flex w-full">									<div class="text-left px-4 py-3 text-xs font-semibold {ThemeUtils.themeTextPrimary()} w-1/2">Header Name</div>
+								<div class="text-left px-4 py-3 text-xs font-semibold {ThemeUtils.themeTextPrimary()}" style="flex: 1">Value</div>
 			</div>
 			
 			{#if editable}
@@ -261,11 +260,11 @@
 						<tbody class="divide-y dark:divide-gray-700">
 							{#each localHeaders as header, index}
 								<tr class="{index % 2 === 0 ? 'bg-white dark:bg-gray-800' : 'bg-gray-50/50 dark:bg-gray-750'}">
-									<td class="px-4 py-3 align-top w-1/2" style="min-width: 150px">
-										<span class="font-medium whitespace-nowrap text-blue-600 dark:text-blue-400">{header.key}</span>
+									<td class="px-4 py-2 align-top w-1/2" style="min-width: 150px">
+										<span class="font-medium whitespace-nowrap text-blue-600 dark:text-blue-400 text-xs">{header.key}</span>
 									</td>
-									<td class="px-4 py-3 align-top" style="min-width: 200px">
-										<div class="break-all whitespace-pre-wrap {ThemeUtils.themeTextSecondary()}" style="max-width: 100%; overflow-x: auto">{header.value}</div>
+									<td class="px-4 py-2 align-top" style="min-width: 200px">
+										<div class="break-all whitespace-pre-wrap text-xs {ThemeUtils.themeTextSecondary()}" style="max-width: 100%; overflow-x: auto">{header.value}</div>
 									</td>
 								</tr>
 							{/each}
@@ -276,7 +275,7 @@
 			{:else}
 				<div class="text-center py-6 rounded-lg border border-dashed {ThemeUtils.themeBorder()}">
 					<i class="fas fa-info-circle mb-2 text-lg {ThemeUtils.themeTextMuted()}"></i>
-					<div class="{ThemeUtils.themeTextMuted()} italic">No headers available.</div>
+					<div class="{ThemeUtils.themeTextMuted()} italic text-xs">No headers available.</div>
 				</div>
 			{/if}
 		
