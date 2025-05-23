@@ -25,6 +25,7 @@ import (
 	"beo-echo/backend/src/mocks/handler/project"
 	"beo-echo/backend/src/mocks/handler/proxy"
 	"beo-echo/backend/src/mocks/handler/response"
+	"beo-echo/backend/src/mocks/services"
 	"beo-echo/backend/src/users"
 	"beo-echo/backend/src/utils"
 	"beo-echo/backend/src/workspaces"
@@ -105,6 +106,12 @@ func SetupRouter() *gin.Engine {
 
 	// Initialize Auth service with user repository
 	authHandler.InitAuthService(database.DB, userRepo)
+
+	// Initialize system configuration handle
+	ruleRepo := repositories.NewRuleRepository(database.DB)
+	responseRepo := repositories.NewResponseRepository(database.DB)
+	ruleService := services.NewRuleService(ruleRepo, responseRepo)
+	ruleHandler := handler.NewRuleHandler(ruleService)
 
 	// Authentication routes
 	router.POST("/mock/api/auth/login", authHandler.LoginHandler)
@@ -198,6 +205,14 @@ func SetupRouter() *gin.Engine {
 				projectRoutes.GET("/endpoints/:id/responses/:responseId", response.GetResponseHandler)
 				projectRoutes.PUT("/endpoints/:id/responses/:responseId", response.UpdateResponseHandler)
 				projectRoutes.DELETE("/endpoints/:id/responses/:responseId", response.DeleteResponseHandler)
+
+				// Rule management
+				projectRoutes.GET("/endpoints/:id/responses/:responseId/rules", ruleHandler.ListRulesHandler)
+				projectRoutes.POST("/endpoints/:id/responses/:responseId/rules", ruleHandler.CreateRuleHandler)
+				projectRoutes.GET("/endpoints/:id/responses/:responseId/rules/:ruleId", ruleHandler.GetRuleHandler)
+				projectRoutes.PUT("/endpoints/:id/responses/:responseId/rules/:ruleId", ruleHandler.UpdateRuleHandler)
+				projectRoutes.DELETE("/endpoints/:id/responses/:responseId/rules/:ruleId", ruleHandler.DeleteRuleHandler)
+				projectRoutes.DELETE("/endpoints/:id/responses/:responseId/rules", ruleHandler.DeleteAllRulesHandler)
 
 				// Proxy management
 				projectRoutes.GET("/proxies", proxy.ListProxyTargetsHandler)

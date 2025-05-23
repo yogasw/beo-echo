@@ -2,6 +2,7 @@ import type { User, Workspace } from '$lib/types/User';
 import { auth } from '$lib/stores/auth';
 import { getCurrentWorkspaceId } from '$lib/utils/localStorage';
 import { apiClient } from './apiClient';
+import type { Rule } from './rulesApi';
 
 interface AuthCredentials {
 	username: string;
@@ -80,7 +81,7 @@ export type Response = {
 	stream: boolean;
 	enabled: boolean;
 	note: string;
-	rules: null;
+	rules: Rule[] | null;
 	created_at: Date;
 	updated_at: Date;
 }
