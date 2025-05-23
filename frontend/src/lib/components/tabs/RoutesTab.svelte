@@ -159,6 +159,13 @@
 					id="endpoint-method"
 					class="w-full md:w-1/6 rounded {ThemeUtils.themeBgSecondary()} px-4 py-2 {ThemeUtils.themeTextPrimary()}"
 					value={selectedEndpoint?.method.toUpperCase()}
+					on:change={(e) => {
+						if (selectedEndpoint) {
+							let target = e?.target as HTMLSelectElement;
+							selectedEndpoint = updateEndpoint('method', target?.value || 'GET', selectedEndpoint);
+							console.log('Updated endpoint method:', selectedEndpoint);
+						}
+					}}
 				>
 					<option value="GET">GET</option>
 					<option value="POST">POST</option>
