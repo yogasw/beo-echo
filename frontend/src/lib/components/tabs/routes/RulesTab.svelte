@@ -1,8 +1,7 @@
 <script lang="ts">
-	import type { BeoEchoRule } from '$lib/types/Config';
 	import * as ThemeUtils from '$lib/utils/themeUtils';
 
-	export let rules: BeoEchoRule[] = [];
+	export let rules: any[] = [];
 	export let rulesOperator = 'OR'; // Default operator
 
 	let isModalVisible = false;
