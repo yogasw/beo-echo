@@ -18,13 +18,13 @@
 	let selectedEndpoint: Endpoint | null = null;
 	let selectedResponse: Response | null = null;
 	let filterText: string = ''; // Variable to store filter input
-	
+
 	// Update endpoints and activeConfigName when selectedProject changes
 	$: {
 		if ($selectedProject) {
 			endpoints = $selectedProject.endpoints || [];
 			activeConfigName = $selectedProject.name || '';
-			
+
 			// Automatically select the first endpoint if available
 			if (endpoints.length > 0) {
 				selectRoute(endpoints[0]);
@@ -50,7 +50,7 @@
 		selectedEndpoint = route;
 		// Reset endpoints update list when changing endpoints
 		resetEndpointsList();
-		
+
 		// Automatically select the first response if available
 		if (route.responses && route.responses.length > 0) {
 			selectedResponse = route.responses[0];
@@ -67,10 +67,10 @@
 				...route
 			};
 			endpoints = [...endpoints]; // Trigger reactivity with a new array reference
-			
+
 			// Also update in the selectedProject store
 			if ($selectedProject && $selectedProject.endpoints) {
-				const projectEndpointIndex = $selectedProject.endpoints.findIndex(e => e.id === route.id);
+				const projectEndpointIndex = $selectedProject.endpoints.findIndex((e) => e.id === route.id);
 				if (projectEndpointIndex !== -1) {
 					$selectedProject.endpoints[projectEndpointIndex] = route;
 					selectedProject.set($selectedProject); // Trigger the store update
@@ -81,29 +81,29 @@
 
 	function handleAddEndpoint(newEndpoint: Endpoint) {
 		console.log('Endpoint added:', newEndpoint);
-		
+
 		// Add the new endpoint to the endpoints array
 		endpoints = [...endpoints, newEndpoint];
-		
+
 		// Also update the selectedProject endpoints to make the change persist
 		if ($selectedProject) {
 			// If selectedProject.endpoints is undefined, initialize it as an empty array
 			if (!$selectedProject.endpoints) {
 				$selectedProject.endpoints = [];
 			}
-			
+
 			// Add the new endpoint to the selectedProject's endpoints
 			$selectedProject.endpoints = [...$selectedProject.endpoints, newEndpoint];
-			
+
 			// Update the selectedProject store to trigger reactivity
 			selectedProject.set($selectedProject);
 		}
-		
+
 		// Clear any active filter to ensure the new endpoint is visible
 		if (filterText) {
 			filterText = '';
 		}
-		
+
 		setTimeout(() => {
 			// Automatically select the new endpoint after a short delay
 			selectRoute(newEndpoint);
@@ -118,6 +118,14 @@
 			endpoints = [...endpoints]; // Trigger reactivity
 		}
 		selectedEndpoint = updatedEndpoint;
+	}
+
+
+	function handleHeadersSave(headers: string): void {
+		console.log('Headers saved:', headers);
+		if (selectedResponse) {
+			selectedResponse = updateResponse('headers', headers, selectedEndpoint, selectedResponse);
+		}
 	}
 </script>
 
@@ -152,20 +160,30 @@
 					<option value="PATCH">PATCH</option>
 				</select>
 				<div class="flex items-center relative">
-					<div class="hidden md:flex items-center rounded-md border border-blue-400/30 bg-blue-500/10 px-3 py-1 shadow-sm hover:border-blue-500/40 hover:bg-blue-500/15 transition-colors">
+					<div
+						class="hidden md:flex items-center rounded-md border border-blue-400/30 bg-blue-500/10 px-3 py-1 shadow-sm hover:border-blue-500/40 hover:bg-blue-500/15 transition-colors"
+					>
 						<i class="fas fa-globe-americas text-blue-400 mr-1.5 text-[10px]"></i>
 						<span class="text-blue-400 font-medium text-xs">API HOST</span>
 						<div class="group relative ml-1.5">
-							<i class="fas fa-info-circle text-blue-400 hover:text-blue-300 cursor-pointer transition-colors"></i>
-							<div class="absolute z-10 hidden group-hover:block bg-gray-800 text-white text-xs rounded-md p-3 left-1/2 -translate-x-1/2 mt-2 w-auto min-w-[200px] max-w-xs whitespace-normal break-all shadow-lg border border-gray-700 transition-all duration-200 ease-in-out">
+							<i
+								class="fas fa-info-circle text-blue-400 hover:text-blue-300 cursor-pointer transition-colors"
+							></i>
+							<div
+								class="absolute z-10 hidden group-hover:block bg-gray-800 text-white text-xs rounded-md p-3 left-1/2 -translate-x-1/2 mt-2 w-auto min-w-[200px] max-w-xs whitespace-normal break-all shadow-lg border border-gray-700 transition-all duration-200 ease-in-out"
+							>
 								<!-- Triangle pointer -->
-								<div class="absolute -top-2 left-1/2 -translate-x-1/2 w-0 h-0 border-l-[6px] border-l-transparent border-r-[6px] border-r-transparent border-b-[6px] border-b-gray-800"></div>
+								<div
+									class="absolute -top-2 left-1/2 -translate-x-1/2 w-0 h-0 border-l-[6px] border-l-transparent border-r-[6px] border-r-transparent border-b-[6px] border-b-gray-800"
+								></div>
 								<div class="flex flex-col space-y-2">
 									<div class="flex items-start">
 										<i class="fas fa-link text-blue-400 mr-2 mt-0.5"></i>
-										<span>{$selectedProject?.url || "No API host defined"}</span>
+										<span>{$selectedProject?.url || 'No API host defined'}</span>
 									</div>
-									<div class="text-[10px] text-gray-400 italic">This is the base URL for all endpoints in this project</div>
+									<div class="text-[10px] text-gray-400 italic">
+										This is the base URL for all endpoints in this project
+									</div>
 								</div>
 							</div>
 						</div>
@@ -190,7 +208,7 @@
 					disabled={!selectedEndpoint || selectedEndpoint?.method !== 'GET'}
 					aria-label="Open endpoint in a new tab"
 					on:click={() => {
-						let url = `${$selectedProject?.url || ""}${selectedEndpoint?.path ? selectedEndpoint.path : ''}`;
+						let url = `${$selectedProject?.url || ''}${selectedEndpoint?.path ? selectedEndpoint.path : ''}`;
 						// Open the URL in a new tab
 						window.open(url, '_blank');
 					}}
@@ -284,14 +302,17 @@
 										}}
 									/>
 								{:else if activeContentTab === 'Headers'}
-									<HeadersEditor headers={selectedResponse?.headers || '{}'} />
+									<HeadersEditor 
+									onSave={handleHeadersSave}
+									headers={selectedResponse?.headers || '{}'}
+									 />
 								{:else if activeContentTab === 'Rules'}
 									<RulesTab rules={selectedResponse?.rules || []} rulesOperator="AND" />
 								{:else if activeContentTab === 'Callbacks'}
 									<CallbacksTab callbacks={[]} />
 								{:else if activeContentTab === 'Notes'}
-									<NotesTab 
-										notes={selectedResponse?.note || ''} 
+									<NotesTab
+										notes={selectedResponse?.note || ''}
 										onSaveNotes={(notes) => {
 											if (selectedResponse) {
 												console.log('Notes saved:', notes);
