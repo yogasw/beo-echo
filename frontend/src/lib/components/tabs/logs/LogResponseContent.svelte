@@ -1,6 +1,7 @@
 <script lang="ts">
 	import type { RequestLog } from '$lib/api/BeoApi';
 	import * as ThemeUtils from '$lib/utils/themeUtils';
+	import HeadersTab from '../../common/HeadersEditor.svelte';
 
 	export let log: RequestLog;
 	export let copyToClipboard: (text: string, label: string) => Promise<void>;
@@ -70,12 +71,12 @@
 				</button>
 			</div>
 		</div>
-		<pre
-			class="bg-gray-300/50 dark:bg-gray-700 p-3 rounded-md text-xs theme-text-secondary font-mono overflow-auto max-h-48">{JSON.stringify(
-				parseJson(log.response_headers),
-				null,
-				2
-			)}</pre>
+		
+		<HeadersTab 
+			headers={log.response_headers} 
+			editable={false} 
+			title="Response Headers" 
+		/>
 	</div>
 
 	<!-- Response body -->

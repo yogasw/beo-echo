@@ -82,14 +82,14 @@ func UpdateResponseHandler(c *gin.Context) {
 
 	// Parse update data
 	var updateData struct {
-		StatusCode    *int    `json:"status_code"`
-		Body          *string `json:"body"`
-		Headers       *string `json:"headers"` // Allow headers to be null
-		Priority      *int    `json:"priority"`
-		DelayMS       *int    `json:"delay_ms"`
-		Stream        *bool   `json:"stream"`
-		Enabled       *bool   `json:"enabled"`
-		Documentation *string `json:"documentation"`
+		StatusCode *int    `json:"status_code"`
+		Body       *string `json:"body"`
+		Headers    *string `json:"headers"` // Allow headers to be null
+		Priority   *int    `json:"priority"`
+		DelayMS    *int    `json:"delay_ms"`
+		Stream     *bool   `json:"stream"`
+		Enabled    *bool   `json:"enabled"`
+		Note       *string `json:"note"`
 	}
 
 	if err := c.ShouldBindJSON(&updateData); err != nil {
@@ -142,8 +142,8 @@ func UpdateResponseHandler(c *gin.Context) {
 	if updateData.Enabled != nil {
 		existingResponse.Enabled = *updateData.Enabled
 	}
-	if updateData.Documentation != nil {
-		existingResponse.Documentation = *updateData.Documentation
+	if updateData.Note != nil {
+		existingResponse.Note = *updateData.Note
 	}
 
 	// Save updates

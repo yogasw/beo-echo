@@ -41,14 +41,18 @@
 	}
 </script>
 
-<div class="h-full flex flex-col space-y-2 w-full" on:keydown={handleKeyDown} tabindex="0">
+<div class="h-full flex flex-col space-y-2 w-full">
 	<div>
-		<label class="text-sm {ThemeUtils.themeTextPrimary()}">Status Code:</label>
+		<label for="statusCode" class="text-sm {ThemeUtils.themeTextPrimary()}">Status Code:</label>
 		<input
+			id="statusCode"
 			type="number"
 			class="{ThemeUtils.themeBgSecondary()} {ThemeUtils.themeTextPrimary()} p-2 rounded w-24 focus:outline-none focus:ring-0 focus:border-none"
 			bind:value={statusCode}
-			on:blur={(e) => onStatusCodeChange(+e.target.value)}
+			on:blur={(e) => {
+				const input = e.target as HTMLInputElement;
+				onStatusCodeChange(+input.value);
+			}}
 		/>
 	</div>
 
@@ -83,7 +87,15 @@
 	{#if isFullScreen}
 		<div
 			class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-80 fullscreen-modal"
+			role="dialog"
+			aria-label="Full Screen Editor"
 			on:click={handleModalClick}
+			on:keydown={(e) => {
+				if (e.key === 'Escape') {
+					toggleFullScreen();
+				}
+			}}
+			tabindex="0"
 		>
 			<div class="relative w-11/12 h-5/6 {ThemeUtils.themeBgPrimary()} rounded-lg shadow-lg">
 				<div class="absolute top-2 right-2 flex space-x-2 z-50">
