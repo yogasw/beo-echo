@@ -10,28 +10,30 @@
 	import * as ThemeUtils from '$lib/utils/themeUtils';
 	import { updateEndpoint as storeUpdateEndpoint } from '$lib/stores/saveButton';
 	import { selectedProject } from '$lib/stores/selectedConfig';
+	import ToggleSwitch from '$lib/components/common/ToggleSwitch.svelte';
 
 	export let endpoint: Endpoint;
 	export let isLoading: boolean = false;
 	export let onChange: (endpoint: Endpoint) => void;
-	let useProxy: boolean =  false;
+	export let use_proxy: boolean = false; // Bind to parent component
 	let proxyTargetId: string | null = null;
-	let proxyTargets =  $selectedProject?.proxy_targets || [];
+	let proxyTargets = $selectedProject?.proxy_targets || [];
 	let proxyTarget: ProxyTarget | null = null;
 
 	$: {
 		if (endpoint) {
-			useProxy = endpoint.use_proxy || false;
+			// Initialize our exported use_proxy from the endpoint
+			use_proxy = endpoint.use_proxy || false;
 			proxyTargetId = endpoint.proxy_target_id || null;
 			proxyTarget = proxyTargets.find((target) => target.id === proxyTargetId) || null;
 		}
 	}
 	// Handle proxy toggle
 	async function handleProxyToggle() {
-		console.log('Proxy toggle changed:', useProxy);
+		console.log('Proxy toggle changed:', use_proxy);
 
 		// Update local state
-		endpoint = storeUpdateEndpoint('use_proxy', useProxy, endpoint);
+		endpoint = storeUpdateEndpoint('use_proxy', use_proxy, endpoint);
 		console.log('Updated endpoint:', endpoint);
 		// Notify parent component
 		onChange(endpoint);
@@ -71,28 +73,19 @@
 		<div class="flex items-center justify-between mb-4">
 			<h3 class="text-lg font-semibold {ThemeUtils.themeTextPrimary()}">Endpoint Proxy</h3>
 
-			<label class="relative inline-flex items-center cursor-pointer">
-				<input
-					type="checkbox"
-					class="sr-only peer"
-					bind:checked={useProxy}
+			<div class="flex items-center">
+				<ToggleSwitch 
+					bind:checked={use_proxy}
 					on:change={handleProxyToggle}
+					ariaLabel="Toggle proxy"
 				/>
-				<div
-					class="w-11 h-6 bg-gray-700 peer-focus:outline-none peer-focus:ring-4
-					peer-focus:ring-blue-800 rounded-full peer peer-checked:after:translate-x-full
-					rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white
-					after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white
-					after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5
-					after:transition-all peer-checked:bg-blue-600"
-				></div>
 				<span class="ml-3 text-sm font-medium {ThemeUtils.themeTextSecondary()}">
-					{endpoint.use_proxy ? 'Enabled' : 'Disabled'}
+					{use_proxy ? 'Enabled' : 'Disabled'}
 				</span>
-			</label>
+			</div>
 		</div>
 
-		{#if endpoint.use_proxy}
+		{#if use_proxy}
 			<div class="space-y-4">
 				<div class="mt-2">
 					<label

@@ -7,7 +7,10 @@ export default {
       colors: {
         gray: {
           750: '#2d3748', // Custom shade for headers
-          850: '#1a202c',  // Custom shade for depth
+          775: '#252f3e', // Additional shade for dark mode elements
+          825: '#1e2633', // Additional shade for dark mode hover states
+          850: '#1a202c', // Custom shade for depth
+          875: '#161b27', // Additional deeper shade for dark mode
         },
         theme: {
           // These can be accessed as bg-theme-primary, text-theme-secondary, etc.

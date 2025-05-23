@@ -79,7 +79,7 @@ export type Response = {
 	delay_ms: number;
 	stream: boolean;
 	enabled: boolean;
-	documentation: string;
+	note: string;
 	rules: null;
 	created_at: Date;
 	updated_at: Date;

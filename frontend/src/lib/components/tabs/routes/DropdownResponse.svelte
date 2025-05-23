@@ -14,8 +14,38 @@
 		}
 	};
 
+	// Helper function to truncate text with ellipsis
+	function truncateText(text: string, maxLength: number = 25): string {
+		if (!text) return '';
+		return text.length > maxLength ? text.substring(0, maxLength) + '...' : text;
+	}
+	
+	// Helper function to sanitize text by removing HTML and collapsing whitespace
+	function sanitizeText(text: string): string {
+		if (!text) return '';
+		// Remove HTML tags
+		const withoutHtml = text.replace(/<[^>]*>/g, ' ');
+		// Collapse whitespace (newlines, tabs, multiple spaces)
+		return withoutHtml.replace(/\s+/g, ' ').trim();
+	}
+
+	// Format response label for display
+	function formatResponseLabel(index: number, response: Response, isForSelectedValue: boolean = false): string {
+		const statusText = `(${response.status_code})`;
+		let noteText = response.note ? ` ${response.note}` : '';
+		
+		// Sanitize the note text to remove HTML and collapse whitespace
+		noteText = sanitizeText(noteText);
+		
+		// Use different truncation length depending on whether this is for the selected value or dropdown items
+		const maxLength = isForSelectedValue ? 40 : 25;
+		
+		// Format display with truncation
+		return `Response ${index + 1} ${statusText} ${truncateText(noteText, maxLength)}`;
+	}
+
 	const selectResponse = (index: number, value: Response): void => {
-		selectedValue = `Response ${index + 1} (${value.status_code}) ${value.documentation}`;
+		selectedValue = formatResponseLabel(index, value);
 		const selectedElement = document.getElementById('selectedValue');
 		if (selectedElement) {
 			selectedElement.innerText = selectedValue;
@@ -59,7 +89,9 @@
 
 	$: {
 		if (selectedResponse) {
-			selectedValue = `Response 1 (${selectedResponse.status_code}) ${selectedResponse.documentation}`;
+			// Find the index of the selected response in the endpoint's responses
+			const index = selectedEndpoint?.responses?.findIndex(r => r.id === selectedResponse?.id) || 0;
+			selectedValue = formatResponseLabel(index, selectedResponse);
 		} else {
 			selectedValue = 'No Response';
 		}
@@ -80,8 +112,8 @@
 				class="text-sm font-medium {ThemeUtils.themeBgSecondary()} {ThemeUtils.themeTextSecondary()} rounded px-2 py-1 flex items-center justify-between w-full"
 				on:click={() => { toggleDropdown() }}
 			>
-				<span id="selectedValue">{selectedValue}</span>
-				<i class="fas fa-chevron-down"></i>
+				<span id="selectedValue" class="truncate mr-2 inline-block max-w-[calc(100%-20px)] whitespace-nowrap overflow-hidden">{selectedValue}</span>
+				<i class="fas fa-chevron-down flex-shrink-0"></i>
 			</button>
 			<div id="dropdownMenu" class="absolute mt-1 {ThemeUtils.themeBgSecondary()} {ThemeUtils.themeTextSecondary()} rounded shadow-lg w-full hidden z-50 max-h-60 overflow-y-auto">
 				<ul class="text-sm">
@@ -90,7 +122,7 @@
 							<li>
 								<button type="button" class="w-full text-left px-4 py-2 {ThemeUtils.themeHover()} cursor-pointer"
 												on:click={() => { selectResponse(index, response) }}>
-									Response {index + 1} ({response.status_code}) {response?.documentation}
+									Response {index + 1} ({response.status_code}) {truncateText(sanitizeText(response?.note))}
 								</button>
 							</li>
 						{/each}

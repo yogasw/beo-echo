@@ -23,12 +23,26 @@ export interface ResponseUpdate {
 
 export const endpointsUpdateList = writable<(EndpointUpdate | ResponseUpdate)[]>([]);
 
+/**
+ * Handle save button functionality
+ * This function is a more robust version of the save button handler
+ * that can be called from different components
+ */
 export function saveButtonHandler() {
+    // Get current save in progress state
     let currentValue = get(saveInprogress);
-    setTimeout(() => {
-        saveInprogress.set(!currentValue);
-    }, 1000);
-    console.log('saveButtonHandler', currentValue);
+    
+    // If a save is already in progress, don't start another one
+    if (currentValue) {
+        console.log('Save already in progress, ignoring request');
+        return;
+    }
+    
+    // Toggle the save button state to indicate a save is in progress
+    saveInprogress.set(true);
+    
+    // Return the current list of updates for processing
+    return getEndpointsUpdateList();
 }
 
 export function updateEndpoint(key: string, value: any, currentEndpoint: Endpoint) {
@@ -262,4 +276,55 @@ export function resetEndpointsList() {
  */
 export function getEndpointsUpdateList() {
     return get(endpointsUpdateList);
+}
+
+/**
+ * Update the route status in both the local state and the selected project store
+ * @param route Updated endpoint
+ */
+export function updateRouteStatus(route: Endpoint) {
+    // Get the current selected project
+    const project = get(selectedProject);
+    if (!project || !project.endpoints) {
+        console.error('No project selected or project has no endpoints');
+        return;
+    }
+
+    // Find the endpoint in the selected project
+    const projectEndpointIndex = project.endpoints.findIndex((e) => e.id === route.id);
+    if (projectEndpointIndex !== -1) {
+        // Update the endpoint in the selected project
+        project.endpoints[projectEndpointIndex] = {
+            ...route
+        };
+        
+        // Update the store
+        selectedProject.set(project);
+        console.log('Updated route status in selected project store', route);
+    } else {
+        console.warn('Endpoint not found in selected project', route);
+    }
+}
+
+/**
+ * Handle route change like the provided handleRouteStatusChange function
+ * This is a more general utility function that can be used to update any endpoint
+ * in both the local state and the selected project store
+ * @param route Updated endpoint
+ * @param endpoints Array of endpoints to update (local state)
+ * @returns Updated endpoints array
+ */
+export function handleRouteChange(route: Endpoint, endpoints: Endpoint[]): Endpoint[] {
+    console.log('Route changed:', route);
+    const index = endpoints.findIndex((r) => r.id === route.id);
+    if (index !== -1) {
+        endpoints[index] = {
+            ...route
+        };
+        endpoints = [...endpoints]; // Trigger reactivity with a new array reference
+
+        // Also update in the selectedProject store
+        updateRouteStatus(route);
+    }
+    return endpoints;
 }
