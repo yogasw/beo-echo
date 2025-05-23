@@ -2,7 +2,6 @@
 	import type { Response, Endpoint, Project } from '$lib/api/BeoApi';
 	import { updateEndpoint, resetEndpointsList, updateResponse } from '$lib/stores/saveButton';
 	import StatusBodyTab from './routes/StatusBodyTab.svelte';
-	import HeadersTab from './routes/HeadersTab.svelte';
 	import RulesTab from './routes/RulesTab.svelte';
 	import CallbacksTab from './routes/CallbacksTab.svelte';
 	import ProxyTab from './routes/ProxyTab.svelte';
@@ -11,6 +10,7 @@
 	import DropdownResponse from '$lib/components/tabs/routes/DropdownResponse.svelte';
 	import * as ThemeUtils from '$lib/utils/themeUtils';
 	import { selectedProject } from '$lib/stores/selectedConfig';
+	import HeadersEditor from '../common/HeadersEditor.svelte';
 
 	export let activeContentTab = 'Status & Body';
 	let activeConfigName = $selectedProject?.name || ''; // Store the active config name
@@ -284,7 +284,7 @@
 										}}
 									/>
 								{:else if activeContentTab === 'Headers'}
-									<HeadersTab headers={selectedResponse?.headers || '{}'} />
+									<HeadersEditor headers={selectedResponse?.headers || '{}'} />
 								{:else if activeContentTab === 'Rules'}
 									<RulesTab rules={selectedResponse?.rules || []} rulesOperator="AND" />
 								{:else if activeContentTab === 'Callbacks'}

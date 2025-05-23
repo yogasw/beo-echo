@@ -1,6 +1,5 @@
 <script lang="ts">
 	import * as ThemeUtils from '$lib/utils/themeUtils';
-	import { theme } from '$lib/stores/theme';
 	import { createEventDispatcher, onMount, onDestroy } from 'svelte';
 	import { tick } from 'svelte';
 	
@@ -8,6 +7,7 @@
 	export let editable: boolean = true;
 	export const title: string = 'Headers'; // Changed to const since it's not used internally
 	export let maxContentHeight: string = ''; // Optional explicit height
+	export let onSave: ((headers: string) => void) | undefined = undefined; // Callback when headers are saved
 	
 	const dispatch = createEventDispatcher<{
 		change: string;
@@ -178,6 +178,12 @@
 		const newHeadersJson = JSON.stringify(headersObj);
 		headers = newHeadersJson;
 		dispatch('change', newHeadersJson);
+		
+		// Call onSave if provided
+		if (onSave) {
+			onSave(newHeadersJson);
+		}
+		
 		isEditing = false;
 		hasChanges = false;
 	}

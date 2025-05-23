@@ -1,7 +1,7 @@
 <script lang="ts">
 	import type { RequestLog } from '$lib/api/BeoApi';
 	import * as ThemeUtils from '$lib/utils/themeUtils';
-	import HeadersTab from '../routes/HeadersTab.svelte';
+	import HeadersTab from '../../common/HeadersEditor.svelte';
 
 	export let log: RequestLog;
 	export let copyToClipboard: (text: string, label: string) => Promise<void>;
