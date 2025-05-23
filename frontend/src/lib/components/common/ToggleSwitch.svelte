@@ -1,4 +1,6 @@
 <script lang="ts">
+    import { createEventDispatcher } from 'svelte';
+    
     /**
      * A reusable toggle switch component that follows the project's design system.
      * 
@@ -19,6 +21,11 @@
     export let id = '';
     export let ariaLabel = '';
     
+    // Create event dispatcher
+    const dispatch = createEventDispatcher<{
+        change: { checked: boolean };
+    }>();
+    
     // Calculate size classes based on the size prop
     $: sizeClass = size === 'small' 
         ? 'w-8 h-4 after:h-3 after:w-3'
@@ -26,18 +33,11 @@
             ? 'w-14 h-7 after:h-6 after:w-6'
             : 'w-11 h-6 after:h-5 after:w-5';
     
-    // Handle change event
-    function handleChange(event: Event) {
-        const target = event.target as HTMLInputElement;
-        checked = target.checked;
-        
-        // Forward the change event
-        const changeEvent = new CustomEvent('change', {
-            detail: { checked }
-        });
-        
-        // Dispatch the event
-        event.target?.dispatchEvent(changeEvent);
+    // Handle change event - create a custom event with the checked state
+    function handleChange() {
+        // Dispatch the change event using Svelte's event dispatcher
+        // No need to access event.target, as bind:checked takes care of updating the value
+        dispatch('change', { checked });
     }
 </script>
 
