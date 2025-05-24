@@ -248,7 +248,7 @@
 				loading={loading}
 				fullWidth
 			>
-				<img src="https://authjs.dev/img/providers/google.svg" alt="Google" class="w-5 h-5" />
+				<img src="/images/providers/google.svg" alt="Google" class="w-5 h-5" />
 				<span>Continue with Google</span>
 			</Button>
 		</div>
