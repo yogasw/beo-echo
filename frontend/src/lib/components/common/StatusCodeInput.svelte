@@ -29,11 +29,14 @@
     { code: 201, name: 'Created', description: 'Resource created successfully', category: 'Success', color: 'text-green-600', bgColor: 'bg-green-600' },
     { code: 202, name: 'Accepted', description: 'Request accepted for processing', category: 'Success', color: 'text-green-600', bgColor: 'bg-green-600' },
     { code: 204, name: 'No Content', description: 'Success with no response body', category: 'Success', color: 'text-green-600', bgColor: 'bg-green-600' },
+    { code: 206, name: 'Partial Content', description: 'Partial content served', category: 'Success', color: 'text-green-600', bgColor: 'bg-green-600' },
     
     // 3xx Redirection  
     { code: 301, name: 'Moved Permanently', description: 'Resource moved permanently', category: 'Redirection', color: 'text-blue-600', bgColor: 'bg-blue-600' },
     { code: 302, name: 'Found', description: 'Resource temporarily moved', category: 'Redirection', color: 'text-blue-600', bgColor: 'bg-blue-600' },
     { code: 304, name: 'Not Modified', description: 'Resource not modified', category: 'Redirection', color: 'text-blue-600', bgColor: 'bg-blue-600' },
+    { code: 307, name: 'Temporary Redirect', description: 'Temporary redirect', category: 'Redirection', color: 'text-blue-600', bgColor: 'bg-blue-600' },
+    { code: 308, name: 'Permanent Redirect', description: 'Permanent redirect', category: 'Redirection', color: 'text-blue-600', bgColor: 'bg-blue-600' },
     
     // 4xx Client Error
     { code: 400, name: 'Bad Request', description: 'Invalid request syntax', category: 'Client Error', color: 'text-yellow-600', bgColor: 'bg-yellow-600' },
@@ -41,7 +44,13 @@
     { code: 403, name: 'Forbidden', description: 'Access denied', category: 'Client Error', color: 'text-yellow-600', bgColor: 'bg-yellow-600' },
     { code: 404, name: 'Not Found', description: 'Resource not found', category: 'Client Error', color: 'text-yellow-600', bgColor: 'bg-yellow-600' },
     { code: 405, name: 'Method Not Allowed', description: 'HTTP method not allowed', category: 'Client Error', color: 'text-yellow-600', bgColor: 'bg-yellow-600' },
+    { code: 406, name: 'Not Acceptable', description: 'Response format not accepted', category: 'Client Error', color: 'text-yellow-600', bgColor: 'bg-yellow-600' },
+    { code: 408, name: 'Request Timeout', description: 'Request timeout', category: 'Client Error', color: 'text-yellow-600', bgColor: 'bg-yellow-600' },
     { code: 409, name: 'Conflict', description: 'Request conflicts with current state', category: 'Client Error', color: 'text-yellow-600', bgColor: 'bg-yellow-600' },
+    { code: 410, name: 'Gone', description: 'Resource no longer available', category: 'Client Error', color: 'text-yellow-600', bgColor: 'bg-yellow-600' },
+    { code: 412, name: 'Precondition Failed', description: 'Precondition failed', category: 'Client Error', color: 'text-yellow-600', bgColor: 'bg-yellow-600' },
+    { code: 413, name: 'Payload Too Large', description: 'Request payload too large', category: 'Client Error', color: 'text-yellow-600', bgColor: 'bg-yellow-600' },
+    { code: 415, name: 'Unsupported Media Type', description: 'Media type not supported', category: 'Client Error', color: 'text-yellow-600', bgColor: 'bg-yellow-600' },
     { code: 422, name: 'Unprocessable Entity', description: 'Request validation failed', category: 'Client Error', color: 'text-yellow-600', bgColor: 'bg-yellow-600' },
     { code: 429, name: 'Too Many Requests', description: 'Rate limit exceeded', category: 'Client Error', color: 'text-yellow-600', bgColor: 'bg-yellow-600' },
     
@@ -50,8 +59,24 @@
     { code: 501, name: 'Not Implemented', description: 'Server does not support functionality', category: 'Server Error', color: 'text-red-600', bgColor: 'bg-red-600' },
     { code: 502, name: 'Bad Gateway', description: 'Invalid response from upstream', category: 'Server Error', color: 'text-red-600', bgColor: 'bg-red-600' },
     { code: 503, name: 'Service Unavailable', description: 'Server temporarily unavailable', category: 'Server Error', color: 'text-red-600', bgColor: 'bg-red-600' },
-    { code: 504, name: 'Gateway Timeout', description: 'Upstream server timeout', category: 'Server Error', color: 'text-red-600', bgColor: 'bg-red-600' }
+    { code: 504, name: 'Gateway Timeout', description: 'Upstream server timeout', category: 'Server Error', color: 'text-red-600', bgColor: 'bg-red-600' },
+    { code: 505, name: 'HTTP Version Not Supported', description: 'HTTP version not supported', category: 'Server Error', color: 'text-red-600', bgColor: 'bg-red-600' }
   ];
+
+  // Function to get appropriate color for status code based on its range
+  function getStatusCodeColor(code: number): { color: string; bgColor: string; category: string } {
+    if (code >= 200 && code < 300) {
+      return { color: 'text-green-600', bgColor: 'bg-green-600', category: 'Success' };
+    } else if (code >= 300 && code < 400) {
+      return { color: 'text-blue-600', bgColor: 'bg-blue-600', category: 'Redirection' };
+    } else if (code >= 400 && code < 500) {
+      return { color: 'text-yellow-600', bgColor: 'bg-yellow-600', category: 'Client Error' };
+    } else if (code >= 500 && code < 600) {
+      return { color: 'text-red-600', bgColor: 'bg-red-600', category: 'Server Error' };
+    } else {
+      return { color: 'text-gray-600', bgColor: 'bg-gray-600', category: 'Custom' };
+    }
+  }
 
   // Quick select options (most commonly used)
   const quickSelectCodes = [200, 201, 204, 400, 401, 403, 404, 500];
@@ -63,8 +88,17 @@
   let selectedIndex = -1;
   let statusBadgeElement: HTMLElement;
 
-  $: selectedStatus = statusCodes.find(s => s.code === value) || 
-    { code: value, name: 'Custom', description: 'Custom status code', category: 'Custom', color: 'text-gray-600', bgColor: 'bg-gray-600' };
+  $: selectedStatus = statusCodes.find(s => s.code === value) || (() => {
+    const colors = getStatusCodeColor(value);
+    return {
+      code: value,
+      name: 'Custom',
+      description: `Custom ${colors.category.toLowerCase()} status code`,
+      category: colors.category,
+      color: colors.color,
+      bgColor: colors.bgColor
+    };
+  })();
   
   // Enhanced filtering: supports multi-criteria search (numeric + text)
   $: filteredCodes = statusCodes.filter(status => {
@@ -128,18 +162,23 @@
         event.preventDefault();
         if (selectedIndex >= 0 && filteredCodes[selectedIndex]) {
           selectStatusCode(filteredCodes[selectedIndex]);
-        } else if (searchTerm.trim() && !isNaN(Number(searchTerm))) {
-          const customCode = Number(searchTerm);
-          if (customCode >= 100 && customCode <= 599) {
-            const customStatus = {
-              code: customCode,
-              name: 'Custom',
-              description: 'Custom status code',
-              category: 'Custom',
-              color: 'text-gray-600',
-              bgColor: 'bg-gray-600'
-            };
-            selectStatusCode(customStatus);
+        } else if (searchTerm.trim()) {
+          const searchValue = searchTerm.trim();
+          // Try to create custom status code
+          if (!isNaN(Number(searchValue))) {
+            const customCode = Number(searchValue);
+            if (customCode > 0) {
+              const colors = getStatusCodeColor(customCode);
+              const customStatus = {
+                code: customCode,
+                name: 'Custom',
+                description: `Custom ${colors.category.toLowerCase()} status code`,
+                category: colors.category,
+                color: colors.color,
+                bgColor: colors.bgColor
+              };
+              selectStatusCode(customStatus);
+            }
           }
         }
         break;
@@ -154,18 +193,23 @@
 
   function handleInputChange(event: Event) {
     const target = event.target as HTMLInputElement;
-    const newValue = Number(target.value);
+    searchTerm = target.value;
     
-    if (!isNaN(newValue) && newValue >= 100 && newValue <= 599) {
+    // If the search term is a valid status code, auto-apply it immediately
+    const newValue = Number(target.value);
+    if (!isNaN(newValue) && newValue > 0) {
       value = newValue;
-      const status = statusCodes.find(s => s.code === newValue) || {
-        code: newValue,
-        name: 'Custom',
-        description: 'Custom status code',
-        category: 'Custom',
-        color: 'text-gray-600',
-        bgColor: 'bg-gray-600'
-      };
+      const status = statusCodes.find(s => s.code === newValue) || (() => {
+        const colors = getStatusCodeColor(newValue);
+        return {
+          code: newValue,
+          name: 'Custom',
+          description: `Custom ${colors.category.toLowerCase()} status code`,
+          category: colors.category,
+          color: colors.color,
+          bgColor: colors.bgColor
+        };
+      })();
       dispatch('change', { value: newValue, statusCode: status });
     }
   }
@@ -265,7 +309,7 @@
         class:border-red-500={error}
         class:dark:border-red-500={error}
         style="padding-left: {dynamicPadding}"
-        placeholder={isOpen ? 'Type to search codes, names, or descriptions... (e.g., "20 ok", "40 error")' : (value ? value.toString() : placeholder)}
+        placeholder={isOpen ? 'Type to search (e.g., "20 ok", "404") or enter any custom code...' : (value ? value.toString() : placeholder)}
         {disabled}
         on:keydown={handleInputKeydown}
         on:focus={handleInputFocus}
@@ -332,58 +376,137 @@
           {/if}
         {/each}
         
-        {#if filteredCodes.length === 0}
+        {#if filteredCodes.length === 0 && searchTerm.trim() && isNaN(Number(searchTerm))}
           <div class="px-4 py-3 text-gray-500 dark:text-gray-400 text-sm">
-            <i class="fas fa-search mr-2"></i>No status codes found
-            {#if searchTerm.trim()}
-              <div class="mt-1 text-xs">
-                Try searching for:
-                <ul class="list-disc list-inside mt-1 space-y-1">
-                  <li>Status code numbers (e.g., "20" for 2xx codes, "404")</li>
-                  <li>Status names (e.g., "success", "error", "not found")</li>
-                  <li>Categories (e.g., "client error", "server error")</li>
-                  <li>Combined search (e.g., "20 ok", "40 error", "50 server")</li>
-                </ul>
-              </div>
-            {/if}
+            <i class="fas fa-search mr-2"></i>No matching status codes found
+            <div class="mt-2 text-xs">
+              <div class="mb-2 font-medium">Search suggestions:</div>
+              <ul class="list-disc list-inside space-y-1">
+                <li>Status code numbers (e.g., "20" for 2xx codes, "404")</li>
+                <li>Status names (e.g., "success", "error", "not found")</li>
+                <li>Categories (e.g., "client error", "server error")</li>
+                <li>Combined search (e.g., "20 ok", "40 error", "50 server")</li>
+              </ul>
+            </div>
+          </div>
+        {:else if filteredCodes.length === 0 && !searchTerm.trim()}
+          <div class="px-4 py-3 text-gray-500 dark:text-gray-400 text-sm">
+            <i class="fas fa-list mr-2"></i>Start typing to search status codes
           </div>
         {/if}
         
         <!-- Custom status code option -->
-        {#if searchTerm.trim() && !isNaN(Number(searchTerm)) && Number(searchTerm) >= 100 && Number(searchTerm) <= 599 && !filteredCodes.some(s => s.code === Number(searchTerm))}
-          <button
-            type="button"
-            class="w-full text-left px-4 py-3 hover:bg-gray-100 dark:hover:bg-gray-600 focus:bg-gray-100 dark:focus:bg-gray-600 focus:outline-none transition-colors border-t border-gray-200 dark:border-gray-600"
-            on:click={() => selectStatusCode({
-              code: Number(searchTerm),
-              name: 'Custom',
-              description: 'Custom status code',
-              category: 'Custom',
-              color: 'text-gray-600',
-              bgColor: 'bg-gray-600'
-            })}
-          >
-            <div class="flex items-center">
-              <span class="px-2 py-1 rounded text-xs font-medium text-white mr-3 bg-gray-600">
-                {searchTerm}
-              </span>
-              <div>
-                <div class="font-medium text-gray-900 dark:text-white">Use "{searchTerm}"</div>
-                <div class="text-xs text-gray-500 dark:text-gray-400">Custom status code</div>
-              </div>
+        {#if searchTerm.trim() && !isNaN(Number(searchTerm)) && Number(searchTerm) > 0}
+          <div class="border-t border-gray-200 dark:border-gray-600">
+            <div class="px-3 py-2 text-xs font-semibold text-gray-500 dark:text-gray-400 bg-gray-50 dark:bg-gray-800">
+              {#if filteredCodes.some(s => s.code === Number(searchTerm))}
+                Predefined Status Code
+              {:else}
+                Custom Status Code
+              {/if}
             </div>
-          </button>
+            <button
+              type="button"
+              class="w-full text-left px-4 py-3 hover:bg-gray-100 dark:hover:bg-gray-600 focus:bg-gray-100 dark:focus:bg-gray-600 focus:outline-none transition-colors"
+              on:click={() => {
+                const customCode = Number(searchTerm);
+                const existingStatus = statusCodes.find(s => s.code === customCode);
+                if (existingStatus) {
+                  selectStatusCode(existingStatus);
+                } else {
+                  const colors = getStatusCodeColor(customCode);
+                  selectStatusCode({
+                    code: customCode,
+                    name: 'Custom',
+                    description: `Custom ${colors.category.toLowerCase()} status code`,
+                    category: colors.category,
+                    color: colors.color,
+                    bgColor: colors.bgColor
+                  });
+                }
+              }}
+            >
+              <div class="flex items-center">
+                <span class="px-2 py-1 rounded text-xs font-medium text-white mr-3 {getStatusCodeColor(Number(searchTerm)).bgColor}">
+                  {searchTerm}
+                </span>
+                <div>
+                  <div class="font-medium text-gray-900 dark:text-white">
+                    {#if filteredCodes.some(s => s.code === Number(searchTerm))}
+                      Use "{searchTerm}"
+                    {:else}
+                      Use "{searchTerm}" (Custom)
+                    {/if}
+                  </div>
+                  <div class="text-xs text-gray-500 dark:text-gray-400">
+                    {#if filteredCodes.some(s => s.code === Number(searchTerm))}
+                      {@const existingStatus = statusCodes.find(s => s.code === Number(searchTerm))}
+                      {existingStatus?.name} - {existingStatus?.description}
+                    {:else}
+                      Custom {getStatusCodeColor(Number(searchTerm)).category.toLowerCase()} status code
+                    {/if}
+                  </div>
+                </div>
+                <div class="ml-auto">
+                  {#if filteredCodes.some(s => s.code === Number(searchTerm))}
+                    <i class="fas fa-check text-green-400"></i>
+                  {:else}
+                    <i class="fas fa-check text-blue-400"></i>
+                  {/if}
+                </div>
+              </div>
+            </button>
+            
+            <!-- Show relevant range info for guidance only for standard HTTP status codes -->
+            {#if Number(searchTerm) >= 100 && Number(searchTerm) <= 599}
+              {@const codeRange = Math.floor(Number(searchTerm) / 100) * 100}
+              <div class="px-4 py-2 bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 text-xs">
+                <i class="fas fa-info-circle mr-1"></i>
+                <strong>{codeRange}xx range:</strong>
+                {#if codeRange === 100}
+                  Informational responses (rarely used in APIs).
+                {:else if codeRange === 200}
+                  Success responses - indicate the request was successfully received, understood, and processed.
+                {:else if codeRange === 300}
+                  Redirection responses - indicate further action needs to be taken to complete the request.
+                {:else if codeRange === 400}
+                  Client error responses - indicate the request contains bad syntax or cannot be fulfilled.
+                {:else if codeRange === 500}
+                  Server error responses - indicate the server failed to fulfill a valid request.
+                {/if}
+              </div>
+            {:else if Number(searchTerm) > 599}
+              <div class="px-4 py-2 bg-gray-50 dark:bg-gray-900/20 text-gray-700 dark:text-gray-300 text-xs">
+                <i class="fas fa-info-circle mr-1"></i>
+                <strong>Custom status code:</strong> This is outside the standard HTTP status code range (100-599) but will work for custom API responses.
+              </div>
+            {/if}
+          </div>
         {/if}
       </div>
     {/if}
   </div>
   
   {#if error}
-    <p class="text-red-500 dark:text-red-400 text-xs mt-1">{error}</p>
-  {:else}
-    <p class="text-gray-500 dark:text-gray-500 text-xs mt-1">
-      {selectedStatus.name} - {selectedStatus.description}
+    <p class="text-red-500 dark:text-red-400 text-xs mt-1">
+      <i class="fas fa-exclamation-circle mr-1"></i>{error}
     </p>
+  {:else}
+    <div class="text-gray-500 dark:text-gray-500 text-xs mt-1 space-y-1">
+      <p>
+        <i class="fas fa-info-circle mr-1 opacity-75"></i>
+        {selectedStatus.name} - {selectedStatus.description}
+        {#if selectedStatus.category === 'Custom'}
+          • Valid custom code
+        {/if}
+      </p>
+      {#if !isOpen && showQuickSelect}
+        <p class="opacity-75">
+          <i class="fas fa-lightbulb mr-1"></i>
+          Tip: Use quick select buttons above, or type to search/create any custom status code
+        </p>
+      {/if}
+    </div>
   {/if}
 </div>
 
