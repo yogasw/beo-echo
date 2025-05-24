@@ -1,6 +1,8 @@
 <script lang="ts">
-  import { fade } from 'svelte/transition';
+  import { fade, scale } from 'svelte/transition';
   import { addEndpoint, addResponse, type RequestLog } from '$lib/api/BeoApi';
+  import { toast } from '$lib/stores/toast';
+  import { theme } from '$lib/stores/theme';
   
   export let isOpen: boolean;
   export let log: RequestLog | null = null;
@@ -16,9 +18,31 @@
   let documentation = '';
   let isSubmitting = false;
   let error: string | null = null;
+  let currentStep = 1;
+  let validationErrors: Record<string, string> = {};
 
-  // HTTP methods for dropdown
-  const methods = ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS', 'HEAD'];
+  // HTTP methods for dropdown with colors
+  const methods = [
+    { value: 'GET', label: 'GET', color: 'text-green-400' },
+    { value: 'POST', label: 'POST', color: 'text-blue-400' },
+    { value: 'PUT', label: 'PUT', color: 'text-yellow-400' },
+    { value: 'DELETE', label: 'DELETE', color: 'text-red-400' },
+    { value: 'PATCH', label: 'PATCH', color: 'text-purple-400' },
+    { value: 'OPTIONS', label: 'OPTIONS', color: 'text-gray-400' },
+    { value: 'HEAD', label: 'HEAD', color: 'text-gray-400' }
+  ];
+
+  // Common status codes with descriptions
+  const statusCodes = [
+    { code: 200, description: 'OK - Success' },
+    { code: 201, description: 'Created - Resource created' },
+    { code: 204, description: 'No Content - Success with no response body' },
+    { code: 400, description: 'Bad Request - Invalid request' },
+    { code: 401, description: 'Unauthorized - Authentication required' },
+    { code: 403, description: 'Forbidden - Access denied' },
+    { code: 404, description: 'Not Found - Resource not found' },
+    { code: 500, description: 'Internal Server Error - Server error' }
+  ];
 
   // Initialize values from log when opened
   $: if (log && isOpen) {
@@ -38,7 +62,74 @@
     }
     
     // Initialize documentation with a template
-    documentation = `## ${method} ${path}\n\nAuto-created from unmatched request.`;
+    documentation = `## ${method} ${path}\n\nAuto-created from unmatched request log.\n\n### Description\nThis endpoint was automatically generated from an unmatched request. Please update the documentation to describe its purpose and behavior.`;
+    
+    // Reset form state
+    currentStep = 1;
+    validationErrors = {};
+    error = null;
+  }
+
+  // Validation functions
+  function validateStep1(): boolean {
+    const errors: Record<string, string> = {};
+    
+    if (!path.trim()) {
+      errors.path = 'Path is required';
+    } else if (!path.startsWith('/')) {
+      errors.path = 'Path must start with /';
+    }
+    
+    if (!method) {
+      errors.method = 'HTTP method is required';
+    }
+    
+    validationErrors = errors;
+    return Object.keys(errors).length === 0;
+  }
+
+  function validateStep2(): boolean {
+    const errors: Record<string, string> = {};
+    
+    if (statusCode < 100 || statusCode > 599) {
+      errors.statusCode = 'Status code must be between 100 and 599';
+    }
+    
+    // Validate headers JSON format
+    if (headers.trim()) {
+      try {
+        JSON.parse(headers);
+      } catch (e) {
+        errors.headers = 'Headers must be valid JSON format';
+      }
+    }
+    
+    // Validate body JSON format if it looks like JSON
+    if (body.trim() && (body.trim().startsWith('{') || body.trim().startsWith('['))) {
+      try {
+        JSON.parse(body);
+      } catch (e) {
+        errors.body = 'Response body appears to be JSON but is not valid';
+      }
+    }
+    
+    validationErrors = errors;
+    return Object.keys(errors).length === 0;
+  }
+
+  // Step navigation
+  function nextStep() {
+    if (currentStep === 1 && validateStep1()) {
+      currentStep = 2;
+    } else if (currentStep === 2 && validateStep2()) {
+      currentStep = 3;
+    }
+  }
+
+  function prevStep() {
+    if (currentStep > 1) {
+      currentStep--;
+    }
   }
 
   // Format JSON nicely for display
@@ -50,10 +141,36 @@
     }
   }
 
+  // Auto-format body as JSON if it's valid
+  function handleBodyInput() {
+    if (body.trim() && (body.trim().startsWith('{') || body.trim().startsWith('['))) {
+      try {
+        const formatted = formatJson(body);
+        body = formatted;
+      } catch (e) {
+        // Ignore formatting errors while typing
+      }
+    }
+  }
+
+  // Generate sample response based on method
+  function generateSampleResponse() {
+    const samples = {
+      GET: '{\n  "data": [\n    {\n      "id": 1,\n      "name": "Sample Item"\n    }\n  ],\n  "total": 1\n}',
+      POST: '{\n  "id": 1,\n  "message": "Resource created successfully",\n  "data": {\n    "name": "New Item"\n  }\n}',
+      PUT: '{\n  "id": 1,\n  "message": "Resource updated successfully"\n}',
+      DELETE: '{\n  "message": "Resource deleted successfully"\n}',
+      PATCH: '{\n  "id": 1,\n  "message": "Resource partially updated"\n}'
+    };
+    
+    body = samples[method as keyof typeof samples] || samples.GET;
+  }
+
   // Handle form submission
   async function handleSubmit() {
-    if (!path || !method) {
-      error = 'Path and method are required';
+    // Final validation
+    if (!validateStep1() || !validateStep2()) {
+      toast.error('Please fix the validation errors before submitting');
       return;
     }
 
@@ -75,6 +192,7 @@
           documentation
         );
 
+        toast.success(`Mock endpoint created: ${method} ${path}`);
         onSuccess();
         onClose();
       } else {
@@ -82,206 +200,494 @@
       }
     } catch (err) {
       console.error('Error creating mock:', err);
-      error = err instanceof Error ? err.message : 'An unknown error occurred';
+      const errorMessage = err instanceof Error ? err.message : 'An unknown error occurred';
+      error = errorMessage;
+      toast.error(`Failed to create mock: ${errorMessage}`);
     } finally {
       isSubmitting = false;
     }
   }
 
-  // Close the modal when clicking outside or on close button
+  // Close the modal when clicking outside
   function handleBackdropClick(event: MouseEvent) {
     if (event.target === event.currentTarget) {
       onClose();
     }
   }
+
+  // Handle escape key
+  function handleKeydown(event: KeyboardEvent) {
+    if (event.key === 'Escape') {
+      onClose();
+    }
+  }
+
+  // Reset form when closing
+  function handleClose() {
+    currentStep = 1;
+    validationErrors = {};
+    error = null;
+    onClose();
+  }
 </script>
 
 {#if isOpen}
+  <!-- svelte-ignore a11y-no-static-element-interactions -->
   <div
-    class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
+    class="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4"
     transition:fade={{ duration: 200 }}
+    on:click={handleBackdropClick}
+    on:keydown={handleKeydown}
     role="dialog"
     aria-modal="true"
     tabindex="-1"
   >
     <div 
-      class="bg-gray-800 rounded-lg w-full max-w-3xl max-h-[90vh] overflow-y-auto shadow-xl"
+      class="bg-white dark:bg-gray-800 rounded-xl w-full max-w-4xl max-h-[90vh] shadow-2xl border border-gray-200 dark:border-gray-700 flex flex-col"
+      transition:scale={{ duration: 200, start: 0.9 }}
       role="dialog"
       aria-modal="true"
     >
-      <!-- Header -->
-      <div class="p-4 border-b border-gray-700 flex justify-between items-center">
-        <h2 class="text-xl font-semibold text-white">Create Mock Endpoint</h2>
-        <button
-          class="text-gray-400 hover:text-white"
-          on:click={onClose}
-          aria-label="Close"
-        >
-          <i class="fas fa-times"></i>
-        </button>
+      <!-- Header with Progress -->
+      <div class="bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-750 p-6 border-b border-gray-200 dark:border-gray-700 shrink-0">
+        <div class="flex justify-between items-center mb-4">
+          <div>
+            <h2 class="text-2xl font-bold text-gray-800 dark:text-white mb-1">Create Mock Endpoint</h2>
+            <p class="text-gray-600 dark:text-gray-400 text-sm">Step {currentStep} of 3</p>
+          </div>
+          <button
+            class="text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 transition-colors p-2 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-500"
+            on:click={handleClose}
+            aria-label="Close"
+          >
+            <i class="fas fa-times text-lg"></i>
+          </button>
+        </div>
+        
+        <!-- Progress Bar -->
+        <div class="flex space-x-2">
+          {#each [1, 2, 3] as step}
+            <div class="flex-1 h-2 rounded-full bg-gray-300 dark:bg-gray-600 overflow-hidden relative">
+              <div 
+                class="h-full bg-gradient-to-r from-blue-500 to-blue-600 transition-all duration-500 ease-out rounded-full"
+                class:w-full={currentStep >= step}
+                class:w-0={currentStep < step}
+              ></div>
+              {#if currentStep === step}
+                <div class="absolute inset-0 bg-gradient-to-r from-blue-400 to-blue-500 opacity-30 animate-pulse rounded-full"></div>
+              {/if}
+            </div>
+          {/each}
+        </div>
+        
+        <!-- Step Labels -->
+        <div class="flex justify-between mt-2 text-xs">
+          <span class="font-medium transition-colors"
+                class:text-blue-600={currentStep >= 1}
+                class:dark:text-blue-400={currentStep >= 1}
+                class:text-gray-400={currentStep < 1}
+                class:dark:text-gray-500={currentStep < 1}>
+            Endpoint
+          </span>
+          <span class="font-medium transition-colors"
+                class:text-blue-600={currentStep >= 2}
+                class:dark:text-blue-400={currentStep >= 2}
+                class:text-gray-400={currentStep < 2}
+                class:dark:text-gray-500={currentStep < 2}>
+            Response
+          </span>
+          <span class="font-medium transition-colors"
+                class:text-blue-600={currentStep >= 3}
+                class:dark:text-blue-400={currentStep >= 3}
+                class:text-gray-400={currentStep < 3}
+                class:dark:text-gray-500={currentStep < 3}>
+            Documentation
+          </span>
+        </div>
       </div>
 
       <!-- Body -->
-      <div class="p-4">
+      <div class="flex-1 overflow-y-auto min-h-0">
         {#if error}
-          <div class="mb-4 p-3 bg-red-900/30 border border-red-700 rounded text-white">
+          <div class="mx-6 mt-4 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
             <div class="flex items-center">
-              <i class="fas fa-exclamation-triangle text-yellow-400 mr-2"></i>
-              <span>{error}</span>
+              <i class="fas fa-exclamation-triangle text-red-500 dark:text-red-400 mr-3"></i>
+              <div>
+                <p class="text-red-700 dark:text-red-300 font-medium">Error</p>
+                <p class="text-red-600 dark:text-red-200 text-sm">{error}</p>
+              </div>
             </div>
           </div>
         {/if}
 
-        <form on:submit|preventDefault={handleSubmit}>
-          <!-- Endpoint section -->
-          <div class="mb-5">
-            <h3 class="text-gray-300 font-medium mb-3 pb-1 border-b border-gray-700">Endpoint Configuration</h3>
+        <!-- Step 1: Endpoint Configuration -->
+        {#if currentStep === 1}
+          <div class="p-6" transition:fade={{ duration: 200 }}>
+            <div class="mb-6">
+              <div class="flex items-center mb-4">
+                <div class="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center mr-3">
+                  <i class="fas fa-route text-white text-sm"></i>
+                </div>
+                <h3 class="text-xl font-semibold text-gray-800 dark:text-white">Endpoint Configuration</h3>
+              </div>
+              <p class="text-gray-600 dark:text-gray-400 text-sm">Define the HTTP method and path for your mock endpoint.</p>
+            </div>
             
-            <!-- Method dropdown -->
-            <div class="mb-4">
-              <label for="method" class="block text-sm font-medium text-gray-300 mb-1">
-                HTTP Method
-              </label>
-              <div class="relative">
-                <select
-                  id="method"
-                  bind:value={method}
-                  class="bg-gray-700 border border-gray-600 text-white rounded-md block w-full py-2 pl-3 pr-10"
-                >
-                  {#each methods as httpMethod}
-                    <option value={httpMethod}>{httpMethod}</option>
-                  {/each}
-                </select>
+            <!-- Method and Path in a Grid -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <!-- Method Selection -->
+              <div class="md:col-span-1">
+                <label for="method" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  <i class="fas fa-code mr-2"></i>HTTP Method
+                </label>
+                <div class="relative">
+                  <select
+                    id="method"
+                    bind:value={method}
+                    class="bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white rounded-lg block w-full py-3 pl-4 pr-10 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors focus:outline-none"
+                    class:border-red-500={validationErrors.method}
+                    class:dark:border-red-500={validationErrors.method}
+                  >
+                    {#each methods as httpMethod}
+                      <option value={httpMethod.value}>{httpMethod.label}</option>
+                    {/each}
+                  </select>
+                  <div class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+                    <i class="fas fa-chevron-down text-gray-400"></i>
+                  </div>
+                </div>
+                {#if validationErrors.method}
+                  <p class="text-red-500 dark:text-red-400 text-xs mt-1">{validationErrors.method}</p>
+                {/if}
+              </div>
+              
+              <!-- Path Input -->
+              <div class="md:col-span-2">
+                <label for="path" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  <i class="fas fa-link mr-2"></i>Path
+                </label>
+                <div class="relative">
+                  <input
+                    type="text"
+                    id="path"
+                    bind:value={path}
+                    class="bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white rounded-lg block w-full py-3 pl-4 pr-4 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors focus:outline-none"
+                    class:border-red-500={validationErrors.path}
+                    class:dark:border-red-500={validationErrors.path}
+                    placeholder="/api/users/:id"
+                  />
+                </div>
+                {#if validationErrors.path}
+                  <p class="text-red-500 dark:text-red-400 text-xs mt-1">{validationErrors.path}</p>
+                {:else}
+                  <p class="text-gray-500 dark:text-gray-500 text-xs mt-1">Example: /api/users, /api/orders/:id</p>
+                {/if}
               </div>
             </div>
             
-            <!-- Path input -->
-            <div class="mb-4">
-              <label for="path" class="block text-sm font-medium text-gray-300 mb-1">
-                Path
-              </label>
-              <input
-                type="text"
-                id="path"
-                bind:value={path}
-                class="bg-gray-700 border border-gray-600 text-white rounded-md block w-full py-2 px-3"
-                placeholder="/api/resources"
-              />
-            </div>
+            <!-- Preview Card -->
+            {#if path && method}
+              <div class="mt-6 p-4 bg-gray-50 dark:bg-gray-750 rounded-lg border border-gray-200 dark:border-gray-600">
+                <h4 class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  <i class="fas fa-eye mr-2"></i>Endpoint Preview
+                </h4>
+                <div class="flex items-center">
+                  <span class="px-3 py-1 rounded-full text-xs font-medium mr-3
+                    {method === 'GET' ? 'bg-green-600 text-white' : 
+                     method === 'POST' ? 'bg-blue-600 text-white' : 
+                     method === 'PUT' ? 'bg-yellow-600 text-white' : 
+                     method === 'DELETE' ? 'bg-red-600 text-white' : 
+                     method === 'PATCH' ? 'bg-purple-600 text-white' : 
+                     'bg-gray-600 text-white'}">
+                    {method}
+                  </span>
+                  <span class="text-gray-900 dark:text-white font-mono">{path}</span>
+                </div>
+              </div>
+            {/if}
           </div>
-          
-          <!-- Response section -->
-          <div class="mb-5">
-            <h3 class="text-gray-300 font-medium mb-3 pb-1 border-b border-gray-700">Response Configuration</h3>
+        {/if}
+        <!-- Step 2: Response Configuration -->
+        {#if currentStep === 2}
+          <div class="p-6" transition:fade={{ duration: 200 }}>
+            <div class="mb-6">
+              <div class="flex items-center mb-4">
+                <div class="w-8 h-8 bg-green-600 rounded-full flex items-center justify-center mr-3">
+                  <i class="fas fa-reply text-white text-sm"></i>
+                </div>
+                <h3 class="text-xl font-semibold text-gray-800 dark:text-white">Response Configuration</h3>
+              </div>
+              <p class="text-gray-600 dark:text-gray-400 text-sm">Configure how your mock endpoint should respond to requests.</p>
+            </div>
             
-            <!-- Status code -->
-            <div class="mb-4">
-              <label for="statusCode" class="block text-sm font-medium text-gray-300 mb-1">
-                Status Code
+            <!-- Status Code -->
+            <div class="mb-6">
+              <label for="statusCode" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                <i class="fas fa-hashtag mr-2"></i>Status Code
               </label>
+              <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-3">
+                {#each statusCodes as status}
+                  <button
+                    type="button"
+                    class="p-3 rounded-lg border text-left transition-all hover:scale-105 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    class:bg-blue-600={statusCode === status.code}
+                    class:border-blue-500={statusCode === status.code}
+                    class:text-white={statusCode === status.code}
+                    class:bg-white={statusCode !== status.code && $theme === 'light'}
+                    class:bg-gray-700={statusCode !== status.code && $theme === 'dark'}
+                    class:border-gray-300={statusCode !== status.code && $theme === 'light'}
+                    class:border-gray-600={statusCode !== status.code && $theme === 'dark'}
+                    class:text-gray-800={statusCode !== status.code && $theme === 'light'}
+                    class:text-gray-300={statusCode !== status.code && $theme === 'dark'}
+                    class:hover:border-blue-400={statusCode !== status.code}
+                    on:click={() => statusCode = status.code}
+                  >
+                    <div class="font-bold text-lg">{status.code}</div>
+                    <div class="text-xs opacity-80">{status.description.split(' - ')[1]}</div>
+                  </button>
+                {/each}
+              </div>
               <input
                 type="number"
                 id="statusCode"
                 bind:value={statusCode}
                 min="100"
                 max="599"
-                class="bg-gray-700 border border-gray-600 text-white rounded-md block w-full py-2 px-3"
+                class="bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white rounded-lg block w-full py-3 px-4 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors focus:outline-none"
+                class:border-red-500={validationErrors.statusCode}
+                class:dark:border-red-500={validationErrors.statusCode}
               />
+              {#if validationErrors.statusCode}
+                <p class="text-red-500 dark:text-red-400 text-xs mt-1">{validationErrors.statusCode}</p>
+              {/if}
             </div>
             
-            <!-- Response body -->
-            <div class="mb-4">
-              <label for="body" class="block text-sm font-medium text-gray-300 mb-1">
-                Response Body
-              </label>
+            <!-- Response Body -->
+            <div class="mb-6">
+              <div class="flex justify-between items-center mb-2">
+                <label for="body" class="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                  <i class="fas fa-file-code mr-2"></i>Response Body
+                </label>
+                <div class="flex space-x-2">
+                  <button 
+                    type="button"
+                    class="bg-gray-200 dark:bg-gray-600 hover:bg-gray-300 dark:hover:bg-gray-500 text-gray-800 dark:text-white rounded-md text-xs px-3 py-1 transition-colors"
+                    on:click={generateSampleResponse}
+                    title="Generate sample response"
+                  >
+                    <i class="fas fa-magic mr-1"></i>Sample
+                  </button>
+                  <button 
+                    type="button"
+                    class="bg-gray-200 dark:bg-gray-600 hover:bg-gray-300 dark:hover:bg-gray-500 text-gray-800 dark:text-white rounded-md text-xs px-3 py-1 transition-colors"
+                    on:click={() => body = formatJson(body)}
+                    title="Format JSON"
+                  >
+                    <i class="fas fa-code mr-1"></i>Format
+                  </button>
+                </div>
+              </div>
               <div class="relative">
-                <button 
-                  type="button"
-                  class="absolute right-2 top-2 bg-gray-600 hover:bg-gray-500 text-white rounded text-xs px-2 py-1"
-                  on:click={() => body = formatJson(body)}
-                  title="Format JSON"
-                >
-                  <i class="fas fa-code"></i> Format
-                </button>
                 <textarea
                   id="body"
                   bind:value={body}
-                  class="bg-gray-700 border border-gray-600 text-white font-mono rounded-md block w-full py-2 px-3"
-                  rows="7"
+                  on:blur={handleBodyInput}
+                  class="bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white font-mono rounded-lg block w-full py-3 px-4 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors resize-none focus:outline-none"
+                  class:border-red-500={validationErrors.body}
+                  class:dark:border-red-500={validationErrors.body}
+                  rows="8"
+                  placeholder='&#123;&#10;  "message": "Hello from mock endpoint",&#10;  "data": &#123;&#10;    "id": 1,&#10;    "name": "Sample"&#10;  &#125;&#10;&#125;'
                 ></textarea>
+                {#if body}
+                  <div class="absolute top-2 right-2 text-xs text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded">
+                    {body.length} chars
+                  </div>
+                {/if}
               </div>
+              {#if validationErrors.body}
+                <p class="text-red-500 dark:text-red-400 text-xs mt-1">{validationErrors.body}</p>
+              {/if}
             </div>
             
             <!-- Headers -->
-            <div class="mb-4">
-              <label for="headers" class="block text-sm font-medium text-gray-300 mb-1">
-                Response Headers (JSON format)
-              </label>
-              <div class="relative">
+            <div class="mb-6">
+              <div class="flex justify-between items-center mb-2">
+                <label for="headers" class="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                  <i class="fas fa-tags mr-2"></i>Response Headers
+                </label>
                 <button 
                   type="button"
-                  class="absolute right-2 top-2 bg-gray-600 hover:bg-gray-500 text-white rounded text-xs px-2 py-1"
+                  class="bg-gray-200 dark:bg-gray-600 hover:bg-gray-300 dark:hover:bg-gray-500 text-gray-800 dark:text-white rounded-md text-xs px-3 py-1 transition-colors"
                   on:click={() => headers = formatJson(headers)}
                   title="Format JSON"
                 >
-                  <i class="fas fa-code"></i> Format
+                  <i class="fas fa-code mr-1"></i>Format
                 </button>
-                <textarea
-                  id="headers"
-                  bind:value={headers}
-                  class="bg-gray-700 border border-gray-600 text-white font-mono rounded-md block w-full py-2 px-3"
-                  rows="4"
-                  placeholder="Headers"
-                ></textarea>
               </div>
+              <textarea
+                id="headers"
+                bind:value={headers}
+                class="bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white font-mono rounded-lg block w-full py-3 px-4 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors resize-none focus:outline-none"
+                class:border-red-500={validationErrors.headers}
+                class:dark:border-red-500={validationErrors.headers}
+                rows="5"
+                placeholder='&#123;&#10;  "Content-Type": "application/json",&#10;  "Cache-Control": "no-cache"&#10;&#125;'
+              ></textarea>
+              {#if validationErrors.headers}
+                <p class="text-red-500 dark:text-red-400 text-xs mt-1">{validationErrors.headers}</p>
+              {:else}
+                <p class="text-gray-500 dark:text-gray-500 text-xs mt-1">JSON format - Common headers will be added automatically</p>
+              {/if}
             </div>
           </div>
-          
-          <!-- Documentation section -->
-          <div class="mb-5">
-            <h3 class="text-gray-300 font-medium mb-3 pb-1 border-b border-gray-700">Documentation</h3>
+        {/if}
+
+        <!-- Step 3: Documentation -->
+        {#if currentStep === 3}
+          <div class="p-6 pb-4" transition:fade={{ duration: 200 }}>
+            <div class="mb-6">
+              <div class="flex items-center mb-4">
+                <div class="w-8 h-8 bg-purple-600 rounded-full flex items-center justify-center mr-3">
+                  <i class="fas fa-book text-white text-sm"></i>
+                </div>
+                <h3 class="text-xl font-semibold text-gray-800 dark:text-white">Documentation & Review</h3>
+              </div>
+              <p class="text-gray-600 dark:text-gray-400 text-sm">Add documentation and review your mock endpoint configuration.</p>
+            </div>
             
-            <div class="mb-4">
-              <label for="documentation" class="block text-sm font-medium text-gray-300 mb-1">
-                Documentation (Markdown)
+            <!-- Documentation -->
+            <div class="mb-6">
+              <label for="documentation" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                <i class="fas fa-edit mr-2"></i>Documentation (Markdown)
               </label>
               <textarea
                 id="documentation"
                 bind:value={documentation}
-                class="bg-gray-700 border border-gray-600 text-white rounded-md block w-full py-2 px-3"
-                rows="5"
+                class="bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white rounded-lg block w-full py-3 px-4 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors resize-none focus:outline-none"
+                rows="6"
                 placeholder="## Endpoint Description
-                
-Describe your endpoint here using Markdown."
+
+Describe your endpoint here using Markdown.
+
+### Parameters
+- `id` (path): Resource identifier
+
+### Response
+Returns a JSON object with the requested resource."
               ></textarea>
+              <p class="text-gray-500 dark:text-gray-500 text-xs mt-1">Use Markdown to document your endpoint's purpose, parameters, and expected responses</p>
+            </div>
+            
+            <!-- Configuration Summary -->
+            <div class="bg-gray-50 dark:bg-gray-750 rounded-lg p-4 border border-gray-200 dark:border-gray-600">
+              <h4 class="text-gray-800 dark:text-white font-medium mb-3 flex items-center">
+                <i class="fas fa-eye mr-2"></i>Configuration Summary
+              </h4>
+              <div class="space-y-2 text-sm">
+                <div class="flex items-center justify-between">
+                  <span class="text-gray-600 dark:text-gray-400">Endpoint:</span>
+                  <div class="flex items-center">
+                    <span class="px-2 py-1 rounded text-xs font-medium mr-2
+                      {method === 'GET' ? 'bg-green-600 text-white' : 
+                       method === 'POST' ? 'bg-blue-600 text-white' : 
+                       method === 'PUT' ? 'bg-yellow-600 text-white' : 
+                       method === 'DELETE' ? 'bg-red-600 text-white' : 
+                       method === 'PATCH' ? 'bg-purple-600 text-white' : 
+                       'bg-gray-600 text-white'}">
+                      {method}
+                    </span>
+                    <span class="text-gray-900 dark:text-white font-mono">{path}</span>
+                  </div>
+                </div>
+                <div class="flex items-center justify-between">
+                  <span class="text-gray-600 dark:text-gray-400">Status Code:</span>
+                  <span class="text-gray-900 dark:text-white">{statusCode}</span>
+                </div>
+                <div class="flex items-center justify-between">
+                  <span class="text-gray-600 dark:text-gray-400">Response Size:</span>
+                  <span class="text-gray-900 dark:text-white">{body.length} characters</span>
+                </div>
+                <div class="flex items-center justify-between">
+                  <span class="text-gray-600 dark:text-gray-400">Headers:</span>
+                  <span class="text-gray-900 dark:text-white">{Object.keys(JSON.parse(headers || '{}')).length} defined</span>
+                </div>
+              </div>
             </div>
           </div>
-        </form>
+        {/if}
       </div>
 
       <!-- Footer -->
-      <div class="p-4 border-t border-gray-700 flex justify-end space-x-3">
-        <button
-          type="button"
-          class="px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-md text-sm"
-          on:click={onClose}
-          disabled={isSubmitting}
-        >
-          Cancel
-        </button>
-        <button
-          type="button"
-          class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md text-sm flex items-center"
-          on:click={handleSubmit}
-          disabled={isSubmitting}
-        >
-          {#if isSubmitting}
-            <span class="animate-spin h-4 w-4 border-t-2 border-b-2 border-white rounded-full mr-2"></span>
-            Creating...
-          {:else}
-            <i class="fas fa-save mr-1"></i> Create Mock
-          {/if}
-        </button>
+      <div class="bg-gray-50 dark:bg-gray-750 px-6 py-4 border-t border-gray-200 dark:border-gray-700 shrink-0">
+        <div class="flex justify-between items-center">
+          <!-- Step Navigation -->
+          <div class="flex space-x-3">
+            {#if currentStep > 1}
+              <button
+                type="button"
+                class="px-4 py-2 bg-gray-200 dark:bg-gray-600 hover:bg-gray-300 dark:hover:bg-gray-500 text-gray-800 dark:text-white rounded-lg text-sm flex items-center transition-colors focus:outline-none focus:ring-2 focus:ring-gray-500"
+                on:click={prevStep}
+                disabled={isSubmitting}
+              >
+                <i class="fas fa-chevron-left mr-2"></i>Previous
+              </button>
+            {/if}
+          </div>
+          
+          <!-- Action Buttons -->
+          <div class="flex space-x-3">
+            <button
+              type="button"
+              class="px-4 py-2 bg-gray-200 dark:bg-gray-600 hover:bg-gray-300 dark:hover:bg-gray-500 text-gray-800 dark:text-white rounded-lg text-sm transition-colors focus:outline-none focus:ring-2 focus:ring-gray-500"
+              on:click={handleClose}
+              disabled={isSubmitting}
+            >
+              Cancel
+            </button>
+            
+            {#if currentStep < 3}
+              <button
+                type="button"
+                class="px-6 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white rounded-lg text-sm flex items-center transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500"
+                on:click={nextStep}
+                disabled={isSubmitting}
+              >
+                Next<i class="fas fa-chevron-right ml-2"></i>
+              </button>
+            {:else}
+              <button
+                type="button"
+                class="px-6 py-2 bg-green-600 hover:bg-green-700 disabled:bg-green-400 text-white rounded-lg text-sm flex items-center transition-colors focus:outline-none focus:ring-2 focus:ring-green-500"
+                on:click={handleSubmit}
+                disabled={isSubmitting}
+              >
+                {#if isSubmitting}
+                  <div class="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full mr-2"></div>
+                  Creating...
+                {:else}
+                  <i class="fas fa-plus mr-2"></i>Create Mock
+                {/if}
+              </button>
+            {/if}
+          </div>
+        </div>
+        
+        <!-- Validation Summary -->
+        {#if Object.keys(validationErrors).length > 0}
+          <div class="mt-4 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
+            <div class="flex items-start">
+              <i class="fas fa-exclamation-triangle text-red-500 dark:text-red-400 mr-2 mt-0.5"></i>
+              <div>
+                <p class="text-red-700 dark:text-red-300 font-medium text-sm">Please fix the following errors:</p>
+                <ul class="text-red-600 dark:text-red-200 text-xs mt-1 space-y-1">
+                  {#each Object.values(validationErrors) as error}
+                    <li>• {error}</li>
+                  {/each}
+                </ul>
+              </div>
+            </div>
+          </div>
+        {/if}
       </div>
     </div>
   </div>
