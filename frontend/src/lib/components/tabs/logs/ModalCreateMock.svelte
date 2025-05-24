@@ -23,13 +23,14 @@
   let currentStep = 1;
   let validationErrors: Record<string, string> = {};
   let showExitConfirmation = false;
+  let isInitialized = false; // Track if we've already initialized from log
 
   // Modal configuration
   const stepLabels = ['Endpoint', 'Response', 'Documentation'];
   const totalSteps = 3;
 
-  // Initialize values from log when opened
-  $: if (log && isOpen) {
+  // Initialize values from log when opened (only once per modal opening)
+  $: if (log && isOpen && !isInitialized) {
     method = log.method;
     path = log.path;
     statusCode = log.response_status;
@@ -52,6 +53,12 @@
     currentStep = 1;
     validationErrors = {};
     error = null;
+    isInitialized = true; // Mark as initialized
+  }
+
+  // Reset initialization flag when modal closes
+  $: if (!isOpen) {
+    isInitialized = false;
   }
 
   // Validation functions for step navigation
@@ -211,6 +218,7 @@
     currentStep = 1;
     validationErrors = {};
     error = null;
+    isInitialized = false; // Reset initialization flag
     onClose();
   }
 
