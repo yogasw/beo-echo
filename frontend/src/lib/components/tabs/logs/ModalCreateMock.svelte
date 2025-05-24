@@ -22,6 +22,7 @@
   let error: string | null = null;
   let currentStep = 1;
   let validationErrors: Record<string, string> = {};
+  let showExitConfirmation = false;
 
   // Initialize values from log when opened
   $: if (log && isOpen) {
@@ -190,15 +191,35 @@
   // Close the modal when clicking outside
   function handleBackdropClick(event: MouseEvent) {
     if (event.target === event.currentTarget) {
-      onClose();
+      // Show confirmation before closing if user has made changes
+      if (hasUnsavedChanges()) {
+        showExitConfirmation = true;
+      } else {
+        onClose();
+      }
     }
   }
 
   // Handle escape key
   function handleKeydown(event: KeyboardEvent) {
     if (event.key === 'Escape') {
-      onClose();
+      // Show confirmation before closing if user has made changes
+      if (hasUnsavedChanges()) {
+        showExitConfirmation = true;
+      } else {
+        onClose();
+      }
     }
+  }
+
+  // Check if user has made changes
+  function hasUnsavedChanges(): boolean {
+    return path.trim() !== '' || 
+           method !== 'GET' || 
+           statusCode !== 200 || 
+           body.trim() !== '' || 
+           headers !== '{}' || 
+           documentation.trim() !== '';
   }
 
   // Reset form when closing
@@ -207,6 +228,26 @@
     validationErrors = {};
     error = null;
     onClose();
+  }
+
+  // Handle direct close (X button)
+  function handleDirectClose() {
+    if (hasUnsavedChanges()) {
+      showExitConfirmation = true;
+    } else {
+      handleClose();
+    }
+  }
+
+  // Confirm exit without saving
+  function confirmExit() {
+    showExitConfirmation = false;
+    handleClose();
+  }
+
+  // Cancel exit confirmation
+  function cancelExit() {
+    showExitConfirmation = false;
   }
 </script>
 
@@ -236,7 +277,7 @@
           </div>
           <button
             class="text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 transition-colors p-2 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-500"
-            on:click={handleClose}
+            on:click={handleDirectClose}
             aria-label="Close"
           >
             <i class="fas fa-times text-lg"></i>
@@ -549,39 +590,34 @@ Returns a JSON object with the requested resource."
       <!-- Footer -->
       <div class="bg-gray-50 dark:bg-gray-750 px-6 py-4 border-t border-gray-200 dark:border-gray-700 shrink-0">
         <div class="flex justify-between items-center">
-          <!-- Step Navigation -->
-          <div class="flex space-x-3">
+          <!-- Left: Empty space to maintain layout balance -->
+          <div></div>
+          
+          <!-- Right: Navigation & Primary Actions -->
+          <div class="flex items-center space-x-3">
+            <!-- Step Navigation -->
             {#if currentStep > 1}
               <button
                 type="button"
                 class="px-4 py-2 bg-gray-200 dark:bg-gray-600 hover:bg-gray-300 dark:hover:bg-gray-500 text-gray-800 dark:text-white rounded-lg text-sm flex items-center transition-colors focus:outline-none focus:ring-2 focus:ring-gray-500"
                 on:click={prevStep}
                 disabled={isSubmitting}
+                title="Go back to previous step"
               >
-                <i class="fas fa-chevron-left mr-2"></i>Previous
+                <i class="fas fa-chevron-left mr-2"></i>Back
               </button>
             {/if}
-          </div>
-          
-          <!-- Action Buttons -->
-          <div class="flex space-x-3">
-            <button
-              type="button"
-              class="px-4 py-2 bg-gray-200 dark:bg-gray-600 hover:bg-gray-300 dark:hover:bg-gray-500 text-gray-800 dark:text-white rounded-lg text-sm transition-colors focus:outline-none focus:ring-2 focus:ring-gray-500"
-              on:click={handleClose}
-              disabled={isSubmitting}
-            >
-              Cancel
-            </button>
             
+            <!-- Primary Action -->
             {#if currentStep < 3}
               <button
                 type="button"
                 class="px-6 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white rounded-lg text-sm flex items-center transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500"
                 on:click={nextStep}
                 disabled={isSubmitting}
+                title="Continue to next step"
               >
-                Next<i class="fas fa-chevron-right ml-2"></i>
+                Continue<i class="fas fa-chevron-right ml-2"></i>
               </button>
             {:else}
               <button
@@ -589,6 +625,7 @@ Returns a JSON object with the requested resource."
                 class="px-6 py-2 bg-green-600 hover:bg-green-700 disabled:bg-green-400 text-white rounded-lg text-sm flex items-center transition-colors focus:outline-none focus:ring-2 focus:ring-green-500"
                 on:click={handleSubmit}
                 disabled={isSubmitting}
+                title="Create the mock endpoint"
               >
                 {#if isSubmitting}
                   <div class="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full mr-2"></div>
@@ -617,6 +654,64 @@ Returns a JSON object with the requested resource."
             </div>
           </div>
         {/if}
+      </div>
+    </div>
+  </div>
+{/if}
+
+<!-- Exit Confirmation Modal -->
+{#if showExitConfirmation}
+  <!-- svelte-ignore a11y-no-static-element-interactions -->
+  <div
+    class="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[60] p-4"
+    transition:fade={{ duration: 150 }}
+    on:click|self={cancelExit}
+    on:keydown={(e) => e.key === 'Escape' && cancelExit()}
+    role="dialog"
+    aria-modal="true"
+    tabindex="-1"
+  >
+    <div 
+      class="bg-white dark:bg-gray-800 rounded-lg w-full max-w-md shadow-xl border border-gray-200 dark:border-gray-700"
+      transition:scale={{ duration: 150, start: 0.95 }}
+    >
+      <!-- Header -->
+      <div class="p-6 border-b border-gray-200 dark:border-gray-700">
+        <div class="flex items-center">
+          <div class="w-10 h-10 bg-yellow-100 dark:bg-yellow-900/30 rounded-full flex items-center justify-center mr-4">
+            <i class="fas fa-exclamation-triangle text-yellow-600 dark:text-yellow-400"></i>
+          </div>
+          <div>
+            <h3 class="text-lg font-semibold text-gray-800 dark:text-white">Exit without saving?</h3>
+            <p class="text-sm text-gray-600 dark:text-gray-400">Your changes will be lost</p>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Body -->
+      <div class="p-6">
+        <p class="text-gray-700 dark:text-gray-300 text-sm leading-relaxed">
+          You have unsaved changes. Are you sure you want to exit? 
+          All changes will be lost and cannot be recovered.
+        </p>
+      </div>
+      
+      <!-- Footer -->
+      <div class="p-6 pt-0 flex justify-end space-x-3">
+        <button
+          type="button"
+          class="px-4 py-2 bg-gray-200 dark:bg-gray-600 hover:bg-gray-300 dark:hover:bg-gray-500 text-gray-800 dark:text-white rounded-lg text-sm transition-colors focus:outline-none focus:ring-2 focus:ring-gray-500"
+          on:click={cancelExit}
+        >
+          <i class="fas fa-arrow-left mr-2"></i>Continue Editing
+        </button>
+        <button
+          type="button"
+          class="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg text-sm transition-colors focus:outline-none focus:ring-2 focus:ring-red-500"
+          on:click={confirmExit}
+        >
+          <i class="fas fa-sign-out-alt mr-2"></i>Yes, Exit
+        </button>
       </div>
     </div>
   </div>
