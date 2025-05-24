@@ -57,7 +57,7 @@
 		selectedEndpoint = route;
 		// Reset endpoints update list when changing endpoints
 		resetEndpointsList();
-		
+
 		// Update local proxy state from the selected endpoint
 		localUseProxy = route.use_proxy || false;
 
@@ -125,7 +125,6 @@
 		localUseProxy = updatedEndpoint.use_proxy || false;
 		console.log('Proxy status updated, localUseProxy:', localUseProxy);
 	}
-
 
 	function handleHeadersSave(headers: string): void {
 		console.log('Headers saved:', headers);
@@ -319,12 +318,17 @@
 										}}
 									/>
 								{:else if activeContentTab === 'Headers'}
-									<HeadersEditor 
-									onSave={handleHeadersSave}
-									headers={selectedResponse?.headers || '{}'}
-									 />
+									<HeadersEditor
+										onSave={handleHeadersSave}
+										headers={selectedResponse?.headers || '{}'}
+									/>
 								{:else if activeContentTab === 'Rules'}
-									<RulesTab rules={selectedResponse?.rules || []} rulesOperator="AND" />
+									<RulesTab
+										projectId={$selectedProject?.id || ''}
+										rules={selectedResponse?.rules || []}
+										endpointId={selectedEndpoint?.id || ''}
+										responseId={selectedResponse?.id || ''}
+									/>
 								{:else if activeContentTab === 'Notes'}
 									<NotesTab
 										notes={selectedResponse?.note || ''}
