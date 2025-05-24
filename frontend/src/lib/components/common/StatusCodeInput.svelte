@@ -1,5 +1,6 @@
 <script lang="ts">
   import { createEventDispatcher, onMount, afterUpdate } from 'svelte';
+  import StatusCodeBadge from './StatusCodeBadge.svelte';
   
   const dispatch = createEventDispatcher<{
     change: { value: number; statusCode: StatusCode }
@@ -320,11 +321,8 @@
       
       <!-- Status Badge -->
       <div class="absolute inset-y-0 left-0 flex items-center pl-3">
-        <span 
-          bind:this={statusBadgeElement}
-          class="px-2 py-1 rounded text-xs font-medium text-white {selectedStatus.bgColor}"
-        >
-          {selectedStatus.code}
+        <span bind:this={statusBadgeElement}>
+          <StatusCodeBadge statusCode={selectedStatus.code} size="sm" />
         </span>
       </div>
       
@@ -359,9 +357,9 @@
               >
                 <div class="flex items-center justify-between">
                   <div class="flex items-center">
-                    <span class="px-2 py-1 rounded text-xs font-medium text-white mr-3 {status.bgColor}">
-                      {status.code}
-                    </span>
+                    <div class="mr-3">
+                      <StatusCodeBadge statusCode={status.code} size="sm" />
+                    </div>
                     <div>
                       <div class="font-medium text-gray-900 dark:text-white">{status.code} {status.name}</div>
                       <div class="text-xs text-gray-500 dark:text-gray-400">{status.description}</div>
@@ -427,9 +425,9 @@
               }}
             >
               <div class="flex items-center">
-                <span class="px-2 py-1 rounded text-xs font-medium text-white mr-3 {getStatusCodeColor(Number(searchTerm)).bgColor}">
-                  {searchTerm}
-                </span>
+                <div class="mr-3">
+                  <StatusCodeBadge statusCode={Number(searchTerm)} size="sm" />
+                </div>
                 <div>
                   <div class="font-medium text-gray-900 dark:text-white">
                     {#if filteredCodes.some(s => s.code === Number(searchTerm))}

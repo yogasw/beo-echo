@@ -1,5 +1,6 @@
 <script lang="ts">
   import { createEventDispatcher, onMount, afterUpdate } from 'svelte';
+  import HttpMethodBadge from './HttpMethodBadge.svelte';
   
   const dispatch = createEventDispatcher<{
     change: { value: string; method: HttpMethod }
@@ -227,11 +228,8 @@
       
       <!-- Method Badge -->
       <div class="absolute inset-y-0 left-0 flex items-center pl-3">
-        <span 
-          bind:this={methodBadgeElement}
-          class="px-2 py-1 rounded text-xs font-medium text-white {selectedMethod.bgColor}"
-        >
-          {selectedMethod.value}
+        <span bind:this={methodBadgeElement}>
+          <HttpMethodBadge method={selectedMethod.value} size="sm" />
         </span>
       </div>
       
@@ -258,9 +256,9 @@
           >
             <div class="flex items-center justify-between">
               <div class="flex items-center">
-                <span class="px-2 py-1 rounded text-xs font-medium text-white mr-3 {method.bgColor}">
-                  {method.value}
-                </span>
+                <div class="mr-3">
+                  <HttpMethodBadge method={method.value} size="sm" />
+                </div>
                 <div>
                   <div class="font-medium text-gray-900 dark:text-white">{method.label}</div>
                   <div class="text-xs text-gray-500 dark:text-gray-400">{method.description}</div>
@@ -286,9 +284,9 @@
             })}
           >
             <div class="flex items-center">
-              <span class="px-2 py-1 rounded text-xs font-medium text-white mr-3 bg-gray-600">
-                {searchTerm.trim().toUpperCase()}
-              </span>
+              <div class="mr-3">
+                <HttpMethodBadge method={searchTerm.trim().toUpperCase()} size="sm" />
+              </div>
               <div>
                 <div class="font-medium text-gray-900 dark:text-white">Create "{searchTerm.trim().toUpperCase()}"</div>
                 <div class="text-xs text-gray-500 dark:text-gray-400">Custom HTTP method</div>
