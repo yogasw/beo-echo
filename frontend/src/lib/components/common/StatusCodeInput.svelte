@@ -216,7 +216,7 @@
         type="number"
         min="100"
         max="599"
-        class="bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white rounded-lg block w-full py-3 pl-12 pr-10 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors focus:outline-none"
+        class="bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white rounded-lg block w-full py-3 pl-14 pr-10 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors focus:outline-none"
         class:border-red-500={error}
         class:dark:border-red-500={error}
         placeholder={isOpen ? 'Type to search...' : (value ? value.toString() : placeholder)}

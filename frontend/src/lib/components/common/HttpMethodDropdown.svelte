@@ -178,7 +178,7 @@
         bind:value={searchTerm}
         id="http-method"
         type="text"
-        class="bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white rounded-lg block w-full py-3 pl-12 pr-10 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors focus:outline-none cursor-pointer"
+        class="bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white rounded-lg block w-full py-3 pl-14 pr-10 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors focus:outline-none cursor-pointer"
         class:border-red-500={error}
         class:dark:border-red-500={error}
         placeholder={isOpen ? 'Type to search...' : (selectedMethod ? selectedMethod.label : placeholder)}
