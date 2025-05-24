@@ -6,13 +6,13 @@ import (
 	"github.com/gin-gonic/gin"
 
 	"beo-echo/backend/src/database"
-	"beo-echo/backend/src/mocks/handler"
+	"beo-echo/backend/src/echo/handler"
 )
 
 // GetProjectHandler retrieves a project by name
 //
 // Sample curl:
-// curl -X GET "http://localhost:3600/mock/api/projects/my-new-project" -H "Content-Type: application/json"
+// curl -X GET "http://localhost:3600/api/api/projects/my-new-project" -H "Content-Type: application/json"
 func GetProjectHandler(c *gin.Context) {
 	handler.EnsureMockService()
 

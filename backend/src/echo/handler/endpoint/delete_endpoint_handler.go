@@ -1,4 +1,4 @@
-package response
+package endpoint
 
 import (
 	"net/http"
@@ -6,14 +6,14 @@ import (
 	"github.com/gin-gonic/gin"
 
 	"beo-echo/backend/src/database"
-	"beo-echo/backend/src/mocks/handler"
+	"beo-echo/backend/src/echo/handler"
 )
 
-// ListResponsesHandler lists all responses for an endpoint
+// DeleteEndpointHandler removes an endpoint
 //
 // Sample curl:
-// curl -X GET "http://localhost:3600/mock/api/projects/my-new-project/endpoints/2/responses" -H "Content-Type: application/json"
-func ListResponsesHandler(c *gin.Context) {
+// curl -X DELETE "http://localhost:3600/api/api/projects/my-new-project/endpoints/1" -H "Content-Type: application/json"
+func DeleteEndpointHandler(c *gin.Context) {
 	handler.EnsureMockService()
 
 	projectId := c.Param("projectId")
@@ -35,7 +35,7 @@ func ListResponsesHandler(c *gin.Context) {
 		return
 	}
 
-	// Check if endpoint exists and belongs to this project
+	// Check if endpoint exists
 	var endpoint database.MockEndpoint
 	result := database.GetDB().Where("id = ? AND project_id = ?", endpointID, projectId).First(&endpoint)
 	if result.Error != nil {
@@ -46,24 +46,18 @@ func ListResponsesHandler(c *gin.Context) {
 		return
 	}
 
-	// Get responses for this endpoint
-	var responses []database.MockResponse
-	result = database.GetDB().
-		Preload("Rules").
-		Where("endpoint_id = ?", endpoint.ID).
-		Order("priority").
-		Find(&responses)
-
+	// Delete the endpoint (GORM will cascade delete related responses and rules)
+	result = database.GetDB().Delete(&endpoint)
 	if result.Error != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error":   true,
-			"message": "Failed to retrieve responses: " + result.Error.Error(),
+			"message": "Failed to delete endpoint: " + result.Error.Error(),
 		})
 		return
 	}
 
 	c.JSON(http.StatusOK, gin.H{
 		"success": true,
-		"data":    responses,
+		"message": "Endpoint deleted successfully",
 	})
 }

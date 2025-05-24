@@ -18,7 +18,7 @@ Register a new user account with a personal workspace.
 
 **Request:**
 ```bash
-curl -X POST "http://localhost:3600/mock/api/auth/register" \
+curl -X POST "http://localhost:3600/api/api/auth/register" \
   -H "Content-Type: application/json" \
   -d '{
     "name": "John Doe",
@@ -47,7 +47,7 @@ Login with email and password to obtain a JWT token.
 
 **Request:**
 ```bash
-curl -X POST "http://localhost:3600/mock/api/auth/login" \
+curl -X POST "http://localhost:3600/api/api/auth/login" \
   -H "Content-Type: application/json" \
   -d '{
     "email": "admin@admin.com",
@@ -78,7 +78,7 @@ Retrieve all workspaces accessible to the authenticated user.
 
 **Request:**
 ```bash
-curl -X GET "http://localhost:3600/mock/api/workspaces" \
+curl -X GET "http://localhost:3600/api/api/workspaces" \
   -H "Authorization: Bearer YOUR_JWT_TOKEN"
 ```
 
@@ -109,7 +109,7 @@ Create a new workspace for the authenticated user.
 
 **Request:**
 ```bash
-curl -X POST "http://localhost:3600/mock/api/workspaces" \
+curl -X POST "http://localhost:3600/api/api/workspaces" \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer YOUR_JWT_TOKEN" \
   -d '{
@@ -137,7 +137,7 @@ Retrieve all projects within a specific workspace.
 
 **Request:**
 ```bash
-curl -X GET "http://localhost:3600/mock/api/workspaces/workspace-uuid-1/projects" \
+curl -X GET "http://localhost:3600/api/api/workspaces/workspace-uuid-1/projects" \
   -H "Authorization: Bearer YOUR_JWT_TOKEN"
 ```
 
@@ -168,11 +168,11 @@ Check the role of a user in a specific workspace.
 **Request:**
 ```bash
 # Check your own role
-curl -X GET "http://localhost:3600/mock/api/workspaces/workspace-uuid-1/role" \
+curl -X GET "http://localhost:3600/api/api/workspaces/workspace-uuid-1/role" \
   -H "Authorization: Bearer YOUR_JWT_TOKEN"
 
 # Admins can check other users' roles
-curl -X GET "http://localhost:3600/mock/api/workspaces/workspace-uuid-1/role?user_id=other-user-uuid" \
+curl -X GET "http://localhost:3600/api/api/workspaces/workspace-uuid-1/role?user_id=other-user-uuid" \
   -H "Authorization: Bearer YOUR_JWT_TOKEN"
 ```
 
@@ -196,7 +196,7 @@ The existing projects API has been updated to respect workspace permissions:
 
 **Request:**
 ```bash
-curl -X GET "http://localhost:3600/mock/api/projects" \
+curl -X GET "http://localhost:3600/api/api/projects" \
   -H "Authorization: Bearer YOUR_JWT_TOKEN"
 ```
 
@@ -224,7 +224,7 @@ curl -X GET "http://localhost:3600/mock/api/projects" \
 
 **Request:**
 ```bash
-curl -X POST "http://localhost:3600/mock/api/workspaces/workspace-uuid-1/projects" \
+curl -X POST "http://localhost:3600/api/api/workspaces/workspace-uuid-1/projects" \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer YOUR_JWT_TOKEN" \
   -d '{
@@ -261,15 +261,15 @@ All project resources are now accessed through a hierarchical structure that enf
 
 ```bash
 # Get project details using the hierarchical structure
-curl -X GET "http://localhost:3600/mock/api/workspaces/workspace-uuid-1/projects/project-uuid-1" \
+curl -X GET "http://localhost:3600/api/api/workspaces/workspace-uuid-1/projects/project-uuid-1" \
   -H "Authorization: Bearer YOUR_JWT_TOKEN"
 
 # Manage endpoints
-curl -X GET "http://localhost:3600/mock/api/workspaces/workspace-uuid-1/projects/project-uuid-1/endpoints" \
+curl -X GET "http://localhost:3600/api/api/workspaces/workspace-uuid-1/projects/project-uuid-1/endpoints" \
   -H "Authorization: Bearer YOUR_JWT_TOKEN"
 
 # Create a new endpoint in a workspace project
-curl -X POST "http://localhost:3600/mock/api/workspaces/workspace-uuid-1/projects/project-uuid-1/endpoints" \
+curl -X POST "http://localhost:3600/api/api/workspaces/workspace-uuid-1/projects/project-uuid-1/endpoints" \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer YOUR_JWT_TOKEN" \
   -d '{
@@ -281,19 +281,19 @@ curl -X POST "http://localhost:3600/mock/api/workspaces/workspace-uuid-1/project
   }'
 
 # View project logs
-curl -X GET "http://localhost:3600/mock/api/workspaces/workspace-uuid-1/projects/project-uuid-1/logs" \
+curl -X GET "http://localhost:3600/api/api/workspaces/workspace-uuid-1/projects/project-uuid-1/logs" \
   -H "Authorization: Bearer YOUR_JWT_TOKEN"
   
 # Stream real-time logs from a project
-curl -X GET "http://localhost:3600/mock/api/workspaces/workspace-uuid-1/projects/project-uuid-1/logs/stream" \
+curl -X GET "http://localhost:3600/api/api/workspaces/workspace-uuid-1/projects/project-uuid-1/logs/stream" \
   -H "Authorization: Bearer YOUR_JWT_TOKEN"
   
 # Manage endpoint responses
-curl -X GET "http://localhost:3600/mock/api/workspaces/workspace-uuid-1/projects/project-uuid-1/endpoints/endpoint-uuid-1/responses" \
+curl -X GET "http://localhost:3600/api/api/workspaces/workspace-uuid-1/projects/project-uuid-1/endpoints/endpoint-uuid-1/responses" \
   -H "Authorization: Bearer YOUR_JWT_TOKEN"
   
 # Create a response for an endpoint
-curl -X POST "http://localhost:3600/mock/api/workspaces/workspace-uuid-1/projects/project-uuid-1/endpoints/endpoint-uuid-1/responses" \
+curl -X POST "http://localhost:3600/api/api/workspaces/workspace-uuid-1/projects/project-uuid-1/endpoints/endpoint-uuid-1/responses" \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer YOUR_JWT_TOKEN" \
   -d '{
@@ -318,7 +318,7 @@ Each request is automatically validated to ensure:
 Retrieve all workspaces accessible to the authenticated user:
 
 ```bash
-curl -X GET "http://localhost:3600/mock/api/workspaces" \
+curl -X GET "http://localhost:3600/api/api/workspaces" \
   -H "Authorization: Bearer YOUR_JWT_TOKEN"
 ```
 
@@ -327,7 +327,7 @@ curl -X GET "http://localhost:3600/mock/api/workspaces" \
 Create a new workspace and automatically assign the authenticated user as an admin:
 
 ```bash
-curl -X POST "http://localhost:3600/mock/api/workspaces" \
+curl -X POST "http://localhost:3600/api/api/workspaces" \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer YOUR_JWT_TOKEN" \
   -d '{
@@ -340,14 +340,14 @@ curl -X POST "http://localhost:3600/mock/api/workspaces" \
 Check the authenticated user's role in a specific workspace:
 
 ```bash
-curl -X GET "http://localhost:3600/mock/api/workspaces/workspace-uuid-1/role" \
+curl -X GET "http://localhost:3600/api/api/workspaces/workspace-uuid-1/role" \
   -H "Authorization: Bearer YOUR_JWT_TOKEN"
 ```
 
 Admin users can also check other users' roles:
 
 ```bash
-curl -X GET "http://localhost:3600/mock/api/workspaces/workspace-uuid-1/role?user_id=other-user-uuid" \
+curl -X GET "http://localhost:3600/api/api/workspaces/workspace-uuid-1/role?user_id=other-user-uuid" \
   -H "Authorization: Bearer YOUR_JWT_TOKEN"
 ```
 
@@ -357,11 +357,11 @@ For backward compatibility, the following routes are still supported:
 
 ```bash
 # List all projects (filtered by workspace access)
-curl -X GET "http://localhost:3600/mock/api/projects" \
+curl -X GET "http://localhost:3600/api/api/projects" \
   -H "Authorization: Bearer YOUR_JWT_TOKEN"
 
 # Create a project (without specifying workspace)
-curl -X POST "http://localhost:3600/mock/api/projects" \
+curl -X POST "http://localhost:3600/api/api/projects" \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer YOUR_JWT_TOKEN" \
   -d '{

@@ -6,7 +6,7 @@ import (
 	"github.com/gin-gonic/gin"
 
 	"beo-echo/backend/src/database"
-	"beo-echo/backend/src/mocks/services"
+	"beo-echo/backend/src/echo/services"
 )
 
 // RuleHandler handles HTTP requests for rules
@@ -24,7 +24,7 @@ func NewRuleHandler(ruleService *services.RuleService) *RuleHandler {
 // ListRulesHandler lists all rules for a response
 //
 // Sample curl:
-// curl -X GET "http://localhost:3600/mock/api/projects/my-project/endpoints/endpoint-id/responses/response-id/rules" -H "Content-Type: application/json"
+// curl -X GET "http://localhost:3600/api/api/projects/my-project/endpoints/endpoint-id/responses/response-id/rules" -H "Content-Type: application/json"
 func (h *RuleHandler) ListRulesHandler(c *gin.Context) {
 	if h.service == nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
@@ -90,7 +90,7 @@ func (h *RuleHandler) ListRulesHandler(c *gin.Context) {
 // GetRuleHandler retrieves a rule by ID
 //
 // Sample curl:
-// curl -X GET "http://localhost:3600/mock/api/projects/my-project/endpoints/endpoint-id/responses/response-id/rules/rule-id" -H "Content-Type: application/json"
+// curl -X GET "http://localhost:3600/api/api/projects/my-project/endpoints/endpoint-id/responses/response-id/rules/rule-id" -H "Content-Type: application/json"
 func (h *RuleHandler) GetRuleHandler(c *gin.Context) {
 	if h.service == nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
@@ -166,7 +166,7 @@ func (h *RuleHandler) GetRuleHandler(c *gin.Context) {
 //
 // Sample curl:
 //
-//	curl -X POST "http://localhost:3600/mock/api/projects/my-project/endpoints/endpoint-id/responses/response-id/rules" \
+//	curl -X POST "http://localhost:3600/api/api/projects/my-project/endpoints/endpoint-id/responses/response-id/rules" \
 //	  -H "Content-Type: application/json" \
 //	  -d '{
 //	    "type": "header",
@@ -255,7 +255,7 @@ func (h *RuleHandler) CreateRuleHandler(c *gin.Context) {
 //
 // Sample curl:
 //
-//	curl -X PUT "http://localhost:3600/mock/api/projects/my-project/endpoints/endpoint-id/responses/response-id/rules/rule-id" \
+//	curl -X PUT "http://localhost:3600/api/api/projects/my-project/endpoints/endpoint-id/responses/response-id/rules/rule-id" \
 //	  -H "Content-Type: application/json" \
 //	  -d '{
 //	    "type": "query",
@@ -349,7 +349,7 @@ func (h *RuleHandler) UpdateRuleHandler(c *gin.Context) {
 // DeleteRuleHandler deletes a rule
 //
 // Sample curl:
-// curl -X DELETE "http://localhost:3600/mock/api/projects/my-project/endpoints/endpoint-id/responses/response-id/rules/rule-id" -H "Content-Type: application/json"
+// curl -X DELETE "http://localhost:3600/api/api/projects/my-project/endpoints/endpoint-id/responses/response-id/rules/rule-id" -H "Content-Type: application/json"
 func (h *RuleHandler) DeleteRuleHandler(c *gin.Context) {
 
 	if h.service == nil {
@@ -425,7 +425,7 @@ func (h *RuleHandler) DeleteRuleHandler(c *gin.Context) {
 // DeleteAllRulesHandler deletes all rules for a response
 //
 // Sample curl:
-// curl -X DELETE "http://localhost:3600/mock/api/projects/my-project/endpoints/endpoint-id/responses/response-id/rules" -H "Content-Type: application/json"
+// curl -X DELETE "http://localhost:3600/api/api/projects/my-project/endpoints/endpoint-id/responses/response-id/rules" -H "Content-Type: application/json"
 func (h *RuleHandler) DeleteAllRulesHandler(c *gin.Context) {
 	if h.service == nil {
 		c.JSON(http.StatusInternalServerError, gin.H{

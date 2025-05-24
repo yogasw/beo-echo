@@ -14,7 +14,7 @@ import (
 	"time"
 
 	"beo-echo/backend/src/database"
-	"beo-echo/backend/src/mocks/repositories"
+	"beo-echo/backend/src/echo/repositories"
 )
 
 // MockService handles mock response logic

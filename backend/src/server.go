@@ -17,15 +17,15 @@ import (
 	"beo-echo/backend/src/caddy/scripts"
 	"beo-echo/backend/src/database"
 	"beo-echo/backend/src/database/repositories"
+	"beo-echo/backend/src/echo/handler"
+	"beo-echo/backend/src/echo/handler/endpoint"
+	"beo-echo/backend/src/echo/handler/project"
+	"beo-echo/backend/src/echo/handler/proxy"
+	"beo-echo/backend/src/echo/handler/response"
+	"beo-echo/backend/src/echo/services"
 	"beo-echo/backend/src/health"
 	"beo-echo/backend/src/lib"
 	"beo-echo/backend/src/middlewares"
-	"beo-echo/backend/src/mocks/handler"
-	"beo-echo/backend/src/mocks/handler/endpoint"
-	"beo-echo/backend/src/mocks/handler/project"
-	"beo-echo/backend/src/mocks/handler/proxy"
-	"beo-echo/backend/src/mocks/handler/response"
-	"beo-echo/backend/src/mocks/services"
 	"beo-echo/backend/src/users"
 	"beo-echo/backend/src/utils"
 	"beo-echo/backend/src/workspaces"
@@ -79,12 +79,12 @@ func SetupRouter() *gin.Engine {
 	}
 
 	// Basic route for checking if server is running
-	router.GET("/mock", func(c *gin.Context) {
+	router.GET("/", func(c *gin.Context) {
 		c.String(http.StatusOK, "Server is running!")
 	})
 
 	// Health check route
-	router.GET("/mock/api/health", health.HealthCheckHandler)
+	router.GET("/api/health", health.HealthCheckHandler)
 
 	// Initialize user repository for auth service
 	userRepo := repositories.NewUserRepository(database.DB)
@@ -114,14 +114,14 @@ func SetupRouter() *gin.Engine {
 	ruleHandler := handler.NewRuleHandler(ruleService)
 
 	// Authentication routes
-	router.POST("/mock/api/auth/login", authHandler.LoginHandler)
+	router.POST("/api/auth/login", authHandler.LoginHandler)
 
 	// Public OAuth routes
-	router.GET("/mock/api/oauth/google/login", googleOAuthHandler.InitiateLogin)
-	router.GET("/mock/api/oauth/google/callback", googleOAuthHandler.HandleCallback)
+	router.GET("/api/oauth/google/login", googleOAuthHandler.InitiateLogin)
+	router.GET("/api/oauth/google/callback", googleOAuthHandler.HandleCallback)
 
 	// Protected API routes group
-	apiGroup := router.Group("/mock/api")
+	apiGroup := router.Group("/api")
 	apiGroup.Use(middlewares.JWTAuthMiddleware())
 	{
 		// Owner-only system configuration routes
@@ -303,8 +303,8 @@ func StartServer() error {
 	log.Printf("=================================================")
 	log.Printf("🚀 BeoEcho server is starting up!")
 	log.Printf("🔗 Server URL: http://%s", serverAddr)
-	log.Printf("📄 API endpoint: http://%s/mock/api", serverAddr)
-	log.Printf("🔍 Health check: http://%s/mock/api/health", serverAddr)
+	log.Printf("📄 API endpoint: http://%s/api", serverAddr)
+	log.Printf("🔍 Health check: http://%s/api/health", serverAddr)
 	log.Printf("=================================================")
 
 	// This will block until the server is stopped

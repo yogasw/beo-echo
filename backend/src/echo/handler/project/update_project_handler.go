@@ -6,7 +6,7 @@ import (
 	"github.com/gin-gonic/gin"
 
 	"beo-echo/backend/src/database"
-	"beo-echo/backend/src/mocks/handler"
+	"beo-echo/backend/src/echo/handler"
 )
 
 /*
@@ -14,7 +14,7 @@ UpdateProjectHandler updates an existing project
 
 Sample curl:
 
-	curl -X PUT "http://localhost:3600/mock/api/projects/my-new-project" \
+	curl -X PUT "http://localhost:3600/api/api/projects/my-new-project" \
 	  -H "Content-Type: application/json" \
 	  -d '{
 	    "mode": "proxy",

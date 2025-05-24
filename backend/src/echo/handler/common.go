@@ -4,8 +4,8 @@ import (
 	"log"
 
 	"beo-echo/backend/src/database"
-	"beo-echo/backend/src/mocks/repositories"
-	"beo-echo/backend/src/mocks/services"
+	"beo-echo/backend/src/echo/repositories"
+	"beo-echo/backend/src/echo/services"
 )
 
 // Gin context keys

@@ -7,7 +7,7 @@ import (
 	"github.com/gin-gonic/gin"
 
 	"beo-echo/backend/src/database"
-	"beo-echo/backend/src/mocks/handler"
+	"beo-echo/backend/src/echo/handler"
 )
 
 /*
@@ -15,7 +15,7 @@ UpdateEndpointHandler updates an existing endpoint
 
 Sample curl:
 
-	curl -X PUT "http://localhost:3600/mock/api/projects/my-new-project/endpoints/1" \
+	curl -X PUT "http://localhost:3600/api/api/projects/my-new-project/endpoints/1" \
 	  -H "Content-Type: application/json" \
 	  -d '{
 	    "method": "POST",

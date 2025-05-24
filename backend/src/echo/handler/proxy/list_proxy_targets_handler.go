@@ -6,7 +6,7 @@ import (
 	"github.com/gin-gonic/gin"
 
 	"beo-echo/backend/src/database"
-	"beo-echo/backend/src/mocks/handler"
+	"beo-echo/backend/src/echo/handler"
 )
 
 // ListProxyTargetsHandler lists all proxy targets for a project

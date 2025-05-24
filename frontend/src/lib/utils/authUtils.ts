@@ -1,7 +1,7 @@
 import type { User } from '$lib/types/User';
 
 // Define API base URL
-export const BASE_URL_API = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3600/mock/api';
+export const BASE_URL_API = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3600/api';
 
 /**
  * Fetch full user profile including ownership status

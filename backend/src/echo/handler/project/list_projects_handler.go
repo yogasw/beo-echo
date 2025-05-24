@@ -7,13 +7,13 @@ import (
 	"gorm.io/gorm"
 
 	"beo-echo/backend/src/database"
-	"beo-echo/backend/src/mocks/handler"
+	"beo-echo/backend/src/echo/handler"
 )
 
 // ListProjectsHandler lists projects accessible to the authenticated user
 //
 // Sample curl:
-// curl -X GET "http://localhost:3600/mock/api/projects" -H "Content-Type: application/json" -H "Authorization: Bearer TOKEN"
+// curl -X GET "http://localhost:3600/api/api/projects" -H "Content-Type: application/json" -H "Authorization: Bearer TOKEN"
 
 // GetWorkspaceProjectsHandler returns all projects in a workspace
 func ListProjectsHandler(c *gin.Context) {

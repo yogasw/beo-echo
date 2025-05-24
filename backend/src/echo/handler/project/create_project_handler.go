@@ -7,7 +7,7 @@ import (
 	"gorm.io/gorm"
 
 	"beo-echo/backend/src/database"
-	"beo-echo/backend/src/mocks/handler"
+	"beo-echo/backend/src/echo/handler"
 )
 
 /*
@@ -15,7 +15,7 @@ CreateProjectHandler creates a new project
 
 Sample curl:
 
-	curl -X POST "http://localhost:3600/mock/api/projects" \
+	curl -X POST "http://localhost:3600/api/api/projects" \
 		-H "Content-Type: application/json" \
 		-d '{
 		 "name": "my-new-project",

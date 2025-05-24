@@ -6,13 +6,13 @@ import (
 	"github.com/gin-gonic/gin"
 
 	"beo-echo/backend/src/database"
-	"beo-echo/backend/src/mocks/handler"
+	"beo-echo/backend/src/echo/handler"
 )
 
 // DeleteProjectHandler removes a project
 //
 // Sample curl:
-// curl -X DELETE "http://localhost:3600/mock/api/projects/my-new-project" -H "Content-Type: application/json"
+// curl -X DELETE "http://localhost:3600/api/api/projects/my-new-project" -H "Content-Type: application/json"
 func DeleteProjectHandler(c *gin.Context) {
 	handler.EnsureMockService()
 

@@ -6,13 +6,13 @@ import (
 	"github.com/gin-gonic/gin"
 
 	"beo-echo/backend/src/database"
-	"beo-echo/backend/src/mocks/handler"
+	"beo-echo/backend/src/echo/handler"
 )
 
 // DeleteResponseHandler removes a response
 //
 // Sample curl:
-// curl -X DELETE "http://localhost:3600/mock/api/projects/my-new-project/endpoints/2/responses/1" -H "Content-Type: application/json"
+// curl -X DELETE "http://localhost:3600/api/api/projects/my-new-project/endpoints/2/responses/1" -H "Content-Type: application/json"
 func DeleteResponseHandler(c *gin.Context) {
 	handler.EnsureMockService()
 

@@ -39,8 +39,8 @@ The service supports two database backends:
 By default, the server runs on port 3600:
 
 - Server URL: http://localhost:3600
-- API Base URL: http://localhost:3600/mock/api
-- Health Check: http://localhost:3600/mock/api/health
+- API Base URL: http://localhost:3600/api/api
+- Health Check: http://localhost:3600/api/api/health
 - Mock APIs: http://localhost:3600/{project-name}/{endpoint-path}
 
 To specify a different port, use the `-p` flag:
@@ -99,7 +99,7 @@ Beo Echo implements a complete authentication system with JWT tokens:
 - **Project Access Control**: Projects belong to workspaces with controlled access
 
 To authenticate API requests:
-1. Login via `/mock/api/auth/login` to get a JWT token
+1. Login via `/api/auth/login` to get a JWT token
 2. Include the token in the `Authorization` header: `Bearer {your-token}`
 
 ## Multi-User Collaboration

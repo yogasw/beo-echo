@@ -7,7 +7,7 @@ import (
 	"gorm.io/gorm"
 
 	"beo-echo/backend/src/database"
-	"beo-echo/backend/src/mocks/handler"
+	"beo-echo/backend/src/echo/handler"
 )
 
 // CreateProjectWithWorkspaceHandler creates a new project within a specified workspace

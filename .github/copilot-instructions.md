@@ -579,7 +579,7 @@ backend/                   # Golang Backend
 │   │   ├── db.go          # Database connection management
 │   │   └── *_repo.go      # Repository implementations
 │   ├── middlewares/       # HTTP middleware components
-│   ├── mocks/             # Mock API management
+│   ├── echo/              # Mock API management
 │   │   ├── handler/       # HTTP handlers for mock endpoints
 │   │   ├── services/      # Mock routing business logic
 │   │   └── repositories/  # Data access layer

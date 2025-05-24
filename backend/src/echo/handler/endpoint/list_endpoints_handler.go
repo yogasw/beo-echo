@@ -6,13 +6,13 @@ import (
 	"github.com/gin-gonic/gin"
 
 	"beo-echo/backend/src/database"
-	"beo-echo/backend/src/mocks/handler"
+	"beo-echo/backend/src/echo/handler"
 )
 
 // ListEndpointsHandler lists all endpoints for a project
 //
 // Sample curl:
-// curl -X GET "http://localhost:3600/mock/api/projects/my-new-project/endpoints" -H "Content-Type: application/json"
+// curl -X GET "http://localhost:3600/api/api/projects/my-new-project/endpoints" -H "Content-Type: application/json"
 func ListEndpointsHandler(c *gin.Context) {
 	handler.EnsureMockService()
 
