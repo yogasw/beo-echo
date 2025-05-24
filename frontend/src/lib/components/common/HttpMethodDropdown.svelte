@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { createEventDispatcher } from 'svelte';
+  import { createEventDispatcher, onMount, afterUpdate } from 'svelte';
   
   const dispatch = createEventDispatcher<{
     change: { value: string; method: HttpMethod }
@@ -79,12 +79,17 @@
   let inputElement: HTMLInputElement;
   let dropdownElement: HTMLDivElement;
   let selectedIndex = -1;
+  let methodBadgeElement: HTMLElement;
 
   $: selectedMethod = httpMethods.find(m => m.value === value) || httpMethods[0];
   $: filteredMethods = httpMethods.filter(method => 
     method.value.toLowerCase().includes(searchTerm.toLowerCase()) ||
     method.description.toLowerCase().includes(searchTerm.toLowerCase())
   );
+
+  // Calculate dynamic padding based on method badge width
+  // Add extra padding: 12px (container left padding) + badge width + 12px (gap between badge and text)
+  let dynamicPadding = '56px'; // Default fallback
 
   function selectMethod(method: HttpMethod) {
     value = method.value;
@@ -160,6 +165,26 @@
       selectedIndex = -1;
     }
   }
+
+  function updatePadding() {
+    if (methodBadgeElement) {
+      const badgeWidth = methodBadgeElement.offsetWidth;
+      const containerPadding = 10; // pl-3 = 10px
+      const gapBetweenBadgeAndText = 10; // 10px gap
+      const totalPadding = containerPadding + badgeWidth + gapBetweenBadgeAndText;
+      dynamicPadding = `${totalPadding}px`;
+      
+      console.log(`Method: ${selectedMethod.value}, Badge width: ${badgeWidth}px, Total padding: ${totalPadding}px`);
+    }
+  }
+
+  onMount(() => {
+    updatePadding();
+  });
+
+  afterUpdate(() => {
+    updatePadding();
+  });
 </script>
 
 <svelte:window on:click={handleClickOutside} />
@@ -178,9 +203,10 @@
         bind:value={searchTerm}
         id="http-method"
         type="text"
-        class="bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white rounded-lg block w-full py-3 pl-14 pr-10 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors focus:outline-none cursor-pointer"
+        class="bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white rounded-lg block w-full py-3 pr-10 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors focus:outline-none cursor-pointer"
         class:border-red-500={error}
         class:dark:border-red-500={error}
+        style="padding-left: {dynamicPadding}"
         placeholder={isOpen ? 'Type to search...' : (selectedMethod ? selectedMethod.label : placeholder)}
         {disabled}
         on:keydown={handleInputKeydown}
@@ -191,7 +217,10 @@
       
       <!-- Method Badge -->
       <div class="absolute inset-y-0 left-0 flex items-center pl-3">
-        <span class="px-2 py-1 rounded text-xs font-medium text-white {selectedMethod.bgColor}">
+        <span 
+          bind:this={methodBadgeElement}
+          class="px-2 py-1 rounded text-xs font-medium text-white {selectedMethod.bgColor}"
+        >
           {selectedMethod.value}
         </span>
       </div>
