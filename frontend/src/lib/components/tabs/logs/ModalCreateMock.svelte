@@ -3,6 +3,8 @@
   import { addEndpoint, addResponse, type RequestLog } from '$lib/api/BeoApi';
   import { toast } from '$lib/stores/toast';
   import { theme } from '$lib/stores/theme';
+  import HttpMethodDropdown from '$lib/components/common/HttpMethodDropdown.svelte';
+  import StatusCodeInput from '$lib/components/common/StatusCodeInput.svelte';
   
   export let isOpen: boolean;
   export let log: RequestLog | null = null;
@@ -20,29 +22,6 @@
   let error: string | null = null;
   let currentStep = 1;
   let validationErrors: Record<string, string> = {};
-
-  // HTTP methods for dropdown with colors
-  const methods = [
-    { value: 'GET', label: 'GET', color: 'text-green-400' },
-    { value: 'POST', label: 'POST', color: 'text-blue-400' },
-    { value: 'PUT', label: 'PUT', color: 'text-yellow-400' },
-    { value: 'DELETE', label: 'DELETE', color: 'text-red-400' },
-    { value: 'PATCH', label: 'PATCH', color: 'text-purple-400' },
-    { value: 'OPTIONS', label: 'OPTIONS', color: 'text-gray-400' },
-    { value: 'HEAD', label: 'HEAD', color: 'text-gray-400' }
-  ];
-
-  // Common status codes with descriptions
-  const statusCodes = [
-    { code: 200, description: 'OK - Success' },
-    { code: 201, description: 'Created - Resource created' },
-    { code: 204, description: 'No Content - Success with no response body' },
-    { code: 400, description: 'Bad Request - Invalid request' },
-    { code: 401, description: 'Unauthorized - Authentication required' },
-    { code: 403, description: 'Forbidden - Access denied' },
-    { code: 404, description: 'Not Found - Resource not found' },
-    { code: 500, description: 'Internal Server Error - Server error' }
-  ];
 
   // Initialize values from log when opened
   $: if (log && isOpen) {
@@ -337,28 +316,11 @@
             <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
               <!-- Method Selection -->
               <div class="md:col-span-1">
-                <label for="method" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  <i class="fas fa-code mr-2"></i>HTTP Method
-                </label>
-                <div class="relative">
-                  <select
-                    id="method"
-                    bind:value={method}
-                    class="bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white rounded-lg block w-full py-3 pl-4 pr-10 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors focus:outline-none"
-                    class:border-red-500={validationErrors.method}
-                    class:dark:border-red-500={validationErrors.method}
-                  >
-                    {#each methods as httpMethod}
-                      <option value={httpMethod.value}>{httpMethod.label}</option>
-                    {/each}
-                  </select>
-                  <div class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
-                    <i class="fas fa-chevron-down text-gray-400"></i>
-                  </div>
-                </div>
-                {#if validationErrors.method}
-                  <p class="text-red-500 dark:text-red-400 text-xs mt-1">{validationErrors.method}</p>
-                {/if}
+                <HttpMethodDropdown 
+                  bind:value={method}
+                  error={validationErrors.method}
+                  on:change={(e: CustomEvent) => method = e.detail.value}
+                />
               </div>
               
               <!-- Path Input -->
@@ -422,44 +384,11 @@
             
             <!-- Status Code -->
             <div class="mb-6">
-              <label for="statusCode" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                <i class="fas fa-hashtag mr-2"></i>Status Code
-              </label>
-              <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-3">
-                {#each statusCodes as status}
-                  <button
-                    type="button"
-                    class="p-3 rounded-lg border text-left transition-all hover:scale-105 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    class:bg-blue-600={statusCode === status.code}
-                    class:border-blue-500={statusCode === status.code}
-                    class:text-white={statusCode === status.code}
-                    class:bg-white={statusCode !== status.code && $theme === 'light'}
-                    class:bg-gray-700={statusCode !== status.code && $theme === 'dark'}
-                    class:border-gray-300={statusCode !== status.code && $theme === 'light'}
-                    class:border-gray-600={statusCode !== status.code && $theme === 'dark'}
-                    class:text-gray-800={statusCode !== status.code && $theme === 'light'}
-                    class:text-gray-300={statusCode !== status.code && $theme === 'dark'}
-                    class:hover:border-blue-400={statusCode !== status.code}
-                    on:click={() => statusCode = status.code}
-                  >
-                    <div class="font-bold text-lg">{status.code}</div>
-                    <div class="text-xs opacity-80">{status.description.split(' - ')[1]}</div>
-                  </button>
-                {/each}
-              </div>
-              <input
-                type="number"
-                id="statusCode"
+              <StatusCodeInput 
                 bind:value={statusCode}
-                min="100"
-                max="599"
-                class="bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white rounded-lg block w-full py-3 px-4 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors focus:outline-none"
-                class:border-red-500={validationErrors.statusCode}
-                class:dark:border-red-500={validationErrors.statusCode}
+                error={validationErrors.statusCode}
+                on:change={(e: CustomEvent) => statusCode = e.detail.value}
               />
-              {#if validationErrors.statusCode}
-                <p class="text-red-500 dark:text-red-400 text-xs mt-1">{validationErrors.statusCode}</p>
-              {/if}
             </div>
             
             <!-- Response Body -->
