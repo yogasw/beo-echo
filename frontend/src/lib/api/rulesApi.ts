@@ -9,6 +9,7 @@ export type Rule = {
   key: string;        // The key to match against
   operator: string;   // "equals", "contains", "regex"
   value: string;      // The value to match
+  isNew?: boolean; // Optional, used for UI state management
 };
 
 // Get all rules for a response
