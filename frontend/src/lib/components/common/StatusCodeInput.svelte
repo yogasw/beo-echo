@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { createEventDispatcher } from 'svelte';
+  import { createEventDispatcher, onMount, afterUpdate } from 'svelte';
   
   const dispatch = createEventDispatcher<{
     change: { value: number; statusCode: StatusCode }
@@ -61,15 +61,42 @@
   let inputElement: HTMLInputElement;
   let dropdownElement: HTMLDivElement;
   let selectedIndex = -1;
+  let statusBadgeElement: HTMLElement;
 
   $: selectedStatus = statusCodes.find(s => s.code === value) || 
     { code: value, name: 'Custom', description: 'Custom status code', category: 'Custom', color: 'text-gray-600', bgColor: 'bg-gray-600' };
   
-  $: filteredCodes = statusCodes.filter(status => 
-    status.code.toString().includes(searchTerm) ||
-    status.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    status.description.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  // Enhanced filtering: supports multi-criteria search (numeric + text)
+  $: filteredCodes = statusCodes.filter(status => {
+    const search = searchTerm.toLowerCase().trim();
+    
+    if (!search) return true;
+    
+    // Split search terms by spaces for multi-criteria search
+    const searchTerms = search.split(/\s+/).filter(term => term.length > 0);
+    
+    // All terms must match (AND logic)
+    return searchTerms.every(term => {
+      // Check if term is numeric
+      if (/^\d/.test(term)) {
+        // Support searching for ranges like "20" matches "200-299"
+        if (term.length <= 2) {
+          return status.code.toString().startsWith(term);
+        } else {
+          // Exact or partial code match
+          return status.code.toString().includes(term);
+        }
+      } else {
+        // Text-based search in name, description, and category
+        return status.name.toLowerCase().includes(term) ||
+               status.description.toLowerCase().includes(term) ||
+               status.category.toLowerCase().includes(term);
+      }
+    });
+  });
+
+  // Calculate dynamic padding based on status badge width
+  let dynamicPadding = '56px'; // Default fallback
 
   function selectStatusCode(status: StatusCode) {
     value = status.code;
@@ -167,6 +194,26 @@
       selectedIndex = -1;
     }
   }
+
+  function updatePadding() {
+    if (statusBadgeElement) {
+      const badgeWidth = statusBadgeElement.offsetWidth;
+      const containerPadding = 12; // pl-3 = 12px
+      const gapBetweenBadgeAndText = 12; // 12px gap
+      const totalPadding = containerPadding + badgeWidth + gapBetweenBadgeAndText;
+      dynamicPadding = `${totalPadding}px`;
+      
+      console.log(`Status: ${selectedStatus.code}, Badge width: ${badgeWidth}px, Total padding: ${totalPadding}px`);
+    }
+  }
+
+  onMount(() => {
+    updatePadding();
+  });
+
+  afterUpdate(() => {
+    updatePadding();
+  });
 </script>
 
 <svelte:window on:click={handleClickOutside} />
@@ -213,13 +260,12 @@
         bind:this={inputElement}
         bind:value={searchTerm}
         id="status-code"
-        type="number"
-        min="100"
-        max="599"
-        class="bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white rounded-lg block w-full py-3 pl-14 pr-10 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors focus:outline-none"
+        type="text"
+        class="bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white rounded-lg block w-full py-3 pr-10 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors focus:outline-none"
         class:border-red-500={error}
         class:dark:border-red-500={error}
-        placeholder={isOpen ? 'Type to search...' : (value ? value.toString() : placeholder)}
+        style="padding-left: {dynamicPadding}"
+        placeholder={isOpen ? 'Type to search codes, names, or descriptions... (e.g., "20 ok", "40 error")' : (value ? value.toString() : placeholder)}
         {disabled}
         on:keydown={handleInputKeydown}
         on:focus={handleInputFocus}
@@ -230,7 +276,10 @@
       
       <!-- Status Badge -->
       <div class="absolute inset-y-0 left-0 flex items-center pl-3">
-        <span class="px-2 py-1 rounded text-xs font-medium text-white {selectedStatus.bgColor}">
+        <span 
+          bind:this={statusBadgeElement}
+          class="px-2 py-1 rounded text-xs font-medium text-white {selectedStatus.bgColor}"
+        >
           {selectedStatus.code}
         </span>
       </div>
@@ -286,7 +335,44 @@
         {#if filteredCodes.length === 0}
           <div class="px-4 py-3 text-gray-500 dark:text-gray-400 text-sm">
             <i class="fas fa-search mr-2"></i>No status codes found
+            {#if searchTerm.trim()}
+              <div class="mt-1 text-xs">
+                Try searching for:
+                <ul class="list-disc list-inside mt-1 space-y-1">
+                  <li>Status code numbers (e.g., "20" for 2xx codes, "404")</li>
+                  <li>Status names (e.g., "success", "error", "not found")</li>
+                  <li>Categories (e.g., "client error", "server error")</li>
+                  <li>Combined search (e.g., "20 ok", "40 error", "50 server")</li>
+                </ul>
+              </div>
+            {/if}
           </div>
+        {/if}
+        
+        <!-- Custom status code option -->
+        {#if searchTerm.trim() && !isNaN(Number(searchTerm)) && Number(searchTerm) >= 100 && Number(searchTerm) <= 599 && !filteredCodes.some(s => s.code === Number(searchTerm))}
+          <button
+            type="button"
+            class="w-full text-left px-4 py-3 hover:bg-gray-100 dark:hover:bg-gray-600 focus:bg-gray-100 dark:focus:bg-gray-600 focus:outline-none transition-colors border-t border-gray-200 dark:border-gray-600"
+            on:click={() => selectStatusCode({
+              code: Number(searchTerm),
+              name: 'Custom',
+              description: 'Custom status code',
+              category: 'Custom',
+              color: 'text-gray-600',
+              bgColor: 'bg-gray-600'
+            })}
+          >
+            <div class="flex items-center">
+              <span class="px-2 py-1 rounded text-xs font-medium text-white mr-3 bg-gray-600">
+                {searchTerm}
+              </span>
+              <div>
+                <div class="font-medium text-gray-900 dark:text-white">Use "{searchTerm}"</div>
+                <div class="text-xs text-gray-500 dark:text-gray-400">Custom status code</div>
+              </div>
+            </div>
+          </button>
         {/if}
       </div>
     {/if}

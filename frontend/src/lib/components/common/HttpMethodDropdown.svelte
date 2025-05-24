@@ -82,10 +82,20 @@
   let methodBadgeElement: HTMLElement;
 
   $: selectedMethod = httpMethods.find(m => m.value === value) || httpMethods[0];
-  $: filteredMethods = httpMethods.filter(method => 
-    method.value.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    method.description.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  $: filteredMethods = httpMethods.filter(method => {
+    const search = searchTerm.toLowerCase().trim();
+    
+    if (!search) return true;
+    
+    // Split search terms by spaces for multi-criteria search
+    const searchTerms = search.split(/\s+/).filter(term => term.length > 0);
+    
+    // All terms must match (AND logic)
+    return searchTerms.every(term =>
+      method.value.toLowerCase().includes(term) ||
+      method.description.toLowerCase().includes(term)
+    );
+  });
 
   // Calculate dynamic padding based on method badge width
   // Add extra padding: 12px (container left padding) + badge width + 12px (gap between badge and text)
@@ -207,7 +217,7 @@
         class:border-red-500={error}
         class:dark:border-red-500={error}
         style="padding-left: {dynamicPadding}"
-        placeholder={isOpen ? 'Type to search...' : (selectedMethod ? selectedMethod.label : placeholder)}
+        placeholder={isOpen ? 'Type to search... (e.g., "get data", "post create")' : (selectedMethod ? selectedMethod.label : placeholder)}
         {disabled}
         on:keydown={handleInputKeydown}
         on:focus={handleInputFocus}
