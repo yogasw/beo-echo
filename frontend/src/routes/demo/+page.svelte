@@ -11,6 +11,13 @@
       tags: ['Components', 'Search', 'Padding', 'UX']
     },
     {
+      title: 'Reusable Badges',
+      description: 'Consistent badge components for HTTP methods and status codes with uniform styling across the application',
+      href: '/demo/badges',
+      icon: 'fas fa-tags',
+      tags: ['Badges', 'Consistency', 'Reusable', 'Status Codes', 'HTTP Methods']
+    },
+    {
       title: 'Toggle Switch',
       description: 'Interactive toggle switch component demonstrations',
       href: '/demo/toggle-switch',

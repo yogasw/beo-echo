@@ -2,6 +2,8 @@
 <script lang="ts">
   import HttpMethodDropdown from '$lib/components/common/HttpMethodDropdown.svelte';
   import StatusCodeInput from '$lib/components/common/StatusCodeInput.svelte';
+  import HttpMethodBadge from '$lib/components/common/HttpMethodBadge.svelte';
+  import StatusCodeBadge from '$lib/components/common/StatusCodeBadge.svelte';
   
   let selectedMethod = 'GET';
   let selectedStatusCode = 200;
@@ -51,7 +53,13 @@
           
           <div class="bg-gray-50 dark:bg-gray-700 rounded-md p-4">
             <h3 class="font-medium text-gray-900 dark:text-white mb-2">Selected Value:</h3>
-            <p class="text-sm text-gray-600 dark:text-gray-300">{selectedMethod}</p>
+            <div class="space-y-2">
+              <p class="text-sm text-gray-600 dark:text-gray-300">Raw value: {selectedMethod}</p>
+              <div class="flex items-center">
+                <span class="text-sm text-gray-600 dark:text-gray-300 mr-2">Badge:</span>
+                <HttpMethodBadge method={selectedMethod} />
+              </div>
+            </div>
           </div>
           
           <div class="text-sm text-gray-500 dark:text-gray-400">
@@ -83,13 +91,19 @@
           
           <div class="bg-gray-50 dark:bg-gray-700 rounded-md p-4">
             <h3 class="font-medium text-gray-900 dark:text-white mb-2">Selected Value:</h3>
-            <div class="text-sm text-gray-600 dark:text-gray-300 space-y-1">
-              <p><strong>Code:</strong> {selectedStatusCode}</p>
-              {#if selectedStatusData}
-                <p><strong>Name:</strong> {selectedStatusData.name}</p>
-                <p><strong>Description:</strong> {selectedStatusData.description}</p>
-                <p><strong>Category:</strong> {selectedStatusData.category}</p>
-              {/if}
+            <div class="text-sm text-gray-600 dark:text-gray-300 space-y-2">
+              <div class="space-y-1">
+                <p><strong>Code:</strong> {selectedStatusCode}</p>
+                {#if selectedStatusData}
+                  <p><strong>Name:</strong> {selectedStatusData.name}</p>
+                  <p><strong>Description:</strong> {selectedStatusData.description}</p>
+                  <p><strong>Category:</strong> {selectedStatusData.category}</p>
+                {/if}
+              </div>
+              <div class="flex items-center pt-2">
+                <span class="text-sm text-gray-600 dark:text-gray-300 mr-2">Badge:</span>
+                <StatusCodeBadge statusCode={selectedStatusCode} />
+              </div>
             </div>
           </div>
           
@@ -105,6 +119,59 @@
             </ul>
           </div>
         </div>
+      </div>
+    </div>
+
+    <!-- Reusable Badge Components Section -->
+    <div class="mt-8 bg-white dark:bg-gray-800 rounded-lg shadow-md border border-gray-200 dark:border-gray-700 p-6">
+      <h2 class="text-xl font-semibold text-gray-900 dark:text-white mb-4">
+        <i class="fas fa-tags mr-2"></i>Reusable Badge Components
+      </h2>
+      
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <!-- HTTP Method Badges -->
+        <div>
+          <h3 class="font-medium text-gray-900 dark:text-white mb-3">HTTP Method Badges</h3>
+          <div class="space-y-3">
+            <div class="flex flex-wrap gap-2">
+              <HttpMethodBadge method="GET" />
+              <HttpMethodBadge method="POST" />
+              <HttpMethodBadge method="PUT" />
+              <HttpMethodBadge method="DELETE" />
+              <HttpMethodBadge method="PATCH" />
+            </div>
+            
+            <div class="text-xs text-gray-500 dark:text-gray-400">
+              Use these consistent badges anywhere in the app for HTTP methods
+            </div>
+          </div>
+        </div>
+        
+        <!-- Status Code Badges -->
+        <div>
+          <h3 class="font-medium text-gray-900 dark:text-white mb-3">Status Code Badges</h3>
+          <div class="space-y-3">
+            <div class="flex flex-wrap gap-2">
+              <StatusCodeBadge statusCode={200} />
+              <StatusCodeBadge statusCode={201} />
+              <StatusCodeBadge statusCode={404} />
+              <StatusCodeBadge statusCode={403} />
+              <StatusCodeBadge statusCode={500} />
+            </div>
+            
+            <div class="text-xs text-gray-500 dark:text-gray-400">
+              Automatically colored based on status code category (2xx=green, 4xx=yellow, 5xx=red)
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <div class="mt-4 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-md">
+        <p class="text-sm text-blue-800 dark:text-blue-200">
+          <i class="fas fa-info-circle mr-2"></i>
+          <strong>Consistent Styling:</strong> These reusable components ensure all badges across the application have the same colors and styling.
+          <a href="/demo/badges" class="underline ml-1">View full badge component demo →</a>
+        </p>
       </div>
     </div>
 
