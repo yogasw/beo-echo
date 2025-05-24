@@ -390,11 +390,11 @@
             
             <!-- Preview Card -->
             {#if path && method}
-              <div class="mt-6 p-4 bg-gray-50 dark:bg-gray-750 rounded-lg border border-gray-200 dark:border-gray-600">
-                <h4 class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  <i class="fas fa-eye mr-2"></i>Endpoint Preview
+              <div class="mt-6 p-4 bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-750 dark:to-gray-800 rounded-lg border border-gray-200 dark:border-gray-600 shadow-sm">
+                <h4 class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3 flex items-center">
+                  <i class="fas fa-eye mr-2 text-blue-600 dark:text-blue-400"></i>Endpoint Preview
                 </h4>
-                <div class="flex items-center">
+                <div class="flex items-center p-3 bg-white dark:bg-gray-700 rounded-md border border-gray-100 dark:border-gray-600">
                   <span class="px-3 py-1 rounded-full text-xs font-medium mr-3
                     {method === 'GET' ? 'bg-green-600 text-white' : 
                      method === 'POST' ? 'bg-blue-600 text-white' : 
@@ -441,7 +441,7 @@
                 <div class="flex space-x-2">
                   <button 
                     type="button"
-                    class="bg-gray-200 dark:bg-gray-600 hover:bg-gray-300 dark:hover:bg-gray-500 text-gray-800 dark:text-white rounded-md text-xs px-3 py-1 transition-colors"
+                    class="bg-gray-200 dark:bg-gray-600 hover:bg-gray-300 dark:hover:bg-gray-500 text-gray-800 dark:text-white rounded-md text-xs px-3 py-1 transition-colors focus:outline-none focus:ring-2 focus:ring-gray-500"
                     on:click={generateSampleResponse}
                     title="Generate sample response"
                   >
@@ -449,7 +449,7 @@
                   </button>
                   <button 
                     type="button"
-                    class="bg-gray-200 dark:bg-gray-600 hover:bg-gray-300 dark:hover:bg-gray-500 text-gray-800 dark:text-white rounded-md text-xs px-3 py-1 transition-colors"
+                    class="bg-gray-200 dark:bg-gray-600 hover:bg-gray-300 dark:hover:bg-gray-500 text-gray-800 dark:text-white rounded-md text-xs px-3 py-1 transition-colors focus:outline-none focus:ring-2 focus:ring-gray-500"
                     on:click={() => body = formatJson(body)}
                     title="Format JSON"
                   >
@@ -487,7 +487,7 @@
                 </label>
                 <button 
                   type="button"
-                  class="bg-gray-200 dark:bg-gray-600 hover:bg-gray-300 dark:hover:bg-gray-500 text-gray-800 dark:text-white rounded-md text-xs px-3 py-1 transition-colors"
+                  class="bg-gray-200 dark:bg-gray-600 hover:bg-gray-300 dark:hover:bg-gray-500 text-gray-800 dark:text-white rounded-md text-xs px-3 py-1 transition-colors focus:outline-none focus:ring-2 focus:ring-gray-500"
                   on:click={() => headers = formatJson(headers)}
                   title="Format JSON"
                 >
@@ -549,37 +549,45 @@ Returns a JSON object with the requested resource."
             </div>
             
             <!-- Configuration Summary -->
-            <div class="bg-gray-50 dark:bg-gray-750 rounded-lg p-4 border border-gray-200 dark:border-gray-600">
-              <h4 class="text-gray-800 dark:text-white font-medium mb-3 flex items-center">
-                <i class="fas fa-eye mr-2"></i>Configuration Summary
+            <div class="bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-750 dark:to-gray-800 rounded-lg p-4 border border-gray-200 dark:border-gray-600 shadow-sm">
+              <h4 class="text-gray-800 dark:text-white font-semibold mb-4 flex items-center">
+                <i class="fas fa-eye text-blue-600 dark:text-blue-400 mr-2"></i>Configuration Summary
               </h4>
-              <div class="space-y-2 text-sm">
-                <div class="flex items-center justify-between">
-                  <span class="text-gray-600 dark:text-gray-400">Endpoint:</span>
-                  <div class="flex items-center">
-                    <span class="px-2 py-1 rounded text-xs font-medium mr-2
-                      {method === 'GET' ? 'bg-green-600 text-white' : 
-                       method === 'POST' ? 'bg-blue-600 text-white' : 
-                       method === 'PUT' ? 'bg-yellow-600 text-white' : 
-                       method === 'DELETE' ? 'bg-red-600 text-white' : 
-                       method === 'PATCH' ? 'bg-purple-600 text-white' : 
-                       'bg-gray-600 text-white'}">
-                      {method}
-                    </span>
-                    <span class="text-gray-900 dark:text-white font-mono">{path}</span>
+              <div class="grid grid-cols-1 gap-3">
+                <div class="bg-white dark:bg-gray-800 rounded-md p-3 border border-gray-200 dark:border-gray-700">
+                  <div class="flex items-center justify-between">
+                    <span class="text-gray-600 dark:text-gray-400 text-sm font-medium">Endpoint:</span>
+                    <div class="flex items-center">
+                      <span class="px-2 py-1 rounded text-xs font-medium mr-2
+                        {method === 'GET' ? 'bg-green-600 text-white' : 
+                         method === 'POST' ? 'bg-blue-600 text-white' : 
+                         method === 'PUT' ? 'bg-yellow-600 text-white' : 
+                         method === 'DELETE' ? 'bg-red-600 text-white' : 
+                         method === 'PATCH' ? 'bg-purple-600 text-white' : 
+                         'bg-gray-600 text-white'}">
+                        {method}
+                      </span>
+                      <span class="text-gray-900 dark:text-white font-mono text-sm">{path}</span>
+                    </div>
                   </div>
                 </div>
-                <div class="flex items-center justify-between">
-                  <span class="text-gray-600 dark:text-gray-400">Status Code:</span>
-                  <span class="text-gray-900 dark:text-white">{statusCode}</span>
+                <div class="bg-white dark:bg-gray-800 rounded-md p-3 border border-gray-200 dark:border-gray-700">
+                  <div class="flex items-center justify-between">
+                    <span class="text-gray-600 dark:text-gray-400 text-sm font-medium">Status Code:</span>
+                    <span class="text-gray-900 dark:text-white font-mono">{statusCode}</span>
+                  </div>
                 </div>
-                <div class="flex items-center justify-between">
-                  <span class="text-gray-600 dark:text-gray-400">Response Size:</span>
-                  <span class="text-gray-900 dark:text-white">{body.length} characters</span>
+                <div class="bg-white dark:bg-gray-800 rounded-md p-3 border border-gray-200 dark:border-gray-700">
+                  <div class="flex items-center justify-between">
+                    <span class="text-gray-600 dark:text-gray-400 text-sm font-medium">Response Size:</span>
+                    <span class="text-gray-900 dark:text-white">{body.length} characters</span>
+                  </div>
                 </div>
-                <div class="flex items-center justify-between">
-                  <span class="text-gray-600 dark:text-gray-400">Headers:</span>
-                  <span class="text-gray-900 dark:text-white">{Object.keys(JSON.parse(headers || '{}')).length} defined</span>
+                <div class="bg-white dark:bg-gray-800 rounded-md p-3 border border-gray-200 dark:border-gray-700">
+                  <div class="flex items-center justify-between">
+                    <span class="text-gray-600 dark:text-gray-400 text-sm font-medium">Headers:</span>
+                    <span class="text-gray-900 dark:text-white">{Object.keys(JSON.parse(headers || '{}')).length} defined</span>
+                  </div>
                 </div>
               </div>
             </div>
@@ -588,10 +596,22 @@ Returns a JSON object with the requested resource."
       </div>
 
       <!-- Footer -->
-      <div class="bg-gray-50 dark:bg-gray-750 px-6 py-4 border-t border-gray-200 dark:border-gray-700 shrink-0">
+      <div class="bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-750 dark:to-gray-800 px-6 py-4 border-t border-gray-200 dark:border-gray-700 shrink-0">
         <div class="flex justify-between items-center">
-          <!-- Left: Empty space to maintain layout balance -->
-          <div></div>
+          <!-- Left: Step Progress Indicator -->
+          <div class="flex items-center space-x-2">
+            <div class="flex space-x-1">
+              {#each Array(3) as _, index}
+                <div class="w-2 h-2 rounded-full transition-colors duration-200 
+                  {index < currentStep ? 'bg-blue-600' : 
+                   index === currentStep - 1 ? 'bg-blue-500' : 'bg-gray-300 dark:bg-gray-600'}">
+                </div>
+              {/each}
+            </div>
+            <span class="text-xs text-gray-500 dark:text-gray-400 ml-2">
+              Step {currentStep} of 3
+            </span>
+          </div>
           
           <!-- Right: Navigation & Primary Actions -->
           <div class="flex items-center space-x-3">
@@ -599,7 +619,7 @@ Returns a JSON object with the requested resource."
             {#if currentStep > 1}
               <button
                 type="button"
-                class="px-4 py-2 bg-gray-200 dark:bg-gray-600 hover:bg-gray-300 dark:hover:bg-gray-500 text-gray-800 dark:text-white rounded-lg text-sm flex items-center transition-colors focus:outline-none focus:ring-2 focus:ring-gray-500"
+                class="px-4 py-2 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-200 border border-gray-300 dark:border-gray-600 rounded-lg text-sm flex items-center transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-gray-500 shadow-sm"
                 on:click={prevStep}
                 disabled={isSubmitting}
                 title="Go back to previous step"
@@ -612,7 +632,7 @@ Returns a JSON object with the requested resource."
             {#if currentStep < 3}
               <button
                 type="button"
-                class="px-6 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white rounded-lg text-sm flex items-center transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500"
+                class="px-6 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white rounded-lg text-sm flex items-center transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-md"
                 on:click={nextStep}
                 disabled={isSubmitting}
                 title="Continue to next step"
@@ -622,7 +642,7 @@ Returns a JSON object with the requested resource."
             {:else}
               <button
                 type="button"
-                class="px-6 py-2 bg-green-600 hover:bg-green-700 disabled:bg-green-400 text-white rounded-lg text-sm flex items-center transition-colors focus:outline-none focus:ring-2 focus:ring-green-500"
+                class="px-6 py-2 bg-green-600 hover:bg-green-700 disabled:bg-green-400 text-white rounded-lg text-sm flex items-center transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-green-500 shadow-md"
                 on:click={handleSubmit}
                 disabled={isSubmitting}
                 title="Create the mock endpoint"
