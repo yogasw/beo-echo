@@ -15,7 +15,6 @@ import {
     addBatchLogs
 } from '$lib/stores/logs';
 import { get } from 'svelte/store';
-import { selectedProject } from '$lib/stores/selectedConfig';
 
 // Store the EventSource instance globally so we can close/reopen it
 let eventSource: EventSource | null = null;

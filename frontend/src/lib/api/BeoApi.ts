@@ -361,7 +361,7 @@ export const getLogs = async (page: number = 1, pageSize: number = 100, projectI
 // Create an EventSource for real-time log streaming
 export const createLogStream = (projectId: string, limit: number = 100): EventSource => {
 	let workspaceId = getCurrentWorkspaceId();
-	let baseURL = `${import.meta.env.VITE_API_BASE_URL || 'http://localhost:3600/api/api'}`;
+	let baseURL = `${import.meta.env.VITE_API_BASE_URL || 'http://localhost:3600/api'}`;
 	let url = `${baseURL}/workspaces/${workspaceId}/projects/${projectId}/logs/stream?limit=${limit}`;
 
 	// Add authentication using JWT token
