@@ -99,7 +99,6 @@
 			// Update the rule in the local array
 			rules[index] = updatedRule;
 			rules = [...rules]; // Trigger reactivity
-			toast.success('Rule updated successfully');
 		} catch (error) {
 			console.error('Error updating rule:', error);
 			toast.error('Failed to update rule');
