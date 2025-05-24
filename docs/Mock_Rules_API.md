@@ -13,7 +13,7 @@ All endpoints require authentication and proper permissions.
 ### List Rules for a Response
 
 ```
-GET /mock/api/projects/:projectId/endpoints/:id/responses/:responseId/rules
+GET /api/projects/:projectId/endpoints/:id/responses/:responseId/rules
 ```
 
 #### Example Response
@@ -45,7 +45,7 @@ GET /mock/api/projects/:projectId/endpoints/:id/responses/:responseId/rules
 ### Get a Single Rule
 
 ```
-GET /mock/api/projects/:projectId/endpoints/:id/responses/:responseId/rules/:ruleId
+GET /api/projects/:projectId/endpoints/:id/responses/:responseId/rules/:ruleId
 ```
 
 #### Example Response
@@ -67,7 +67,7 @@ GET /mock/api/projects/:projectId/endpoints/:id/responses/:responseId/rules/:rul
 ### Create a Rule
 
 ```
-POST /mock/api/projects/:projectId/endpoints/:id/responses/:responseId/rules
+POST /api/projects/:projectId/endpoints/:id/responses/:responseId/rules
 ```
 
 #### Request Body
@@ -101,7 +101,7 @@ POST /mock/api/projects/:projectId/endpoints/:id/responses/:responseId/rules
 ### Update a Rule
 
 ```
-PUT /mock/api/projects/:projectId/endpoints/:id/responses/:responseId/rules/:ruleId
+PUT /api/projects/:projectId/endpoints/:id/responses/:responseId/rules/:ruleId
 ```
 
 #### Request Body
@@ -135,7 +135,7 @@ PUT /mock/api/projects/:projectId/endpoints/:id/responses/:responseId/rules/:rul
 ### Delete a Rule
 
 ```
-DELETE /mock/api/projects/:projectId/endpoints/:id/responses/:responseId/rules/:ruleId
+DELETE /api/projects/:projectId/endpoints/:id/responses/:responseId/rules/:ruleId
 ```
 
 #### Example Response
@@ -150,7 +150,7 @@ DELETE /mock/api/projects/:projectId/endpoints/:id/responses/:responseId/rules/:
 ### Delete All Rules for a Response
 
 ```
-DELETE /mock/api/projects/:projectId/endpoints/:id/responses/:responseId/rules
+DELETE /api/projects/:projectId/endpoints/:id/responses/:responseId/rules
 ```
 
 #### Example Response

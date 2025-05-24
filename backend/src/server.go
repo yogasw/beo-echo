@@ -235,7 +235,7 @@ func SetupRouter() *gin.Engine {
 	}
 
 	// Register the catch-all handler for mock API endpoints
-	// We need to avoid conflict with the /mock path, so we'll create a separate group
+	// We need to avoid conflict with the /api path, so we'll create a separate group
 	// for the mock project endpoints
 	mockProjectGroup := router.Group("")
 	{

@@ -95,8 +95,8 @@ func extractProjectAlias(req *http.Request) string {
 	// Try to extract from path
 	path := req.URL.Path
 
-	// If path starts with /mock, remove it
-	if strings.HasPrefix(path, "/mock") {
+	// If path starts with /api, remove it
+	if strings.HasPrefix(path, "/api") {
 		path = path[5:]
 	}
 

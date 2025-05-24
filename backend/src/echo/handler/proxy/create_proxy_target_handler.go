@@ -13,7 +13,7 @@ import (
 //
 // Sample curl:
 //
-//	curl -X POST "http://localhost:8000/mock/api/workspaces/{workspaceID}/projects/{projectId}/proxies" \
+//	curl -X POST "http://localhost:8000/api/workspaces/{workspaceID}/projects/{projectId}/proxies" \
 //	  -H "Content-Type: application/json" \
 //	  -H "Authorization: Bearer {token}" \
 //	  -d '{

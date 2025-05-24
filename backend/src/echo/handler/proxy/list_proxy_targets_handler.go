@@ -12,7 +12,7 @@ import (
 // ListProxyTargetsHandler lists all proxy targets for a project
 //
 // Sample curl:
-// curl -X GET "http://localhost:8000/mock/api/workspaces/{workspaceID}/projects/{projectId}/proxies" -H "Content-Type: application/json" -H "Authorization: Bearer {token}"
+// curl -X GET "http://localhost:8000/api/workspaces/{workspaceID}/projects/{projectId}/proxies" -H "Content-Type: application/json" -H "Authorization: Bearer {token}"
 func ListProxyTargetsHandler(c *gin.Context) {
 	handler.EnsureMockService()
 

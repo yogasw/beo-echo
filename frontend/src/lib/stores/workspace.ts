@@ -23,7 +23,7 @@ const initialState: WorkspaceState = {
 export const workspaceStore = writable<WorkspaceState>(initialState);
 
 // API URL
-const API_URL = '/mock/api';
+const API_URL = '/api';
 
 // Helper to get the auth token from the auth store
 function getAuthToken(): string | null {

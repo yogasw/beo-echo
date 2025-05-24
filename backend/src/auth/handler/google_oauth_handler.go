@@ -132,7 +132,7 @@ func (h *GoogleOAuthHandler) InitiateLogin(c *gin.Context) {
 		scheme = "https"
 	}
 	backendBaseURL := fmt.Sprintf("%s://%s", scheme, c.Request.Host)
-	backendCallbackURI := fmt.Sprintf("%s/mock/api/oauth/google/callback", backendBaseURL)
+	backendCallbackURI := fmt.Sprintf("%s/api/oauth/google/callback", backendBaseURL)
 
 	// Check if OAuth is configured
 	config, err := h.service.GetConfig()

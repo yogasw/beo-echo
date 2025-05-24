@@ -12,7 +12,7 @@ import (
 // DeleteProxyTargetHandler deletes a proxy target
 //
 // Sample curl:
-// curl -X DELETE "http://localhost:8000/mock/api/workspaces/{workspaceID}/projects/{projectId}/proxies/{proxyId}" -H "Content-Type: application/json" -H "Authorization: Bearer {token}"
+// curl -X DELETE "http://localhost:8000/api/workspaces/{workspaceID}/projects/{projectId}/proxies/{proxyId}" -H "Content-Type: application/json" -H "Authorization: Bearer {token}"
 func DeleteProxyTargetHandler(c *gin.Context) {
 	handler.EnsureMockService()
 
