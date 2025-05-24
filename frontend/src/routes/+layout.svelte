@@ -90,6 +90,8 @@
 
 				// If we have a valid workspace ID, fetch projects for that workspace
 				if (currentWorkspaceId) {
+					//set localStorage for current workspace
+					setCurrentWorkspaceId(currentWorkspaceId);
 					await fetchConfigs(currentWorkspaceId);
 				}
 			}

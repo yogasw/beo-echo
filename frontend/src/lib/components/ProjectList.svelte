@@ -19,6 +19,7 @@
 	import { isLoadingContentArea } from '$lib/stores/loadingContentArea';
 	import { initializeLogsStream } from '$lib/services/logsService';
 	import { logStatus } from '$lib/stores/logStatus';
+	import { setCurrentWorkspaceId } from '$lib/utils/localStorage';
 
 	export let searchTerm = '';
 
@@ -167,7 +168,7 @@
 		try {
 			await addProject(projectName.trim(), projectAlias.trim());
 			// Refresh project list
-			projects.set(await getProjects($currentWorkspace.id));
+			projects.set(await getProjects());
 			toast.success('Project created successfully');
 			closeAddProjectModal();
 		} catch (err) {
@@ -211,7 +212,8 @@
 
 	async function refreshProjects(workspaceId: string) {
 		try {
-			const projectsData = await getProjects(workspaceId);
+			setCurrentWorkspaceId(workspaceId);
+			const projectsData = await getProjects();
 			projects.set(projectsData);
 		} catch (err) {
 			console.error('Failed to fetch projects for workspace:', workspaceId, err);

@@ -155,7 +155,8 @@ export const deleteWorkspace = async (workspaceId: string): Promise<any> => {
 	return response.data;
 }
 
-export const getProjects = async (workspaceId?: string): Promise<Project[]> => {
+export const getProjects = async (): Promise<Project[]> => {
+	let workspaceId = getCurrentWorkspaceId();
 	// If no workspaceId provided, this will fail with the new API structure
 	if (!workspaceId) {
 		console.error('No workspace ID provided for getProjects');
