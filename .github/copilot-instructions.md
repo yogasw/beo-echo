@@ -514,6 +514,60 @@ frontend/                  # JavaScript/TypeScript frontend with Svelte and Tail
      }
      ```
    - Use loading states for all async operations
+   - **Always implement skeleton screens during API loading states**:
+     - Use the `SkeletonLoader` component to show a placeholder while data is loading
+     - Select the appropriate skeleton type based on the content being loaded:
+       - `type="card"` - For card-based layouts or content blocks
+       - `type="list"` - For list items with avatar/icon and text
+       - `type="table"` - For tabular data with rows and columns
+       - `type="text"` - For text paragraphs or long content
+       - `type="custom"` - For simple generic placeholders
+     - Customize count, dimensions, and appearance as needed
+     - Always pair with `ErrorDisplay` for error handling
+     
+     ```svelte
+     <script>
+       import { onMount } from 'svelte';
+       import SkeletonLoader from '$lib/components/common/SkeletonLoader.svelte';
+       import ErrorDisplay from '$lib/components/common/ErrorDisplay.svelte';
+       import { toast } from '$lib/stores/toast';
+       
+       let data = null;
+       let isLoading = true;
+       let error = null;
+       
+       onMount(async () => {
+         try {
+           isLoading = true;
+           data = await apiService.fetchData();
+         } catch (err) {
+           error = err;
+           toast.error(err);
+         } finally {
+           isLoading = false;
+         }
+       });
+     </script>
+     
+     {#if isLoading}
+       <!-- Select appropriate skeleton type based on content -->
+       <SkeletonLoader type="list" count={5} /> <!-- For list data -->
+       <!-- OR -->
+       <SkeletonLoader type="table" count={8} /> <!-- For tabular data -->
+       <!-- OR -->
+       <SkeletonLoader type="card" /> <!-- For card-based content -->
+     {:else if error}
+       <!-- Show error with retry option if applicable -->
+       <ErrorDisplay 
+         message={error.message} 
+         type="error" 
+         retryable={true}
+         onRetry={() => loadData()}
+       />
+     {:else}
+       <DataDisplay {data} />
+     {/if}
+     ```
 
 3. **State Management**
    - Use Svelte stores for global state management
