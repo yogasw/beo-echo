@@ -156,7 +156,7 @@
 </script>
 
 <!-- Routes Section -->
-<div class="flex flex-col theme-bg-primary relative" style="width: {panelWidth}%;">
+<div class="flex flex-col theme-bg-primary relative border-r border-theme" style="width: {panelWidth}%;">
 	<div class="pr-2 flex flex-col h-full">
 		<div class={ThemeUtils.headerSection('rounded mb-4')}>
 			<div class="bg-blue-600/10 dark:bg-blue-600/10 p-2 rounded-lg mr-3">

@@ -20,6 +20,8 @@
 
 	let searchTerm = '';
 	let activeTab = 'routes';
+	let panelWidth: number = 18; // Panel width in rem units (w-72 = 18rem)
+
 	// Check authentication from localStorage
 	$: isLoginPage = $page.url.pathname === '/login';
 
