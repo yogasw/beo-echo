@@ -15,21 +15,22 @@
 <!-- Header with tabs/actions -->
 <div class={ThemeUtils.themeBgSecondary('border-b theme-border')}>
 	<div class="flex items-center justify-between px-4 py-2 text-sm">
-		<div class="flex items-center space-x-2">
+		<div class="flex items-center space-x-2 flex-1 min-w-0">
 			<button
 				class={ThemeUtils.themeBgAccent(
-					'flex items-center space-x-1 px-2 py-1 rounded-md theme-text-primary'
+					'flex items-center space-x-1 px-2 py-1 rounded-md theme-text-primary flex-shrink-0'
 				)}
+				title="Replay mode"
+				aria-label="Replay mode"
 			>
 				<i class="fas fa-play text-sm"></i>
 				<span>Replay</span>
 			</button>
 
-			<!-- Tab Navigation -->
-			<div class="flex items-center space-x-1 overflow-x-auto max-w-lg">
+			<div class="flex items-center space-x-1 overflow-x-auto flex-1 hide-scrollbar">
 				{#each tabs as tab (tab.id)}
 					<div
-						class="flex items-center bg-gray-100 dark:bg-gray-750 rounded-lg transition-all duration-200 hover:shadow-md"
+						class="flex items-center bg-gray-100 dark:bg-gray-750 rounded-lg transition-all duration-200 hover:shadow-md flex-shrink-0"
 					>
 						<button
 							class="flex items-center space-x-2 px-3 py-2 {activeTabId === tab.id
@@ -65,17 +66,16 @@
 						</button>
 					</div>
 				{/each}
-
-				<!-- Add new tab button -->
-				<button
-					class="p-2 ml-2 hover:bg-blue-600 hover:text-white bg-gray-200 dark:bg-gray-700 theme-text-primary rounded-lg transition-all duration-200 flex items-center justify-center shadow-sm hover:shadow-md"
-					title="Create new request tab"
-					aria-label="Add new request tab"
-					on:click={createNewTab}
-				>
-					<i class="fas fa-plus text-sm"></i>
-				</button>
 			</div>
+
+			<button
+				class="p-2 ml-2 hover:bg-blue-600 hover:text-white bg-gray-200 dark:bg-gray-700 theme-text-primary rounded-lg transition-all duration-200 flex items-center justify-center shadow-sm hover:shadow-md flex-shrink-0"
+				title="Create new request tab"
+				aria-label="Add new request tab"
+				on:click={createNewTab}
+			>
+				<i class="fas fa-plus text-sm"></i>
+			</button>
 		</div>
 	</div>
 </div>
