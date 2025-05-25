@@ -97,48 +97,49 @@
 
 <div class="flex flex-col h-full theme-bg-primary">
 	<!-- Main Content Area -->
-	<div class="flex-1 grid grid-cols-3 gap-4 p-4">
+	<div class="flex-1 grid grid-cols-3 gap-4 p-4 h-full">
 		<!-- Left: Replay List -->
-		<div class="space-y-4">
+		<div class="flex flex-col h-full space-y-4">
 			<button
 				on:click={handleCreateNew}
-				class="w-full px-3 py-1.5 text-sm bg-blue-600 hover:bg-blue-700 text-white rounded transition-colors"
+				class="w-full px-3 py-1.5 text-sm bg-blue-600 hover:bg-blue-700 text-white rounded transition-colors flex-shrink-0"
 			>
 				<i class="fas fa-plus mr-1"></i>
 				New Replay
 			</button>
 
-			{#if !$selectedWorkspace || !$selectedProject}
-				<div class="flex items-center justify-center h-full">
-					<div class="text-center theme-text-secondary">
-						<i class="fas fa-project-diagram text-4xl mb-4 opacity-50"></i>
-						<p>Please select a workspace and project to manage replays</p>
+			<div class="flex-1 min-h-0">
+				{#if !$selectedWorkspace || !$selectedProject}
+					<div class="flex items-center justify-center h-full">
+						<div class="text-center theme-text-secondary">
+							<i class="fas fa-project-diagram text-4xl mb-4 opacity-50"></i>
+							<p>Please select a workspace and project to manage replays</p>
+						</div>
 					</div>
-				</div>
-			{:else if isLoading}
-				<SkeletonLoader type="list" count={5} />
-			{:else if error}
-				<ErrorDisplay 
-					message={error} 
-					type="error" 
-					retryable={true}
-					onRetry={loadReplays}
-				/>
-			{:else}
-				<ReplayList 
-					on:edit={handleEditReplay}
-					on:execute={handleExecuteReplay}
-					on:logs={handleViewLogs}
-					on:refresh={loadReplays}
-				/>
-			{/if}
+				{:else if isLoading}
+					<SkeletonLoader type="list" count={5} />
+				{:else if error}
+					<ErrorDisplay 
+						message={error} 
+						type="error" 
+						retryable={true}
+						onRetry={loadReplays}
+					/>
+				{:else}
+					<ReplayList 
+						on:edit={handleEditReplay}
+						on:execute={handleExecuteReplay}
+						on:logs={handleViewLogs}
+						on:refresh={loadReplays}
+					/>
+				{/if}
+			</div>
 		</div>
 
 		<!-- Center: Replay Editor/Input -->
-		<div>
+		<div class="flex flex-col h-full">
 			{#if activeView === 'editor'}
 				<ReplayEditor 
-					replay={$selectedReplay}
 					on:created={handleReplayCreated}
 					on:updated={handleReplayUpdated}
 					on:cancel={handleBackToList}
@@ -149,24 +150,30 @@
 					on:close={handleBackToList}
 					on:executed={() => {/* Handle execution completion if needed */}}
 				/>
+			{:else}
+				<div class="flex items-center justify-center h-full">
+					<div class="text-center theme-text-secondary">
+						<i class="fas fa-edit text-4xl mb-4 opacity-50"></i>
+						<p>Select a replay to edit or create a new one</p>
+					</div>
+				</div>
 			{/if}
 		</div>
 
 		<!-- Right: Replay Logs/Results -->
-		<div>
+		<div class="flex flex-col h-full">
 			{#if activeView === 'logs' && $selectedReplay}
 				<ReplayLogs 
 					replay={$selectedReplay}
 					on:close={handleBackToList}
 				/>
-			{/if}
-		</div>
-		<div>
-			{#if activeView === 'logs' && $selectedReplay}
-				<ReplayLogs 
-					replay={$selectedReplay}
-					on:close={handleBackToList}
-				/>
+			{:else}
+				<div class="flex items-center justify-center h-full">
+					<div class="text-center theme-text-secondary">
+						<i class="fas fa-list-alt text-4xl mb-4 opacity-50"></i>
+						<p>Select a replay to view logs and results</p>
+					</div>
+				</div>
 			{/if}
 		</div>
 	</div>

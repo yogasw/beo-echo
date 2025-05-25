@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { createEventDispatcher } from 'svelte';
-	import { replays, filteredReplays, replayFilter, replayActions } from '$lib/stores/replay';
+	import { replays, filteredReplays, replayFilter, replayActions, selectedReplay } from '$lib/stores/replay';
 	import { selectedWorkspace } from '$lib/stores/workspace';
 	import { selectedProject } from '$lib/stores/selectedConfig';
 	import { toast } from '$lib/stores/toast';
@@ -13,6 +13,7 @@
 	let sortOrder: 'asc' | 'desc' = 'asc';
 	let showAddDropdown = false;
 	let searchTerm = '';
+	let openMenuId: string | null = null;
 
 	// Sort replays
 	$: sortedReplays = $filteredReplays.sort((a, b) => {
@@ -46,10 +47,14 @@
 		} finally {
 			replayActions.setLoading('delete', false);
 		}
+		
+		// Close menu after action
+		openMenuId = null;
 	}
 
-	function handleEdit(replay: Replay) {
-		dispatch('edit', replay);
+	function handleSelectReplay(replay: Replay) {
+		console.log('Selecting replay:', replay);
+		selectedReplay.set(replay);
 	}
 
 	function handleAdd() {
@@ -66,12 +71,28 @@
 		showAddDropdown = false;
 	}
 
+	function handleCreateFolder(replay: Replay) {
+		dispatch('add', { type: 'folder', parentReplay: replay });
+		openMenuId = null;
+	}
+
+	function toggleMenu(replayId: string, event: Event) {
+		event.stopPropagation();
+		openMenuId = openMenuId === replayId ? null : replayId;
+	}
+
+	function closeMenu() {
+		openMenuId = null;
+	}
+
 	function toggleSort() {
 		sortOrder = sortOrder === 'asc' ? 'desc' : 'asc';
 	}
 </script>
 
-<div class="flex flex-col h-full theme-bg-primary border border-gray-700 rounded-lg shadow-md overflow-hidden">
+<div 
+	class="flex flex-col h-full theme-bg-primary border border-gray-700 rounded-lg shadow-md overflow-hidden"
+>
 	<!-- Header Bar -->
 	<div class="flex items-center justify-between p-3 bg-gray-750 border-b border-gray-700">
 		<!-- Search Section -->
@@ -101,7 +122,7 @@
 				<i class="fas fa-sort text-sm"></i>
 			</button>
 			
-			<div class="relative">
+			<div class="add-dropdown-container relative">
 				<button
 					on:click={handleAdd}
 					title="Add new replay"
@@ -156,15 +177,21 @@
 		{:else}
 			<div class="divide-y divide-gray-700">
 				{#each sortedReplays as replay (replay.id)}
-					<div class="group hover:bg-gray-750 transition-colors">
-						<div class="flex items-center justify-between px-4 py-1">
+					<div 
+						class="group hover:bg-gray-750 transition-colors cursor-pointer {$selectedReplay?.id === replay.id ? 'bg-blue-600/20 border-l-4 border-l-blue-500' : ''}"
+						on:click={() => handleSelectReplay(replay)}
+						role="button"
+						tabindex="0"
+						on:keydown={(e) => e.key === 'Enter' && handleSelectReplay(replay)}
+					>
+						<div class="flex items-center justify-between px-4 py-3">
 							<!-- Method Icon and Info -->
 							<div class="flex items-center space-x-3 flex-1 min-w-0">
 								
 								<HttpMethodBadge method={replay.method} />
 								
 								<div class="flex-1 min-w-0">
-									<h4 class="text-sm font-medium text-white truncate">
+									<h4 class="text-sm font-medium {$selectedReplay?.id === replay.id ? 'text-blue-300' : 'text-white'} truncate">
 										{replay.name}
 									</h4>
 									<p class="text-xs text-gray-400 truncate">
@@ -173,25 +200,39 @@
 								</div>
 							</div>
 
-							<!-- Actions -->
-							<div class="flex items-center space-x-1 opacity-0 group-hover:opacity-100 transition-opacity">
+							<!-- Three-dot menu -->
+							<div class="menu-container relative">
 								<button
-									on:click={() => handleEdit(replay)}
-									class="p-1.5 text-gray-400 hover:text-white transition-colors"
-									title="Edit"
-									aria-label="Edit replay"
+									on:click={(e) => toggleMenu(replay.id, e)}
+									class="p-1.5 text-gray-400 hover:text-white transition-colors opacity-0 group-hover:opacity-100 {openMenuId === replay.id ? 'opacity-100' : ''}"
+									title="More options"
+									aria-label="More options"
+									aria-expanded={openMenuId === replay.id}
 								>
-									<i class="fas fa-edit text-xs"></i>
+									<i class="fas fa-ellipsis-v text-xs"></i>
 								</button>
-								
-								<button
-									on:click={() => handleDelete(replay)}
-									class="p-1.5 text-gray-400 hover:text-red-400 transition-colors"
-									title="Delete"
-									aria-label="Delete replay"
-								>
-									<i class="fas fa-trash text-xs"></i>
-								</button>
+
+								<!-- Dropdown Menu -->
+								{#if openMenuId === replay.id}
+									<div class="absolute top-full right-0 mt-1 w-48 bg-gray-800 border border-gray-700 rounded-md shadow-lg z-20">
+										<div class="py-1">
+											<button
+												on:click={() => handleDelete(replay)}
+												class="w-full text-left px-4 py-2 text-sm text-white hover:bg-gray-700 transition-colors flex items-center space-x-2"
+											>
+												<i class="fas fa-trash text-red-400"></i>
+												<span>Delete</span>
+											</button>
+											<button
+												on:click={() => handleCreateFolder(replay)}
+												class="w-full text-left px-4 py-2 text-sm text-white hover:bg-gray-700 transition-colors flex items-center space-x-2"
+											>
+												<i class="fas fa-folder-plus text-yellow-400"></i>
+												<span>Create Folder</span>
+											</button>
+										</div>
+									</div>
+								{/if}
 							</div>
 						</div>
 					</div>
