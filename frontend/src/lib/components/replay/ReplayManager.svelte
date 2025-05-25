@@ -178,14 +178,6 @@
 	<div class="flex-1 grid grid-cols-3 gap-4 p-4 h-full">
 		<!-- Left: Replay List -->
 		<div class="flex flex-col h-full space-y-4">
-			<button
-				on:click={handleCreateNew}
-				class="w-full px-3 py-1.5 text-sm bg-blue-600 hover:bg-blue-700 text-white rounded transition-colors flex-shrink-0"
-			>
-				<i class="fas fa-plus mr-1"></i>
-				New Replay
-			</button>
-
 			<div class="flex-1 min-h-0">
 				{#if !$selectedWorkspace || !$selectedProject}
 					<div class="flex items-center justify-center h-full">
@@ -200,6 +192,7 @@
 					<ErrorDisplay message={error} type="error" retryable={true} onRetry={loadReplays} />
 				{:else}
 					<ReplayList
+						on:add={handleCreateNew}
 						on:edit={handleEditReplay}
 						on:execute={handleExecuteReplay}
 						on:logs={handleViewLogs}
