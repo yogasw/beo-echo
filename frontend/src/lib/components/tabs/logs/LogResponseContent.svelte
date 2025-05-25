@@ -2,6 +2,7 @@
 	import type { RequestLog } from '$lib/api/BeoApi';
 	import * as ThemeUtils from '$lib/utils/themeUtils';
 	import HeadersTab from '../../common/HeadersEditor.svelte';
+	import StatusCodeBadge from '$lib/components/common/StatusCodeBadge.svelte';
 
 	export let log: RequestLog;
 	export let copyToClipboard: (text: string, label: string) => Promise<void>;
@@ -15,17 +16,13 @@
 		<div class="grid grid-cols-2 gap-2 text-sm">
 			<div>
 				<span class="theme-text-muted">Status Code:</span>
-				<span
-					class="{log.response_status < 300
-						? 'text-green-600 dark:text-green-400'
-						: log.response_status < 400
-							? 'text-blue-600 dark:text-blue-400'
-							: log.response_status < 500
-								? 'text-yellow-600 dark:text-yellow-400'
-								: 'text-red-600 dark:text-red-400'} font-mono"
-				>
-					{log.response_status}
-				</span>
+				<StatusCodeBadge
+					statusCode={log.response_status}
+					size="sm"
+					showDescription={true}
+					className="inline-block"
+				/>
+				
 			</div>
 			<div>
 				<span class="theme-text-muted">Execution Mode:</span>

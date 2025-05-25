@@ -4,6 +4,7 @@
 	import * as ThemeUtils from '$lib/utils/themeUtils';
 	import LogRequestContent from './LogRequestContent.svelte';
 	import LogResponseContent from './LogResponseContent.svelte';
+	import HttpMethodBadge from '$lib/components/common/HttpMethodBadge.svelte';
 
 	export let log: RequestLog;
 	export let isExpanded: boolean = false;
@@ -82,20 +83,7 @@
 			aria-expanded={isExpanded}
 		>
 			<div class="flex items-center space-x-2">
-				<!-- Method badge -->
-				<span
-					class="px-2 py-0.5 text-sm font-mono rounded {log.method === 'GET'
-						? 'bg-green-600 text-white'
-						: log.method === 'POST'
-							? 'bg-blue-600 text-white'
-							: log.method === 'PUT'
-								? 'bg-yellow-600 text-white'
-								: log.method === 'DELETE'
-									? 'bg-red-600 text-white'
-									: 'bg-gray-600 text-white'}"
-				>
-					{log.method}
-				</span>
+				<HttpMethodBadge method={log.method} size="sm" />
 
 				<!-- Path with truncation -->
 				<span class="font-mono text-sm theme-text-primary truncate max-w-sm">

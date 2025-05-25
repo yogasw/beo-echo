@@ -1,5 +1,6 @@
 <script lang="ts">
 	import type { RequestLog } from '$lib/api/BeoApi';
+	import HttpMethodBadge from '$lib/components/common/HttpMethodBadge.svelte';
 	import * as ThemeUtils from '$lib/utils/themeUtils';
 	import HeadersEditor from '../../common/HeadersEditor.svelte';
 
@@ -19,7 +20,10 @@
 			</div>
 			<div>
 				<span class="theme-text-muted">Method:</span>
-				<span class="theme-text-primary font-mono">{log.method}</span>
+				<HttpMethodBadge
+					method={log.method}
+					size="sm"
+				/>
 			</div>
 		</div>
 	</div>
