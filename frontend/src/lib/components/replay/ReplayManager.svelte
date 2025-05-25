@@ -96,16 +96,6 @@
 </script>
 
 <div class="flex flex-col h-full theme-bg-primary">
-	<!-- Header -->
-	<div class="theme-bg-secondary border-b theme-border px-4 py-3">
-		<div class="flex items-center justify-between">
-			<div class="flex items-center space-x-4">
-				<i class="fas fa-play-circle text-blue-400"></i>
-				<h1 class="text-lg font-semibold theme-text-primary">API Replays</h1>
-			</div>
-		</div>
-	</div>
-
 	<!-- Main Content Area -->
 	<div class="flex-1 grid grid-cols-3 gap-4 p-4">
 		<!-- Left: Replay List -->
