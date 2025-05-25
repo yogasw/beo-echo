@@ -96,6 +96,8 @@ func CheckAndHandle() error {
 		&Workspace{},
 		&UserWorkspace{},
 		&SSOConfig{},
+		&Replay{},
+		&ReplayFolder{},
 	); err != nil {
 		return errors.New("Failed to migrate database schema: " + err.Error())
 	}

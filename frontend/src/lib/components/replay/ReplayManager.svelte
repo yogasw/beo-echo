@@ -100,93 +100,84 @@
 	<div class="theme-bg-secondary border-b theme-border px-4 py-3">
 		<div class="flex items-center justify-between">
 			<div class="flex items-center space-x-4">
-				{#if activeView !== 'list'}
-					<button
-						on:click={handleBackToList}
-						class="flex items-center text-sm theme-text-secondary hover:theme-text-primary transition-colors"
-					>
-						<i class="fas fa-arrow-left mr-2"></i>
-						Back to Replays
-					</button>
-				{/if}
-				
-				<div class="flex items-center space-x-2">
-					<i class="fas fa-play-circle text-blue-400"></i>
-					<h1 class="text-lg font-semibold theme-text-primary">
-						{#if activeView === 'list'}
-							API Replays
-						{:else if activeView === 'editor'}
-							{$selectedReplay ? 'Edit Replay' : 'Create Replay'}
-						{:else if activeView === 'execution'}
-							Execute Replay
-						{:else if activeView === 'logs'}
-							Execution Logs
-						{/if}
-					</h1>
-				</div>
-			</div>
-
-			<div class="flex items-center space-x-2">
-				{#if activeView === 'list'}
-					<button
-						on:click={handleCreateNew}
-						class="px-3 py-1.5 text-sm bg-blue-600 hover:bg-blue-700 text-white rounded transition-colors"
-					>
-						<i class="fas fa-plus mr-1"></i>
-						New Replay
-					</button>
-				{/if}
+				<i class="fas fa-play-circle text-blue-400"></i>
+				<h1 class="text-lg font-semibold theme-text-primary">API Replays</h1>
 			</div>
 		</div>
 	</div>
 
-	<!-- Content Area -->
-	<div class="flex-1 overflow-hidden">
-		{#if !$selectedWorkspace || !$selectedProject}
-			<div class="flex items-center justify-center h-full">
-				<div class="text-center theme-text-secondary">
-					<i class="fas fa-project-diagram text-4xl mb-4 opacity-50"></i>
-					<p>Please select a workspace and project to manage replays</p>
+	<!-- Main Content Area -->
+	<div class="flex-1 grid grid-cols-3 gap-4 p-4">
+		<!-- Left: Replay List -->
+		<div class="space-y-4">
+			<button
+				on:click={handleCreateNew}
+				class="w-full px-3 py-1.5 text-sm bg-blue-600 hover:bg-blue-700 text-white rounded transition-colors"
+			>
+				<i class="fas fa-plus mr-1"></i>
+				New Replay
+			</button>
+
+			{#if !$selectedWorkspace || !$selectedProject}
+				<div class="flex items-center justify-center h-full">
+					<div class="text-center theme-text-secondary">
+						<i class="fas fa-project-diagram text-4xl mb-4 opacity-50"></i>
+						<p>Please select a workspace and project to manage replays</p>
+					</div>
 				</div>
-			</div>
-		{:else if isLoading && activeView === 'list'}
-			<div class="p-4">
+			{:else if isLoading}
 				<SkeletonLoader type="list" count={5} />
-			</div>
-		{:else if error && activeView === 'list'}
-			<div class="p-4">
+			{:else if error}
 				<ErrorDisplay 
 					message={error} 
 					type="error" 
 					retryable={true}
 					onRetry={loadReplays}
 				/>
-			</div>
-		{:else if activeView === 'list'}
-			<ReplayList 
-				on:edit={handleEditReplay}
-				on:execute={handleExecuteReplay}
-				on:logs={handleViewLogs}
-				on:refresh={loadReplays}
-			/>
-		{:else if activeView === 'editor'}
-			<ReplayEditor 
-				replay={$selectedReplay}
-				on:created={handleReplayCreated}
-				on:updated={handleReplayUpdated}
-				on:cancel={handleBackToList}
-			/>
-		{:else if activeView === 'execution' && $selectedReplay}
-			<ReplayExecution 
-				replay={$selectedReplay}
-				on:close={handleBackToList}
-				on:executed={() => {/* Handle execution completion if needed */}}
-			/>
-		{:else if activeView === 'logs' && $selectedReplay}
-			<ReplayLogs 
-				replay={$selectedReplay}
-				on:close={handleBackToList}
-			/>
-		{/if}
+			{:else}
+				<ReplayList 
+					on:edit={handleEditReplay}
+					on:execute={handleExecuteReplay}
+					on:logs={handleViewLogs}
+					on:refresh={loadReplays}
+				/>
+			{/if}
+		</div>
+
+		<!-- Center: Replay Editor/Input -->
+		<div>
+			{#if activeView === 'editor'}
+				<ReplayEditor 
+					replay={$selectedReplay}
+					on:created={handleReplayCreated}
+					on:updated={handleReplayUpdated}
+					on:cancel={handleBackToList}
+				/>
+			{:else if activeView === 'execution' && $selectedReplay}
+				<ReplayExecution 
+					replay={$selectedReplay}
+					on:close={handleBackToList}
+					on:executed={() => {/* Handle execution completion if needed */}}
+				/>
+			{/if}
+		</div>
+
+		<!-- Right: Replay Logs/Results -->
+		<div>
+			{#if activeView === 'logs' && $selectedReplay}
+				<ReplayLogs 
+					replay={$selectedReplay}
+					on:close={handleBackToList}
+				/>
+			{/if}
+		</div>
+		<div>
+			{#if activeView === 'logs' && $selectedReplay}
+				<ReplayLogs 
+					replay={$selectedReplay}
+					on:close={handleBackToList}
+				/>
+			{/if}
+		</div>
 	</div>
 </div>

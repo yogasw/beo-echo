@@ -18,7 +18,7 @@
 		alias: '',
 		protocol: 'https',
 		method: 'GET',
-		url: '',
+		target_url: '',
 		headers: {},
 		body: ''
 	};
@@ -36,7 +36,7 @@
 			alias: replay.alias,
 			protocol: replay.protocol,
 			method: replay.method,
-			url: replay.url,
+			target_url: replay.target_url,
 			headers: replay.headers || {},
 			body: replay.body || ''
 		};
@@ -50,7 +50,7 @@
 			alias: '',
 			protocol: 'https',
 			method: 'GET',
-			url: '',
+			target_url: '',
 			headers: {},
 			body: ''
 		};
@@ -102,8 +102,8 @@
 			return;
 		}
 
-		if (!formData.url.trim()) {
-			toast.error('URL is required');
+		if (!formData.target_url.trim()) {
+			toast.error('target url is required');
 			return;
 		}
 
@@ -155,8 +155,8 @@
 	}
 
 	function generateSampleUrl() {
-		if (formData.protocol && !formData.url) {
-			formData.url = `${formData.protocol}://api.example.com/endpoint`;
+		if (formData.protocol && !formData.target_url) {
+			formData.target_url = `${formData.protocol}://api.example.com/endpoint`;
 		}
 	}
 
@@ -244,7 +244,7 @@
 						<input
 							id="url"
 							type="url"
-							bind:value={formData.url}
+							bind:value={formData.target_url}
 							placeholder="https://api.example.com/endpoint"
 							class="w-full px-3 py-2 border theme-border rounded-md theme-bg-primary theme-text-primary placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
 							required
