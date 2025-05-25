@@ -1,10 +1,10 @@
 <script lang="ts">
-	import { deleteEndpoint, updateEndpoint, type Endpoint, type Project } from '$lib/api/BeoApi';
+	import { deleteEndpoint, updateEndpoint, type Endpoint, type Project, type RequestLog } from '$lib/api/BeoApi';
 	import { toast } from '$lib/stores/toast';
-	import AddEndpointModal from './AddEndpointModal.svelte';
 	import { onMount, onDestroy } from 'svelte';
 	import * as ThemeUtils from '$lib/utils/themeUtils';
 	import { currentWorkspace } from '$lib/stores/workspace';
+	import ModalCreateMock from '../logs/ModalCreateMock.svelte';
 
 	export let selectedEndpoint: Endpoint | null;
 	export let activeConfigName: string;
@@ -13,6 +13,23 @@
 	export let selectRoute: (route: Endpoint) => void;
 	export let handleRouteStatusChange: (route: Endpoint) => void;
 	export let handleAddEndpoint: (endpoint: Endpoint) => void;
+	let defaultRequestLog: RequestLog = {
+		id: '',
+		project_id: selectedEndpoint?.project_id || '',
+		method: 'GET',
+		path: '/',
+		query_params: '',
+		request_headers: `{}`,
+		request_body: '',
+		response_status: 200,
+		response_body: '',
+		response_headers: '{"Content-Type": "application/json"}',
+		latency_ms: 0,
+		execution_mode: 'mock',
+		matched: false,
+		bookmark: false,
+		created_at: new Date(),
+	};
 
 	let showAddEndpointModal = false;
 	let activeMenuEndpointId: string | null = null;
@@ -130,10 +147,14 @@
 		<i class="fas fa-plus mr-2"></i> Add Endpoint
 	</button>
 
-	<AddEndpointModal
+	<ModalCreateMock
 		bind:isOpen={showAddEndpointModal}
+		projectId={selectedEndpoint?.project_id || ''}
+		onClose={() => (showAddEndpointModal = false)}
+		onSuccess={() => (showAddEndpointModal = false)}
 		on:endpointCreated={onEndpointCreated}
 		on:close={() => (showAddEndpointModal = false)}
+		log={defaultRequestLog}
 	/>
 
 	<div class="flex-1 overflow-y-auto hide-scrollbar" bind:this={endpointsContainer}>
