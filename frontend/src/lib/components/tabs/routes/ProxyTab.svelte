@@ -77,11 +77,9 @@
 				<ToggleSwitch 
 					bind:checked={use_proxy}
 					on:change={handleProxyToggle}
-					ariaLabel="Toggle proxy"
+					aria-label="Toggle proxy"
+					label="Use Proxy"
 				/>
-				<span class="ml-3 text-sm font-medium {ThemeUtils.themeTextSecondary()}">
-					{use_proxy ? 'Enabled' : 'Disabled'}
-				</span>
 			</div>
 		</div>
 
