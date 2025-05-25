@@ -10,7 +10,6 @@
 
 	const dispatch = createEventDispatcher();
 
-	let selectedMethod = '';
 	let sortOrder: 'asc' | 'desc' = 'asc';
 	let showAddDropdown = false;
 	let searchTerm = '';
@@ -23,10 +22,9 @@
 
 	// Update store when filters change
 	$: {
-		console.log('Updating replayFilter with searchTerm:', searchTerm, 'method:', selectedMethod);
+		console.log('Updating replayFilter with searchTerm:', searchTerm);
 		replayFilter.set({
 			searchTerm: searchTerm,
-			method: selectedMethod,
 			protocol: ''
 		});
 	}

@@ -14,13 +14,7 @@ import (
 func (s *ReplayService) CreateReplay(ctx context.Context, projectID string, req CreateReplayRequest) (*database.Replay, error) {
 	log := zerolog.Ctx(ctx)
 
-	log.Info().
-		Str("project_id", projectID).
-		Str("alias", req.Alias).
-		Str("protocol", req.Protocol).
-		Str("method", req.Method).
-		Str("target_url", req.TargetURL).
-		Msg("creating new replay")
+	log.Info().Str("project_id", projectID).Str("name", req.Name).Msg("creating replay")
 
 	// Validate project exists
 	_, err := s.repo.FindProjectByID(ctx, projectID)
@@ -50,7 +44,7 @@ func (s *ReplayService) CreateReplay(ctx context.Context, projectID string, req 
 	}
 
 	replay := &database.Replay{
-		Alias:      req.Alias,
+		Name:       req.Name,
 		ProjectID:  projectID,
 		FolderID:   req.FolderID,
 		Protocol:   req.Protocol,
@@ -61,7 +55,6 @@ func (s *ReplayService) CreateReplay(ctx context.Context, projectID string, req 
 		Headers:    string(headersJSON),
 		Payload:    req.Payload,
 		Metadata:   string(metadataJSON),
-		IsMutation: req.IsMutation,
 		Path:       req.Path,
 	}
 
@@ -70,7 +63,7 @@ func (s *ReplayService) CreateReplay(ctx context.Context, projectID string, req 
 		log.Error().
 			Err(err).
 			Str("project_id", projectID).
-			Str("alias", req.Alias).
+			Str("name", req.Name).
 			Msg("failed to create replay")
 		return nil, fmt.Errorf("failed to create replay: %w", err)
 	}
@@ -78,7 +71,7 @@ func (s *ReplayService) CreateReplay(ctx context.Context, projectID string, req 
 	log.Info().
 		Str("replay_id", replay.ID).
 		Str("project_id", projectID).
-		Str("alias", req.Alias).
+		Str("name", req.Name).
 		Msg("successfully created replay")
 
 	return replay, nil

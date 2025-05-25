@@ -28,7 +28,7 @@ func (s *ReplayService) GetReplay(ctx context.Context, replayID string) (*databa
 
 	log.Info().
 		Str("replay_id", replayID).
-		Str("alias", replay.Alias).
+		Str("name", replay.Name).
 		Msg("successfully retrieved replay")
 
 	return replay, nil

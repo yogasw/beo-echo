@@ -321,7 +321,7 @@ func (s *SSOConfig) BeforeCreate(tx *gorm.DB) error {
 // It supports multiple protocols and is organized under folders per project.
 type Replay struct {
 	ID        string  `gorm:"primaryKey;type:TEXT" json:"id"`   // Unique identifier (UUID)
-	Alias     string  `gorm:"not null" json:"alias"`            // User-defined name for this replay
+	Name      string  `json:"name"`                             // User-defined name for this replay
 	ProjectID string  `gorm:"index;not null" json:"project_id"` // Project scoping
 	FolderID  *string `gorm:"index" json:"folder_id"`           // Optional folder location
 
@@ -331,10 +331,9 @@ type Replay struct {
 	Service    string `json:"service"`                    // gRPC service name (optional)
 	MethodName string `json:"method_name"`                // gRPC method name (optional)
 
-	Headers    string `gorm:"type:text" json:"headers"`         // Headers as key-value pairs
-	Payload    string `gorm:"type:text" json:"payload"`         // Request payload
-	Metadata   string `gorm:"type:text" json:"metadata"`        // Optional metadata (e.g., tags, retries)
-	IsMutation bool   `gorm:"default:false" json:"is_mutation"` // Marks this replay as modifying server state
+	Headers  string `gorm:"type:text" json:"headers"`  // Headers as key-value pairs
+	Payload  string `gorm:"type:text" json:"payload"`  // Request payload
+	Metadata string `gorm:"type:text" json:"metadata"` // Optional metadata (e.g., tags, retries)
 
 	Path []string `gorm:"type:json" json:"path"` // Folder path in array form (for UI or indexing)
 

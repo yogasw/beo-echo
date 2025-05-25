@@ -43,7 +43,7 @@ func NewReplayService(repo ReplayRepository) *ReplayService {
 
 // CreateReplayRequest represents the request payload for creating a replay
 type CreateReplayRequest struct {
-	Alias      string            `json:"alias" binding:"required"`
+	Name       string            `json:"name"`
 	FolderID   *string           `json:"folder_id"`
 	Protocol   string            `json:"protocol" binding:"required"`
 	Method     string            `json:"method" binding:"required"`
@@ -53,7 +53,6 @@ type CreateReplayRequest struct {
 	Headers    map[string]string `json:"headers"`
 	Payload    string            `json:"payload"`
 	Metadata   map[string]string `json:"metadata"`
-	IsMutation bool              `json:"is_mutation"`
 	Path       []string          `json:"path"`
 }
 

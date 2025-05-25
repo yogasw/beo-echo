@@ -55,7 +55,7 @@ func GetReplayHandler(service *services.ReplayService) gin.HandlerFunc {
 		log.Info().
 			Str("project_id", projectID).
 			Str("replay_id", replayID).
-			Str("alias", replay.Alias).
+			Str("name", replay.Name).
 			Msg("successfully retrieved replay")
 
 		c.JSON(http.StatusOK, gin.H{

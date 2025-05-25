@@ -38,11 +38,9 @@ export const replayLoading = writable<{
 // Replay search and filter
 export const replayFilter = writable<{
 	searchTerm: string;
-	method: string;
 	protocol: string;
 }>({
 	searchTerm: '',
-	method: '',
 	protocol: ''
 });
 
@@ -55,14 +53,10 @@ export const filteredReplays = derived(
 			const matchesSearch = !$filter.searchTerm || 
 				replay.alias?.toLowerCase().includes($filter.searchTerm?.toLowerCase()) ||
 				replay.url?.toLowerCase().includes($filter.searchTerm?.toLowerCase());
-
-			// Filter by method
-			const matchesMethod = !$filter.method || replay.method === $filter.method;
-
 			// Filter by protocol
 			const matchesProtocol = !$filter.protocol || replay.protocol === $filter.protocol;
 
-			return matchesSearch && matchesMethod && matchesProtocol;
+			return matchesSearch && matchesProtocol;
 		});
 	}
 );
@@ -157,6 +151,6 @@ export const replayActions = {
 		selectedReplay.set(null);
 		replayLogs.set([]);
 		replayExecution.set({ isExecuting: false, lastResult: null });
-		replayFilter.set({ searchTerm: '', method: '', protocol: '' });
+		replayFilter.set({ searchTerm: '', protocol: '' });
 	}
 };

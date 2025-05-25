@@ -33,7 +33,7 @@ func CreateReplayHandler(service *services.ReplayService) gin.HandlerFunc {
 
 		log.Info().
 			Str("project_id", projectID).
-			Str("alias", req.Alias).
+			Str("name", req.Name).
 			Str("protocol", req.Protocol).
 			Str("method", req.Method).
 			Msg("handling create replay request")
@@ -43,7 +43,7 @@ func CreateReplayHandler(service *services.ReplayService) gin.HandlerFunc {
 			log.Error().
 				Err(err).
 				Str("project_id", projectID).
-				Str("alias", req.Alias).
+				Str("name", req.Name).
 				Msg("failed to create replay")
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			return
@@ -52,7 +52,7 @@ func CreateReplayHandler(service *services.ReplayService) gin.HandlerFunc {
 		log.Info().
 			Str("replay_id", replay.ID).
 			Str("project_id", projectID).
-			Str("alias", req.Alias).
+			Str("name", req.Name).
 			Msg("successfully created replay")
 
 		c.JSON(http.StatusCreated, gin.H{
