@@ -15,10 +15,10 @@
 
 	// Form data
 	let formData: CreateReplayRequest = {
-		alias: '',
+		name: '',
 		protocol: 'https',
 		method: 'GET',
-		target_url: '',
+		url: '',
 		headers: {},
 		body: ''
 	};
@@ -36,7 +36,7 @@
 			name: replay.name,
 			protocol: replay.protocol,
 			method: replay.method,
-			target_url: replay.target_url,
+			url: replay.url,
 			headers: replay.headers || {},
 			body: replay.body || ''
 		};
@@ -50,7 +50,7 @@
 			name: '',
 			protocol: 'https',
 			method: 'GET',
-			target_url: '',
+			url: '',
 			headers: {},
 			body: ''
 		};
@@ -102,7 +102,7 @@
 			return;
 		}
 
-		if (!formData.target_url.trim()) {
+		if (!formData.url.trim()) {
 			toast.error('target url is required');
 			return;
 		}
@@ -155,8 +155,8 @@
 	}
 
 	function generateSampleUrl() {
-		if (formData.protocol && !formData.target_url) {
-			formData.target_url = `${formData.protocol}://api.example.com/endpoint`;
+		if (formData.protocol && !formData.url) {
+			formData.url = `${formData.protocol}://api.example.com/endpoint`;
 		}
 	}
 
@@ -244,7 +244,7 @@
 						<input
 							id="url"
 							type="url"
-							bind:value={formData.target_url}
+							bind:value={formData.url}
 							placeholder="https://api.example.com/endpoint"
 							class="w-full px-3 py-2 border theme-border rounded-md theme-bg-primary theme-text-primary placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
 							required

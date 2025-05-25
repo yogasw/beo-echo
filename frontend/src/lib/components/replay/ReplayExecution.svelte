@@ -72,7 +72,7 @@
 				<h2 class="text-lg font-semibold text-white">Execute Replay</h2>
 				<div class="flex items-center space-x-2">
 					<HttpMethodBadge method={replay.method} />
-					<span class="text-gray-300 font-mono text-sm">{replay.alias}</span>
+					<span class="text-gray-300 font-mono text-sm">{replay.name}</span>
 				</div>
 			</div>
 			<button
@@ -93,7 +93,7 @@
 				<div class="grid grid-cols-2 gap-4 text-sm">
 					<div>
 						<span class="text-gray-400">URL:</span>
-						<span class="text-white font-mono ml-2">{replay.target_url}</span>
+						<span class="text-white font-mono ml-2">{replay.url}</span>
 					</div>
 					<div>
 						<span class="text-gray-400">Method:</span>

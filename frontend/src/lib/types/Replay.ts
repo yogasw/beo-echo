@@ -5,8 +5,7 @@ export interface Replay {
 	name: string;
 	protocol: string;
 	method: string;
-	target_url: string;
-	url: string; // Alias for target_url for compatibility
+	url: string;
 	headers?: Record<string, string>;
 	payload?: string;
 	body?: string; // Alias for payload for compatibility
@@ -24,8 +23,7 @@ export interface CreateReplayRequest {
 	name: string;
 	protocol: string;
 	method: string;
-	target_url: string;
-	url?: string; // Alias for target_url for compatibility
+	url: string;
 	headers?: Record<string, string>;
 	payload?: string;
 	body?: string; // Alias for payload for compatibility
