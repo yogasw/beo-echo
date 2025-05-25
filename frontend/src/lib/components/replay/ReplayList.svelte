@@ -107,7 +107,7 @@
 					type="text"
 					bind:value={searchTerm}
 					placeholder="Search replays..."
-					class="block w-64 p-2 ps-10 text-sm rounded-lg theme-bg-primary theme-border border theme-text-primary focus:ring-blue-500 focus:border-blue-500 placeholder-gray-400 dark:placeholder-gray-400"
+					class="block w-full p-2 ps-10 text-sm rounded-lg theme-bg-primary theme-border border theme-text-primary focus:ring-blue-500 focus:border-blue-500 placeholder-gray-400 dark:placeholder-gray-400"
 				/>
 			</div>
 		</div>
