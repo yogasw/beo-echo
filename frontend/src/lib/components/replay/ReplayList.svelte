@@ -55,6 +55,7 @@
 	function handleSelectReplay(replay: Replay) {
 		console.log('Selecting replay:', replay);
 		selectedReplay.set(replay);
+		dispatch('edit', replay); // Dispatch an 'edit' event with the selected replay
 	}
 
 	function handleAdd() {
