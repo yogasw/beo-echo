@@ -108,7 +108,7 @@ func (r *replayRepository) FindReplayLogs(ctx context.Context, projectID string,
 			return nil, err
 		}
 
-		query = query.Where("path = ?", replay.TargetURL)
+		query = query.Where("path = ?", replay.Url)
 	}
 
 	err := query.Find(&logs).Error

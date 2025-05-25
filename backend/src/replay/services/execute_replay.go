@@ -33,7 +33,7 @@ func (s *ReplayService) ExecuteReplay(ctx context.Context, replayID string) (*Ex
 	}
 
 	// Currently only support HTTP protocol
-	if strings.ToLower(replay.Protocol) != "http" {
+	if strings.ToLower(string(replay.Protocol)) != "http" {
 		return nil, fmt.Errorf("unsupported protocol: %s", replay.Protocol)
 	}
 
@@ -58,12 +58,12 @@ func (s *ReplayService) ExecuteReplay(ctx context.Context, replayID string) (*Ex
 		reqBody = strings.NewReader(replay.Payload)
 	}
 
-	httpReq, err := http.NewRequestWithContext(ctx, replay.Method, replay.TargetURL, reqBody)
+	httpReq, err := http.NewRequestWithContext(ctx, replay.Method, replay.Url, reqBody)
 	if err != nil {
 		log.Error().
 			Err(err).
 			Str("replay_id", replayID).
-			Str("target_url", replay.TargetURL).
+			Str("target_url", replay.Url).
 			Msg("failed to create HTTP request")
 		return nil, fmt.Errorf("failed to create request: %w", err)
 	}
@@ -86,7 +86,7 @@ func (s *ReplayService) ExecuteReplay(ctx context.Context, replayID string) (*Ex
 		log.Error().
 			Err(err).
 			Str("replay_id", replayID).
-			Str("target_url", replay.TargetURL).
+			Str("target_url", replay.Url).
 			Int("latency_ms", latencyMS).
 			Msg("request execution failed")
 
@@ -155,7 +155,7 @@ func (s *ReplayService) logReplayExecution(ctx context.Context, replay *database
 	requestLog := &database.RequestLog{
 		ProjectID:       replay.ProjectID,
 		Method:          replay.Method,
-		Path:            replay.TargetURL,
+		Path:            replay.Url,
 		QueryParams:     queryParams,
 		RequestHeaders:  string(reqHeadersJSON),
 		RequestBody:     requestBody,

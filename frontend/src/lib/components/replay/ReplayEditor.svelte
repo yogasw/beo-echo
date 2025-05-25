@@ -33,7 +33,7 @@
 	// Initialize form data when replay prop changes
 	$: if (replay) {
 		formData = {
-			alias: replay.alias,
+			name: replay.name,
 			protocol: replay.protocol,
 			method: replay.method,
 			target_url: replay.target_url,
@@ -47,7 +47,7 @@
 	} else {
 		// Reset form for new replay
 		formData = {
-			alias: '',
+			name: '',
 			protocol: 'https',
 			method: 'GET',
 			target_url: '',
@@ -97,7 +97,7 @@
 		if (!$selectedWorkspace || !$selectedProject) return;
 
 		// Validation
-		if (!formData.alias.trim()) {
+		if (!formData.name.trim()) {
 			toast.error('Alias is required');
 			return;
 		}
@@ -196,7 +196,7 @@
 						<input
 							id="alias"
 							type="text"
-							bind:value={formData.alias}
+							bind:value={formData.name}
 							placeholder="e.g., Get Users API"
 							class="w-full px-3 py-2 border theme-border rounded-md theme-bg-primary theme-text-primary placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
 							required

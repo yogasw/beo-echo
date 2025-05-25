@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"strings"
 
 	"beo-echo/backend/src/database"
 
@@ -15,6 +16,18 @@ func (s *ReplayService) CreateReplay(ctx context.Context, projectID string, req 
 	log := zerolog.Ctx(ctx)
 
 	log.Info().Str("project_id", projectID).Str("name", req.Name).Msg("creating replay")
+	name := req.Name
+	if name == "" {
+		name = req.Url
+	}
+
+	protocol := database.ReplayProtocol(strings.ToLower(req.Protocol))
+	if protocol == "" {
+		log.Error().
+			Str("protocol", req.Protocol).
+			Msg("invalid protocol specified")
+		return nil, fmt.Errorf("invalid protocol: %s", req.Protocol)
+	}
 
 	// Validate project exists
 	_, err := s.repo.FindProjectByID(ctx, projectID)
@@ -44,12 +57,12 @@ func (s *ReplayService) CreateReplay(ctx context.Context, projectID string, req 
 	}
 
 	replay := &database.Replay{
-		Name:       req.Name,
+		Name:       name,
 		ProjectID:  projectID,
 		FolderID:   req.FolderID,
-		Protocol:   req.Protocol,
-		Method:     req.Method,
-		TargetURL:  req.TargetURL,
+		Protocol:   database.ReplayProtocol(strings.ToLower(req.Protocol)),
+		Method:     strings.ToUpper(req.Method),
+		Url:        req.Url,
 		Service:    req.Service,
 		MethodName: req.MethodName,
 		Headers:    string(headersJSON),

@@ -47,7 +47,7 @@ type CreateReplayRequest struct {
 	FolderID   *string           `json:"folder_id"`
 	Protocol   string            `json:"protocol" binding:"required"`
 	Method     string            `json:"method" binding:"required"`
-	TargetURL  string            `json:"target_url" binding:"required"`
+	Url        string            `json:"url" binding:"required"`
 	Service    string            `json:"service"`
 	MethodName string            `json:"method_name"`
 	Headers    map[string]string `json:"headers"`

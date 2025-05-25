@@ -51,7 +51,7 @@ export const filteredReplays = derived(
 		return $replays.filter(replay => {
 			// Search by alias or URL
 			const matchesSearch = !$filter.searchTerm || 
-				replay.alias?.toLowerCase().includes($filter.searchTerm?.toLowerCase()) ||
+				replay.name?.toLowerCase().includes($filter.searchTerm?.toLowerCase()) ||
 				replay.url?.toLowerCase().includes($filter.searchTerm?.toLowerCase());
 			// Filter by protocol
 			const matchesProtocol = !$filter.protocol || replay.protocol === $filter.protocol;

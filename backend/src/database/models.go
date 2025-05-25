@@ -317,6 +317,12 @@ func (s *SSOConfig) BeforeCreate(tx *gorm.DB) error {
 	return nil
 }
 
+type ReplayProtocol string
+
+const (
+	ReplayProtocolHTTP ReplayProtocol = "http" // HTTP/HTTPS protocol
+)
+
 // Replay stores a preset request configuration to be executed for testing or mocking purposes.
 // It supports multiple protocols and is organized under folders per project.
 type Replay struct {
@@ -325,11 +331,11 @@ type Replay struct {
 	ProjectID string  `gorm:"index;not null" json:"project_id"` // Project scoping
 	FolderID  *string `gorm:"index" json:"folder_id"`           // Optional folder location
 
-	Protocol   string `gorm:"not null" json:"protocol"`   // Protocol: http, grpc, ws, graphql, etc.
-	Method     string `gorm:"size:20" json:"method"`      // HTTP method or RPC action (e.g., POST, GET, INVOKE)
-	TargetURL  string `gorm:"not null" json:"target_url"` // Target URL or endpoint
-	Service    string `json:"service"`                    // gRPC service name (optional)
-	MethodName string `json:"method_name"`                // gRPC method name (optional)
+	Protocol   ReplayProtocol `gorm:"not null" json:"protocol"` // Protocol: http, grpc, ws, graphql, etc.
+	Method     string         `gorm:"size:20" json:"method"`    // HTTP method or RPC action (e.g., POST, GET, INVOKE)
+	Url        string         `json:"url"`                      // Target URL or endpoint
+	Service    string         `json:"service"`                  // gRPC service name (optional)
+	MethodName string         `json:"method_name"`              // gRPC method name (optional)
 
 	Headers  string `gorm:"type:text" json:"headers"`  // Headers as key-value pairs
 	Payload  string `gorm:"type:text" json:"payload"`  // Request payload

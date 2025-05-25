@@ -16,7 +16,7 @@
 
 	// Sort replays
 	$: sortedReplays = $filteredReplays.sort((a, b) => {
-		const comparison = a.alias.localeCompare(b.alias);
+		const comparison = a.name.localeCompare(b.name);
 		return sortOrder === 'asc' ? comparison : -comparison;
 	});
 
@@ -32,7 +32,7 @@
 	async function handleDelete(replay: Replay) {
 		if (!$selectedWorkspace || !$selectedProject) return;
 
-		if (!confirm(`Are you sure you want to delete the replay "${replay.alias}"?`)) {
+		if (!confirm(`Are you sure you want to delete the replay "${replay.name}"?`)) {
 			return;
 		}
 
@@ -165,7 +165,7 @@
 								
 								<div class="flex-1 min-w-0">
 									<h4 class="text-sm font-medium text-white truncate">
-										{replay.alias}
+										{replay.name}
 									</h4>
 									<p class="text-xs text-gray-400 truncate">
 										{replay.url}

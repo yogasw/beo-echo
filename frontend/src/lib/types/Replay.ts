@@ -2,8 +2,7 @@
 export interface Replay {
 	id: string;
 	project_id: string;
-	alias: string;
-	name: string; // Alias for alias for compatibility
+	name: string;
 	protocol: string;
 	method: string;
 	target_url: string;
@@ -22,7 +21,7 @@ export interface Replay {
 }
 
 export interface CreateReplayRequest {
-	alias: string;
+	name: string;
 	protocol: string;
 	method: string;
 	target_url: string;
@@ -99,7 +98,7 @@ export interface ExecuteReplayResponse {
 // HTTP Methods
 export const HTTP_METHODS = [
 	'GET',
-	'POST', 
+	'POST',
 	'PUT',
 	'PATCH',
 	'DELETE',
