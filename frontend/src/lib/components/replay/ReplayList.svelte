@@ -5,20 +5,29 @@
 	import { selectedProject } from '$lib/stores/selectedConfig';
 	import { toast } from '$lib/stores/toast';
 	import { replayApi } from '$lib/api/replayApi';
-	import { HTTP_METHODS, PROTOCOLS } from '$lib/types/Replay';
+	import { HTTP_METHODS } from '$lib/types/Replay';
 	import type { Replay } from '$lib/types/Replay';
+	import HttpMethodBadge from '$lib/components/common/HttpMethodBadge.svelte';
+	import StatusCodeBadge from '$lib/components/common/StatusCodeBadge.svelte';
 
 	const dispatch = createEventDispatcher();
 
 	let searchTerm = '';
-	let methodFilter = '';
-	let protocolFilter = '';
+	let sortOrder: 'asc' | 'desc' = 'asc';
+	let showDropdown = false;
+	let showAddDropdown = false;
+
+	// Sort replays
+	$: sortedReplays = $filteredReplays.sort((a, b) => {
+		const comparison = a.alias.localeCompare(b.alias);
+		return sortOrder === 'asc' ? comparison : -comparison;
+	});
 
 	// Update store when filters change
 	$: replayFilter.set({
 		searchTerm,
-		method: methodFilter,
-		protocol: protocolFilter
+		method: '',
+		protocol: ''
 	});
 
 	async function handleDelete(replay: Replay) {
@@ -44,208 +53,168 @@
 		dispatch('edit', replay);
 	}
 
-	function handleExecute(replay: Replay) {
-		dispatch('execute', replay);
+	function handleAdd() {
+		showAddDropdown = !showAddDropdown;
 	}
 
-	function handleLogs(replay: Replay) {
-		dispatch('logs', replay);
+	function handleAddHttp() {
+		dispatch('add', { type: 'http' });
+		showAddDropdown = false;
 	}
 
-	function handleRefresh() {
-		dispatch('refresh');
+	function handleAddFolder() {
+		dispatch('add', { type: 'folder' });
+		showAddDropdown = false;
 	}
 
-	function clearFilters() {
-		searchTerm = '';
-		methodFilter = '';
-		protocolFilter = '';
-	}
-
-	function getMethodColor(method: string): string {
-		switch (method.toUpperCase()) {
-			case 'GET': return 'bg-green-600 text-white';
-			case 'POST': return 'bg-blue-600 text-white';
-			case 'PUT': return 'bg-yellow-600 text-white';
-			case 'PATCH': return 'bg-orange-600 text-white';
-			case 'DELETE': return 'bg-red-600 text-white';
-			case 'HEAD': return 'bg-purple-600 text-white';
-			case 'OPTIONS': return 'bg-gray-600 text-white';
-			default: return 'bg-gray-600 text-white';
-		}
-	}
-
-	function formatDate(dateString: string): string {
-		return new Date(dateString).toLocaleDateString('en-US', {
-			month: 'short',
-			day: 'numeric',
-			hour: '2-digit',
-			minute: '2-digit'
-		});
+	function toggleSort() {
+		sortOrder = sortOrder === 'asc' ? 'desc' : 'asc';
 	}
 </script>
 
-<div class="flex flex-col h-full">
-	<!-- Search and Filter Bar -->
-	<div class="theme-bg-secondary border-b theme-border p-4">
-		<div class="flex flex-col lg:flex-row gap-4">
-			<!-- Search Input -->
-			<div class="flex-1">
-				<div class="relative">
-					<div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-						<i class="fas fa-search theme-text-secondary"></i>
+<div class="flex flex-col h-full theme-bg-primary border border-gray-700 rounded-lg shadow-md overflow-hidden">
+	<!-- Header Bar -->
+	<div class="flex items-center justify-between p-3 bg-gray-750 border-b border-gray-700">
+		<!-- Filter Section -->
+		<div class="flex items-center space-x-3">
+			<div class="relative">
+				<button 
+					on:click={() => showDropdown = !showDropdown}
+					class="flex items-center space-x-2 px-3 py-1.5 bg-gray-700 hover:bg-gray-600 text-white rounded-md text-sm transition-colors"
+				>
+					<i class="fas fa-search text-xs"></i>
+					<span>Filter</span>
+					<i class="fas fa-chevron-down text-xs {showDropdown ? 'rotate-180' : ''} transition-transform"></i>
+				</button>
+
+				<!-- Dropdown Filter Panel -->
+				{#if showDropdown}
+					<div class="absolute top-full left-0 mt-1 w-72 bg-gray-800 border border-gray-700 rounded-md shadow-lg z-10">
+						<div class="p-3 space-y-3">
+							<div>
+								<label class="block text-xs font-medium text-gray-300 mb-1">Search</label>
+								<input
+									type="text"
+									bind:value={searchTerm}
+									placeholder="Search by alias or URL..."
+									class="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded text-white text-sm placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+								/>
+							</div>
+							<div class="flex justify-end">
+								<button
+									on:click={() => { searchTerm = ''; showDropdown = false; }}
+									class="px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white text-xs rounded"
+								>
+									Apply
+								</button>
+							</div>
+						</div>
 					</div>
-					<input
-						type="text"
-						bind:value={searchTerm}
-						placeholder="Search replays by alias or URL..."
-						class="block w-full pl-10 pr-3 py-2 border theme-border rounded-md theme-bg-primary theme-text-primary placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-					/>
-				</div>
-			</div>
-
-			<!-- Filters -->
-			<div class="flex gap-3">
-				<select
-					bind:value={methodFilter}
-					class="px-3 py-2 border theme-border rounded-md theme-bg-primary theme-text-primary focus:outline-none focus:ring-2 focus:ring-blue-500"
-				>
-					<option value="">All Methods</option>
-					{#each HTTP_METHODS as method}
-						<option value={method}>{method}</option>
-					{/each}
-				</select>
-
-				<select
-					bind:value={protocolFilter}
-					class="px-3 py-2 border theme-border rounded-md theme-bg-primary theme-text-primary focus:outline-none focus:ring-2 focus:ring-blue-500"
-				>
-					<option value="">All Protocols</option>
-					{#each PROTOCOLS as protocol}
-						<option value={protocol}>{protocol.toUpperCase()}</option>
-					{/each}
-				</select>
-
-				<button
-					on:click={clearFilters}
-					class="px-3 py-2 text-sm theme-text-secondary hover:theme-text-primary transition-colors"
-					title="Clear filters"
-				>
-					<i class="fas fa-times"></i>
-				</button>
-
-				<button
-					on:click={handleRefresh}
-					class="px-3 py-2 text-sm theme-text-secondary hover:theme-text-primary transition-colors"
-					title="Refresh list"
-				>
-					<i class="fas fa-sync-alt"></i>
-				</button>
+				{/if}
 			</div>
 		</div>
 
-		<!-- Results Summary -->
-		{#if searchTerm || methodFilter || protocolFilter}
-			<div class="mt-3 text-sm theme-text-secondary">
-				Showing {$filteredReplays.length} of {$replays.length} replays
-				{#if searchTerm || methodFilter || protocolFilter}
-					<button
-						on:click={clearFilters}
-						class="ml-2 text-blue-400 hover:text-blue-300 underline"
-					>
-						Clear filters
-					</button>
+		<!-- Action Buttons -->
+		<div class="flex items-center space-x-2">
+			<button
+				on:click={toggleSort}
+				class="p-2 text-gray-300 hover:text-white transition-colors"
+				title="Toggle sort order"
+				aria-label="Toggle sort order"
+			>
+				<i class="fas fa-sort text-sm"></i>
+			</button>
+			
+			<div class="relative">
+				<button
+					on:click={handleAdd}
+					title="Add new replay"
+					aria-label="Add new replay"
+					class="flex items-center space-x-1 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-md text-sm transition-colors"
+				>
+					<i class="fas fa-plus text-xs"></i>
+					<i class="fas fa-chevron-down text-xs {showAddDropdown ? 'rotate-180' : ''} transition-transform"></i>
+				</button>
+
+				<!-- Add Options Dropdown -->
+				{#if showAddDropdown}
+					<div class="absolute top-full right-0 mt-1 w-48 bg-gray-800 border border-gray-700 rounded-md shadow-lg z-20">
+						<div class="py-1">
+							<button
+								on:click={handleAddHttp}
+								class="w-full text-left px-4 py-2 text-sm text-white hover:bg-gray-700 transition-colors flex items-center space-x-2"
+							>
+								<i class="fas fa-globe text-blue-400"></i>
+								<span>HTTP Replay</span>
+							</button>
+							<button
+								on:click={handleAddFolder}
+								class="w-full text-left px-4 py-2 text-sm text-white hover:bg-gray-700 transition-colors flex items-center space-x-2"
+							>
+								<i class="fas fa-folder text-yellow-400"></i>
+								<span>Folder</span>
+							</button>
+						</div>
+					</div>
 				{/if}
 			</div>
-		{/if}
+		</div>
 	</div>
 
-	<!-- Replay List -->
+	<!-- Content Area -->
 	<div class="flex-1 overflow-auto">
 		{#if $filteredReplays.length === 0}
 			<div class="flex items-center justify-center h-full">
-				<div class="text-center theme-text-secondary">
+				<div class="text-center text-gray-400">
 					{#if $replays.length === 0}
 						<i class="fas fa-play-circle text-4xl mb-4 opacity-50"></i>
 						<h3 class="text-lg font-medium mb-2">No replays yet</h3>
-						<p>Create your first API replay to get started</p>
+						<p class="text-sm">Create your first API replay to get started</p>
 					{:else}
 						<i class="fas fa-search text-4xl mb-4 opacity-50"></i>
 						<h3 class="text-lg font-medium mb-2">No matching replays</h3>
-						<p>Try adjusting your search criteria</p>
+						<p class="text-sm">Try adjusting your search criteria</p>
 					{/if}
 				</div>
 			</div>
 		{:else}
-			<div class="divide-y theme-border">
-				{#each $filteredReplays as replay (replay.id)}
-					<div class="p-4 hover:theme-bg-secondary transition-colors group">
-						<div class="flex items-center justify-between">
-							<!-- Replay Info -->
-							<div class="flex-1 min-w-0">
-								<div class="flex items-center space-x-3 mb-2">
-									<!-- Method Badge -->
-									<span class="px-2 py-1 text-xs font-medium rounded {getMethodColor(replay.method)}">
-										{replay.method}
-									</span>
-									
-									<!-- Protocol Badge -->
-									<span class="px-2 py-1 text-xs font-medium rounded bg-gray-600 text-white">
-										{replay.protocol.toUpperCase()}
-									</span>
-									
-									<!-- Alias -->
-									<h3 class="font-medium theme-text-primary truncate">
+			<div class="divide-y divide-gray-700">
+				{#each sortedReplays as replay (replay.id)}
+					<div class="group hover:bg-gray-750 transition-colors">
+						<div class="flex items-center justify-between px-4 py-1">
+							<!-- Method Icon and Info -->
+							<div class="flex items-center space-x-3 flex-1 min-w-0">
+								
+								<HttpMethodBadge method={replay.method} />
+								
+								<div class="flex-1 min-w-0">
+									<h4 class="text-sm font-medium text-white truncate">
 										{replay.alias}
-									</h3>
-								</div>
-								
-								<!-- URL -->
-								<div class="text-sm theme-text-secondary font-mono truncate mb-1">
-									{replay.url}
-								</div>
-								
-								<!-- Metadata -->
-								<div class="text-xs theme-text-secondary">
-									Created {formatDate(replay.created_at)}
-									{#if replay.updated_at !== replay.created_at}
-										• Updated {formatDate(replay.updated_at)}
-									{/if}
+									</h4>
+									<p class="text-xs text-gray-400 truncate">
+										{replay.url}
+									</p>
 								</div>
 							</div>
 
 							<!-- Actions -->
-							<div class="flex items-center space-x-2 opacity-0 group-hover:opacity-100 transition-opacity">
-								<button
-									on:click={() => handleExecute(replay)}
-									class="p-2 text-green-400 hover:text-green-300 transition-colors"
-									title="Execute replay"
-								>
-									<i class="fas fa-play"></i>
-								</button>
-								
-								<button
-									on:click={() => handleLogs(replay)}
-									class="p-2 text-blue-400 hover:text-blue-300 transition-colors"
-									title="View execution logs"
-								>
-									<i class="fas fa-history"></i>
-								</button>
-								
+							<div class="flex items-center space-x-1 opacity-0 group-hover:opacity-100 transition-opacity">
 								<button
 									on:click={() => handleEdit(replay)}
-									class="p-2 theme-text-secondary hover:theme-text-primary transition-colors"
-									title="Edit replay"
+									class="p-1.5 text-gray-400 hover:text-white transition-colors"
+									title="Edit"
+									aria-label="Edit replay"
 								>
-									<i class="fas fa-edit"></i>
+									<i class="fas fa-edit text-xs"></i>
 								</button>
 								
 								<button
 									on:click={() => handleDelete(replay)}
-									class="p-2 text-red-400 hover:text-red-300 transition-colors"
-									title="Delete replay"
+									class="p-1.5 text-gray-400 hover:text-red-400 transition-colors"
+									title="Delete"
+									aria-label="Delete replay"
 								>
-									<i class="fas fa-trash"></i>
+									<i class="fas fa-trash text-xs"></i>
 								</button>
 							</div>
 						</div>
@@ -255,3 +224,13 @@
 		{/if}
 	</div>
 </div>
+
+<!-- Click outside to close dropdown -->
+{#if showDropdown}
+	<div class="fixed inset-0 z-0" on:click={() => showDropdown = false}></div>
+{/if}
+
+<!-- Click outside to close add dropdown -->
+{#if showAddDropdown}
+	<div class="fixed inset-0 z-10" on:click={() => showAddDropdown = false}></div>
+{/if}
