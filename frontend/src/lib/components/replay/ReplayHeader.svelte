@@ -1,15 +1,63 @@
 <script lang="ts">
+	import { onMount, onDestroy, tick } from 'svelte'; // Import tick
 	import * as ThemeUtils from '$lib/utils/themeUtils';
-    export var activeTabId: string;
-    export var switchTab: (tabId: string) => void;
-    export var closeTab: (tabId: string) => void;
-    export var createNewTab: () => void;
-    export var tabs: {
-        id: string;
-        name: string;
-        method: string;
-        isUnsaved?: boolean;
-    }[] = [];
+	export var activeTabId: string;
+	export var switchTab: (tabId: string) => void;
+	export var closeTab: (tabId: string) => void;
+	export var createNewTab: () => void;
+	export var tabs: {
+		id: string;
+		name: string;
+		method: string;
+		isUnsaved?: boolean;
+	}[] = [];
+
+	let scrollableContainer: HTMLDivElement | null = null;
+	let isOverflowing = false;
+	let mutationObserver: MutationObserver | null = null;
+
+	function checkOverflow() {
+		if (scrollableContainer) {
+			const currentlyOverflowing = scrollableContainer.scrollWidth > scrollableContainer.clientWidth;
+			if (isOverflowing !== currentlyOverflowing) {
+				isOverflowing = currentlyOverflowing;
+			}
+		}
+	}
+
+	onMount(() => {
+		// Initial check after DOM is ready for the scrollableContainer
+		// The reactive block below handles the first check once scrollableContainer is bound.
+
+		window.addEventListener('resize', checkOverflow);
+
+		if (scrollableContainer) {
+			mutationObserver = new MutationObserver(checkOverflow);
+			// Observe changes that could affect overflow: child additions/removals, attribute changes (like style/class)
+			mutationObserver.observe(scrollableContainer, {
+				childList: true,
+				attributes: true,
+				subtree: true // If children's content changes width
+			});
+		}
+	});
+
+	onDestroy(() => {
+		window.removeEventListener('resize', checkOverflow);
+		if (mutationObserver) {
+			mutationObserver.disconnect();
+		}
+	});
+
+	// Reactive statement to check overflow when tabs change or scrollableContainer is bound/updated
+	$: if (scrollableContainer && typeof tabs !== 'undefined') {
+		// tabs is included to ensure this runs when the number of tabs changes
+		const updateOverflowState = async () => {
+			await tick(); // Wait for Svelte to update the DOM based on any changes (e.g., tabs)
+			checkOverflow();
+		};
+		updateOverflowState();
+	}
 </script>
 
 <!-- Header with tabs/actions -->
@@ -27,7 +75,10 @@
 				<span>Replay</span>
 			</button>
 
-			<div class="flex items-center space-x-1 overflow-x-auto flex-1 hide-scrollbar">
+			<div
+				class="flex items-center space-x-1 overflow-x-auto flex-1 hide-scrollbar"
+				bind:this={scrollableContainer}
+			>
 				{#each tabs as tab (tab.id)}
 					<div
 						class="flex items-center bg-gray-100 dark:bg-gray-750 rounded-lg transition-all duration-200 hover:shadow-md flex-shrink-0"
@@ -66,16 +117,30 @@
 						</button>
 					</div>
 				{/each}
+				<!--- Button 1 (Inline add button - shown when not overflowing) -->
+				{#if !isOverflowing}
+					<button
+						class="p-2 ml-2 hover:bg-blue-600 hover:text-white bg-gray-200 dark:bg-gray-700 theme-text-primary rounded-lg transition-all duration-200 flex items-center justify-center shadow-sm hover:shadow-md flex-shrink-0"
+						title="Create new request tab"
+						aria-label="Add new request tab"
+						on:click={createNewTab}
+					>
+						<i class="fas fa-plus text-sm"></i>
+					</button>
+				{/if}
 			</div>
 
-			<button
-				class="p-2 ml-2 hover:bg-blue-600 hover:text-white bg-gray-200 dark:bg-gray-700 theme-text-primary rounded-lg transition-all duration-200 flex items-center justify-center shadow-sm hover:shadow-md flex-shrink-0"
-				title="Create new request tab"
-				aria-label="Add new request tab"
-				on:click={createNewTab}
-			>
-				<i class="fas fa-plus text-sm"></i>
-			</button>
+			<!--- Button 2 (Fixed add button - shown when overflowing) -->
+			{#if isOverflowing}
+				<button
+					class="p-2 ml-2 hover:bg-blue-600 hover:text-white bg-gray-200 dark:bg-gray-700 theme-text-primary rounded-lg transition-all duration-200 flex items-center justify-center shadow-sm hover:shadow-md flex-shrink-0"
+					title="Create new request tab"
+					aria-label="Add new request tab"
+					on:click={createNewTab}
+				>
+					<i class="fas fa-plus text-sm"></i>
+				</button>
+			{/if}
 		</div>
 	</div>
 </div>
