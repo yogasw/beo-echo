@@ -45,7 +45,7 @@ This project is a Beo Echo API mocking service with a Golang backend and Svelte 
 ├── .vscode/           # VSCode settings
 ├── backend/           # Golang Backend (BE)
 ├── docs/              # Documentation files
-└── frontend/          # Svelte Frontend (FE)
+└── frontend/          # Svelte Frontend (FE) (version 5)
 ```
 
 ## Technology Stack
@@ -65,7 +65,7 @@ This project is a Beo Echo API mocking service with a Golang backend and Svelte 
   - Real-time proxy forwarding
 
 ### Frontend (FE)
-- **Framework**: SvelteKit
+- **Framework**: SvelteKit (version 5)
 - **Styling**: Tailwind CSS with custom theming
 - **Language**: TypeScript
 - **State Management**: Svelte stores
