@@ -6,6 +6,7 @@
 	import { currentWorkspace } from '$lib/stores/workspace';
 	import ModalCreateMock from '../logs/ModalCreateMock.svelte';
 	import { selectedProject } from '$lib/stores/selectedConfig';
+	import { getRoutesPanelWidth, setRoutesPanelWidth } from '$lib/utils/localStorage';
 
 	export let selectedEndpoint: Endpoint | null;
 	export let activeConfigName: string;
@@ -14,7 +15,7 @@
 	export let selectRoute: (route: Endpoint) => void;
 	export let handleRouteStatusChange: (route: Endpoint) => void;
 	export let handleAddEndpoint: (endpoint: Endpoint) => void;
-	export let panelWidth: number = 33; // Panel width as percentage (33% = w-1/3)
+	export let panelWidth: number = 33; // Panel width as percentage (33% = w-1/3) - will be initialized in onMount
 	let defaultRequestLog: RequestLog = {
 		id: '',
 		project_id: $selectedProject?.id || '',
@@ -143,10 +144,16 @@
 		document.removeEventListener('mouseup', stopResize);
 		document.body.style.cursor = '';
 		document.body.style.userSelect = '';
+		
+		// Save panel width to localStorage when resize is complete
+		setRoutesPanelWidth(panelWidth);
 	}
 
 	onMount(() => {
 		document.addEventListener('click', handleClickOutside);
+		
+		// Initialize panel width from localStorage
+		panelWidth = getRoutesPanelWidth();
 	});
 
 	onDestroy(() => {

@@ -19,10 +19,10 @@
 	import { isLoadingContentArea } from '$lib/stores/loadingContentArea';
 	import { initializeLogsStream } from '$lib/services/logsService';
 	import { logStatus } from '$lib/stores/logStatus';
-	import { setCurrentWorkspaceId } from '$lib/utils/localStorage';
+	import { setCurrentWorkspaceId, getProjectPanelWidth, setProjectPanelWidth } from '$lib/utils/localStorage';
 
 	export let searchTerm = '';
-	export let panelWidth: number = 18; // Panel width in rem units (w-72 = 18rem)
+	export let panelWidth: number = getProjectPanelWidth(); // Panel width in rem units (w-72 = 18rem)
 
 	const dispatch = createEventDispatcher<{
 		selectedProject: Project;
@@ -79,6 +79,9 @@
 		document.removeEventListener('mouseup', stopResize);
 		document.body.style.cursor = '';
 		document.body.style.userSelect = '';
+		
+		// Save panel width to localStorage when resize is complete
+		setProjectPanelWidth(panelWidth);
 	}
 
 	// Function to generate alias from project name
