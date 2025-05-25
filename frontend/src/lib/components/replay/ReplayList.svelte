@@ -5,18 +5,15 @@
 	import { selectedProject } from '$lib/stores/selectedConfig';
 	import { toast } from '$lib/stores/toast';
 	import { replayApi } from '$lib/api/replayApi';
-	import { HTTP_METHODS } from '$lib/types/Replay';
 	import type { Replay } from '$lib/types/Replay';
 	import HttpMethodBadge from '$lib/components/common/HttpMethodBadge.svelte';
-	import StatusCodeBadge from '$lib/components/common/StatusCodeBadge.svelte';
 
 	const dispatch = createEventDispatcher();
 
-	let searchTerm = '';
 	let selectedMethod = '';
 	let sortOrder: 'asc' | 'desc' = 'asc';
-	let showDropdown = false;
 	let showAddDropdown = false;
+	let searchTerm = '';
 
 	// Sort replays
 	$: sortedReplays = $filteredReplays.sort((a, b) => {
@@ -25,11 +22,14 @@
 	});
 
 	// Update store when filters change
-	$: replayFilter.set({
-		searchTerm,
-		method: selectedMethod,
-		protocol: ''
-	});
+	$: {
+		console.log('Updating replayFilter with searchTerm:', searchTerm, 'method:', selectedMethod);
+		replayFilter.set({
+			searchTerm: searchTerm,
+			method: selectedMethod,
+			protocol: ''
+		});
+	}
 
 	async function handleDelete(replay: Replay) {
 		if (!$selectedWorkspace || !$selectedProject) return;
@@ -76,60 +76,19 @@
 <div class="flex flex-col h-full theme-bg-primary border border-gray-700 rounded-lg shadow-md overflow-hidden">
 	<!-- Header Bar -->
 	<div class="flex items-center justify-between p-3 bg-gray-750 border-b border-gray-700">
-		<!-- Filter Section -->
+		<!-- Search Section -->
 		<div class="flex items-center space-x-3">
+			<!-- Search Input -->
 			<div class="relative">
-				<button 
-					on:click={() => showDropdown = !showDropdown}
-					class="flex items-center space-x-2 px-3 py-1.5 bg-gray-700 hover:bg-gray-600 text-white rounded-md text-sm transition-colors"
-				>
-					<i class="fas fa-search text-xs"></i>
-					<span>Filter</span>
-					<i class="fas fa-chevron-down text-xs {showDropdown ? 'rotate-180' : ''} transition-transform"></i>
-				</button>
-
-				<!-- Dropdown Filter Panel -->
-				{#if showDropdown}
-					<div class="absolute top-full left-0 mt-1 w-80 bg-gray-800 border border-gray-700 rounded-md shadow-lg z-10">
-						<div class="p-3 space-y-3">
-							<div>
-								<label class="block text-xs font-medium text-gray-300 mb-1">Search by name</label>
-								<input
-									type="text"
-									bind:value={searchTerm}
-									placeholder="Search by alias or URL..."
-									class="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded text-white text-sm placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-								/>
-							</div>
-							<div>
-								<label class="block text-xs font-medium text-gray-300 mb-1">Method</label>
-								<select
-									bind:value={selectedMethod}
-									class="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded text-white text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-								>
-									<option value="">All Methods</option>
-									{#each HTTP_METHODS as method}
-										<option value={method}>{method}</option>
-									{/each}
-								</select>
-							</div>
-							<div class="flex justify-between">
-								<button
-									on:click={() => { searchTerm = ''; selectedMethod = ''; }}
-									class="px-3 py-1 bg-gray-600 hover:bg-gray-500 text-white text-xs rounded"
-								>
-									Clear
-								</button>
-								<button
-									on:click={() => showDropdown = false}
-									class="px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white text-xs rounded"
-								>
-									Apply
-								</button>
-							</div>
-						</div>
-					</div>
-				{/if}
+				<div class="absolute inset-y-0 start-0 flex items-center ps-3 pointer-events-none">
+					<i class="fas fa-search text-gray-400 text-sm"></i>
+				</div>
+				<input
+					type="text"
+					bind:value={searchTerm}
+					placeholder="Search replays..."
+					class="block w-64 p-2 ps-10 text-sm rounded-lg bg-gray-800 border border-gray-700 text-white focus:ring-blue-500 focus:border-blue-500 placeholder-gray-400"
+				/>
 			</div>
 		</div>
 
@@ -243,13 +202,3 @@
 		{/if}
 	</div>
 </div>
-
-<!-- Click outside to close dropdown -->
-{#if showDropdown}
-	<div class="fixed inset-0 z-0" on:click={() => showDropdown = false}></div>
-{/if}
-
-<!-- Click outside to close add dropdown -->
-{#if showAddDropdown}
-	<div class="fixed inset-0 z-10" on:click={() => showAddDropdown = false}></div>
-{/if}
