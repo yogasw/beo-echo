@@ -2,7 +2,7 @@
 	import { createEventDispatcher } from 'svelte';
 	import ReplayResponseFooter from './ReplayResponseFooter.svelte'; // Import the new footer component
 	import * as ThemeUtils from '$lib/utils/themeUtils';
-	import ReplayHeader from './ReplayHeader.svelte';
+	import ReplayBar from './ReplayBar.svelte';
 
 	// Tab management
 	interface Tab {
@@ -130,7 +130,7 @@
 
 <!-- Postman-like Request Interface -->
 <div class="flex flex-col h-full">
-	<ReplayHeader 
+	<ReplayBar 
 		activeTabId={activeTabId}
 		switchTab={switchTab}
 		closeTab={closeTab}
