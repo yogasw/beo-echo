@@ -160,16 +160,17 @@
 					showPlaceholder={false}
 					className="w-full md:w-[120px]"
 					value={selectedEndpoint?.method.toUpperCase()}
-					placeholder={""}
+					placeholder={''}
 					on:change={(e) => {
 						if (selectedEndpoint) {
+							let endpoint = e.detail.value;
 							let target = e?.target as HTMLSelectElement;
-							selectedEndpoint = updateEndpoint('method', target?.value || 'GET', selectedEndpoint);
+							updateEndpoint('method', endpoint, selectedEndpoint);
 							console.log('Updated endpoint method:', selectedEndpoint);
 						}
 					}}
 				/>
-				
+
 				<!-- API Host Indicator - Enhanced with better tooltip and responsive design -->
 				<div class="flex items-center relative">
 					<div
@@ -178,7 +179,7 @@
 						<i class="fas fa-globe-americas text-blue-400 mr-1.5 text-xs"></i>
 						<span class="text-blue-400 font-medium text-xs">API HOST</span>
 						<i class="fas fa-chevron-down text-blue-400 opacity-50 ml-1 text-[10px]"></i>
-						
+
 						<!-- Improved tooltip -->
 						<div
 							class="absolute z-20 hidden group-hover:block bg-gray-800 text-white text-xs rounded-md p-4 left-0 mt-[42px] w-auto min-w-[240px] max-w-sm whitespace-normal break-all shadow-lg border border-gray-700 transition-all duration-200 ease-in-out"
@@ -194,18 +195,20 @@
 									</div>
 									<div class="flex flex-col">
 										<span class="font-semibold mb-1">Base URL</span>
-										<span class="font-mono text-blue-300">{$selectedProject?.url || 'No API host defined'}</span>
+										<span class="font-mono text-blue-300"
+											>{$selectedProject?.url || 'No API host defined'}</span
+										>
 									</div>
 								</div>
 								<div class="text-xs text-gray-400">
-									This is the base URL for all endpoints in this project. 
-									It will be prepended to all endpoint paths when requests are processed.
+									This is the base URL for all endpoints in this project. It will be prepended to
+									all endpoint paths when requests are processed.
 								</div>
 							</div>
 						</div>
 					</div>
 				</div>
-				
+
 				<!-- Path Input Field - Enhanced with styling and icons -->
 				<div class="relative w-full md:flex-1">
 					<div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
@@ -223,14 +226,16 @@
 							}
 						}}
 					/>
-					
+
 					<!-- Enhanced Open in New Tab Button -->
 					<div class="absolute inset-y-0 right-0 flex items-center pr-3">
 						<button
 							class="p-1.5 rounded-md hover:bg-blue-500/10 {ThemeUtils.themeTextMuted()} hover:text-blue-500 transition-colors disabled:opacity-50 disabled:hover:bg-transparent"
 							disabled={!selectedEndpoint || selectedEndpoint?.method !== 'GET'}
 							aria-label="Open endpoint in a new tab"
-							title={selectedEndpoint?.method !== 'GET' ? 'Only GET endpoints can be opened directly' : 'Open endpoint in new tab'}
+							title={selectedEndpoint?.method !== 'GET'
+								? 'Only GET endpoints can be opened directly'
+								: 'Open endpoint in new tab'}
 							on:click={() => {
 								let url = `${$selectedProject?.url || ''}${selectedEndpoint?.path ? selectedEndpoint.path : ''}`;
 								window.open(url, '_blank');
@@ -263,7 +268,11 @@
 					on:blur={(e) => {
 						if (selectedEndpoint) {
 							let target = e?.target as HTMLTextAreaElement;
-							selectedEndpoint = updateEndpoint('documentation', target?.value || '', selectedEndpoint);
+							selectedEndpoint = updateEndpoint(
+								'documentation',
+								target?.value || '',
+								selectedEndpoint
+							);
 						}
 					}}>{selectedEndpoint?.documentation || ''}</textarea
 				>
@@ -291,25 +300,21 @@
 
 			<!-- Enhanced Tab Navigation -->
 			<div class="flex mb-4 border-b {ThemeUtils.themeBorder()} overflow-x-auto no-scrollbar">
-				{#each [
-					{ id: 'Status & Body', icon: 'fas fa-code' },
-					{ id: 'Headers', icon: 'fas fa-exchange-alt' },
-					{ id: 'Rules', icon: 'fas fa-filter' },
-					{ id: 'Notes', icon: 'fas fa-sticky-note' }
-				] as tab}
+				{#each [{ id: 'Status & Body', icon: 'fas fa-code' }, { id: 'Headers', icon: 'fas fa-exchange-alt' }, { id: 'Rules', icon: 'fas fa-filter' }, { id: 'Notes', icon: 'fas fa-sticky-note' }] as tab}
 					<button
-						class="relative flex items-center py-3 px-4 font-medium text-sm whitespace-nowrap transition-all duration-200 {
-							tab.id === activeContentTab 
-								? `${ThemeUtils.themeTextPrimary()} border-b-2 border-blue-500` 
-								: `${ThemeUtils.themeTextMuted()} hover:${ThemeUtils.themeTextPrimary('opacity-80')}`
-						}"
+						class="relative flex items-center py-3 px-4 font-medium text-sm whitespace-nowrap transition-all duration-200 {tab.id ===
+						activeContentTab
+							? `${ThemeUtils.themeTextPrimary()} border-b-2 border-blue-500`
+							: `${ThemeUtils.themeTextMuted()} hover:${ThemeUtils.themeTextPrimary('opacity-80')}`}"
 						on:click={() => (activeContentTab = tab.id)}
 					>
 						<i class="{tab.icon} mr-2 {tab.id === activeContentTab ? 'text-blue-500' : ''}"></i>
 						{tab.id}
 						<!-- Active indicator for current tab -->
 						{#if tab.id === activeContentTab}
-							<span class="absolute bottom-0 left-0 h-0.5 w-full bg-blue-500 transform transition-transform"></span>
+							<span
+								class="absolute bottom-0 left-0 h-0.5 w-full bg-blue-500 transform transition-transform"
+							></span>
 						{/if}
 					</button>
 				{/each}
