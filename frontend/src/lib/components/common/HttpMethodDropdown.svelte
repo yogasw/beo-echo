@@ -12,6 +12,7 @@
   export let error: string = '';
   export let label: string = 'HTTP Method';
   export let showLabel: boolean = true;
+  export let showPlaceholder: boolean = true;
   export let allowCustom: boolean = false;
   export let className: string = '';
 
@@ -214,11 +215,11 @@
         bind:value={searchTerm}
         id="http-method"
         type="text"
-        class="bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white rounded-lg block w-full py-3 pr-10 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors focus:outline-none cursor-pointer"
+        class="bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white rounded-lg block w-full py-2 px-4 pr-10 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors focus:outline-none cursor-pointer"
         class:border-red-500={error}
         class:dark:border-red-500={error}
         style="padding-left: {dynamicPadding}"
-        placeholder={isOpen ? 'Type to search... (e.g., "get data", "post create")' : (selectedMethod ? selectedMethod.label : placeholder)}
+        placeholder={isOpen ? 'Type to search... (e.g., "get data", "post create")' : (showPlaceholder ? (selectedMethod ? selectedMethod.label : placeholder) : '')}
         {disabled}
         on:keydown={handleInputKeydown}
         on:focus={handleInputFocus}
@@ -244,7 +245,7 @@
     {#if isOpen}
       <div 
         bind:this={dropdownElement}
-        class="absolute z-50 w-full mt-1 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg shadow-lg max-h-64 overflow-auto"
+        class="absolute z-50 min-w-[220px] mt-1 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg shadow-lg max-h-64 overflow-auto"
       >
         {#each filteredMethods as method, index}
           <button
