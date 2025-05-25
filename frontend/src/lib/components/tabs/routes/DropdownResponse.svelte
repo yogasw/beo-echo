@@ -1,11 +1,14 @@
 <script lang="ts">
 	import type { Endpoint, Response } from '$lib/api/BeoApi';
-	import { addResponse } from '$lib/api/BeoApi';
+	import { addResponse, updateEndpoint } from '$lib/api/BeoApi';
+	import { toast } from '$lib/stores/toast';
 	import * as ThemeUtils from '$lib/utils/themeUtils';
 
 	let selectedValue: string = '';
 	export let selectedEndpoint: Endpoint | null;
 	export let selectedResponse: Response | null;
+
+	let flaggedResponseId: string | null = null;
 
 	const toggleDropdown = (): void => {
 		const dropdown = document.getElementById('dropdownMenu');
@@ -87,6 +90,36 @@
 		}
 	};
 
+	// Toggle flag for a response
+	function toggleFlag(responseId: string) {
+		flaggedResponseId = responseId === flaggedResponseId ? null : responseId;
+	}
+
+	// Handle response mode change
+	const handleResponseModeChange = async (mode: 'static' | 'random' | 'round_robin'): Promise<void> => {
+		if (!selectedEndpoint) {
+			toast.error('No endpoint selected');
+			return;
+		}
+
+		try {
+			// Update the endpoint response mode via API
+			await updateEndpoint(selectedEndpoint.project_id, selectedEndpoint.id, {
+				responseMode: mode
+			});
+
+			// Update local state
+			selectedEndpoint.response_mode = mode;
+			
+			// Show success notification
+			const modeDisplayName = mode.replace('_', ' ').toLowerCase();
+			toast.success(`Response mode changed to ${modeDisplayName}`);
+		} catch (error) {
+			console.error('Failed to update response mode:', error);
+			toast.error('Failed to update response mode');
+		}
+	};
+
 	$: {
 		if (selectedResponse) {
 			// Find the index of the selected response in the endpoint's responses
@@ -119,11 +152,23 @@
 				<ul class="text-sm">
 					{#if selectedEndpoint?.responses && selectedEndpoint.responses.length > 0}
 						{#each selectedEndpoint.responses as response, index}
-							<li>
+							<li class="flex items-center">
 								<button type="button" class="w-full text-left px-4 py-2 {ThemeUtils.themeHover()} cursor-pointer"
-												on:click={() => { selectResponse(index, response) }}>
+											on:click={() => { selectResponse(index, response) }}>
 									Response {index + 1} ({response.status_code}) {truncateText(sanitizeText(response?.note))}
 								</button>
+								<!-- Copy & Delete actions -->
+								<div class="flex items-center space-x-1 ml-2">
+									<button class="p-1 rounded hover:bg-gray-700" title="Flag" aria-label="Flag" on:click|stopPropagation={() => { toggleFlag(response.id); }}>
+										<i class="fas fa-flag {flaggedResponseId === response.id ? 'text-red-500' : 'text-gray-300'}"></i>
+									</button>
+									<button class="p-1 rounded hover:bg-gray-700" title="Copy" aria-label="Copy" on:click|stopPropagation={() => { console.log('Copy', response); }}>
+										<i class="fas fa-copy text-gray-300"></i>
+									</button>
+									<button class="p-1 rounded hover:bg-gray-700" title="Delete" aria-label="Delete" on:click|stopPropagation={() => { console.log('Delete', response); }}>
+										<i class="fas fa-trash text-gray-300"></i>
+									</button>
+								</div>
 							</li>
 						{/each}
 					{:else}
@@ -132,5 +177,35 @@
 				</ul>
 			</div>
 		</div>
+	</div>
+	<!-- Action buttons group -->
+	<div class="flex items-center space-x-1 ml-4">
+		<button 
+			class="p-2 rounded-md text-sm transition-all duration-200 {selectedEndpoint?.response_mode === 'static' ? 'bg-blue-600 text-white shadow-md' : 'bg-gray-700 dark:bg-gray-600 text-gray-300 hover:bg-gray-600 dark:hover:bg-gray-500 hover:text-white'}"
+			title="Static Mode - Return highest priority response" 
+			aria-label="Static response mode" 
+			on:click={() => handleResponseModeChange('static')}
+			disabled={!selectedEndpoint}
+		>
+			<i class="fas fa-list text-xs"></i>
+		</button>
+		<button 
+			class="p-2 rounded-md text-sm transition-all duration-200 {selectedEndpoint?.response_mode === 'random' ? 'bg-green-600 text-white shadow-md' : 'bg-gray-700 dark:bg-gray-600 text-gray-300 hover:bg-gray-600 dark:hover:bg-gray-500 hover:text-white'}"
+			title="Random Mode - Return random response from available options" 
+			aria-label="Random response mode" 
+			on:click={() => handleResponseModeChange('random')}
+			disabled={!selectedEndpoint}
+		>
+			<i class="fas fa-random text-xs"></i>
+		</button>
+		<button 
+			class="p-2 rounded-md text-sm transition-all duration-200 {selectedEndpoint?.response_mode === 'round_robin' ? 'bg-purple-600 text-white shadow-md' : 'bg-gray-700 dark:bg-gray-600 text-gray-300 hover:bg-gray-600 dark:hover:bg-gray-500 hover:text-white'}"
+			title="Round Robin Mode - Cycle through responses in order" 
+			aria-label="Round robin response mode" 
+			on:click={() => handleResponseModeChange('round_robin')}
+			disabled={!selectedEndpoint}
+		>
+			<i class="fas fa-sync-alt text-xs"></i>
+		</button>
 	</div>
 </div>
