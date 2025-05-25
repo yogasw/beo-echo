@@ -1,10 +1,11 @@
 <script lang="ts">
-	import { deleteEndpoint, updateEndpoint, type Endpoint, type Project, type RequestLog } from '$lib/api/BeoApi';
+	import { deleteEndpoint, updateEndpoint, type Endpoint, type RequestLog } from '$lib/api/BeoApi';
 	import { toast } from '$lib/stores/toast';
 	import { onMount, onDestroy } from 'svelte';
 	import * as ThemeUtils from '$lib/utils/themeUtils';
 	import { currentWorkspace } from '$lib/stores/workspace';
 	import ModalCreateMock from '../logs/ModalCreateMock.svelte';
+	import { selectedProject } from '$lib/stores/selectedConfig';
 
 	export let selectedEndpoint: Endpoint | null;
 	export let activeConfigName: string;
@@ -15,7 +16,7 @@
 	export let handleAddEndpoint: (endpoint: Endpoint) => void;
 	let defaultRequestLog: RequestLog = {
 		id: '',
-		project_id: selectedEndpoint?.project_id || '',
+		project_id: $selectedProject?.id || '',
 		method: 'GET',
 		path: '/',
 		query_params: '',
@@ -114,6 +115,7 @@
 	onDestroy(() => {
 		document.removeEventListener('click', handleClickOutside);
 	});
+	console.log("projectId", selectedEndpoint?.project_id);
 </script>
 
 <!-- Routes Section -->
@@ -149,7 +151,7 @@
 
 	<ModalCreateMock
 		bind:isOpen={showAddEndpointModal}
-		projectId={selectedEndpoint?.project_id || ''}
+		projectId={$selectedProject?.id || ''}
 		onClose={() => (showAddEndpointModal = false)}
 		onSuccess={() => (showAddEndpointModal = false)}
 		on:endpointCreated={onEndpointCreated}
