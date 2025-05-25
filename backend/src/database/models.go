@@ -182,7 +182,7 @@ type RequestLog struct {
 	Bookmark        bool   `gorm:"type:bool" json:"bookmark"`           // Optional bookmark for easy reference
 	LogsHash        string `gorm:"type:string" json:"logs_hash"`        // Hash of the response body for integrity checks + jwt signature
 
-	Source SourceRequest `gorm:"size:50;not null" json:"source"` // Source of the request: "replay", "echo", etc.
+	Source SourceRequest `gorm:"size:50;not null default:''" json:"source"` // Source of the request: "replay", "echo", etc.
 
 	// ExecutionMode indicates the handling logic used for this request.
 	// Values follow ProjectMode: "mock", "proxy", "forwarder", etc.

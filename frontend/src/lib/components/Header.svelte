@@ -133,6 +133,21 @@
 		<span class="text-xs mt-1 theme-text-primary">Logs</span>
 	</button>
 	<button
+		class="relative group mr-4 flex flex-col items-center"
+		on:click={() => handleTabClick('replay')}
+		title="Switch to Replay tab"
+		aria-label="Switch to Replay tab"
+	>
+		<div
+			class="w-12 aspect-square theme-text-primary p-3 rounded-full border-2 border-green-500 flex items-center justify-center"
+			class:bg-blue-500={$activeTab === 'replay'}
+			class:theme-bg-secondary={$activeTab !== 'replay'}
+		>
+			<i class="fas fa-play-circle"></i>
+		</div>
+		<span class="text-xs mt-1 theme-text-primary">Replay</span>
+	</button>
+	<button
 		class="relative group mr-auto flex flex-col items-center"
 		on:click={() => handleTabClick('configuration')}
 		title="Switch to Configuration tab"
