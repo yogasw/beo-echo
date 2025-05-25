@@ -19,43 +19,43 @@
 	}
 </script>
 
-<footer class="bg-gray-900 dark:bg-gray-900 border-t border-gray-700 dark:border-gray-700">
+<footer class="bg-white dark:bg-gray-800 border-t border-gray-300 dark:border-gray-600">
 	<div
-		class="flex items-center justify-between p-2 border-b border-gray-700 dark:border-gray-700"
+		class="flex items-center justify-between p-3 border-b border-gray-200 dark:border-gray-700"
 	>
-		<div class="flex items-center space-x-2">
-			<span class="text-sm font-medium text-gray-300 dark:text-gray-300">Response</span>
+		<div class="flex items-center space-x-3">
+			<span class="text-sm font-semibold text-gray-800 dark:text-white">Response</span>
 			<button
 				on:click={showHistory}
-				class="flex items-center space-x-1 text-sm text-gray-400 dark:text-gray-400 hover:text-gray-200 dark:hover:text-gray-200"
+				class="flex items-center space-x-2 text-sm text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors duration-200"
 			>
-				<i class="fas fa-history text-base"></i>
+				<i class="fas fa-history text-sm"></i>
 				<span>History</span>
 			</button>
 		</div>
 		<button
 			on:click={toggleExpand}
-			class="text-gray-400 dark:text-gray-400 hover:text-gray-200 dark:hover:text-gray-200"
+			class="text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors duration-200"
 		>
 			<i class="fas {isExpanded ? 'fa-chevron-down' : 'fa-chevron-up'}"></i>
 		</button>
 	</div>
 	{#if isExpanded}
-		<div class="flex flex-col items-center justify-center h-64 text-center p-4">
+		<div class="flex flex-col items-center justify-center h-64 text-center p-6 bg-gray-50 dark:bg-gray-900">
 			<!-- Placeholder for response body or actual response display -->
 			<div
-				class="h-32 w-32 mb-4 opacity-75 bg-gray-700 dark:bg-gray-700 rounded-lg flex items-center justify-center"
+				class="h-24 w-24 mb-4 bg-gray-200 dark:bg-gray-700 rounded-full flex items-center justify-center shadow-sm"
 			>
-				<i class="fas fa-rocket text-4xl text-gray-500 dark:text-gray-500"></i>
+				<i class="fas fa-rocket text-3xl text-gray-500 dark:text-gray-400"></i>
 			</div>
-			<p class="text-gray-400 dark:text-gray-400">
+			<p class="text-gray-600 dark:text-gray-300 max-w-md">
 				Enter the URL and click Send to get a response. Response content will appear here.
 			</p>
 			<!-- Example: Displaying actual response data -->
 			<!-- {#if responseData} -->
-			<!-- <pre class="text-left text-xs bg-gray-800 p-2 rounded-md overflow-auto max-h-56 w-full">{JSON.stringify(responseData, null, 2)}</pre> -->
+			<!-- <pre class="text-left text-xs bg-gray-100 dark:bg-gray-800 p-3 rounded-md overflow-auto max-h-56 w-full border border-gray-200 dark:border-gray-700">{JSON.stringify(responseData, null, 2)}</pre> -->
 			<!-- {:else} -->
-			<!-- <p class="text-gray-400 dark:text-gray-400">No response data yet.</p> -->
+			<!-- <p class="text-gray-600 dark:text-gray-300">No response data yet.</p> -->
 			<!-- {/if} -->
 		</div>
 	{/if}

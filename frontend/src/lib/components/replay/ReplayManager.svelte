@@ -225,9 +225,9 @@
 	}
 </script>
 
-<div class="flex flex-col h-full theme-bg-primary">
+<div class="flex flex-col h-full bg-gray-50 dark:bg-gray-900">
 	<!-- Main Content Area -->
-	<div class="flex-1 flex p-4 h-full overflow-hidden"> 
+	<div class="flex-1 flex p-4 h-full overflow-hidden bg-gray-50 dark:bg-gray-900"> 
 		<!-- Left: Replay List (Resizable) -->
 		<div 
 			class="flex flex-col h-full space-y-4 relative mr-4"  
@@ -261,20 +261,20 @@
 			</div>
 			<!-- Resizable handle -->
 			<div
-				class="absolute top-0 right-0 bottom-0 w-1.5 cursor-col-resize group z-10"
+				class="absolute top-0 right-0 bottom-0 w-1.5 cursor-col-resize group z-10 hover:bg-blue-500/20 dark:hover:bg-blue-400/20 transition-colors duration-200"
 				role="button"
 				tabindex="0"
 				on:mousedown|preventDefault={startResize}
 				aria-label="Resize panel"
 				title="Drag to resize panel"
 			>
-				<div class="w-full h-full bg-transparent group-hover:theme-bg-accent transition-colors duration-150"></div>
+				<div class="w-full h-full bg-transparent group-hover:bg-blue-500/30 dark:group-hover:bg-blue-400/30 transition-colors duration-150"></div>
 			</div>
 		</div>
 
 		<!-- Right: Replay Content -->
 		<div
-			class="flex-1 flex flex-col h-full theme-bg-secondary border theme-border rounded-lg overflow-hidden"
+			class="flex-1 flex flex-col h-full bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg overflow-hidden shadow-sm"
 		>
 			{#if activeView === 'editor' || activeView === 'execution' || activeView === 'logs'}
 				<ReplayEditor 
@@ -289,15 +289,24 @@
 					on:updated={handleReplayUpdated}
 				/>
 			{:else if activeView === 'list' && ($selectedWorkspace && $selectedProject)}
-				<div class="flex flex-col items-center justify-center h-full text-center p-4 theme-text-secondary">
-					<i class="fas fa-mouse-pointer text-5xl mb-4 opacity-50"></i>
-					<p class="text-lg">Select a replay from the list to view or edit,</p>
-					<p class="text-lg">or click "New Replay" to create one.</p>
+				<div class="flex flex-col items-center justify-center h-full text-center p-8 text-gray-500 dark:text-gray-400">
+					<div class="bg-gray-100 dark:bg-gray-700 rounded-full p-6 mb-4">
+						<i class="fas fa-mouse-pointer text-4xl text-gray-400 dark:text-gray-500"></i>
+					</div>
+					<h3 class="text-lg font-medium mb-2 text-gray-700 dark:text-gray-300">Select a Replay</h3>
+					<p class="text-sm max-w-xs leading-relaxed">
+						Choose a replay from the list to view or edit, or click "New Replay" to create one.
+					</p>
 				</div>
 			{:else}
-				<div class="flex flex-col items-center justify-center h-full text-center p-4 theme-text-secondary">
-					<i class="fas fa-info-circle text-5xl mb-4 opacity-50"></i>
-					<p class="text-lg">Select a workspace and project to get started.</p>
+				<div class="flex flex-col items-center justify-center h-full text-center p-8 text-gray-500 dark:text-gray-400">
+					<div class="bg-gray-100 dark:bg-gray-700 rounded-full p-6 mb-4">
+						<i class="fas fa-info-circle text-4xl text-gray-400 dark:text-gray-500"></i>
+					</div>
+					<h3 class="text-lg font-medium mb-2 text-gray-700 dark:text-gray-300">Get Started</h3>
+					<p class="text-sm max-w-xs leading-relaxed">
+						Select a workspace and project to manage your API replays.
+					</p>
 				</div>
 			{/if}
 		</div>
