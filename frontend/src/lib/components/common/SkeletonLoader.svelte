@@ -31,6 +31,9 @@
   const getAnimation = () => {
     return 'animate-pulse';
   };
+
+  // This makes TypeScript recognize the component has a default export
+  export default;
 </script>
 
 {#if type === 'card'}
