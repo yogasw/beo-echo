@@ -268,7 +268,7 @@
 				aria-label="Resize panel"
 				title="Drag to resize panel"
 			>
-				<div class="w-full h-full bg-transparent group-hover:bg-blue-500/30 transition-colors duration-150"></div>
+				<div class="w-full h-full bg-transparent group-hover:theme-bg-accent transition-colors duration-150"></div>
 			</div>
 		</div>
 
