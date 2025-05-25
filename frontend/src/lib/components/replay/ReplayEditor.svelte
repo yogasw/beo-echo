@@ -71,9 +71,9 @@
 			return;
 		}
 
-		const tabIndex = tabs.findIndex(tab => tab.id === tabId);
-		tabs = tabs.filter(tab => tab.id !== tabId);
-		
+		const tabIndex = tabs.findIndex((tab) => tab.id === tabId);
+		tabs = tabs.filter((tab) => tab.id !== tabId);
+
 		// Switch to adjacent tab
 		if (activeTabId === tabId) {
 			if (tabIndex > 0) {
@@ -83,7 +83,7 @@
 			}
 		}
 		// Update activeTabContent based on the new activeTabId
-		const newActiveTab = tabs.find(t => t.id === activeTabId);
+		const newActiveTab = tabs.find((t) => t.id === activeTabId);
 		if (newActiveTab) {
 			activeTabContent = {
 				method: newActiveTab.method,
@@ -96,7 +96,7 @@
 
 	function switchTab(tabId: string) {
 		activeTabId = tabId;
-		const tab = tabs.find(t => t.id === tabId);
+		const tab = tabs.find((t) => t.id === tabId);
 		if (tab) {
 			activeTabContent = {
 				method: tab.method,
@@ -125,7 +125,6 @@
 		console.log('Show history clicked');
 		// Handle showing history, potentially dispatching another event upwards
 	}
-
 </script>
 
 <!-- Postman-like Request Interface -->
@@ -135,18 +134,22 @@
 		<div class="flex items-center justify-between px-4 py-2 text-sm">
 			<div class="flex items-center space-x-2">
 				<button
-					class={ThemeUtils.themeBgAccent('flex items-center space-x-1 px-2 py-1 rounded-md theme-text-primary')}
+					class={ThemeUtils.themeBgAccent(
+						'flex items-center space-x-1 px-2 py-1 rounded-md theme-text-primary'
+					)}
 				>
 					<i class="fas fa-play text-sm"></i>
 					<span>Replay</span>
 				</button>
-				
+
 				<!-- Tab Navigation -->
 				<div class="flex items-center space-x-1">
 					{#each tabs as tab (tab.id)}
 						<div class="flex items-center">
 							<button
-								class="flex items-center space-x-1 px-2 py-1 {activeTabId === tab.id ? ThemeUtils.themeBgAccent() : 'hover:' + ThemeUtils.themeBgAccent()} rounded-l-md theme-text-primary"
+								class="flex items-center space-x-1 px-2 py-1 {activeTabId === tab.id
+									? ThemeUtils.themeBgAccent()
+									: 'hover:' + ThemeUtils.themeBgAccent()} rounded-l-md theme-text-primary"
 								on:click={() => switchTab(tab.id)}
 							>
 								<span class={ThemeUtils.methodBadge(tab.method, 'text-xs px-1')}>{tab.method}</span>
@@ -155,7 +158,7 @@
 									<span class="w-2 h-2 bg-orange-500 rounded-full"></span>
 								{/if}
 							</button>
-							<button 
+							<button
 								aria-label="Close tab"
 								class="p-1 hover:{ThemeUtils.themeBgAccent()} rounded-r-md theme-text-primary"
 								on:click={() => closeTab(tab.id)}
@@ -164,9 +167,9 @@
 							</button>
 						</div>
 					{/each}
-					
+
 					<!-- Add new tab button -->
-					<button 
+					<button
 						class="p-1 hover:{ThemeUtils.themeBgAccent()} rounded-md theme-text-primary"
 						aria-label="Add new tab"
 						on:click={createNewTab}
@@ -175,7 +178,6 @@
 					</button>
 				</div>
 			</div>
-			
 		</div>
 	</header>
 
@@ -186,29 +188,30 @@
 			<div class="flex items-center space-x-2">
 				<i class="fas fa-folder-open text-orange-500 text-xl"></i>
 				<h1 class="text-lg font-semibold theme-text-primary">
-					{tabs.find(t => t.id === activeTabId)?.name || 'New Request'}
+					{tabs.find((t) => t.id === activeTabId)?.name || 'New Request'}
 				</h1>
 			</div>
 			<div class="flex items-center space-x-2">
 				<button
-					class={ThemeUtils.themeBgSecondary('flex items-center space-x-1 px-3 py-1.5 rounded-md text-sm')}
+					class={ThemeUtils.themeBgSecondary(
+						'flex items-center space-x-1 px-3 py-1.5 rounded-md text-sm'
+					)}
 				>
 					<i class="fas fa-save text-sm"></i>
 					<span>Save</span>
 					<i class="fas fa-chevron-down text-sm"></i>
 				</button>
-				
 			</div>
 		</div>
 
 		<!-- Request builder -->
-		<div
-			class={ThemeUtils.themeBgSecondary('flex items-center border theme-border rounded-lg')}
-		>
+		<div class={ThemeUtils.themeBgSecondary('flex items-center border theme-border rounded-lg')}>
 			<div class="relative">
 				<select
 					bind:value={activeTabContent.method}
-					class={ThemeUtils.themeBgSecondary('appearance-none font-semibold px-4 py-2.5 rounded-l-lg focus:outline-none border-r theme-border pr-8 theme-text-primary')}
+					class={ThemeUtils.themeBgSecondary(
+						'appearance-none font-semibold px-4 py-2.5 rounded-l-lg focus:outline-none border-r theme-border pr-8 theme-text-primary'
+					)}
 				>
 					<option>GET</option>
 					<option>POST</option>
@@ -222,13 +225,13 @@
 			</div>
 			<input
 				bind:value={activeTabContent.url}
-				class={ThemeUtils.themeBgSecondary('flex-grow p-2.5 focus:outline-none theme-text-secondary')}
+				class={ThemeUtils.themeBgSecondary(
+					'flex-grow p-2.5 focus:outline-none theme-text-secondary'
+				)}
 				placeholder="Enter URL or describe the request"
 				type="text"
 			/>
-			<button
-				class={ThemeUtils.primaryButton('px-4 py-2.5 rounded-r-lg space-x-1')}
-			>
+			<button class={ThemeUtils.primaryButton('px-4 py-2.5 rounded-r-lg space-x-1')}>
 				<span>Send</span>
 				<i class="fas fa-paper-plane text-sm"></i>
 			</button>
@@ -237,38 +240,52 @@
 		<!-- Tab navigation -->
 		<div class="border-b theme-border">
 			<nav class="flex space-x-4 text-sm">
-				<button 
-					class="py-2 px-1 border-b-2 {activeTabContent.activeSection === 'params' ? 'border-orange-600 text-orange-600' : 'border-transparent hover:theme-text-primary'}"
+				<button
+					class="py-2 px-1 border-b-2 {activeTabContent.activeSection === 'params'
+						? 'border-orange-600 text-orange-600'
+						: 'border-transparent hover:theme-text-primary'}"
 					on:click={() => setActiveSection('params')}
 				>
 					Params
 				</button>
 				<button
-					class="py-2 px-1 border-b-2 {activeTabContent.activeSection === 'auth' ? 'border-orange-600 text-orange-600' : 'border-transparent hover:theme-text-primary'}"
+					class="py-2 px-1 border-b-2 {activeTabContent.activeSection === 'auth'
+						? 'border-orange-600 text-orange-600'
+						: 'border-transparent hover:theme-text-primary'}"
 					on:click={() => setActiveSection('auth')}
 				>
 					Authorization
 				</button>
 				<button
-					class="py-2 px-1 border-b-2 {activeTabContent.activeSection === 'headers' ? 'border-orange-600 text-orange-600' : 'border-transparent hover:theme-text-primary'}"
+					class="py-2 px-1 border-b-2 {activeTabContent.activeSection === 'headers'
+						? 'border-orange-600 text-orange-600'
+						: 'border-transparent hover:theme-text-primary'}"
 					on:click={() => setActiveSection('headers')}
 				>
 					Headers
 				</button>
 				<button
-					class="py-2 px-1 border-b-2 {activeTabContent.activeSection === 'body' ? 'border-orange-600 text-orange-600' : 'border-transparent hover:theme-text-primary'}"
+					class="py-2 px-1 border-b-2 {activeTabContent.activeSection === 'body'
+						? 'border-orange-600 text-orange-600'
+						: 'border-transparent hover:theme-text-primary'}"
 					on:click={() => setActiveSection('body')}
 				>
 					Body
 				</button>
 				<button
-					class="py-2 px-1 border-b-2 {activeTabContent.activeSection === 'scripts' ? 'border-orange-600 text-orange-600' : 'border-transparent hover:theme-text-primary'}"
+					title="Scripts"
+					aria-label="Scripts"
+					class="py-2 px-1 border-b-2 {activeTabContent.activeSection === 'scripts'
+						? 'border-orange-600 text-orange-600'
+						: 'border-transparent hover:theme-text-primary'}"
 					on:click={() => setActiveSection('scripts')}
 				>
 					Scripts
 				</button>
 				<button
-					class="py-2 px-1 border-b-2 {activeTabContent.activeSection === 'settings' ? 'border-orange-600 text-orange-600' : 'border-transparent hover:theme-text-primary'}"
+					class="py-2 px-1 border-b-2 {activeTabContent.activeSection === 'settings'
+						? 'border-orange-600 text-orange-600'
+						: 'border-transparent hover:theme-text-primary'}"
 					on:click={() => setActiveSection('settings')}
 				>
 					Settings
@@ -345,8 +362,13 @@
 			<!-- Authorization section -->
 			<div class="space-y-4">
 				<div>
-					<label for="auth-type" class="block text-sm font-medium theme-text-secondary mb-2">Authorization Type</label>
-					<select id="auth-type" class="w-full theme-bg-secondary p-2 focus:outline-none focus:ring-1 focus:ring-blue-500 rounded-md border theme-border theme-text-secondary">
+					<label for="auth-type" class="block text-sm font-medium theme-text-secondary mb-2"
+						>Authorization Type</label
+					>
+					<select
+						id="auth-type"
+						class="w-full theme-bg-secondary p-2 focus:outline-none focus:ring-1 focus:ring-blue-500 rounded-md border theme-border theme-text-secondary"
+					>
 						<option>No Auth</option>
 						<option>Bearer Token</option>
 						<option>Basic Auth</option>
@@ -377,19 +399,37 @@
 						<tbody>
 							<tr class="border-t theme-border">
 								<td class="p-2">
-									<input class="form-checkbox h-4 w-4 theme-bg-secondary theme-border text-blue-500 focus:ring-blue-500 rounded" type="checkbox"/>
+									<input
+										class="form-checkbox h-4 w-4 theme-bg-secondary theme-border text-blue-500 focus:ring-blue-500 rounded"
+										type="checkbox"
+									/>
 								</td>
 								<td class="p-1">
-									<input class="w-full theme-bg-secondary p-1 focus:outline-none focus:ring-1 focus:ring-blue-500 rounded-md border border-transparent focus:border-blue-500 theme-text-secondary" placeholder="Content-Type" type="text"/>
+									<input
+										class="w-full theme-bg-secondary p-1 focus:outline-none focus:ring-1 focus:ring-blue-500 rounded-md border border-transparent focus:border-blue-500 theme-text-secondary"
+										placeholder="Content-Type"
+										type="text"
+									/>
 								</td>
 								<td class="p-1">
-									<input class="w-full theme-bg-secondary p-1 focus:outline-none focus:ring-1 focus:ring-blue-500 rounded-md border border-transparent focus:border-blue-500 theme-text-secondary" placeholder="application/json" type="text"/>
+									<input
+										class="w-full theme-bg-secondary p-1 focus:outline-none focus:ring-1 focus:ring-blue-500 rounded-md border border-transparent focus:border-blue-500 theme-text-secondary"
+										placeholder="application/json"
+										type="text"
+									/>
 								</td>
 								<td class="p-1">
-									<input class="w-full theme-bg-secondary p-1 focus:outline-none focus:ring-1 focus:ring-blue-500 rounded-md border border-transparent focus:border-blue-500 theme-text-secondary" placeholder="Description" type="text"/>
+									<input
+										class="w-full theme-bg-secondary p-1 focus:outline-none focus:ring-1 focus:ring-blue-500 rounded-md border border-transparent focus:border-blue-500 theme-text-secondary"
+										placeholder="Description"
+										type="text"
+									/>
 								</td>
 								<td class="p-2">
-									<button class="theme-text-muted hover:theme-text-secondary" aria-label="Delete header">
+									<button
+										class="theme-text-muted hover:theme-text-secondary"
+										aria-label="Delete header"
+									>
 										<i class="fas fa-trash text-base"></i>
 									</button>
 								</td>
@@ -403,19 +443,19 @@
 			<div class="space-y-4">
 				<div class="flex space-x-4 text-sm">
 					<label class="flex items-center">
-						<input type="radio" name="bodyType" value="none" class="mr-2" checked>
+						<input type="radio" name="bodyType" value="none" class="mr-2" checked />
 						<span>None</span>
 					</label>
 					<label class="flex items-center">
-						<input type="radio" name="bodyType" value="raw" class="mr-2">
+						<input type="radio" name="bodyType" value="raw" class="mr-2" />
 						<span>Raw</span>
 					</label>
 					<label class="flex items-center">
-						<input type="radio" name="bodyType" value="form" class="mr-2">
+						<input type="radio" name="bodyType" value="form" class="mr-2" />
 						<span>Form Data</span>
 					</label>
 				</div>
-				<textarea 
+				<textarea
 					class="w-full h-64 theme-bg-secondary p-3 focus:outline-none focus:ring-1 focus:ring-blue-500 rounded-md border theme-border theme-text-secondary"
 					placeholder="Enter request body..."
 				></textarea>
@@ -427,7 +467,7 @@
 					<button class="py-2 px-4 theme-bg-accent rounded-md">Pre-request Script</button>
 					<button class="py-2 px-4 hover:theme-bg-accent rounded-md">Tests</button>
 				</div>
-				<textarea 
+				<textarea
 					class="w-full h-64 theme-bg-secondary p-3 focus:outline-none focus:ring-1 focus:ring-blue-500 rounded-md border theme-border theme-text-secondary font-mono"
 					placeholder="// Add your script here..."
 				></textarea>
@@ -436,18 +476,30 @@
 			<!-- Settings section -->
 			<div class="space-y-4">
 				<div class="flex items-center justify-between">
-					<label for="follow-redirects" class="text-sm font-medium theme-text-secondary">Follow redirects</label>
-					<input id="follow-redirects" type="checkbox" class="form-checkbox h-4 w-4 theme-bg-secondary theme-border text-blue-500 focus:ring-blue-500 rounded">
+					<label for="follow-redirects" class="text-sm font-medium theme-text-secondary"
+						>Follow redirects</label
+					>
+					<input
+						id="follow-redirects"
+						type="checkbox"
+						class="form-checkbox h-4 w-4 theme-bg-secondary theme-border text-blue-500 focus:ring-blue-500 rounded"
+					/>
 				</div>
 				<div class="flex items-center justify-between">
-					<label for="auto-follow-redirects" class="text-sm font-medium theme-text-secondary">Automatically follow redirects</label>
-					<input id="auto-follow-redirects" type="checkbox" class="form-checkbox h-4 w-4 theme-bg-secondary theme-border text-blue-500 focus:ring-blue-500 rounded">
+					<label for="auto-follow-redirects" class="text-sm font-medium theme-text-secondary"
+						>Automatically follow redirects</label
+					>
+					<input
+						id="auto-follow-redirects"
+						type="checkbox"
+						class="form-checkbox h-4 w-4 theme-bg-secondary theme-border text-blue-500 focus:ring-blue-500 rounded"
+					/>
 				</div>
 			</div>
 		{/if}
 	</main>
 
-	<ReplayResponseFooter 
+	<ReplayResponseFooter
 		on:toggleExpand={handleFooterToggleExpand}
 		on:showHistory={handleFooterShowHistory}
 	/>
