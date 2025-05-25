@@ -1,72 +1,103 @@
 <script lang="ts">
-	import { onMount, onDestroy, tick } from 'svelte';
+	// Ensure Svelte 5 is correctly installed and configured in your project
+	// for these imports to work.
+	import {  tick } from 'svelte'; // Corrected import
 	import * as ThemeUtils from '$lib/utils/themeUtils';
-	export var activeTabId: string;
-	export var switchTab: (tabId: string) => void;
-	export var closeTab: (tabId: string) => void;
-	export var createNewTab: () => void;
-	export var tabs: {
-		id: string;
-		name: string;
-		method: string;
-		isUnsaved?: boolean;
-	}[] = [];
 
-	let scrollableContainer: HTMLDivElement | null = null;
-	let isOverflowing = false;
-	let mutationObserver: MutationObserver | null = null;
+	// Props using Svelte 5 runes mode
+	let {
+		activeTabId,
+		switchTab,
+		closeTab,
+		createNewTab,
+		tabs = []
+	}: {
+		activeTabId: string;
+		switchTab: (tabId: string) => void;
+		closeTab: (tabId: string) => void;
+		createNewTab: () => void;
+		tabs?: {
+			id: string;
+			name: string;
+			method: string;
+			isUnsaved?: boolean;
+		}[];
+	} = $props();
 
+	// Reactive state for the DOM element reference
+	let scrollableContainer: HTMLDivElement | null = $state(null);
+
+	// Reactive state for overflow status
+	let isOverflowing = $state(false);
+
+	// Helper function to check and update overflow state
 	function checkOverflow() {
-		if (scrollableContainer) {
-			const currentlyOverflowing = scrollableContainer.scrollWidth > scrollableContainer.clientWidth;
+		const sc = scrollableContainer; // Read $state variable
+		if (sc) {
+			const currentlyOverflowing = sc.scrollWidth > sc.clientWidth;
 			if (isOverflowing !== currentlyOverflowing) {
-				isOverflowing = currentlyOverflowing;
+				isOverflowing = currentlyOverflowing; // Update $state variable
 			}
 		}
 	}
 
 	async function handleCreateAndSwitchToNewTab() {
-		const oldTabsCount = tabs.length;
-		createNewTab();
+		const oldTabsCount = tabs.length; // `tabs` is a prop
+		createNewTab(); // This prop function is expected to update the `tabs` array
 
-		await tick();
+		await tick(); // Wait for Svelte to process DOM changes
 
+		// `tabs` prop will be updated by the parent, Svelte 5's reactivity handles the rest.
 		if (tabs.length > oldTabsCount && tabs.length > 0) {
 			const newTab = tabs[tabs.length - 1];
-			if (newTab && newTab.id !== activeTabId) {
+			if (newTab && newTab.id !== activeTabId) { // `activeTabId` is a prop
 				switchTab(newTab.id);
 			}
 		}
 	}
 
-	onMount(() => {
-		window.addEventListener('resize', checkOverflow);
-
-		if (scrollableContainer) {
-			mutationObserver = new MutationObserver(checkOverflow);
-			mutationObserver.observe(scrollableContainer, {
+	// Effect for MutationObserver and initial check
+	$effect(() => {
+		const sc = scrollableContainer; // Dependency: scrollableContainer
+		if (sc) {
+			const observer = new MutationObserver(checkOverflow);
+			observer.observe(sc, {
 				childList: true,
-				attributes: true,
-				subtree: true
+				attributes: true, // Consider if needed, can be performance intensive
+				subtree: true // Consider if needed
 			});
 			checkOverflow(); // Initial check
+
+			// Cleanup function for this effect
+			return () => {
+				observer.disconnect();
+			};
 		}
 	});
 
-	onDestroy(() => {
-		window.removeEventListener('resize', checkOverflow);
-		if (mutationObserver) {
-			mutationObserver.disconnect();
-		}
-	});
+	// Effect for window resize listener
+	$effect(() => {
+		window.addEventListener('resize', checkOverflow);
+		checkOverflow(); // Also check on mount
 
-	$: if (scrollableContainer && typeof tabs !== 'undefined') {
-		const updateOverflowState = async () => {
-			await tick();
-			checkOverflow();
+		// Cleanup function for this effect
+		return () => {
+			window.removeEventListener('resize', checkOverflow);
 		};
-		updateOverflowState();
-	}
+	});
+
+	// Effect to react to changes in `tabs` prop and `scrollableContainer`
+	$effect(() => {
+		const sc = scrollableContainer; // Dependency: scrollableContainer
+		// Reading `tabs` here makes it a dependency as well.
+		if (sc && tabs) {
+			const updateOverflowStateAsync = async () => {
+				await tick(); // Ensure DOM is updated after `tabs` change
+				checkOverflow();
+			};
+			updateOverflowStateAsync();
+		}
+	});
 </script>
 
 <!-- Header with tabs/actions -->
@@ -98,7 +129,7 @@
 								: 'hover:bg-gray-200 dark:hover:bg-gray-600 theme-text-primary'} rounded-l-lg transition-all duration-200 min-w-0`}
 							title="Switch to {tab.name} ({tab.method})"
 							aria-label="Switch to tab {tab.name} using {tab.method} method"
-							on:click={() => switchTab(tab.id)}
+							onclick={() => switchTab(tab.id)}
 						>
 							<span
 								class={`${activeTabId === tab.id
@@ -120,7 +151,7 @@
 							class="p-2 hover:bg-red-500 hover:text-white rounded-r-lg transition-all duration-200 theme-text-muted hover:theme-text-white"
 							title="Close {tab.name} tab"
 							aria-label="Close tab {tab.name}"
-							on:click={() => closeTab(tab.id)}
+							onclick={() => closeTab(tab.id)}
 						>
 							<i class="fas fa-times text-xs"></i>
 						</button>
@@ -132,7 +163,7 @@
 						class="p-2 ml-2 hover:bg-blue-600 hover:text-white bg-gray-200 dark:bg-gray-700 theme-text-primary rounded-lg transition-all duration-200 flex items-center justify-center shadow-sm hover:shadow-md flex-shrink-0"
 						title="Create new request tab"
 						aria-label="Add new request tab"
-						on:click={handleCreateAndSwitchToNewTab}
+						onclick={handleCreateAndSwitchToNewTab}
 					>
 						<i class="fas fa-plus text-sm"></i>
 					</button>
@@ -145,7 +176,7 @@
 					class="p-2 ml-2 hover:bg-blue-600 hover:text-white bg-gray-200 dark:bg-gray-700 theme-text-primary rounded-lg transition-all duration-200 flex items-center justify-center shadow-sm hover:shadow-md flex-shrink-0"
 					title="Create new request tab"
 					aria-label="Add new request tab"
-					on:click={handleCreateAndSwitchToNewTab}
+					onclick={handleCreateAndSwitchToNewTab}
 				>
 					<i class="fas fa-plus text-sm"></i>
 				</button>
