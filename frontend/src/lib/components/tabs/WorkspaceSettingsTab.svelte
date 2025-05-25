@@ -217,7 +217,10 @@
 	<!-- Header Section -->
 	<div class="flex justify-between items-center mb-6">
 		<div>
-			<h1 class="text-2xl font-semibold theme-text-primary">Workspace Settings</h1>
+			<h1 class="text-2xl font-semibold theme-text-primary flex items-center">
+				<i class="fas fa-cog text-blue-400 mr-2"></i>
+				Workspace Settings
+			</h1>
 			<p class="theme-text-secondary text-sm mt-1">
 				Manage your workspace details and team members
 			</p>
