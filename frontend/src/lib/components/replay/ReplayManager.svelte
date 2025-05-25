@@ -5,6 +5,7 @@
 	import { replays, selectedReplay, replayActions } from '$lib/stores/replay';
 	import { toast } from '$lib/stores/toast';
 	import { replayApi } from '$lib/api/replayApi';
+	import { getReplayPanelWidth, setReplayPanelWidth } from '$lib/utils/localStorage';
 
 	import ReplayList from './ReplayList.svelte';
 	import SkeletonLoader from '$lib/components/common/SkeletonLoader.svelte';
@@ -15,6 +16,12 @@
 	let isLoading = true;
 	let error: string | null = null;
 	let activeView: 'list' | 'editor' | 'execution' | 'logs' = 'list';
+
+	// Panel width
+	let panelWidth: number; // Initialized in onMount
+	let isResizing = false;
+	let startX = 0;
+	let startWidth = 0;
 
 	// State for ReplayEditor, to be passed as props
 	let editorTabs: Tab[] = [
@@ -166,30 +173,82 @@
 		if ($selectedWorkspace && $selectedProject) {
 			loadReplays();
 		}
+		panelWidth = getReplayPanelWidth();
+		// document.addEventListener('click', handleClickOutside); // If needed for closing menus
 	});
 
 	onDestroy(() => {
 		replayActions.clearAll();
+		// document.removeEventListener('click', handleClickOutside); // If added in onMount
+		if (isResizing) { // Clean up listeners if component is destroyed while resizing
+			document.removeEventListener('mousemove', handleResize);
+			document.removeEventListener('mouseup', stopResize);
+		}
 	});
+
+	// function handleClickOutside(event: MouseEvent) {
+	// 	// Logic to close any dropdowns or modals if necessary
+	// }
+
+	// Resize functions
+	function startResize(event: MouseEvent) {
+		isResizing = true;
+		startX = event.clientX;
+		startWidth = panelWidth;
+
+		document.addEventListener('mousemove', handleResize);
+		document.addEventListener('mouseup', stopResize);
+		document.body.style.cursor = 'col-resize';
+		document.body.style.userSelect = 'none';
+	}
+
+	function handleResize(event: MouseEvent) {
+		if (!isResizing) return;
+
+		const deltaX = event.clientX - startX;
+		// Assuming the ReplayManager's parent container takes full width for percentage calculation
+		const containerWidth = (event.target as HTMLElement)?.closest('.flex-1.flex.p-4.h-full')?.clientWidth || window.innerWidth;
+		const newWidth = startWidth + (deltaX / containerWidth) * 100;
+
+		// Constrain between 20% and 60% (adjust as needed)
+		panelWidth = Math.min(Math.max(newWidth, 15), 70);
+	}
+
+	function stopResize() {
+		isResizing = false;
+		document.removeEventListener('mousemove', handleResize);
+		document.removeEventListener('mouseup', stopResize);
+		document.body.style.cursor = '';
+		document.body.style.userSelect = '';
+
+		setReplayPanelWidth(panelWidth);
+	}
 </script>
 
 <div class="flex flex-col h-full theme-bg-primary">
 	<!-- Main Content Area -->
-	<div class="flex-1 grid grid-cols-3 gap-4 p-4 h-full">
-		<!-- Left: Replay List -->
-		<div class="flex flex-col h-full space-y-4">
-			<div class="flex-1 min-h-0">
+	<div class="flex-1 flex p-4 h-full overflow-hidden"> 
+		<!-- Left: Replay List (Resizable) -->
+		<div 
+			class="flex flex-col h-full space-y-4 relative mr-4"  
+			style="width: {panelWidth}%;"
+		>
+			<div class="flex-1 min-h-0 overflow-y-auto pr-1 hide-scrollbar"> 
 				{#if !$selectedWorkspace || !$selectedProject}
 					<div class="flex items-center justify-center h-full">
-						<div class="text-center theme-text-secondary">
+						<div class="text-center theme-text-secondary p-4">
 							<i class="fas fa-project-diagram text-4xl mb-4 opacity-50"></i>
 							<p>Please select a workspace and project to manage replays</p>
 						</div>
 					</div>
 				{:else if isLoading}
-					<SkeletonLoader type="list" count={5} />
+					<div class="p-4">
+						<SkeletonLoader type="list" count={5} />
+					</div>
 				{:else if error}
-					<ErrorDisplay message={error} type="error" retryable={true} onRetry={loadReplays} />
+					<div class="p-4">
+						<ErrorDisplay message={error} type="error" retryable={true} onRetry={loadReplays} />
+					</div>
 				{:else}
 					<ReplayList
 						on:add={handleCreateNew}
@@ -200,10 +259,22 @@
 					/>
 				{/if}
 			</div>
+			<!-- Resizable handle -->
+			<div
+				class="absolute top-0 right-0 bottom-0 w-1.5 cursor-col-resize group z-10"
+				role="button"
+				tabindex="0"
+				on:mousedown|preventDefault={startResize}
+				aria-label="Resize panel"
+				title="Drag to resize panel"
+			>
+				<div class="w-full h-full bg-transparent group-hover:bg-blue-500/30 transition-colors duration-150"></div>
+			</div>
 		</div>
-		<!-- Center & Right: Replay Content -->
+
+		<!-- Right: Replay Content -->
 		<div
-			class="col-span-2 flex flex-col h-full bg-gray-800 dark:bg-gray-800 border border-gray-700 dark:border-gray-700 rounded-lg overflow-hidden"
+			class="flex-1 flex flex-col h-full theme-bg-secondary border theme-border rounded-lg overflow-hidden"
 		>
 			{#if activeView === 'editor' || activeView === 'execution' || activeView === 'logs'}
 				<ReplayEditor 
@@ -213,6 +284,9 @@
 					on:tabschange={handleTabsChange}
 					on:activeSectionChange={handleActiveSectionChange}
 					on:tabContentChange={handleTabContentChange}
+					on:back={handleBackToList}
+					on:created={handleReplayCreated}
+					on:updated={handleReplayUpdated}
 				/>
 			{:else if activeView === 'list' && ($selectedWorkspace && $selectedProject)}
 				<div class="flex flex-col items-center justify-center h-full text-center p-4 theme-text-secondary">
