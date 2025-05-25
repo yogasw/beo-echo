@@ -1,3 +1,4 @@
+````instructions
 # Beo Echo Project Guide
 
 ## MANDATORY ACCESSIBILITY REQUIREMENTS
@@ -715,6 +716,60 @@ frontend/                  # JavaScript/TypeScript frontend with Svelte and Tail
    - Ensure accessibility testing (a11y) is part of the process
    - Test keyboard navigation and screen reader compatibility
 
+7. **Utilize Svelte 5 Runes for Reactivity**
+   - Svelte 5 introduces Runes, a new paradigm for fine-grained reactivity, which is enabled by default.
+   - Embrace Runes for managing component state and logic for better explicitness and performance.
+   - **Key Runes**:
+     - `$state()`: For declaring reactive state variables.
+       ```svelte
+       <script lang="ts">
+         let count = $state(0);
+         
+         function increment() {
+           count += 1;
+         }
+       </script>
+       
+       <button on:click={increment} title="Increment count" aria-label="Increment count">
+         Count: {count}
+       </button>
+       ```
+     - `$derived()`: For creating values that are derived from other reactive state.
+       ```svelte
+       <script lang="ts">
+         let count = $state(0);
+         let doubled = $derived(count * 2);
+       </script>
+       
+       <p>Count: {count}, Doubled: {doubled}</p>
+       ```
+     - `$effect()`: For running side effects in response to state changes (e.g., logging, data fetching).
+       ```svelte
+       <script lang="ts">
+         let count = $state(0);
+         
+         $effect(() => {
+           console.log('The count is now', count);
+           // Perform side effects here, like saving to localStorage
+           // localStorage.setItem('count', count.toString());
+         });
+       </script>
+       ```
+     - `$props()`: For declaring component props in a more type-safe and explicit way.
+       ```svelte
+       <script lang="ts">
+         let { name, age = 30 }: { name: string, age?: number } = $props();
+       </script>
+       
+       <p>Name: {name}, Age: {age}</p>
+       ```
+   - **Benefits**:
+     - More explicit and granular control over reactivity.
+     - Easier to understand data flow and dependencies.
+     - Can lead to performance improvements in complex components.
+   - For new components, prefer using Runes. Existing components using Svelte stores or older reactivity patterns can be gradually refactored if beneficial.
+   - Refer to the official Svelte 5 documentation for detailed usage and advanced patterns.
+
 ### Key Frontend Technologies
 - **SvelteKit**: For routing and server-side rendering
 - **Tailwind CSS**: For styling with utility classes
@@ -1169,3 +1224,4 @@ cd backend && go test -cover ./...
 ```
 
 You can also use the VS Code task "Run all Tests in Backend" to execute all tests in the backend directory.
+```
