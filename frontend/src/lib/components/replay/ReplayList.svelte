@@ -13,6 +13,7 @@
 	const dispatch = createEventDispatcher();
 
 	let searchTerm = '';
+	let selectedMethod = '';
 	let sortOrder: 'asc' | 'desc' = 'asc';
 	let showDropdown = false;
 	let showAddDropdown = false;
@@ -26,7 +27,7 @@
 	// Update store when filters change
 	$: replayFilter.set({
 		searchTerm,
-		method: '',
+		method: selectedMethod,
 		protocol: ''
 	});
 
@@ -89,10 +90,10 @@
 
 				<!-- Dropdown Filter Panel -->
 				{#if showDropdown}
-					<div class="absolute top-full left-0 mt-1 w-72 bg-gray-800 border border-gray-700 rounded-md shadow-lg z-10">
+					<div class="absolute top-full left-0 mt-1 w-80 bg-gray-800 border border-gray-700 rounded-md shadow-lg z-10">
 						<div class="p-3 space-y-3">
 							<div>
-								<label class="block text-xs font-medium text-gray-300 mb-1">Search</label>
+								<label class="block text-xs font-medium text-gray-300 mb-1">Search by name</label>
 								<input
 									type="text"
 									bind:value={searchTerm}
@@ -100,9 +101,27 @@
 									class="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded text-white text-sm placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
 								/>
 							</div>
-							<div class="flex justify-end">
+							<div>
+								<label class="block text-xs font-medium text-gray-300 mb-1">Method</label>
+								<select
+									bind:value={selectedMethod}
+									class="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded text-white text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+								>
+									<option value="">All Methods</option>
+									{#each HTTP_METHODS as method}
+										<option value={method}>{method}</option>
+									{/each}
+								</select>
+							</div>
+							<div class="flex justify-between">
 								<button
-									on:click={() => { searchTerm = ''; showDropdown = false; }}
+									on:click={() => { searchTerm = ''; selectedMethod = ''; }}
+									class="px-3 py-1 bg-gray-600 hover:bg-gray-500 text-white text-xs rounded"
+								>
+									Clear
+								</button>
+								<button
+									on:click={() => showDropdown = false}
 									class="px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white text-xs rounded"
 								>
 									Apply
