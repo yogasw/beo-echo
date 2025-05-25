@@ -1,4 +1,4 @@
-<script lang="ts">
+<script>
 	// Props if needed, e.g., for response data, history handling, etc.
 	// export let responseData: any = null;
 	// export let responseHistory: any[] = [];
