@@ -155,6 +155,15 @@ func (mr *MockRule) BeforeCreate(tx *gorm.DB) error {
 	return nil
 }
 
+// SourceRequest defines the source of the request log.
+type SourceRequest string
+
+const (
+	RequestSourceUnknown SourceRequest = ""
+	RequestSourceEcho    SourceRequest = "echo"
+	RequestSourceReplay  SourceRequest = "replay"
+)
+
 // RequestLog stores detailed information about each incoming HTTP request.
 // It captures how the request was handled (mock, proxy, forwarder), whether it matched a mock endpoint,
 // and includes raw request/response data for auditing or debugging.
@@ -172,6 +181,8 @@ type RequestLog struct {
 	LatencyMS       int    `json:"latency_ms"`                          // Time taken to respond or delay applied (in milliseconds)
 	Bookmark        bool   `gorm:"type:bool" json:"bookmark"`           // Optional bookmark for easy reference
 	LogsHash        string `gorm:"type:string" json:"logs_hash"`        // Hash of the response body for integrity checks + jwt signature
+
+	Source SourceRequest `gorm:"size:50;not null" json:"source"` // Source of the request: "replay", "echo", etc.
 
 	// ExecutionMode indicates the handling logic used for this request.
 	// Values follow ProjectMode: "mock", "proxy", "forwarder", etc.
@@ -302,6 +313,60 @@ type SSOConfig struct {
 func (s *SSOConfig) BeforeCreate(tx *gorm.DB) error {
 	if s.ID == "" {
 		s.ID = uuid.New().String()
+	}
+	return nil
+}
+
+// Replay stores a preset request configuration to be executed for testing or mocking purposes.
+// It supports multiple protocols and is organized under folders per project.
+type Replay struct {
+	ID        string  `gorm:"primaryKey;type:TEXT" json:"id"`   // Unique identifier (UUID)
+	Alias     string  `gorm:"not null" json:"alias"`            // User-defined name for this replay
+	ProjectID string  `gorm:"index;not null" json:"project_id"` // Project scoping
+	FolderID  *string `gorm:"index" json:"folder_id"`           // Optional folder location
+
+	Protocol   string `gorm:"not null" json:"protocol"`   // Protocol: http, grpc, ws, graphql, etc.
+	Method     string `gorm:"size:20" json:"method"`      // HTTP method or RPC action (e.g., POST, GET, INVOKE)
+	TargetURL  string `gorm:"not null" json:"target_url"` // Target URL or endpoint
+	Service    string `json:"service"`                    // gRPC service name (optional)
+	MethodName string `json:"method_name"`                // gRPC method name (optional)
+
+	Headers    string `gorm:"type:text" json:"headers"`         // Headers as key-value pairs
+	Payload    string `gorm:"type:text" json:"payload"`         // Request payload
+	Metadata   string `gorm:"type:text" json:"metadata"`        // Optional metadata (e.g., tags, retries)
+	IsMutation bool   `gorm:"default:false" json:"is_mutation"` // Marks this replay as modifying server state
+
+	Path []string `gorm:"type:json" json:"path"` // Folder path in array form (for UI or indexing)
+
+	CreatedAt time.Time `gorm:"autoCreateTime" json:"created_at"` // Timestamp of creation
+	UpdatedAt time.Time `gorm:"autoUpdateTime" json:"updated_at"` // Timestamp of last update
+}
+
+func (uw *Replay) BeforeCreate(tx *gorm.DB) error {
+	if uw.ID == "" {
+		uw.ID = uuid.New().String()
+	}
+	return nil
+}
+
+// ReplayFolder represents a hierarchical folder to group replays.
+// Folders can be nested via ParentID and scoped per project.
+type ReplayFolder struct {
+	ID        string  `gorm:"primaryKey;type:TEXT" json:"id"`   // Unique identifier (UUID)
+	Name      string  `gorm:"not null" json:"name"`             // Folder name
+	ParentID  *string `gorm:"type:TEXT;index" json:"parent_id"` // Optional parent folder (null = root)
+	ProjectID string  `gorm:"index;not null" json:"project_id"` // Project scoping
+
+	Children []ReplayFolder `gorm:"foreignKey:ParentID" json:"children,omitempty"` // Subfolders
+	Replays  []Replay       `gorm:"foreignKey:FolderID" json:"replays,omitempty"`  // Replays inside this folder
+
+	CreatedAt time.Time `gorm:"autoCreateTime" json:"created_at"` // Timestamp of creation
+	UpdatedAt time.Time `gorm:"autoUpdateTime" json:"updated_at"` // Timestamp of last update
+}
+
+func (uw *ReplayFolder) BeforeCreate(tx *gorm.DB) error {
+	if uw.ID == "" {
+		uw.ID = uuid.New().String()
 	}
 	return nil
 }
