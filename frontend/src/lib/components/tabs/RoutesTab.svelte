@@ -19,6 +19,7 @@
 	let selectedResponse: Response | null = null;
 	let filterText: string = ''; // Variable to store filter input
 	let localUseProxy: boolean = false; // Local state for proxy status
+	let panelWidth: number = 33; // Panel width as percentage (33% = w-1/3)
 
 	// Update endpoints and activeConfigName when selectedProject changes
 	$: {
@@ -144,10 +145,11 @@
 		{selectRoute}
 		{handleRouteStatusChange}
 		{handleAddEndpoint}
+		bind:panelWidth
 	/>
 
 	<!-- Details Section -->
-	<div class="w-2/3 {ThemeUtils.themeBgPrimary()} p-4 flex flex-col overflow-hidden">
+	<div class="{ThemeUtils.themeBgPrimary()} p-4 flex flex-col overflow-hidden" style="width: {100 - panelWidth}%;">
 		<div class="mb-4">
 			<label
 				for="endpoint-method"
