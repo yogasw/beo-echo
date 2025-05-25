@@ -26,6 +26,7 @@ import (
 	"beo-echo/backend/src/health"
 	"beo-echo/backend/src/lib"
 	"beo-echo/backend/src/middlewares"
+	"beo-echo/backend/src/replay"
 	"beo-echo/backend/src/users"
 	"beo-echo/backend/src/utils"
 	"beo-echo/backend/src/workspaces"
@@ -112,6 +113,11 @@ func SetupRouter() *gin.Engine {
 	responseRepo := repositories.NewResponseRepository(database.DB)
 	ruleService := services.NewRuleService(ruleRepo, responseRepo)
 	ruleHandler := handler.NewRuleHandler(ruleService)
+
+	// Initialize replay service and handler
+	replayRepo := repositories.NewReplayRepository(database.DB)
+	replayService := replay.NewReplayService(replayRepo)
+	replayHandler := replay.NewReplayHandler(replayService)
 
 	// Authentication routes
 	router.POST("/api/auth/login", authHandler.LoginHandler)
@@ -229,6 +235,14 @@ func SetupRouter() *gin.Engine {
 				projectRoutes.GET("/logs/bookmark", handlerLogs.GetBookmarksHandler)
 				projectRoutes.POST("/logs/bookmark", handlerLogs.AddBookmarkHandler)
 				projectRoutes.DELETE("/logs/bookmark/:bookmarkId", handlerLogs.DeleteBookmarkHandler)
+
+				// Replay management
+				projectRoutes.GET("/replays", replayHandler.ListReplays)
+				projectRoutes.POST("/replays", replayHandler.CreateReplay)
+				projectRoutes.GET("/replays/:replayId", replayHandler.GetReplay)
+				projectRoutes.POST("/replays/:replayId/execute", replayHandler.ExecuteReplay)
+				projectRoutes.DELETE("/replays/:replayId", replayHandler.DeleteReplay)
+				projectRoutes.GET("/replays/:replayId/logs", replayHandler.GetReplayLogs)
 
 			}
 		}
