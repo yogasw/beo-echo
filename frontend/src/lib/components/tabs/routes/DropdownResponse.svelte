@@ -1,6 +1,7 @@
 <script lang="ts">
 	import type { Endpoint, Response } from '$lib/api/BeoApi';
-	import { addResponse, updateEndpoint } from '$lib/api/BeoApi';
+	import { addResponse } from '$lib/api/BeoApi';
+	import { updateEndpoint } from '$lib/stores/saveButton';
 	import { toast } from '$lib/stores/toast';
 	import * as ThemeUtils from '$lib/utils/themeUtils';
 
@@ -101,23 +102,7 @@
 			toast.error('No endpoint selected');
 			return;
 		}
-
-		try {
-			// Update the endpoint response mode via API
-			await updateEndpoint(selectedEndpoint.project_id, selectedEndpoint.id, {
-				responseMode: mode
-			});
-
-			// Update local state
-			selectedEndpoint.response_mode = mode;
-			
-			// Show success notification
-			const modeDisplayName = mode.replace('_', ' ').toLowerCase();
-			toast.success(`Response mode changed to ${modeDisplayName}`);
-		} catch (error) {
-			console.error('Failed to update response mode:', error);
-			toast.error('Failed to update response mode');
-		}
+		selectedEndpoint = updateEndpoint("response_mode", mode, selectedEndpoint);
 	};
 
 	$: {
