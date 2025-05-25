@@ -19,6 +19,8 @@
 		<button
 			class={ThemeUtils.primaryButton('py-1 px-3 text-sm')}
 			on:click={() => reconnectLogStream()}
+			aria-label="Reconnect to live log stream"
+			title="Reconnect to live log stream"
 		>
 			<i class="fas fa-sync mr-1"></i> Reconnect Stream
 		</button>
@@ -68,6 +70,8 @@
 			<button
 				class={ThemeUtils.primaryButton('py-2 px-4 text-sm')}
 				on:click={() => refreshLogs()}
+				aria-label="Manually refresh request logs"
+				title="Manually refresh request logs"
 			>
 				<i class="fas fa-sync mr-2"></i> Refresh Logs
 			</button>

@@ -228,14 +228,13 @@
 					/>
 
 					<!-- Enhanced Open in New Tab Button -->
-					<div class="absolute inset-y-0 right-0 flex items-center pr-3">
-						<button
-							class="p-1.5 rounded-md hover:bg-blue-500/10 {ThemeUtils.themeTextMuted()} hover:text-blue-500 transition-colors disabled:opacity-50 disabled:hover:bg-transparent"
-							disabled={!selectedEndpoint || selectedEndpoint?.method !== 'GET'}
-							aria-label="Open endpoint in a new tab"
-							title={selectedEndpoint?.method !== 'GET'
-								? 'Only GET endpoints can be opened directly'
-								: 'Open endpoint in new tab'}
+					<div class="absolute inset-y-0 right-0 flex items-center pr-3">					<button
+						class="p-1.5 rounded-md hover:bg-blue-500/10 {ThemeUtils.themeTextMuted()} hover:text-blue-500 transition-colors disabled:opacity-50 disabled:hover:bg-transparent"
+						disabled={!selectedEndpoint || selectedEndpoint?.method !== 'GET'}
+						aria-label="Open endpoint in a new tab"
+						title={selectedEndpoint?.method !== 'GET'
+							? 'Only GET endpoints can be opened directly'
+							: 'Open endpoint in new tab'}
 							on:click={() => {
 								let url = `${$selectedProject?.url || ''}${selectedEndpoint?.path ? selectedEndpoint.path : ''}`;
 								window.open(url, '_blank');
@@ -301,14 +300,15 @@
 
 			<!-- Enhanced Tab Navigation -->
 			<div class="flex mb-4 border-b {ThemeUtils.themeBorder()} overflow-x-auto no-scrollbar">
-				{#each [{ id: 'Status & Body', icon: 'fas fa-code' }, { id: 'Headers', icon: 'fas fa-exchange-alt' }, { id: 'Rules', icon: 'fas fa-filter' }, { id: 'Notes', icon: 'fas fa-sticky-note' }] as tab}
-					<button
-						class="relative flex items-center py-3 px-4 font-medium text-sm whitespace-nowrap transition-all duration-200 {tab.id ===
-						activeContentTab
-							? `${ThemeUtils.themeTextPrimary()} border-b-2 border-blue-500`
-							: `${ThemeUtils.themeTextMuted()} hover:${ThemeUtils.themeTextPrimary('opacity-80')}`}"
-						on:click={() => (activeContentTab = tab.id)}
-					>
+				{#each [{ id: 'Status & Body', icon: 'fas fa-code' }, { id: 'Headers', icon: 'fas fa-exchange-alt' }, { id: 'Rules', icon: 'fas fa-filter' }, { id: 'Notes', icon: 'fas fa-sticky-note' }] as tab}				<button
+					class="relative flex items-center py-3 px-4 font-medium text-sm whitespace-nowrap transition-all duration-200 {tab.id ===
+					activeContentTab
+						? `${ThemeUtils.themeTextPrimary()} border-b-2 border-blue-500`
+						: `${ThemeUtils.themeTextMuted()} hover:${ThemeUtils.themeTextPrimary('opacity-80')}`}"
+					on:click={() => (activeContentTab = tab.id)}
+					aria-label="Switch to {tab.id} tab"
+					title="Switch to {tab.id} tab"
+				>
 						<i class="{tab.icon} mr-2 {tab.id === activeContentTab ? 'text-blue-500' : ''}"></i>
 						{tab.id}
 						<!-- Active indicator for current tab -->

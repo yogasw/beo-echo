@@ -61,18 +61,24 @@
 			<button
 				on:click={formatContent}
 				class="bg-green-600 text-white text-xs px-2 py-1 rounded hover:bg-green-700"
+				aria-label="Format and prettify JSON content"
+				title="Format and prettify JSON content"
 			>
 				Prettify
 			</button>
 			<button
 				on:click={saveContent}
 				class="bg-blue-600 text-white text-xs px-2 py-1 rounded hover:bg-blue-700"
+				aria-label="Save response body content"
+				title="Save response body content"
 			>
 				Save
 			</button>
 			<button
 				on:click={toggleFullScreen}
 				class="bg-gray-600 text-white text-xs px-2 py-1 rounded hover:bg-gray-700"
+				aria-label="Toggle fullscreen editor"
+				title="Toggle fullscreen editor"
 			>
 				Full Screen
 			</button>
@@ -102,12 +108,16 @@
 					<button
 						class="bg-blue-600 text-white text-xs px-3 py-1 rounded hover:bg-blue-700"
 						on:click={saveContent}
+						aria-label="Save fullscreen content"
+						title="Save fullscreen content"
 					>
 						Save
 					</button>
 					<button
 						class="bg-red-600 text-white text-xs px-3 py-1 rounded hover:bg-red-700"
 						on:click={toggleFullScreen}
+						aria-label="Close fullscreen editor"
+						title="Close fullscreen editor"
 					>
 						Close
 					</button>

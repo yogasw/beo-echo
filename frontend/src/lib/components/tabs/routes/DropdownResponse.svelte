@@ -144,6 +144,8 @@
 			<button
 				class="text-sm font-medium {ThemeUtils.themeBgSecondary()} {ThemeUtils.themeTextSecondary()} rounded px-2 py-1 flex items-center justify-between w-full"
 				on:click={() => { toggleDropdown() }}
+				title="Select response"
+				aria-label="Select response"
 			>
 				<span id="selectedValue" class="truncate mr-2 inline-block max-w-[calc(100%-20px)] whitespace-nowrap overflow-hidden">{selectedValue}</span>
 				<i class="fas fa-chevron-down flex-shrink-0"></i>
@@ -154,7 +156,9 @@
 						{#each selectedEndpoint.responses as response, index}
 							<li class="flex items-center">
 								<button type="button" class="w-full text-left px-4 py-2 {ThemeUtils.themeHover()} cursor-pointer"
-											on:click={() => { selectResponse(index, response) }}>
+											on:click={() => { selectResponse(index, response) }}
+											title="Select this response"
+											aria-label="Select this response">
 									Response {index + 1} ({response.status_code}) {truncateText(sanitizeText(response?.note))}
 								</button>
 								<!-- Copy & Delete actions -->

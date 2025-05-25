@@ -177,6 +177,7 @@
             <button
               class="p-2 text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300 transition-colors rounded"
               title={endpoint.status === 'active' ? 'Disable endpoint' : 'Enable endpoint'}
+              aria-label={endpoint.status === 'active' ? 'Disable endpoint' : 'Enable endpoint'}
               on:click={handleToggle}
             >
               <i class="fas {endpoint.status === 'active' ? 'fa-pause' : 'fa-play'} text-sm"></i>
@@ -186,6 +187,7 @@
             <button
               class="p-2 text-gray-400 hover:text-blue-600 dark:text-gray-500 dark:hover:text-blue-400 transition-colors rounded"
               title="Test endpoint"
+              aria-label="Test endpoint"
               on:click={handleTest}
             >
               <i class="fas fa-play-circle text-sm"></i>
@@ -196,6 +198,7 @@
               <button
                 class="p-2 text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300 transition-colors rounded"
                 title="More actions"
+                aria-label="More actions"
               >
                 <i class="fas fa-ellipsis-v text-sm"></i>
               </button>
@@ -206,6 +209,8 @@
                   <button
                     class="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors"
                     on:click={handleEdit}
+                    title="Edit endpoint"
+                    aria-label="Edit endpoint"
                   >
                     <i class="fas fa-edit mr-2"></i>Edit
                   </button>
@@ -213,6 +218,8 @@
                   <button
                     class="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors"
                     on:click={handleDuplicate}
+                    title="Duplicate endpoint"
+                    aria-label="Duplicate endpoint"
                   >
                     <i class="fas fa-copy mr-2"></i>Duplicate
                   </button>
@@ -222,6 +229,8 @@
                   <button
                     class="w-full text-left px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
                     on:click={handleDelete}
+                    title="Delete endpoint"
+                    aria-label="Delete endpoint"
                   >
                     <i class="fas fa-trash-alt mr-2"></i>Delete
                   </button>

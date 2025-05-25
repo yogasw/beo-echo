@@ -244,6 +244,8 @@
 				<button
 					type="submit"
 					class="px-3 py-2 theme-bg-secondary theme-text-primary rounded-md text-sm hover:bg-gray-200 dark:hover:bg-gray-600"
+					title="Search users"
+					aria-label="Search users"
 				>
 					Search
 				</button>
@@ -438,12 +440,16 @@
 							type="button"
 							class="px-4 py-2 theme-bg-secondary theme-text-primary rounded-md text-sm hover:bg-gray-200 dark:hover:bg-gray-600"
 							on:click={closeModals}
+							title="Cancel"
+							aria-label="Cancel"
 						>
 							Cancel
 						</button>
 						<button
 							type="submit"
 							class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md text-sm"
+							title="Add user"
+							aria-label="Add user"
 						>
 							Add User
 						</button>

@@ -73,7 +73,9 @@
 								<div class="h-16 w-16 bg-blue-600 rounded flex items-center justify-center">
 									<i class="fas fa-mountain text-white text-xl"></i>
 								</div>
-								<button class="px-3 py-2 theme-bg-secondary hover:bg-gray-600 theme-text-primary rounded-md text-xs">
+								<button class="px-3 py-2 theme-bg-secondary hover:bg-gray-600 theme-text-primary rounded-md text-xs"
+									title="Upload custom logo for branding"
+									aria-label="Upload custom logo for branding">
 									Upload Logo
 								</button>
 							</div>
@@ -145,7 +147,9 @@
 					</div>
 					<div class="md:col-span-2">
 						<div class="flex items-center gap-2">
-							<button class="px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md text-sm">
+							<button class="px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md text-sm"
+								title="Test SMTP email connection settings"
+								aria-label="Test SMTP email connection settings">
 								Test Connection
 							</button>
 							<span class="theme-text-muted text-xs">Verify email configuration</span>

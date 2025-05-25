@@ -138,6 +138,7 @@
 		on:click={toggleTheme}
 		class="absolute top-4 right-4 w-10 h-10 flex items-center justify-center rounded-full theme-bg-secondary hover:bg-opacity-80 transition-colors border theme-border"
 		aria-label="Toggle theme"
+		title="Toggle theme"
 	>
 		<i class="fas {$theme === 'dark' ? 'fa-sun' : 'fa-moon'} text-base theme-text-primary"></i>
 	</button>
@@ -201,6 +202,7 @@
 								class="absolute inset-y-0 right-0 pr-3 flex items-center"
 								on:click={togglePasswordVisibility}
 								aria-label={showPassword ? 'Hide password' : 'Show password'}
+								title={showPassword ? 'Hide password' : 'Show password'}
 							>
 								<span class="theme-text-muted hover:text-indigo-500">
 									<i class="fas {showPassword ? 'fa-eye-slash' : 'fa-eye'}"></i>

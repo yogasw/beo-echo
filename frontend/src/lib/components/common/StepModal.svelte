@@ -90,6 +90,7 @@
             class="text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 transition-colors p-2 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-500"
             on:click={handleDirectClose}
             aria-label="Close"
+            title="Close"
           >
             <i class="fas fa-times text-lg"></i>
           </button>

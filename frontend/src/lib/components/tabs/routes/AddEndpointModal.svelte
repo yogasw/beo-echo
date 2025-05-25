@@ -73,7 +73,9 @@
 		<div class="theme-bg-primary p-6 rounded-lg shadow-lg w-full max-w-md border theme-border">
 			<div class="flex justify-between items-center mb-4">
 				<h2 class="text-xl font-bold theme-text-primary">Add New Endpoint</h2>
-				<button class="theme-text-primary hover:theme-text-secondary" on:click={closeModal}>
+				<button class="theme-text-primary hover:theme-text-secondary" on:click={closeModal}
+					title="Close"
+					aria-label="Close">
 					<i class="fas fa-times"></i>
 				</button>
 			</div>
@@ -116,6 +118,8 @@
 						class="px-4 py-2 bg-gray-200 dark:bg-gray-600 text-gray-700 dark:text-white rounded hover:bg-gray-300 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-500"
 						on:click={closeModal}
 						disabled={isLoading}
+						title="Cancel"
+						aria-label="Cancel"
 					>
 						Cancel
 					</button>
@@ -123,6 +127,8 @@
 						type="submit"
 						class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 flex items-center"
 						disabled={isLoading}
+						title={isLoading ? 'Adding endpoint...' : 'Add endpoint'}
+						aria-label={isLoading ? 'Adding endpoint...' : 'Add endpoint'}
 					>
 						{#if isLoading}
 							<span class="mr-2">

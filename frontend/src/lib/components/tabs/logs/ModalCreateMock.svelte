@@ -399,7 +399,8 @@
                 type="button"
                 class="bg-gray-200 dark:bg-gray-600 hover:bg-gray-300 dark:hover:bg-gray-500 text-gray-800 dark:text-white rounded-md text-xs px-3 py-1 transition-colors focus:outline-none focus:ring-2 focus:ring-gray-500"
                 on:click={generateSampleResponse}
-                title="Generate sample response"
+                title="Generate sample response based on HTTP method"
+                aria-label="Generate sample response based on HTTP method"
               >
                 <i class="fas fa-magic mr-1"></i>Sample
               </button>
@@ -407,7 +408,8 @@
                 type="button"
                 class="bg-gray-200 dark:bg-gray-600 hover:bg-gray-300 dark:hover:bg-gray-500 text-gray-800 dark:text-white rounded-md text-xs px-3 py-1 transition-colors focus:outline-none focus:ring-2 focus:ring-gray-500"
                 on:click={() => { body = formatJson(body); }}
-                title="Format JSON"
+                title="Format response body as properly formatted JSON"
+                aria-label="Format response body as properly formatted JSON"
               >
                 <i class="fas fa-code mr-1"></i>Format
               </button>
@@ -445,7 +447,8 @@
               type="button"
               class="bg-gray-200 dark:bg-gray-600 hover:bg-gray-300 dark:hover:bg-gray-500 text-gray-800 dark:text-white rounded-md text-xs px-3 py-1 transition-colors focus:outline-none focus:ring-2 focus:ring-gray-500"
               on:click={() => { headers = formatJson(headers); }}
-              title="Format JSON"
+              title="Format response headers as properly formatted JSON"
+              aria-label="Format response headers as properly formatted JSON"
             >
               <i class="fas fa-code mr-1"></i>Format
             </button>

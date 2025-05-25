@@ -264,11 +264,15 @@
 			<div class="flex items-center space-x-4 px-4 py-3">
 				<span class="text-xs font-semibold {ThemeUtils.themeTextPrimary()}">Rules Logic:</span>
 				<button on:click={() => toggleLogic('OR')}
-								class="logic-button {rulesOperator === 'OR' ? 'text-blue-500 border-blue-500' : ThemeUtils.themeTextMuted() + ' border ' + ThemeUtils.themeBorder()} px-2 py-1 rounded text-xs">
+								class="logic-button {rulesOperator === 'OR' ? 'text-blue-500 border-blue-500' : ThemeUtils.themeTextMuted() + ' border ' + ThemeUtils.themeBorder()} px-2 py-1 rounded text-xs"
+								aria-label="Set rules logic to OR"
+								title="Set rules logic to OR">
 					OR
 				</button>
 				<button on:click={() => toggleLogic('AND')}
-								class="logic-button {rulesOperator === 'AND' ? 'text-blue-500 border-blue-500' : ThemeUtils.themeTextMuted() + ' border ' + ThemeUtils.themeBorder()} px-2 py-1 rounded text-xs">
+								class="logic-button {rulesOperator === 'AND' ? 'text-blue-500 border-blue-500' : ThemeUtils.themeTextMuted() + ' border ' + ThemeUtils.themeBorder()} px-2 py-1 rounded text-xs"
+								aria-label="Set rules logic to AND"
+								title="Set rules logic to AND">
 					AND
 				</button>
 				<span class="{ThemeUtils.themeTextSecondary()} text-xs">
@@ -283,6 +287,7 @@
 					type="button"
 					disabled={isEditing && !hasChanges}
 					aria-label={isEditing ? "Save rules" : "Edit rules"}
+					title={isEditing ? "Save rules" : "Edit rules"}
 				>
 					{#if isEditing}
 						<i class="fas fa-save text-xs mr-1"></i>
@@ -299,6 +304,7 @@
 						class="{ThemeUtils.utilityButton('py-1 px-2 text-xs ml-1')}"
 						type="button"
 						aria-label="Cancel editing"
+						title="Cancel editing"
 					>
 						Cancel
 					</button>
@@ -346,6 +352,7 @@
 											on:click={() => removeRule(rule.id, index)} 
 											class="h-6 w-6 flex items-center justify-center text-red-500 hover:bg-red-100 dark:hover:bg-red-900/30 dark:text-red-400 dark:hover:text-red-300 rounded-full"
 											title="Delete rule"
+											aria-label="Delete rule"
 										>
 											<i class="fas fa-trash-alt text-xs"></i>
 										</button>
@@ -370,6 +377,8 @@
 						on:click={addRule}
 						class="{ThemeUtils.secondaryButton('py-1.5 px-3 text-xs')}"
 						type="button"
+						aria-label="Add first rule"
+						title="Add first rule"
 					>
 						<i class="fas fa-plus text-xs mr-1"></i>
 						<span>Add First Rule</span>

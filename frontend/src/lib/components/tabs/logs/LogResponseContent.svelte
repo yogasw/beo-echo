@@ -53,6 +53,8 @@
 							JSON.stringify(parseJson(log.response_headers), null, 2),
 							'Headers'
 						)}
+					aria-label="Copy response headers to clipboard"
+					title="Copy response headers to clipboard"
 				>
 					<i class="fas fa-copy mr-1"></i> Copy
 				</button>
@@ -63,6 +65,8 @@
 							JSON.stringify(parseJson(log.response_headers)),
 							'Headers (minified)'
 						)}
+					aria-label="Copy minified response headers to clipboard"
+					title="Copy minified response headers to clipboard"
 				>
 					<i class="fas fa-compress-alt mr-1"></i> Minify
 				</button>
@@ -88,6 +92,8 @@
 							JSON.stringify(parseJson(log.response_body), null, 2),
 							'Body'
 						)}
+					aria-label="Copy response body to clipboard"
+					title="Copy response body to clipboard"
 				>
 					<i class="fas fa-copy mr-1"></i> Copy
 				</button>
@@ -98,6 +104,8 @@
 							JSON.stringify(parseJson(log.response_body)),
 							'Body (minified)'
 						)}
+					aria-label="Copy minified response body to clipboard"
+					title="Copy minified response body to clipboard"
 				>
 					<i class="fas fa-compress-alt mr-1"></i> Minify
 				</button>

@@ -43,6 +43,8 @@
           <button 
             on:click={onRetry}
             class="text-sm px-3 py-1.5 rounded-md bg-gray-700 hover:bg-gray-600 text-white"
+            aria-label="Retry the failed operation"
+            title="Retry the failed operation"
           >
             <i class="fas fa-sync-alt mr-1.5"></i>
             Retry

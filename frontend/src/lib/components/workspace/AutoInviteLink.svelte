@@ -21,6 +21,7 @@
         on:click={handleClick} 
         class="p-2 theme-bg-secondary rounded-full hover:bg-blue-500/20" 
         title="Auto-Invite Settings"
+        aria-label="Auto-Invite Settings"
         disabled={!isOwner}
     >
         <i class="fas fa-user-plus theme-text-secondary"></i>
@@ -32,6 +33,8 @@
         class="flex items-center space-x-2 text-sm px-3 py-2 theme-bg-secondary theme-text-primary 
         rounded-md hover:bg-blue-500/20 disabled:opacity-50 disabled:cursor-not-allowed"
         disabled={!isOwner}
+        aria-label="Configure auto-invite settings for workspace"
+        title="Configure auto-invite settings for workspace"
     >
         <i class="fas fa-user-plus"></i>
         <span>Auto-Invite Settings</span>

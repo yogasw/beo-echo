@@ -139,6 +139,7 @@
 				class="{log.bookmark ? 'bg-yellow-600 hover:bg-yellow-700' : 'bg-gray-600 hover:bg-gray-700'} text-white py-1 px-3 rounded text-xs flex items-center transition-all duration-200 transform hover:scale-105 mr-2"
 				on:click|stopPropagation={() => bookmarkLog(log)}
 				title={log.bookmark ? "Remove from bookmarks" : "Add to bookmarks"}
+				aria-label={log.bookmark ? "Remove request from bookmarks" : "Add request to bookmarks"}
 			>
 				<i class="fas {log.bookmark ? 'fa-bookmark' : 'fa-bookmark'} mr-1"></i> 
 				{log.bookmark ? 'Bookmarked' : 'Bookmark'}
@@ -149,6 +150,7 @@
 				class="bg-blue-600 hover:bg-blue-700 text-white py-1 px-3 rounded text-xs flex items-center transition-all duration-200 transform hover:scale-105 mr-2"
 				on:click|stopPropagation={() => exportToCurl(log)}
 				title="Export this request to cURL command"
+				aria-label="Export request as cURL command"
 			>
 				<i class="fas fa-code mr-1"></i> 
 				Export as cURL
@@ -160,6 +162,7 @@
 					class="bg-emerald-600 hover:bg-emerald-700 text-white py-1 px-3 rounded text-xs flex items-center transition-all duration-200 transform hover:scale-105"
 					on:click|stopPropagation={() => createMockFromLog(log)}
 					title="Create a new mock endpoint using the data from this request"
+					aria-label="Create mock endpoint from this request"
 				>
 					<i class="fas fa-magic mr-1"></i> Create Mock from this Request
 				</button>
@@ -177,6 +180,8 @@
 						? 'text-blue-500 dark:text-blue-400 border-b-2 border-blue-500 dark:border-blue-400'
 						: 'theme-text-muted hover:text-gray-600 dark:hover:text-gray-300'}"
 					on:click|stopPropagation={() => switchTab(log.id, 'request')}
+					aria-label="View request details"
+					title="View request details"
 				>
 					Request
 				</button>
@@ -185,6 +190,8 @@
 						? 'text-blue-500 dark:text-blue-400 border-b-2 border-blue-500 dark:border-blue-400'
 						: 'theme-text-muted hover:text-gray-600 dark:hover:text-gray-300'}"
 					on:click|stopPropagation={() => switchTab(log.id, 'response')}
+					aria-label="View response details"
+					title="View response details"
 				>
 					Response
 				</button>

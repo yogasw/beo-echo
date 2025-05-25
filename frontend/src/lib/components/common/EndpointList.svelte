@@ -136,6 +136,7 @@
         on:click={handleRefresh}
         class="p-2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 transition-colors rounded-lg border border-gray-300 dark:border-gray-600"
         title="Refresh endpoints"
+        aria-label="Refresh endpoints list"
       >
         <i class="fas fa-sync text-sm"></i>
       </button>
@@ -144,6 +145,8 @@
       <button
         on:click={handleCreate}
         class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors flex items-center"
+        aria-label="Create new endpoint"
+        title="Create new endpoint"
       >
         <i class="fas fa-plus mr-2"></i>
         New Endpoint
@@ -186,6 +189,8 @@
         <button
           on:click={handleCreate}
           class="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors"
+          aria-label="Create your first endpoint"
+          title="Create your first endpoint"
         >
           <i class="fas fa-plus mr-2"></i>
           Create Endpoint

@@ -230,6 +230,8 @@
 			on:click={() => toggleEditMode()}
 			class={ThemeUtils.themeBgSecondary(`px-4 py-2 rounded-md flex items-center gap-2 transition-colors
 				${editMode ? 'hover:bg-red-600' : 'hover:bg-blue-500/20'}`)}
+			aria-label={editMode ? "Cancel editing workspace" : "Edit workspace settings"}
+			title={editMode ? "Cancel editing workspace" : "Edit workspace settings"}
 		>
 			{#if editMode}
 				<i class="fas fa-times text-red-400"></i>
@@ -279,6 +281,8 @@
 					disabled={isLoading}
 					class={`bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded-md 
 						flex items-center gap-2 ${isLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
+					aria-label="Save workspace settings"
+					title="Save workspace settings"
 				>
 					{#if isLoading}
 						<i class="fas fa-spinner fa-spin"></i>
@@ -358,6 +362,8 @@
 					<button
 						on:click={toggleAddMemberModal}
 						class={ThemeUtils.themeBgSecondary('px-4 py-2 rounded-md hover:bg-blue-500/20 flex items-center gap-2')}
+						title="Add a new member to this workspace"
+						aria-label="Add a new member to this workspace"
 					>
 						<i class="fas fa-user-plus text-blue-400"></i>
 						<span class="theme-text-primary">Add Member</span>
@@ -390,6 +396,8 @@
 				<button
 					on:click={deleteWorkspace}
 					class="bg-red-600 hover:bg-red-700 text-white py-2 px-4 rounded-md flex items-center gap-2"
+					title="Permanently delete this workspace and all associated data"
+					aria-label="Permanently delete this workspace and all associated data"
 				>
 					<i class="fas fa-trash-alt"></i>
 					Delete
@@ -451,6 +459,8 @@
 						type="button"
 						on:click={toggleAddMemberModal}
 						class={ThemeUtils.themeBgSecondary('px-4 py-2 rounded-md mr-2')}
+						title="Cancel adding member"
+						aria-label="Cancel adding member"
 					>
 						Cancel
 					</button>
@@ -459,6 +469,8 @@
 						disabled={isAddingMember}
 						class={`bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded-md 
 							flex items-center gap-2 ${isAddingMember ? 'opacity-50 cursor-not-allowed' : ''}`}
+						title="Add member to workspace"
+						aria-label="Add member to workspace"
 					>
 						{#if isAddingMember}
 							<i class="fas fa-spinner fa-spin"></i>

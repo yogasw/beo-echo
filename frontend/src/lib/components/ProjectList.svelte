@@ -241,6 +241,8 @@
 		class={ThemeUtils.primaryButton('mb-2 w-full justify-center')}
 		on:click={triggerFileInput}
 		disabled={uploading}
+		title="Upload configuration file"
+		aria-label="Upload configuration file"
 	>
 		<i class="fas fa-upload mr-2"></i>
 		{uploading ? 'Uploading...' : 'Upload Config'}
@@ -256,6 +258,8 @@
 	<button
 		class={ThemeUtils.primaryButton('mb-4 w-full justify-center bg-green-600 hover:bg-green-700')}
 		on:click={openAddProjectModal}
+		title="Add new project"
+		aria-label="Add new project"
 	>
 		<i class="fas fa-plus mr-2"></i> Add Project
 	</button>
@@ -323,6 +327,8 @@
 						class={ThemeUtils.secondaryButton('px-4 py-2 rounded transition-colors')}
 						on:click={closeAddProjectModal}
 						disabled={isAddingProject}
+						title="Cancel"
+						aria-label="Cancel"
 					>
 						<i class="fas fa-times mr-2"></i> Cancel
 					</button>
@@ -332,6 +338,8 @@
 							: ThemeUtils.primaryButton('px-4 py-2')}
 						on:click={handleAddProject}
 						disabled={isAddingProject || !projectName.trim() || !projectAlias.trim()}
+						title={isAddingProject ? 'Creating project...' : 'Create project'}
+						aria-label={isAddingProject ? 'Creating project...' : 'Create project'}
 					>
 						{#if isAddingProject}
 							<i class="fas fa-spinner fa-spin mr-2"></i>
