@@ -146,7 +146,7 @@
           <div class="flex-shrink-0">
             <StatusCodeBadge 
               statusCode={endpoint.statusCode} 
-              size={compact ? 'sm' : 'md'} 
+              size={compact ? 'sm' : 'sm'} 
               showDescription={!compact}
             />
           </div>
