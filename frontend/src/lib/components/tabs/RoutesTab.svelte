@@ -248,7 +248,8 @@
 			</div>
 			<span class="{ThemeUtils.themeTextMuted()} block md:hidden mt-2"></span>
 		</div>
-		<div class="mb-4">
+		
+		<div class="mb-2">
 			<label
 				for="endpoint-documentation"
 				class="block text-sm font-bold mb-2 {ThemeUtils.themeTextPrimary()} flex items-center"
@@ -284,7 +285,7 @@
 		</div>
 
 		{#if selectedEndpoint}
-			<div class="mb-4 mt-4">
+			<div class="mb-2">
 				<!-- ProxyTab endpoint={selectedEndpoint} onChange={handleProxyChange} /-->
 				<ProxyTab
 					endpoint={selectedEndpoint}

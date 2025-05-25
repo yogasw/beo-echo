@@ -70,7 +70,7 @@
 
 <div class="space-y-4">
 	<div class="flex flex-col">
-		<div class="flex items-center justify-between mb-4">
+		<div class="flex items-center justify-between">
 			<h3 class="text-lg font-semibold {ThemeUtils.themeTextPrimary()}">Endpoint Proxy</h3>
 
 			<div class="flex items-center">
