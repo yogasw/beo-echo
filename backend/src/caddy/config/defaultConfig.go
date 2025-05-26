@@ -14,7 +14,7 @@ const CADDY_DEFAULT_CONFIG = `{
 
 	# Define routes for static assets
 	@static {
-		path /_app/* /favicon.png /robots.txt
+		path /_app/* /robots.txt /images/* /css/* /js/* /fonts/* /favicon.ico /favicon.png /robots.txt
 	}
 
 	# Handle static asset routes directly
