@@ -3,7 +3,8 @@
 	import ReplayResponseFooter from './ReplayResponseFooter.svelte'; // Import the new footer component
 	import * as ThemeUtils from '$lib/utils/themeUtils';
 	import ReplayBar from './ReplayBar.svelte';
-	
+	import { replayActions, replayLoading } from '$lib/stores/replay';
+
 	// Import modular tab components
 	import ParamsTab from './tabs/ParamsTab.svelte';
 	import AuthorizationTab from './tabs/AuthorizationTab.svelte';
@@ -11,7 +12,6 @@
 	import ScriptTab from './tabs/ScriptTab.svelte';
 	import SettingsTab from './tabs/SettingsTab.svelte';
 	import ReplayBody from './tabs/ReplayBody.svelte';
-
 
 	export let tabs: Tab[] = [
 		{
@@ -52,6 +52,10 @@
 	};
 
 	const dispatch = createEventDispatcher();
+
+	// Footer state
+	let isFooterExpanded = false;
+	let replayResponseFooter; // Reference to the footer component
 
 	function createNewTab() {
 		const newTabId = `tab-${Date.now()}`;
@@ -246,6 +250,7 @@
 
 	// Event handlers for ReplayResponseFooter
 	function handleFooterToggleExpand(event: CustomEvent) {
+		isFooterExpanded = event.detail.expanded;
 		console.log('Footer expansion toggled:', event.detail.expanded);
 		// Handle footer expansion state if needed in ReplayEditor or pass up to parent
 	}
@@ -257,21 +262,47 @@
 
 	function onExcuteRequest() {
 		console.log('Execute request with current configuration:', activeTabContent);
+
+		// Set loading state to true using the proper loading action
+		replayActions.setLoading('execute', true);
+
+		// Simulate request execution for 3 seconds
+		setTimeout(() => {
+			// Set loading state to false after 3 seconds
+			replayActions.setLoading('execute', false);
+
+			// You can also set a mock result here
+			replayActions.setLastResult(null);
+
+			// Simulate response footer expansion after successful execution
+			isFooterExpanded = true;
+			console.log('Request execution completed');
+		}, 3000); // 3 seconds
+
 		// Here you would typically send the request using fetch or another HTTP client
 		// For now, just log the configuration
 		dispatch('executeRequest', { request: activeTabContent });
+	}
+
+	function onCancelRequest() {
+		console.log('Cancel request clicked');
+
+		// Set loading state to false to cancel the request
+		replayActions.setLoading('execute', false);
+
+		// TODO: Implement actual request cancellation logic here
+		// This could include:
+		// - Aborting fetch requests using AbortController
+		// - Clearing timeouts
+		// - Resetting request state
+
+		console.log('Request cancelled');
 	}
 </script>
 
 <!-- Postman-like Request Interface -->
 <div class="flex flex-col h-full">
-	<ReplayBar 
-		activeTabId={activeTabId}
-		switchTab={switchTab}
-		closeTab={closeTab}
-		createNewTab={createNewTab}
-		tabs={tabs}
-	/>
+	<ReplayBar {activeTabId} {switchTab} {closeTab} {createNewTab} {tabs} />
 	<!-- Main content -->
 	<main class="flex-grow p-4 space-y-4 overflow-y-auto">
 		<!-- Title and actions -->
@@ -284,7 +315,9 @@
 			</div>
 			<div class="flex items-center space-x-2">
 				<button
-					class={ThemeUtils.secondaryButton('flex items-center space-x-2 px-3 py-1.5 rounded-md text-sm border theme-border hover:shadow-md transition-all duration-200')}
+					class={ThemeUtils.secondaryButton(
+						'flex items-center space-x-2 px-3 py-1.5 rounded-md text-sm border theme-border hover:shadow-md transition-all duration-200'
+					)}
 					title="Save current request configuration"
 					aria-label="Save request"
 				>
@@ -296,7 +329,11 @@
 		</div>
 
 		<!-- Request builder -->
-		<div class={ThemeUtils.themeBgSecondary('flex items-center border theme-border rounded-lg shadow-sm')}>
+		<div
+			class={ThemeUtils.themeBgSecondary(
+				'flex items-center border theme-border rounded-lg shadow-sm'
+			)}
+		>
 			<div class="relative">
 				<select
 					bind:value={activeTabContent.method}
@@ -326,14 +363,23 @@
 				title="Request URL input"
 				aria-label="Enter request URL"
 			/>
-			<button 
-				class={ThemeUtils.primaryButton('px-4 py-2.5 rounded-r-lg space-x-1 shadow-sm hover:shadow-md transition-all duration-200')}
-				title="Send HTTP request"
-				aria-label="Send request"
-				on:click={onExcuteRequest}
+			<button
+				class={$replayLoading.execute
+					? 'bg-gray-600 hover:bg-gray-700 text-white px-4 py-2.5 rounded-r-lg flex items-center space-x-1 shadow-sm hover:shadow-md transition-all duration-200'
+					: ThemeUtils.primaryButton(
+							'px-4 py-2.5 rounded-r-lg space-x-1 shadow-sm hover:shadow-md transition-all duration-200'
+						)}
+				title={$replayLoading.execute ? 'Cancel HTTP request' : 'Send HTTP request'}
+				aria-label={$replayLoading.execute ? 'Cancel request' : 'Send request'}
+				on:click={$replayLoading.execute ? onCancelRequest : onExcuteRequest}
 			>
-				<span>Send</span>
-				<i class="fas fa-paper-plane text-sm"></i>
+				{#if $replayLoading.execute}
+					<span>Cancel</span>
+					<i class="fas fa-times text-sm"></i>
+				{:else}
+					<span>Send</span>
+					<i class="fas fa-paper-plane text-sm"></i>
+				{/if}
 			</button>
 		</div>
 
@@ -417,38 +463,30 @@
 
 		<!-- Dynamic content based on active section -->
 		{#if activeTabContent.activeSection === 'params'}
-			<ParamsTab 
-				params={activeTabContent?.params}
-				on:paramsChange={handleParamsChange}
-			/>
+			<ParamsTab params={activeTabContent?.params} on:paramsChange={handleParamsChange} />
 		{:else if activeTabContent.activeSection === 'auth'}
-			<AuthorizationTab 
+			<AuthorizationTab
 				authType={activeTabContent?.auth?.type}
 				authConfig={activeTabContent?.auth?.config}
 				on:authChange={handleAuthChange}
 			/>
 		{:else if activeTabContent.activeSection === 'headers'}
-			<HeadersTab 
-				headers={activeTabContent?.headers}
-				on:headersChange={handleHeadersChange}
-			/>
+			<HeadersTab headers={activeTabContent?.headers} on:headersChange={handleHeadersChange} />
 		{:else if activeTabContent.activeSection === 'body'}
-			<ReplayBody/>
+			<ReplayBody />
 		{:else if activeTabContent.activeSection === 'scripts'}
-			<ScriptTab 
+			<ScriptTab
 				preRequestScript={activeTabContent?.scripts?.preRequestScript}
 				testScript={activeTabContent?.scripts?.testScript}
 				on:scriptChange={handleScriptChange}
 			/>
 		{:else if activeTabContent.activeSection === 'settings'}
-			<SettingsTab 
-				settings={activeTabContent?.settings}
-				on:settingsChange={handleSettingsChange}
-			/>
+			<SettingsTab settings={activeTabContent?.settings} on:settingsChange={handleSettingsChange} />
 		{/if}
 	</main>
 
 	<ReplayResponseFooter
+		bind:isExpanded={isFooterExpanded}
 		on:toggleExpand={handleFooterToggleExpand}
 		on:showHistory={handleFooterShowHistory}
 	/>
