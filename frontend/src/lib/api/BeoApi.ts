@@ -2,6 +2,7 @@ import type { User, Workspace } from '$lib/types/User';
 import { auth } from '$lib/stores/auth';
 import { getCurrentWorkspaceId } from '$lib/utils/localStorage';
 import { apiClient } from './apiClient';
+import type { Rule } from './rulesApi';
 
 interface AuthCredentials {
 	username: string;
@@ -80,7 +81,7 @@ export type Response = {
 	stream: boolean;
 	enabled: boolean;
 	note: string;
-	rules: null;
+	rules: Rule[] | null;
 	created_at: Date;
 	updated_at: Date;
 }
@@ -154,7 +155,8 @@ export const deleteWorkspace = async (workspaceId: string): Promise<any> => {
 	return response.data;
 }
 
-export const getProjects = async (workspaceId?: string): Promise<Project[]> => {
+export const getProjects = async (): Promise<Project[]> => {
+	let workspaceId = getCurrentWorkspaceId();
 	// If no workspaceId provided, this will fail with the new API structure
 	if (!workspaceId) {
 		console.error('No workspace ID provided for getProjects');
@@ -360,7 +362,7 @@ export const getLogs = async (page: number = 1, pageSize: number = 100, projectI
 // Create an EventSource for real-time log streaming
 export const createLogStream = (projectId: string, limit: number = 100): EventSource => {
 	let workspaceId = getCurrentWorkspaceId();
-	let baseURL = `${import.meta.env.VITE_API_BASE_URL || 'http://localhost:3600/mock/api'}`;
+	let baseURL = `${import.meta.env.VITE_API_BASE_URL || 'http://localhost:3600/api'}`;
 	let url = `${baseURL}/workspaces/${workspaceId}/projects/${projectId}/logs/stream?limit=${limit}`;
 
 	// Add authentication using JWT token

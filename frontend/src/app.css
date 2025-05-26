@@ -90,6 +90,15 @@ body, button, div, input, textarea, select {
   .theme-shadow {
     @apply shadow-md dark:shadow-gray-900;
   }
+
+  /* Hide scrollbar utility */
+  .hide-scrollbar {
+    -ms-overflow-style: none;  /* Internet Explorer 10+ */
+    scrollbar-width: none;  /* Firefox */
+  }
+  .hide-scrollbar::-webkit-scrollbar { 
+    display: none;  /* Safari and Chrome */
+  }
 }
 
 /* Custom scrollbar styles */

@@ -33,6 +33,8 @@
 		<button
 			class="absolute top-4 right-4 bg-gray-700 text-gray-400 hover:text-white w-10 h-10 rounded-full flex items-center justify-center border border-gray-500"
 			on:click={()=>closeSettingsModal()}
+			title="Close settings modal"
+			aria-label="Close settings modal"
 		>
 			<i class="fas fa-times"></i>
 		</button>
@@ -43,6 +45,8 @@
 			<button
 				class="md:hidden flex items-center bg-gray-600 text-white py-2 px-4 rounded mb-4"
 				on:click={()=>toggleMenu()}
+				title="Toggle navigation menu"
+				aria-label="Toggle navigation menu"
 			>
 				<i class="fas fa-bars text-lg mr-2"></i>
 				<span>Menu</span>
@@ -52,6 +56,8 @@
 				<button
 					class="flex items-center space-x-2 text-white hover:bg-gray-600 py-2 px-4 rounded"
 					on:click={()=>toggleTab('adminSettingsTab')}
+					aria-label="Open admin settings tab"
+					title="Open admin settings tab"
 				>
 					<i class="fas fa-user-cog text-lg"></i>
 					<span>Admin</span>
@@ -59,6 +65,8 @@
 				<button
 					class="flex items-center space-x-2 text-white hover:bg-gray-600 py-2 px-4 rounded"
 					on:click={()=>toggleTab('gitConfigTab')}
+					aria-label="Open git configuration tab"
+					title="Open git configuration tab"
 				>
 					<i class="fas fa-code-branch text-lg"></i>
 					<span>Git</span>
@@ -66,6 +74,8 @@
 				<button
 					class="flex items-center space-x-2 text-white hover:bg-gray-600 py-2 px-4 rounded"
 					on:click={()=>toggleTab('advancedSettingsTab')}
+					aria-label="Open advanced settings tab"
+					title="Open advanced settings tab"
 				>
 					<i class="fas fa-cogs text-lg"></i>
 					<span>Advanced</span>

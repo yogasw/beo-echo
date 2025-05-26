@@ -212,6 +212,7 @@
 												on:click={() => toggleAutoInvite(workspace)} 
 												class="ml-2 text-xs bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 py-1 px-2 rounded"
 												title={workspace.auto_invite_enabled ? "Disable Auto-Invite" : "Enable Auto-Invite"}
+												aria-label={workspace.auto_invite_enabled ? "Disable Auto-Invite for this workspace" : "Enable Auto-Invite for this workspace"}
 											>
 												{workspace.auto_invite_enabled ? 'Disable' : 'Enable'}
 											</button>
@@ -257,7 +258,8 @@
 						on:click={() => goToPage(1)}
 						disabled={currentPage === 1}
 						class="p-2 rounded theme-bg-secondary hover:bg-blue-500/20 disabled:opacity-50 disabled:hover:bg-transparent"
-						aria-label="First page"
+						title="Go to first page"
+						aria-label="Go to first page"
 					>
 						<i class="fas fa-angle-double-left theme-text-secondary"></i>
 					</button>
@@ -265,7 +267,8 @@
 						on:click={() => goToPage(currentPage - 1)}
 						disabled={currentPage === 1}
 						class="p-2 rounded theme-bg-secondary hover:bg-blue-500/20 disabled:opacity-50 disabled:hover:bg-transparent"
-						aria-label="Previous page"
+						title="Go to previous page"
+						aria-label="Go to previous page"
 					>
 						<i class="fas fa-angle-left theme-text-secondary"></i>
 					</button>
@@ -294,6 +297,9 @@
 										? 'bg-blue-600 text-white' 
 										: 'theme-bg-secondary theme-text-secondary hover:bg-blue-500/20'
 								}`}
+								title={`Go to page ${pageNum}`}
+								aria-label={`Go to page ${pageNum}`}
+								aria-current={currentPage === pageNum ? 'page' : undefined}
 							>
 								{pageNum}
 							</button>
@@ -304,7 +310,8 @@
 						on:click={() => goToPage(currentPage + 1)}
 						disabled={currentPage === totalPages}
 						class="p-2 rounded theme-bg-secondary hover:bg-blue-500/20 disabled:opacity-50 disabled:hover:bg-transparent"
-						aria-label="Next page"
+						title="Go to next page"
+						aria-label="Go to next page"
 					>
 						<i class="fas fa-angle-right theme-text-secondary"></i>
 					</button>
@@ -312,7 +319,8 @@
 						on:click={() => goToPage(totalPages)}
 						disabled={currentPage === totalPages}
 						class="p-2 rounded theme-bg-secondary hover:bg-blue-500/20 disabled:opacity-50 disabled:hover:bg-transparent"
-						aria-label="Last page"
+						title="Go to last page"
+						aria-label="Go to last page"
 					>
 						<i class="fas fa-angle-double-right theme-text-secondary"></i>
 					</button>

@@ -71,6 +71,8 @@
 				<button 
 					class={ThemeUtils.destructiveButton('py-2 px-4 rounded-md text-sm')}
 					on:click={() => showDeleteConfirm = true}
+					title="Delete this project permanently"
+					aria-label="Delete project {selectedProject.name}"
 				>
 					<i class="fas fa-trash-alt mr-2"></i> Delete Project
 				</button>
@@ -102,6 +104,8 @@
 				<button 
 					class={ThemeUtils.secondaryButton('py-2 px-4 rounded')} 
 					on:click={() => showDeleteConfirm = false}
+					title="Cancel project deletion"
+					aria-label="Cancel project deletion"
 				>
 					<i class="fas fa-times mr-1"></i>
 					Cancel
@@ -109,6 +113,8 @@
 				<button 
 					class={ThemeUtils.destructiveButton('py-2 px-4 rounded')}
 					on:click={handleDelete}
+					title="Confirm and delete project permanently"
+					aria-label="Confirm and delete project {selectedProject.name} permanently"
 				>
 					<i class="fas fa-trash-alt mr-1"></i>
 					Delete

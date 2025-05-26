@@ -20,6 +20,8 @@
 
 	let searchTerm = '';
 	let activeTab = 'routes';
+	let panelWidth: number = 18; // Panel width in rem units (w-72 = 18rem)
+
 	// Check authentication from localStorage
 	$: isLoginPage = $page.url.pathname === '/login';
 
@@ -90,6 +92,8 @@
 
 				// If we have a valid workspace ID, fetch projects for that workspace
 				if (currentWorkspaceId) {
+					//set localStorage for current workspace
+					setCurrentWorkspaceId(currentWorkspaceId);
 					await fetchConfigs(currentWorkspaceId);
 				}
 			}

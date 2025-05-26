@@ -2,8 +2,8 @@ package handler
 
 import (
 	"beo-echo/backend/src/database"
+	"beo-echo/backend/src/echo/repositories"
 	"beo-echo/backend/src/logs/services"
-	"beo-echo/backend/src/mocks/repositories"
 	"net/http"
 	"strconv"
 	"sync"

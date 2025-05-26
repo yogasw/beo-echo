@@ -1,5 +1,6 @@
 <script lang="ts">
 	import type { RequestLog } from '$lib/api/BeoApi';
+	import HttpMethodBadge from '$lib/components/common/HttpMethodBadge.svelte';
 	import * as ThemeUtils from '$lib/utils/themeUtils';
 	import HeadersEditor from '../../common/HeadersEditor.svelte';
 
@@ -19,7 +20,10 @@
 			</div>
 			<div>
 				<span class="theme-text-muted">Method:</span>
-				<span class="theme-text-primary font-mono">{log.method}</span>
+				<HttpMethodBadge
+					method={log.method}
+					size="sm"
+				/>
 			</div>
 		</div>
 	</div>
@@ -36,6 +40,8 @@
 							JSON.stringify(parseJson(log.request_headers), null, 2),
 							'Headers'
 						)}
+					aria-label="Copy request headers to clipboard"
+					title="Copy request headers to clipboard"
 				>
 					<i class="fas fa-copy mr-1"></i> Copy
 				</button>
@@ -46,6 +52,8 @@
 							JSON.stringify(parseJson(log.request_headers)),
 							'Headers (minified)'
 						)}
+					aria-label="Copy minified request headers to clipboard"
+					title="Copy minified request headers to clipboard"
 				>
 					<i class="fas fa-compress-alt mr-1"></i> Minify
 				</button>
@@ -72,6 +80,8 @@
 								JSON.stringify(parseJson(log.request_body), null, 2),
 								'Body'
 							)}
+						aria-label="Copy request body to clipboard"
+						title="Copy request body to clipboard"
 					>
 						<i class="fas fa-copy mr-1"></i> Copy
 					</button>
@@ -82,6 +92,8 @@
 								JSON.stringify(parseJson(log.request_body)),
 								'Body (minified)'
 							)}
+						aria-label="Copy minified request body to clipboard"
+						title="Copy minified request body to clipboard"
 					>
 						<i class="fas fa-compress-alt mr-1"></i> Minify
 					</button>
@@ -105,6 +117,8 @@
 					class={ThemeUtils.utilityButton()}
 					on:click|stopPropagation={() =>
 						copyToClipboard(log.query_params, 'Query parameters')}
+					aria-label="Copy query parameters to clipboard"
+					title="Copy query parameters to clipboard"
 				>
 					<i class="fas fa-copy mr-1"></i> Copy
 				</button>

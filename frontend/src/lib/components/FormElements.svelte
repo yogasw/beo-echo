@@ -123,7 +123,7 @@
     {/if}
   </div>
 {:else if type === 'toggle'}
-  <div class={`flex items-center justify-between mb-4 ${containerClass}`}>
+  <div class={`flex items-center justify-between ${containerClass}`}>
     {#if label}
       <span class={`text-sm font-medium theme-text-primary ${labelClass}`}>
         {label}

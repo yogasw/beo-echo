@@ -79,6 +79,7 @@
 			class="flex items-center justify-center gap-2 bg-green-500 hover:bg-green-600 text-white px-4 py-3 rounded-full shadow-lg transition-all duration-200 transform hover:scale-105"
 			on:click={handleSave}
 			aria-label="Save changes"
+			title="Save changes"
 			disabled={$saveInprogress}
 		>
 			{#if $saveInprogress}
