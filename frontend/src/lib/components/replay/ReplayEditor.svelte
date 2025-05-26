@@ -254,6 +254,13 @@
 		console.log('Show history clicked');
 		// Handle showing history, potentially dispatching another event upwards
 	}
+
+	function onExcuteRequest() {
+		console.log('Execute request with current configuration:', activeTabContent);
+		// Here you would typically send the request using fetch or another HTTP client
+		// For now, just log the configuration
+		dispatch('executeRequest', { request: activeTabContent });
+	}
 </script>
 
 <!-- Postman-like Request Interface -->
@@ -323,6 +330,7 @@
 				class={ThemeUtils.primaryButton('px-4 py-2.5 rounded-r-lg space-x-1 shadow-sm hover:shadow-md transition-all duration-200')}
 				title="Send HTTP request"
 				aria-label="Send request"
+				on:click={onExcuteRequest}
 			>
 				<span>Send</span>
 				<i class="fas fa-paper-plane text-sm"></i>
