@@ -11,7 +11,6 @@
 	import SkeletonLoader from '$lib/components/common/SkeletonLoader.svelte';
 	import ErrorDisplay from '$lib/components/common/ErrorDisplay.svelte';
 	import ReplayEditor from './ReplayEditor.svelte';
-	import type { Tab } from './ReplayEditor.svelte';
 
 	let isLoading = true;
 	let error: string | null = null;
