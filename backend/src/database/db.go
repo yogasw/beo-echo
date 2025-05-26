@@ -83,6 +83,7 @@ func CheckAndHandle() error {
 
 	DB.AutoMigrate(&ProxyTarget{})
 	DB.AutoMigrate(&Project{})
+	DB.AutoMigrate(&Replay{})
 
 	// Auto migrate the models
 	if err := DB.AutoMigrate(
@@ -96,7 +97,6 @@ func CheckAndHandle() error {
 		&Workspace{},
 		&UserWorkspace{},
 		&SSOConfig{},
-		&Replay{},
 		&ReplayFolder{},
 	); err != nil {
 		return errors.New("Failed to migrate database schema: " + err.Error())
