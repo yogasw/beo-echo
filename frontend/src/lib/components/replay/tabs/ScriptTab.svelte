@@ -174,7 +174,7 @@ pm.test("Response has data", function () {
 	<div class="bg-white dark:bg-gray-800 border theme-border rounded-lg overflow-hidden">
 		<!-- Script Type Navigation -->
 		<div class="border-b theme-border">
-			<nav class="flex space-x-0" role="tablist" aria-label="Script type navigation">
+			<div class="flex space-x-0" role="tablist" aria-label="Script type navigation">
 				<button 
 					class="flex-1 py-3 px-4 text-sm font-medium transition-all duration-200 border-r theme-border {activeScriptTab === 'pre-request' 
 						? 'bg-blue-600 text-white shadow-sm' 
@@ -201,7 +201,7 @@ pm.test("Response has data", function () {
 					<i class="fas fa-check-circle mr-2"></i>
 					Tests
 				</button>
-			</nav>
+			</div>
 		</div>
 
 		<!-- Script Editor -->
