@@ -151,6 +151,8 @@
 					type="button"
 					on:click={toggleEdit}
 					class="theme-bg-secondary theme-text-primary px-4 py-2 rounded-md text-sm hover:bg-gray-200 dark:hover:bg-gray-600"
+					title="Cancel profile editing changes"
+					aria-label="Cancel profile editing changes"
 				>
 					Cancel
 				</button>
@@ -158,6 +160,8 @@
 					type="submit"
 					class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md text-sm flex items-center gap-2"
 					disabled={isSaving}
+					title="Save profile changes"
+					aria-label="Save profile changes"
 				>
 					{#if isSaving}
 						<i class="fas fa-spinner fa-spin"></i>
@@ -175,6 +179,8 @@
 			<button 
 				on:click={toggleEdit}
 				class="theme-bg-secondary theme-text-primary px-4 py-2 rounded-md text-sm flex items-center gap-2 hover:bg-gray-200 dark:hover:bg-gray-600"
+				title="Edit user profile information"
+				aria-label="Edit user profile information"
 			>
 				<i class="fas fa-pencil-alt"></i>
 				<span>Edit Profile</span>

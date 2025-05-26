@@ -147,14 +147,18 @@
                     class="px-4 py-2 theme-bg-secondary hover:bg-gray-600 
                            theme-text-primary rounded-md text-sm"
                     on:click={onClose}
-                    disabled={saving}>
+                    disabled={saving}
+                    title="Cancel Google SSO configuration changes"
+                    aria-label="Cancel Google SSO configuration changes">
                     Cancel
                 </button>
                 <button
                     type="submit"
                     class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md text-sm 
                            flex items-center gap-2"
-                    disabled={saving}>
+                    disabled={saving}
+                    title="Save Google SSO configuration settings"
+                    aria-label="Save Google SSO configuration settings">
                     {#if saving}
                         <i class="fas fa-spinner fa-spin"></i>
                     {/if}

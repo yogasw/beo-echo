@@ -158,6 +158,8 @@
                             type="button"
                             on:click={onClose}
                             class="mr-2 px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-300 rounded-md hover:bg-gray-300 dark:hover:bg-gray-600"
+                            aria-label="Cancel auto-invite configuration"
+                            title="Cancel auto-invite configuration"
                         >
                             Cancel
                         </button>
@@ -166,6 +168,8 @@
                             disabled={saving}
                             class="bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded-md
                                 flex items-center disabled:opacity-50 disabled:cursor-not-allowed"
+                            aria-label="Save auto-invite configuration"
+                            title="Save auto-invite configuration"
                         >
                             {#if saving}
                                 <div class="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>

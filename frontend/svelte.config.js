@@ -7,6 +7,11 @@ const config = {
 	// Consult https://svelte.dev/docs/kit/integrations
 	// for more information about preprocessors
 	preprocess: vitePreprocess(),
+
+	// compilerOptions: { // Add this section
+	// 	runes: true
+	// },
+
 	kit: {
 		// adapter-auto only supports some environments, see https://svelte.dev/docs/kit/adapter-auto for a list.
 		// If your environment is not supported, or you settled on a specific environment, switch out the adapter.
@@ -21,6 +26,7 @@ const config = {
 			strict: false
 		})
 	}
+	
 };
 
 export default config;

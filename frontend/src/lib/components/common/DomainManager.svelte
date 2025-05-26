@@ -109,6 +109,8 @@
             type="button" 
             on:click={addDomain} 
             class="rounded-r-lg px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white"
+            title="Add domain to the list"
+            aria-label="Add domain to the list"
         >
             Add
         </button>

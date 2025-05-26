@@ -144,6 +144,8 @@
 			type="submit"
 			class={`px-4 py-2 rounded-md text-sm flex items-center gap-2 text-white ${isSaving || !currentPassword || !passwordValid || newPassword !== confirmPassword ? 'bg-gray-400 cursor-not-allowed opacity-70' : 'bg-blue-600 hover:bg-blue-700'}`}
 			disabled={isSaving || !currentPassword || !passwordValid || newPassword !== confirmPassword}
+			title="Update account password"
+			aria-label="Update account password"
 		>
 			{#if isSaving}
 				<i class="fas fa-spinner fa-spin"></i>

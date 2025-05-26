@@ -250,7 +250,8 @@
 						class="{isEditing && !hasChanges ? ThemeUtils.secondaryButton('py-1 px-2 text-xs opacity-60') : isEditing ? ThemeUtils.primaryButton('py-1 px-2 text-xs') : ThemeUtils.utilityButton('py-1 px-2 text-xs')}"
 						type="button"
 						disabled={isEditing && !hasChanges}
-						aria-label={isEditing ? "Save headers" : "Edit headers"}
+						title={isEditing ? "Save header changes" : "Edit headers"}
+						aria-label={isEditing ? "Save header changes" : "Edit headers"}
 					>
 						{#if isEditing}
 							<i class="fas fa-save text-xs mr-1"></i>
@@ -266,7 +267,8 @@
 							on:click={cancelEdit} 
 							class="{ThemeUtils.utilityButton('py-1 px-2 text-xs ml-1')}"
 							type="button"
-							aria-label="Cancel editing"
+							title="Cancel header editing"
+							aria-label="Cancel header editing"
 						>
 							Cancel
 						</button>

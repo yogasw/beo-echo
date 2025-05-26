@@ -21,27 +21,6 @@
 		features: false,
 		general: true // General open by default
 	};
-
-	// State for save action
-	let isSaving = false;
-	let saveSuccess = false;
-
-	// Handle save
-	function handleSave() {
-		isSaving = true;
-
-		// Simulate API call
-		setTimeout(() => {
-			isSaving = false;
-			saveSuccess = true;
-			toast.success('Instance settings saved successfully');
-
-			// Reset success message after a delay
-			setTimeout(() => {
-				saveSuccess = false;
-			}, 3000);
-		}, 1000);
-	}
 </script>
 
 <div class="w-full theme-bg-primary p-4">
@@ -57,20 +36,6 @@
 					<p class="text-sm theme-text-muted">Manage system-wide configuration</p>
 				</div>
 			</div>
-
-			<button
-				on:click={handleSave}
-				class="bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded-md flex items-center gap-2 text-sm"
-				disabled={isSaving}
-			>
-				{#if isSaving}
-					<i class="fas fa-spinner fa-spin"></i>
-					<span>Saving...</span>
-				{:else}
-					<i class="fas fa-save"></i>
-					<span>Save Changes</span>
-				{/if}
-			</button>
 		</div>
 
 		<!-- Info Message -->

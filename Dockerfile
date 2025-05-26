@@ -5,7 +5,7 @@ ARG NODE_VERSION=22.14.0
 FROM node:${NODE_VERSION}-alpine AS frontend-builder
 
 # Set the working directory for the frontend build
-ENV VITE_API_BASE_URL="/mock/api"
+ENV VITE_API_BASE_URL="/api"
 
 WORKDIR /app/frontend
 

@@ -3,8 +3,8 @@ package middlewares
 import (
 	"beo-echo/backend/src/auth"
 	"beo-echo/backend/src/database"
+	"beo-echo/backend/src/echo/handler"
 	handlerLogs "beo-echo/backend/src/logs/handlers"
-	"beo-echo/backend/src/mocks/handler"
 	systemConfig "beo-echo/backend/src/systemConfigs"
 	"beo-echo/backend/src/utils"
 	"bytes"

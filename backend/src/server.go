@@ -17,14 +17,16 @@ import (
 	"beo-echo/backend/src/caddy/scripts"
 	"beo-echo/backend/src/database"
 	"beo-echo/backend/src/database/repositories"
+	"beo-echo/backend/src/echo/handler"
+	"beo-echo/backend/src/echo/handler/endpoint"
+	"beo-echo/backend/src/echo/handler/project"
+	"beo-echo/backend/src/echo/handler/proxy"
+	"beo-echo/backend/src/echo/handler/response"
+	"beo-echo/backend/src/echo/services"
 	"beo-echo/backend/src/health"
 	"beo-echo/backend/src/lib"
 	"beo-echo/backend/src/middlewares"
-	"beo-echo/backend/src/mocks/handler"
-	"beo-echo/backend/src/mocks/handler/endpoint"
-	"beo-echo/backend/src/mocks/handler/project"
-	"beo-echo/backend/src/mocks/handler/proxy"
-	"beo-echo/backend/src/mocks/handler/response"
+	"beo-echo/backend/src/replay"
 	"beo-echo/backend/src/users"
 	"beo-echo/backend/src/utils"
 	"beo-echo/backend/src/workspaces"
@@ -78,12 +80,12 @@ func SetupRouter() *gin.Engine {
 	}
 
 	// Basic route for checking if server is running
-	router.GET("/mock", func(c *gin.Context) {
+	router.GET("/", func(c *gin.Context) {
 		c.String(http.StatusOK, "Server is running!")
 	})
 
 	// Health check route
-	router.GET("/mock/api/health", health.HealthCheckHandler)
+	router.GET("/api/health", health.HealthCheckHandler)
 
 	// Initialize user repository for auth service
 	userRepo := repositories.NewUserRepository(database.DB)
@@ -106,15 +108,26 @@ func SetupRouter() *gin.Engine {
 	// Initialize Auth service with user repository
 	authHandler.InitAuthService(database.DB, userRepo)
 
+	// Initialize system configuration handle
+	ruleRepo := repositories.NewRuleRepository(database.DB)
+	responseRepo := repositories.NewResponseRepository(database.DB)
+	ruleService := services.NewRuleService(ruleRepo, responseRepo)
+	ruleHandler := handler.NewRuleHandler(ruleService)
+
+	// Initialize replay service and handler
+	replayRepo := repositories.NewReplayRepository(database.DB)
+	replayService := replay.NewReplayService(replayRepo)
+	replayHandler := replay.NewReplayHandler(replayService)
+
 	// Authentication routes
-	router.POST("/mock/api/auth/login", authHandler.LoginHandler)
+	router.POST("/api/auth/login", authHandler.LoginHandler)
 
 	// Public OAuth routes
-	router.GET("/mock/api/oauth/google/login", googleOAuthHandler.InitiateLogin)
-	router.GET("/mock/api/oauth/google/callback", googleOAuthHandler.HandleCallback)
+	router.GET("/api/oauth/google/login", googleOAuthHandler.InitiateLogin)
+	router.GET("/api/oauth/google/callback", googleOAuthHandler.HandleCallback)
 
 	// Protected API routes group
-	apiGroup := router.Group("/mock/api")
+	apiGroup := router.Group("/api")
 	apiGroup.Use(middlewares.JWTAuthMiddleware())
 	{
 		// Owner-only system configuration routes
@@ -199,6 +212,14 @@ func SetupRouter() *gin.Engine {
 				projectRoutes.PUT("/endpoints/:id/responses/:responseId", response.UpdateResponseHandler)
 				projectRoutes.DELETE("/endpoints/:id/responses/:responseId", response.DeleteResponseHandler)
 
+				// Rule management
+				projectRoutes.GET("/endpoints/:id/responses/:responseId/rules", ruleHandler.ListRulesHandler)
+				projectRoutes.POST("/endpoints/:id/responses/:responseId/rules", ruleHandler.CreateRuleHandler)
+				projectRoutes.GET("/endpoints/:id/responses/:responseId/rules/:ruleId", ruleHandler.GetRuleHandler)
+				projectRoutes.PUT("/endpoints/:id/responses/:responseId/rules/:ruleId", ruleHandler.UpdateRuleHandler)
+				projectRoutes.DELETE("/endpoints/:id/responses/:responseId/rules/:ruleId", ruleHandler.DeleteRuleHandler)
+				projectRoutes.DELETE("/endpoints/:id/responses/:responseId/rules", ruleHandler.DeleteAllRulesHandler)
+
 				// Proxy management
 				projectRoutes.GET("/proxies", proxy.ListProxyTargetsHandler)
 				projectRoutes.POST("/proxies", proxy.CreateProxyTargetHandler)
@@ -215,12 +236,20 @@ func SetupRouter() *gin.Engine {
 				projectRoutes.POST("/logs/bookmark", handlerLogs.AddBookmarkHandler)
 				projectRoutes.DELETE("/logs/bookmark/:bookmarkId", handlerLogs.DeleteBookmarkHandler)
 
+				// Replay management
+				projectRoutes.GET("/replays", replayHandler.ListReplays)
+				projectRoutes.POST("/replays", replayHandler.CreateReplay)
+				projectRoutes.GET("/replays/:replayId", replayHandler.GetReplay)
+				projectRoutes.POST("/replays/:replayId/execute", replayHandler.ExecuteReplay)
+				projectRoutes.DELETE("/replays/:replayId", replayHandler.DeleteReplay)
+				projectRoutes.GET("/replays/:replayId/logs", replayHandler.GetReplayLogs)
+
 			}
 		}
 	}
 
 	// Register the catch-all handler for mock API endpoints
-	// We need to avoid conflict with the /mock path, so we'll create a separate group
+	// We need to avoid conflict with the /api path, so we'll create a separate group
 	// for the mock project endpoints
 	mockProjectGroup := router.Group("")
 	{
@@ -288,8 +317,8 @@ func StartServer() error {
 	log.Printf("=================================================")
 	log.Printf("🚀 BeoEcho server is starting up!")
 	log.Printf("🔗 Server URL: http://%s", serverAddr)
-	log.Printf("📄 API endpoint: http://%s/mock/api", serverAddr)
-	log.Printf("🔍 Health check: http://%s/mock/api/health", serverAddr)
+	log.Printf("📄 API endpoint: http://%s/api", serverAddr)
+	log.Printf("🔍 Health check: http://%s/api/health", serverAddr)
 	log.Printf("=================================================")
 
 	// This will block until the server is stopped

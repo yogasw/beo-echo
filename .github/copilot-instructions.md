@@ -1,4 +1,32 @@
+````instructions
 # Beo Echo Project Guide
+
+## MANDATORY ACCESSIBILITY REQUIREMENTS
+
+**🚨 CRITICAL: ALL UI ELEMENTS MUST FOLLOW ACCESSIBILITY STANDARDS**
+
+### Button Accessibility (MANDATORY)
+Every button created or modified MUST include:
+1. **`title` attribute** - Provides tooltip and describes the action
+2. **`aria-label` attribute** - Screen reader description
+3. **Icon-only buttons** - BOTH `title` and `aria-label` are REQUIRED
+4. **Text buttons** - `title` is REQUIRED, `aria-label` recommended
+5. **Toggle buttons** - MUST include `aria-pressed` attribute
+6. **Disabled buttons** - MUST include `aria-disabled="true"`
+
+### Form Element Accessibility (MANDATORY)
+1. **Labels** - All inputs MUST have associated `<label>` elements
+2. **Error states** - Use `aria-invalid` and `aria-describedby`
+3. **Required fields** - Mark with `aria-required="true"`
+4. **Help text** - Associate with `aria-describedby`
+
+### Navigation Accessibility (MANDATORY)
+1. **Keyboard navigation** - All interactive elements must be keyboard accessible
+2. **Focus management** - Visible focus indicators required
+3. **Skip links** - Provide skip navigation options
+4. **Heading hierarchy** - Logical h1, h2, h3 structure
+
+**NO EXCEPTIONS**: These accessibility requirements are non-negotiable and must be implemented in every component.
 
 ## Project Overview
 This project is a Beo Echo API mocking service with a Golang backend and Svelte frontend. It includes features for creating mock APIs, forwarding requests, and managing API behaviors, similar to tools like Beeceptor and Mockoon.
@@ -18,7 +46,7 @@ This project is a Beo Echo API mocking service with a Golang backend and Svelte 
 ├── .vscode/           # VSCode settings
 ├── backend/           # Golang Backend (BE)
 ├── docs/              # Documentation files
-└── frontend/          # Svelte Frontend (FE)
+└── frontend/          # Svelte Frontend (FE) (version 5)
 ```
 
 ## Technology Stack
@@ -38,7 +66,7 @@ This project is a Beo Echo API mocking service with a Golang backend and Svelte 
   - Real-time proxy forwarding
 
 ### Frontend (FE)
-- **Framework**: SvelteKit
+- **Framework**: SvelteKit (version 5)
 - **Styling**: Tailwind CSS with custom theming
 - **Language**: TypeScript
 - **State Management**: Svelte stores
@@ -130,33 +158,117 @@ This project is a Beo Echo API mocking service with a Golang backend and Svelte 
   ```
 
 #### Buttons
+
+**IMPORTANT**: All buttons MUST include proper accessibility attributes:
+- `title` attribute for tooltip description
+- `aria-label` attribute for screen readers
+- When button contains only an icon, both attributes are REQUIRED
+- When button has text, at minimum include `title` for additional context
+
+**Button Examples with Required Accessibility**:
+
 - **Primary Action**:
+  ```html
+  <button 
+    class="bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded-md text-sm flex items-center"
+    title="Submit the form"
+    aria-label="Submit the form"
+  >
+    <i class="fas fa-save mr-2"></i>
+    Save
+  </button>
   ```
-  bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded-md 
-  text-sm flex items-center
+
+- **Icon-Only Button** (MUST have both title and aria-label):
+  ```html
+  <button 
+    class="bg-gray-700 hover:bg-gray-600 text-white p-2 rounded flex items-center"
+    title="Delete item"
+    aria-label="Delete this item"
+  >
+    <i class="fas fa-trash-alt"></i>
+  </button>
   ```
 
 - **Secondary Action**:
-  ```
-  bg-gray-700 hover:bg-gray-600 text-white py-2 px-4 rounded 
-  flex items-center
+  ```html
+  <button 
+    class="bg-gray-700 hover:bg-gray-600 text-white py-2 px-4 rounded flex items-center"
+    title="Cancel the current operation"
+    aria-label="Cancel operation"
+  >
+    Cancel
+  </button>
   ```
 
 - **Destructive Action**:
-  ```
-  bg-red-600 hover:bg-red-700 text-white py-2 px-4 rounded 
-  flex items-center
+  ```html
+  <button 
+    class="bg-red-600 hover:bg-red-700 text-white py-2 px-4 rounded flex items-center"
+    title="Permanently delete this item"
+    aria-label="Delete item permanently"
+  >
+    <i class="fas fa-trash-alt mr-2"></i>
+    Delete
+  </button>
   ```
 
 - **Utility/Small**:
-  ```
-  text-xs bg-gray-700 hover:bg-gray-600 text-gray-300 px-2 py-1 rounded
+  ```html
+  <button 
+    class="text-xs bg-gray-700 hover:bg-gray-600 text-gray-300 px-2 py-1 rounded"
+    title="Copy to clipboard"
+    aria-label="Copy text to clipboard"
+  >
+    Copy
+  </button>
   ```
 
-- **Badge/Pill**:
+- **Toggle Button** (state-dependent accessibility):
+  ```html
+  <button 
+    class="px-3 py-1 rounded-full bg-gray-900/50 text-xs font-medium"
+    title="{isActive ? 'Disable feature' : 'Enable feature'}"
+    aria-label="{isActive ? 'Disable feature' : 'Enable feature'}"
+    aria-pressed="{isActive}"
+  >
+    {isActive ? 'Active' : 'Inactive'}
+  </button>
   ```
-  px-3 py-1 rounded-full bg-gray-900/50 text-xs font-medium
-  ```
+
+**Accessibility Requirements**:
+1. **Icon-only buttons**: MUST have both `title` and `aria-label` that describe the action
+2. **Text buttons**: MUST have `title` for additional context, `aria-label` recommended
+3. **Destructive actions**: MUST clearly indicate the consequence (e.g., "Permanently delete")
+4. **Toggle buttons**: MUST include `aria-pressed` attribute and state-dependent labels
+5. **Loading states**: Update `aria-label` to include loading status
+6. **Disabled buttons**: Include `aria-disabled="true"` and explain why in `title`
+
+**Svelte Button Component Pattern**:
+```svelte
+<script>
+  export let onClick;
+  export let title;
+  export let ariaLabel = title; // Default aria-label to title
+  export let variant = 'primary'; // primary, secondary, destructive, utility
+  export let disabled = false;
+  export let loading = false;
+  
+  $: computedTitle = loading ? `${title} (Loading...)` : title;
+  $: computedAriaLabel = loading ? `${ariaLabel} Loading` : ariaLabel;
+</script>
+
+<button 
+  class="btn btn-{variant}" 
+  {title}={computedTitle}
+  aria-label={computedAriaLabel}
+  aria-disabled={disabled}
+  on:click={onClick}
+  {disabled}
+>
+  <slot />
+</button>
+```
 
 #### Status Indicators
 - Method badges with color coding:
@@ -514,6 +626,60 @@ frontend/                  # JavaScript/TypeScript frontend with Svelte and Tail
      }
      ```
    - Use loading states for all async operations
+   - **Always implement skeleton screens during API loading states**:
+     - Use the `SkeletonLoader` component to show a placeholder while data is loading
+     - Select the appropriate skeleton type based on the content being loaded:
+       - `type="card"` - For card-based layouts or content blocks
+       - `type="list"` - For list items with avatar/icon and text
+       - `type="table"` - For tabular data with rows and columns
+       - `type="text"` - For text paragraphs or long content
+       - `type="custom"` - For simple generic placeholders
+     - Customize count, dimensions, and appearance as needed
+     - Always pair with `ErrorDisplay` for error handling
+     
+     ```svelte
+     <script>
+       import { onMount } from 'svelte';
+       import SkeletonLoader from '$lib/components/common/SkeletonLoader.svelte';
+       import ErrorDisplay from '$lib/components/common/ErrorDisplay.svelte';
+       import { toast } from '$lib/stores/toast';
+       
+       let data = null;
+       let isLoading = true;
+       let error = null;
+       
+       onMount(async () => {
+         try {
+           isLoading = true;
+           data = await apiService.fetchData();
+         } catch (err) {
+           error = err;
+           toast.error(err);
+         } finally {
+           isLoading = false;
+         }
+       });
+     </script>
+     
+     {#if isLoading}
+       <!-- Select appropriate skeleton type based on content -->
+       <SkeletonLoader type="list" count={5} /> <!-- For list data -->
+       <!-- OR -->
+       <SkeletonLoader type="table" count={8} /> <!-- For tabular data -->
+       <!-- OR -->
+       <SkeletonLoader type="card" /> <!-- For card-based content -->
+     {:else if error}
+       <!-- Show error with retry option if applicable -->
+       <ErrorDisplay 
+         message={error.message} 
+         type="error" 
+         retryable={true}
+         onRetry={() => loadData()}
+       />
+     {:else}
+       <DataDisplay {data} />
+     {/if}
+     ```
 
 3. **State Management**
    - Use Svelte stores for global state management
@@ -527,10 +693,82 @@ frontend/                  # JavaScript/TypeScript frontend with Svelte and Tail
    - Avoid unnecessary re-renders
    - Use efficient event handlers with proper cleanup
 
-5. **Testing**
+5. **Accessibility (a11y) Requirements**
+   - **ALL buttons MUST include accessibility attributes**:
+     - `title` attribute for tooltip descriptions
+     - `aria-label` attribute for screen readers
+     - `aria-pressed` for toggle buttons
+     - `aria-disabled` for disabled states
+   - **Form elements MUST have proper labels**:
+     - Use `<label>` elements with `for` attribute
+     - Include `aria-describedby` for help text
+     - Provide clear error messages with `aria-invalid`
+   - **Interactive elements MUST be keyboard accessible**:
+     - Ensure proper focus management
+     - Support Enter/Space key activation
+     - Provide visible focus indicators
+   - **Content MUST have proper heading hierarchy**: Use `h1`, `h2`, `h3` in logical order
+   - **Images and icons MUST have alt text** or `aria-hidden="true"` for decorative elements
+
+6. **Testing**
    - Write unit tests for critical components and utilities
    - Implement integration tests for complex page interactions
    - Ensure accessibility testing (a11y) is part of the process
+   - Test keyboard navigation and screen reader compatibility
+
+7. **Utilize Svelte 5 Runes for Reactivity**
+   - Svelte 5 introduces Runes, a new paradigm for fine-grained reactivity, which is enabled by default.
+   - Embrace Runes for managing component state and logic for better explicitness and performance.
+   - **Key Runes**:
+     - `$state()`: For declaring reactive state variables.
+       ```svelte
+       <script lang="ts">
+         let count = $state(0);
+         
+         function increment() {
+           count += 1;
+         }
+       </script>
+       
+       <button on:click={increment} title="Increment count" aria-label="Increment count">
+         Count: {count}
+       </button>
+       ```
+     - `$derived()`: For creating values that are derived from other reactive state.
+       ```svelte
+       <script lang="ts">
+         let count = $state(0);
+         let doubled = $derived(count * 2);
+       </script>
+       
+       <p>Count: {count}, Doubled: {doubled}</p>
+       ```
+     - `$effect()`: For running side effects in response to state changes (e.g., logging, data fetching).
+       ```svelte
+       <script lang="ts">
+         let count = $state(0);
+         
+         $effect(() => {
+           console.log('The count is now', count);
+           // Perform side effects here, like saving to localStorage
+           // localStorage.setItem('count', count.toString());
+         });
+       </script>
+       ```
+     - `$props()`: For declaring component props in a more type-safe and explicit way.
+       ```svelte
+       <script lang="ts">
+         let { name, age = 30 }: { name: string, age?: number } = $props();
+       </script>
+       
+       <p>Name: {name}, Age: {age}</p>
+       ```
+   - **Benefits**:
+     - More explicit and granular control over reactivity.
+     - Easier to understand data flow and dependencies.
+     - Can lead to performance improvements in complex components.
+   - For new components, prefer using Runes. Existing components using Svelte stores or older reactivity patterns can be gradually refactored if beneficial.
+   - Refer to the official Svelte 5 documentation for detailed usage and advanced patterns.
 
 ### Key Frontend Technologies
 - **SvelteKit**: For routing and server-side rendering
@@ -579,7 +817,7 @@ backend/                   # Golang Backend
 │   │   ├── db.go          # Database connection management
 │   │   └── *_repo.go      # Repository implementations
 │   ├── middlewares/       # HTTP middleware components
-│   ├── mocks/             # Mock API management
+│   ├── echo/              # Mock API management
 │   │   ├── handler/       # HTTP handlers for mock endpoints
 │   │   ├── services/      # Mock routing business logic
 │   │   └── repositories/  # Data access layer
@@ -986,3 +1224,4 @@ cd backend && go test -cover ./...
 ```
 
 You can also use the VS Code task "Run all Tests in Backend" to execute all tests in the backend directory.
+```

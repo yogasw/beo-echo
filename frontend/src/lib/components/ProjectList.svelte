@@ -19,8 +19,10 @@
 	import { isLoadingContentArea } from '$lib/stores/loadingContentArea';
 	import { initializeLogsStream } from '$lib/services/logsService';
 	import { logStatus } from '$lib/stores/logStatus';
+	import { setCurrentWorkspaceId, getProjectPanelWidth, setProjectPanelWidth } from '$lib/utils/localStorage';
 
 	export let searchTerm = '';
+	export let panelWidth: number = getProjectPanelWidth(); // Panel width in rem units (w-72 = 18rem)
 
 	const dispatch = createEventDispatcher<{
 		selectedProject: Project;
@@ -42,6 +44,45 @@
 
 	// For project status updates
 	let updatingStatus: string | null = null;
+
+	// Resizable panel variables
+	let isResizing = false;
+	let startX = 0;
+	let startWidth = panelWidth;
+
+	// Resize functions
+	function startResize(event: MouseEvent) {
+		isResizing = true;
+		startX = event.clientX;
+		startWidth = panelWidth;
+		
+		document.addEventListener('mousemove', handleResize);
+		document.addEventListener('mouseup', stopResize);
+		document.body.style.cursor = 'col-resize';
+		document.body.style.userSelect = 'none';
+	}
+
+	function handleResize(event: MouseEvent) {
+		if (!isResizing) return;
+		
+		const deltaX = event.clientX - startX;
+		const containerWidth = window.innerWidth;
+		const newWidthRem = startWidth + (deltaX / containerWidth) * 100; // Convert to rem-like units
+		
+		// Constrain between 12rem and 30rem (minimum 192px, maximum 480px)
+		panelWidth = Math.min(Math.max(newWidthRem, 12), 30);
+	}
+
+	function stopResize() {
+		isResizing = false;
+		document.removeEventListener('mousemove', handleResize);
+		document.removeEventListener('mouseup', stopResize);
+		document.body.style.cursor = '';
+		document.body.style.userSelect = '';
+		
+		// Save panel width to localStorage when resize is complete
+		setProjectPanelWidth(panelWidth);
+	}
 
 	// Function to generate alias from project name
 	function generateAlias(name: string): string {
@@ -167,7 +208,7 @@
 		try {
 			await addProject(projectName.trim(), projectAlias.trim());
 			// Refresh project list
-			projects.set(await getProjects($currentWorkspace.id));
+			projects.set(await getProjects());
 			toast.success('Project created successfully');
 			closeAddProjectModal();
 		} catch (err) {
@@ -211,7 +252,8 @@
 
 	async function refreshProjects(workspaceId: string) {
 		try {
-			const projectsData = await getProjects(workspaceId);
+			setCurrentWorkspaceId(workspaceId);
+			const projectsData = await getProjects();
 			projects.set(projectsData);
 		} catch (err) {
 			console.error('Failed to fetch projects for workspace:', workspaceId, err);
@@ -220,7 +262,7 @@
 	}
 </script>
 
-<div class="w-72 theme-bg-primary p-4 flex flex-col h-full border-r theme-border">
+<div class="theme-bg-primary p-4 flex flex-col h-full border-r theme-border relative" style="width: {panelWidth}rem;">
 	<h1 class="text-xl font-bold mb-4 flex items-center theme-text-primary">
 		<i class="fas fa-server text-5xl mr-4"></i> Beo Echo
 	</h1>
@@ -239,6 +281,8 @@
 		class={ThemeUtils.primaryButton('mb-2 w-full justify-center')}
 		on:click={triggerFileInput}
 		disabled={uploading}
+		title="Upload configuration file"
+		aria-label="Upload configuration file"
 	>
 		<i class="fas fa-upload mr-2"></i>
 		{uploading ? 'Uploading...' : 'Upload Config'}
@@ -254,6 +298,8 @@
 	<button
 		class={ThemeUtils.primaryButton('mb-4 w-full justify-center bg-green-600 hover:bg-green-700')}
 		on:click={openAddProjectModal}
+		title="Add new project"
+		aria-label="Add new project"
 	>
 		<i class="fas fa-plus mr-2"></i> Add Project
 	</button>
@@ -321,6 +367,8 @@
 						class={ThemeUtils.secondaryButton('px-4 py-2 rounded transition-colors')}
 						on:click={closeAddProjectModal}
 						disabled={isAddingProject}
+						title="Cancel"
+						aria-label="Cancel"
 					>
 						<i class="fas fa-times mr-2"></i> Cancel
 					</button>
@@ -330,6 +378,8 @@
 							: ThemeUtils.primaryButton('px-4 py-2')}
 						on:click={handleAddProject}
 						disabled={isAddingProject || !projectName.trim() || !projectAlias.trim()}
+						title={isAddingProject ? 'Creating project...' : 'Create project'}
+						aria-label={isAddingProject ? 'Creating project...' : 'Create project'}
 					>
 						{#if isAddingProject}
 							<i class="fas fa-spinner fa-spin mr-2"></i>
@@ -397,9 +447,17 @@
 							<ProjectStatusBadge status={project.status || 'stopped'} size="small" />
 						</div>
 					</div>
-				</div>
-			{/each}
+				</div>			{/each}
 		</div>
+	</div>
+	
+	<!-- Resizable handle -->
+	<div 
+		class="absolute top-0 right-0 bottom-0 w-1 cursor-col-resize hover:bg-blue-500 transition-colors duration-200 group"
+		on:mousedown={startResize}
+		title="Drag to resize panel"
+	>
+		<div class="w-full h-full bg-transparent group-hover:bg-blue-500/30"></div>
 	</div>
 </div>
 

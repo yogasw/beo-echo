@@ -81,53 +81,53 @@ User
 ### Authentication Routes
 
 ```
-POST /mock/api/auth/login
-POST /mock/api/auth/register
+POST /api/auth/login
+POST /api/auth/register
 ```
 
 ### Workspace Management Routes
 
 ```
-GET  /mock/api/workspaces
-POST /mock/api/workspaces
-GET  /mock/api/workspaces/:workspaceID/role
+GET  /api/workspaces
+POST /api/workspaces
+GET  /api/workspaces/:workspaceID/role
 ```
 
 ### Project Management Routes
 
 ```
-GET  /mock/api/workspaces/:workspaceID/projects
-POST /mock/api/workspaces/:workspaceID/projects
-GET  /mock/api/workspaces/:workspaceID/projects/:projectId
-PUT  /mock/api/workspaces/:workspaceID/projects/:projectId
-DEL  /mock/api/workspaces/:workspaceID/projects/:projectId
+GET  /api/workspaces/:workspaceID/projects
+POST /api/workspaces/:workspaceID/projects
+GET  /api/workspaces/:workspaceID/projects/:projectId
+PUT  /api/workspaces/:workspaceID/projects/:projectId
+DEL  /api/workspaces/:workspaceID/projects/:projectId
 ```
 
 ### Endpoint Management Routes
 
 ```
-GET  /mock/api/workspaces/:workspaceID/projects/:projectId/endpoints
-POST /mock/api/workspaces/:workspaceID/projects/:projectId/endpoints
-GET  /mock/api/workspaces/:workspaceID/projects/:projectId/endpoints/:id
-PUT  /mock/api/workspaces/:workspaceID/projects/:projectId/endpoints/:id
-DEL  /mock/api/workspaces/:workspaceID/projects/:projectId/endpoints/:id
+GET  /api/workspaces/:workspaceID/projects/:projectId/endpoints
+POST /api/workspaces/:workspaceID/projects/:projectId/endpoints
+GET  /api/workspaces/:workspaceID/projects/:projectId/endpoints/:id
+PUT  /api/workspaces/:workspaceID/projects/:projectId/endpoints/:id
+DEL  /api/workspaces/:workspaceID/projects/:projectId/endpoints/:id
 ```
 
 ### Response Management Routes
 
 ```
-GET  /mock/api/workspaces/:workspaceID/projects/:projectId/endpoints/:id/responses
-POST /mock/api/workspaces/:workspaceID/projects/:projectId/endpoints/:id/responses
-GET  /mock/api/workspaces/:workspaceID/projects/:projectId/endpoints/:id/responses/:responseId
-PUT  /mock/api/workspaces/:workspaceID/projects/:projectId/endpoints/:id/responses/:responseId
-DEL  /mock/api/workspaces/:workspaceID/projects/:projectId/endpoints/:id/responses/:responseId
+GET  /api/workspaces/:workspaceID/projects/:projectId/endpoints/:id/responses
+POST /api/workspaces/:workspaceID/projects/:projectId/endpoints/:id/responses
+GET  /api/workspaces/:workspaceID/projects/:projectId/endpoints/:id/responses/:responseId
+PUT  /api/workspaces/:workspaceID/projects/:projectId/endpoints/:id/responses/:responseId
+DEL  /api/workspaces/:workspaceID/projects/:projectId/endpoints/:id/responses/:responseId
 ```
 
 ### Logs Management Routes
 
 ```
-GET  /mock/api/workspaces/:workspaceID/projects/:projectId/logs
-GET  /mock/api/workspaces/:workspaceID/projects/:projectId/logs/stream
+GET  /api/workspaces/:workspaceID/projects/:projectId/logs
+GET  /api/workspaces/:workspaceID/projects/:projectId/logs/stream
 ```
 
 ## Middleware

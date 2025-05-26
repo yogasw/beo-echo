@@ -70,6 +70,8 @@
 	<button
 		class="relative group mr-4 flex flex-col items-center"
 		on:click={() => handleTabClick('routes')}
+		title="Switch to Routes tab"
+		aria-label="Switch to Routes tab"
 	>
 		<div
 			class="w-12 aspect-square theme-text-primary p-3 rounded-full border-2 border-blue-500 flex items-center justify-center"
@@ -86,6 +88,8 @@
 			handleTabClick('logs');
 			logStatus.resetUnread();
 		}}
+		title="Switch to Logs tab"
+		aria-label="Switch to Logs tab"
 	>
 		<div
 			class="w-12 aspect-square theme-text-primary p-3 rounded-full border-2 border-yellow-500 flex items-center justify-center relative"
@@ -129,8 +133,25 @@
 		<span class="text-xs mt-1 theme-text-primary">Logs</span>
 	</button>
 	<button
+		class="relative group mr-4 flex flex-col items-center"
+		on:click={() => handleTabClick('replay')}
+		title="Switch to Replay tab"
+		aria-label="Switch to Replay tab"
+	>
+		<div
+			class="w-12 aspect-square theme-text-primary p-3 rounded-full border-2 border-green-500 flex items-center justify-center"
+			class:bg-blue-500={$activeTab === 'replay'}
+			class:theme-bg-secondary={$activeTab !== 'replay'}
+		>
+			<i class="fas fa-play-circle"></i>
+		</div>
+		<span class="text-xs mt-1 theme-text-primary">Replay</span>
+	</button>
+	<button
 		class="relative group mr-auto flex flex-col items-center"
 		on:click={() => handleTabClick('configuration')}
+		title="Switch to Configuration tab"
+		aria-label="Switch to Configuration tab"
 	>
 		<div
 			class="w-12 aspect-square theme-text-primary p-3 rounded-full border-2 border-purple-500 flex items-center justify-center"
@@ -142,7 +163,9 @@
 		<span class="text-xs mt-1 theme-text-primary">Configuration</span>
 	</button>
 
-	<button class="relative group mr-4 flex flex-col items-center" on:click={handleDownload}>
+	<button class="relative group mr-4 flex flex-col items-center" on:click={handleDownload}
+		title="Download configuration as JSON"
+		aria-label="Download configuration as JSON">
 		<div
 			class="w-12 aspect-square theme-bg-secondary theme-text-primary p-3 rounded-full border-2 border-blue-500 flex items-center justify-center"
 		>
@@ -152,7 +175,9 @@
 	</button>
 
 	<!-- Theme Toggle Button -->
-	<button class="relative group mr-4 flex flex-col items-center" on:click={toggleTheme}>
+	<button class="relative group mr-4 flex flex-col items-center" on:click={toggleTheme}
+		title={$theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
+		aria-label={$theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}>
 		<div
 			class="w-12 aspect-square theme-bg-secondary theme-text-primary p-3 rounded-full border-2 border-amber-500 flex items-center justify-center transition-all"
 		>
@@ -173,7 +198,9 @@
 	<!-- Profile Button -->
 	<div class="relative flex flex-col items-center">
 		<!-- Company/Profile Button -->
-		<button on:click={toggleProfileMenu} class="profile-button flex flex-col items-center">
+		<button on:click={toggleProfileMenu} class="profile-button flex flex-col items-center"
+			title="Open profile menu"
+			aria-label="Open profile menu">
 			<div
 				class="w-12 aspect-square theme-bg-secondary theme-text-primary p-3 rounded-full border-2 border-gray-500 flex items-center justify-center"
 			>
@@ -208,6 +235,8 @@
 						<button
 							class="w-full text-left p-3 rounded-md flex items-center theme-text-primary hover:theme-bg-secondary transition-colors"
 							on:click={openSettings}
+							title="Open settings"
+							aria-label="Open settings"
 						>
 							<i class="fas fa-cog mr-2 text-blue-400"></i>
 							<span>Settings</span>
@@ -215,6 +244,8 @@
 						<button
 							class="w-full text-left p-3 rounded-md flex items-center theme-text-primary hover:theme-bg-secondary transition-colors"
 							on:click={handleLogout}
+							title="Logout"
+							aria-label="Logout"
 						>
 							<i class="fas fa-sign-out-alt mr-2 text-red-400"></i>
 							<span>Logout</span>

@@ -30,5 +30,5 @@
 	</div>
 {:else}
 	<h1>{status}</h1>
-	<p>{error.message}</p>
+	<p>{error?.message}</p>
 {/if}
