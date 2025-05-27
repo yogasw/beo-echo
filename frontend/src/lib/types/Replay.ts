@@ -1,4 +1,3 @@
-
 export interface Replay {
 	id: string;
 	project_id: string;
@@ -28,10 +27,17 @@ export interface CreateReplayRequest {
 	payload?: string;
 	body?: string; // Alias for payload for compatibility
 	folder_id?: string;
-	service?: string;
-	method_name?: string;
-	metadata?: string;
-	is_mutation?: boolean;
+}
+
+export interface UpdateReplayRequest {
+	name?: string;
+	protocol?: string;
+	method?: string;
+	url?: string;
+	headers?: Record<string, string>;
+	payload?: string;
+	body?: string; // Alias for payload for compatibility
+	folder_id?: string;
 }
 
 export interface ReplayExecutionResult {

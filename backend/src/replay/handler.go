@@ -32,6 +32,11 @@ func (h *ReplayHandler) GetReplay(c *gin.Context) {
 	handlers.GetReplayHandler(h.service)(c)
 }
 
+// UpdateReplay handles PUT /projects/{projectId}/replays/{replayId}
+func (h *ReplayHandler) UpdateReplay(c *gin.Context) {
+	handlers.UpdateReplayHandler(h.service)(c)
+}
+
 // ExecuteReplay handles POST /projects/{projectId}/replays/{replayId}/execute
 func (h *ReplayHandler) ExecuteReplay(c *gin.Context) {
 	handlers.ExecuteReplayHandler(h.service)(c)

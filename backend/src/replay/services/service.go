@@ -48,12 +48,19 @@ type CreateReplayRequest struct {
 	Protocol   string            `json:"protocol" binding:"required"`
 	Method     string            `json:"method" binding:"required"`
 	Url        string            `json:"url" binding:"required"`
-	Service    string            `json:"service"`
-	MethodName string            `json:"method_name"`
 	Headers    map[string]string `json:"headers"`
 	Payload    string            `json:"payload"`
-	Metadata   map[string]string `json:"metadata"`
-	Path       []string          `json:"path"`
+}
+
+// UpdateReplayRequest represents the request payload for updating a replay
+type UpdateReplayRequest struct {
+	Name     *string            `json:"name"`
+	FolderID *string            `json:"folder_id"`
+	Protocol *string            `json:"protocol"`
+	Method   *string            `json:"method"`
+	Url      *string            `json:"url"`
+	Headers  *map[string]string `json:"headers"`
+	Payload  *string            `json:"payload"`
 }
 
 // ExecuteReplayRequest represents the request payload for executing a replay test
