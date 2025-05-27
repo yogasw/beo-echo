@@ -23,6 +23,17 @@ func CheckAndHandle() error {
 	dbURL := os.Getenv("DATABASE_URL")
 	var err error
 
+	// Determine if we're in a test environment
+	// GO_TEST is set to "1" in test_helpers.go when running tests
+	isTestEnv := os.Getenv("GO_TEST") == "1"
+
+	// Set appropriate logging level based on environment
+	logLevel := logger.Info
+	if isTestEnv {
+		// Use Silent log level during tests to suppress migration logs
+		logLevel = logger.Silent
+	}
+
 	// Check if the database URL is empty or contains "sqlite"
 	if dbURL == "" || strings.Contains(strings.ToLower(dbURL), "sqlite") {
 		// If no URL is provided or if it contains "sqlite", use SQLite
@@ -43,7 +54,9 @@ func CheckAndHandle() error {
 			os.Setenv("DATABASE_URL", dbURL)
 		}
 
-		log.Println("Using SQLite database:", dbURL)
+		if !isTestEnv {
+			log.Println("Using SQLite database:", dbURL)
+		}
 
 		// Process SQLite connection string based on format
 		var sqlitePath string
@@ -60,21 +73,25 @@ func CheckAndHandle() error {
 		// Ensure the directory for the SQLite file exists
 		dbDir := filepath.Dir(sqlitePath)
 		if _, err := os.Stat(dbDir); os.IsNotExist(err) {
-			log.Println("SQLite directory doesn't exist, creating:", dbDir)
+			if !isTestEnv {
+				log.Println("SQLite directory doesn't exist, creating:", dbDir)
+			}
 			if err := os.MkdirAll(dbDir, 0755); err != nil {
 				return errors.New("Failed to create SQLite database directory: " + err.Error())
 			}
 		}
 
-		// Open SQLite database connection
+		// Open SQLite database connection with appropriate log level
 		DB, err = gorm.Open(sqlite.Open(sqlitePath), &gorm.Config{
-			Logger: logger.Default.LogMode(logger.Info),
+			Logger: logger.Default.LogMode(logLevel),
 		})
 	} else {
 		// Use PostgreSQL for all other database URLs
-		log.Println("Using PostgreSQL database")
+		if !isTestEnv {
+			log.Println("Using PostgreSQL database")
+		}
 		DB, err = gorm.Open(postgres.Open(dbURL), &gorm.Config{
-			Logger: logger.Default.LogMode(logger.Info),
+			Logger: logger.Default.LogMode(logLevel),
 		})
 	}
 	if err != nil {
@@ -102,10 +119,12 @@ func CheckAndHandle() error {
 		return errors.New("Failed to migrate database schema: " + err.Error())
 	}
 
-	log.Println("Database connection established and migrations completed")
+	if !isTestEnv {
+		log.Println("Database connection established and migrations completed")
+	}
 
 	// Initialize default user and workspace if no users exist
-	if err := InitializeDefaultUserAndWorkspace(DB); err != nil {
+	if err := InitializeDefaultUserAndWorkspace(DB); err != nil && !isTestEnv {
 		log.Printf("Warning: Failed to initialize default user: %v", err)
 	}
 
