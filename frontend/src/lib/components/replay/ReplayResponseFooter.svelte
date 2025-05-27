@@ -15,7 +15,7 @@
 	} = $props();
 
 	// For response content tabs
-	let activeSection = 'response'; // 'response', 'headers', 'cookies'
+	let activeSection = $state('response'); // 'response', 'headers', 'cookies'
 
 	// Function to expand the footer (can be called from parent)
 	export function expand() {
@@ -40,6 +40,7 @@
 	}
 
 	function setActiveSection(section: string) {
+		console.log('Setting active section:', section);
 		activeSection = section;
 	}
 
@@ -221,10 +222,9 @@
 								<p>{executionResult.error}</p>
 							</div>
 						{:else if executionResult.response_body}
-							<pre
-								class="bg-gray-800 text-gray-200 p-4 rounded-md overflow-auto font-mono text-sm max-h-52">
-								{formatJson(executionResult.response_body)}
-							</pre>
+							<div>
+								{executionResult.response_body}
+							</div>
 						{:else}
 							<div
 								class="p-4 bg-gray-100 dark:bg-gray-700 rounded-md text-center text-gray-600 dark:text-gray-300"
