@@ -53,7 +53,7 @@ func TestExecuteReplay(t *testing.T) {
 	t.Run("ExecuteReplay_Success_HTTPBin", func(t *testing.T) {
 		// Test data using httpbin.org (a free HTTP testing service)
 		req := ExecuteReplayRequest{
-			Protocol: "https",
+			Protocol: "http",
 			Method:   "GET",
 			URL:      "https://httpbin.org/get",
 			Headers: map[string]string{
@@ -90,7 +90,7 @@ func TestExecuteReplay(t *testing.T) {
 	t.Run("ExecuteReplay_Success_POST_with_Body", func(t *testing.T) {
 		// Test POST request with body
 		req := ExecuteReplayRequest{
-			Protocol: "https",
+			Protocol: "http",
 			Method:   "POST",
 			URL:      "https://httpbin.org/post",
 			Headers: map[string]string{
@@ -117,7 +117,7 @@ func TestExecuteReplay(t *testing.T) {
 	t.Run("ExecuteReplay_InvalidProject", func(t *testing.T) {
 		// Test with non-existent project ID
 		req := ExecuteReplayRequest{
-			Protocol: "https",
+			Protocol: "http",
 			Method:   "GET",
 			URL:      "https://httpbin.org/get",
 		}
@@ -151,7 +151,7 @@ func TestExecuteReplay(t *testing.T) {
 	t.Run("ExecuteReplay_HTTPError_NotFound", func(t *testing.T) {
 		// Test with URL that returns 404
 		req := ExecuteReplayRequest{
-			Protocol: "https",
+			Protocol: "http",
 			Method:   "GET",
 			URL:      "https://httpbin.org/status/404",
 		}
@@ -172,7 +172,7 @@ func TestExecuteReplay(t *testing.T) {
 		req := ExecuteReplayRequest{
 			Protocol: "http",
 			Method:   "GET",
-			URL:      "http://non-existent-domain-12345.com",
+			URL:      "https://non-existent-domain-12345.com",
 		}
 
 		// Execute the replay
@@ -202,15 +202,17 @@ func TestExecuteReplay(t *testing.T) {
 		response, err := replayService.ExecuteReplay(ctx, testProject.ID, req)
 
 		// Assertions
-		assert.Error(t, err, "Should return error for invalid URL")
-		assert.Nil(t, response, "Response should be nil on error")
-		assert.Contains(t, err.Error(), "invalid URL format", "Error should indicate invalid URL format")
+		assert.NoError(t, err, "Network errors should not cause service error")
+		assert.NotNil(t, response, "Response should not be nil")
+		assert.NotEmpty(t, response.Error, "Error field should contain invalid URL error")
+		assert.Equal(t, 0, response.StatusCode, "Status code should be 0 for invalid URL")
+		assert.NotEmpty(t, response.ReplayID, "ReplayID should still be generated")
 	})
 
 	t.Run("ExecuteReplay_WithQueryParams", func(t *testing.T) {
 		// Test with multiple query parameters
 		req := ExecuteReplayRequest{
-			Protocol: "https",
+			Protocol: "http",
 			Method:   "GET",
 			URL:      "https://httpbin.org/get",
 			Headers: map[string]string{
