@@ -77,6 +77,28 @@ export class ReplayApi {
 	}
 
 	/**
+	 * Execute a replay request directly (without saving)
+	 */
+	static async executeReplayRequest(
+		workspaceId: string,
+		projectId: string,
+		requestData: {
+			protocol: string;
+			method: string;
+			url: string;
+			headers?: Record<string, string>;
+			body?: string;
+			query?: Record<string, string>;
+		}
+	): Promise<ExecuteReplayResponse> {
+		const response = await apiClient.post(
+			`/workspaces/${workspaceId}/projects/${projectId}/replays/execute`,
+			requestData
+		);
+		return response.data;
+	}
+
+	/**
 	 * Delete a replay
 	 */
 	static async deleteReplay(

@@ -15,6 +15,8 @@
 	let isLoading = true;
 	let error: string | null = null;
 	let activeView: 'list' | 'editor' | 'execution' | 'logs' = 'list';
+	let isExecuting = false;
+	let executionResult: any = null;
 
 	// Panel width
 	let panelWidth: number; // Initialized in onMount
@@ -168,6 +170,53 @@
 		loadReplays(); // Refresh the list
 	}
 
+	async function executeReplay(replayData: any) {
+		if (!$selectedWorkspace || !$selectedProject) {
+			toast.error('No workspace or project selected');
+			return;
+		}
+
+		try {
+			isExecuting = true;
+			executionResult = null;
+			
+			// Prepare request payload from editor data
+			const payload = {
+				protocol: 'http', // Default to http
+				method: replayData.method || 'GET',
+				url: replayData.url || '',
+				headers: replayData.headers || {},
+				body: replayData.body || '',
+				query: replayData.query || {}
+			};
+
+			// Execute the replay request
+			const result = await replayApi.executeReplayRequest(
+				$selectedWorkspace.id, 
+				$selectedProject.id, 
+				payload
+			);
+			
+			executionResult = result;
+			toast.success('Request executed successfully');
+			
+			// You can optionally update UI to show the result or navigate to a result view
+			activeView = 'execution';
+		} catch (err: any) {
+			toast.error(err.message || 'Failed to execute request');
+			executionResult = {
+				error: err.message || 'An unknown error occurred'
+			};
+		} finally {
+			isExecuting = false;
+		}
+	}
+
+	function handleSendRequest(event: CustomEvent) {
+		const requestData = event.detail;
+		executeReplay(requestData);
+	}
+
 	onMount(() => {
 		if ($selectedWorkspace && $selectedProject) {
 			loadReplays();
@@ -280,12 +329,15 @@
 					bind:tabs={editorTabs} 
 					bind:activeTabId={editorActiveTabId} 
 					bind:activeTabContent={editorActiveTabContent}
+					isExecuting={isExecuting}
+					executionResult={executionResult}
 					on:tabschange={handleTabsChange}
 					on:activeSectionChange={handleActiveSectionChange}
 					on:tabContentChange={handleTabContentChange}
 					on:back={handleBackToList}
 					on:created={handleReplayCreated}
 					on:updated={handleReplayUpdated}
+					on:send={handleSendRequest}
 				/>
 			{:else if activeView === 'list' && ($selectedWorkspace && $selectedProject)}
 				<div class="flex flex-col items-center justify-center h-full text-center p-8 text-gray-500 dark:text-gray-400">

@@ -25,49 +25,29 @@
 	export let activeTabId = 'tab-1';
 
 	// Active tab content state
-	export let activeTabContent = {
-		method: 'GET',
-		url: '',
-		activeSection: 'params', // params, headers, body, auth, scripts, settings
-		// Data for each tab component
-		params: [{ key: '', value: '', description: '', enabled: true }] as Param[],
-		headers: [{ key: '', value: '', description: '', enabled: true }] as Header[],
-		auth: { type: 'none', config: {} } as AuthConfig,
-		scripts: { preRequestScript: '', testScript: '' } as ScriptConfig,
-		settings: {
-			timeout: 30000,
-			followRedirects: true,
-			maxRedirects: 5,
-			verifySsl: true,
-			ignoreSslErrors: false,
-			encoding: 'utf-8',
-			sendCookies: true,
-			storeCookies: true,
-			keepAlive: true,
-			userAgent: 'Beo-Echo/1.0',
-			retryOnFailure: false,
-			retryCount: 3,
-			retryDelay: 1000
-		} as SettingsConfig
-	};
-
+	export let activeTabContent = {};
+	
+	// Add props for execution status and results
+	export let isExecuting = false;
+	export let executionResult = null;
+	
+	// Update footer expansion when execution result changes
+	$: if (executionResult) {
+		isFooterExpanded = true;
+	}
 	const dispatch = createEventDispatcher();
 
 	// Footer state
 	let isFooterExpanded = false;
 	let replayResponseFooter; // Reference to the footer component
 
-	function createNewTab() {
-		const newTabId = `tab-${Date.now()}`;
-		const newTab: Tab = {
-			id: newTabId,
-			name: 'New Request',
-			method: 'GET',
-			url: '',
-			isUnsaved: true
-		};
-		tabs = [...tabs, newTab];
-		activeTabId = newTabId;
+	// Update footer expansion when execution result changes
+	$: if (executionResult) {
+		isFooterExpanded = true;
+	}
+
+	// Active tab content reset function
+	function resetActiveTabContent() {
 		activeTabContent = {
 			method: 'GET',
 			url: '',
@@ -92,6 +72,20 @@
 				retryDelay: 1000
 			}
 		};
+	}
+
+	function createNewTab() {
+		const newTabId = `tab-${Date.now()}`;
+		const newTab: Tab = {
+			id: newTabId,
+			name: 'New Request',
+			method: 'GET',
+			url: '',
+			isUnsaved: true
+		};
+		tabs = [...tabs, newTab];
+		activeTabId = newTabId;
+		resetActiveTabContent();
 		dispatch('tabschange', { tabs, activeTabId, activeTabContent });
 	}
 
@@ -106,30 +100,7 @@
 				isUnsaved: true
 			};
 			activeTabId = 'tab-1';
-			activeTabContent = {
-				method: 'GET',
-				url: '',
-				activeSection: 'params',
-				params: [{ key: '', value: '', description: '', enabled: true }],
-				headers: [{ key: '', value: '', description: '', enabled: true }],
-				auth: { type: 'none', config: {} },
-				scripts: { preRequestScript: '', testScript: '' },
-				settings: {
-					timeout: 30000,
-					followRedirects: true,
-					maxRedirects: 5,
-					verifySsl: true,
-					ignoreSslErrors: false,
-					encoding: 'utf-8',
-					sendCookies: true,
-					storeCookies: true,
-					keepAlive: true,
-					userAgent: 'Beo-Echo/1.0',
-					retryOnFailure: false,
-					retryCount: 3,
-					retryDelay: 1000
-				}
-			};
+			resetActiveTabContent();
 			dispatch('tabschange', { tabs, activeTabId, activeTabContent });
 			return;
 		}
@@ -261,42 +232,72 @@
 	}
 
 	function onExcuteRequest() {
-		console.log('Execute request with current configuration:', activeTabContent);
+		// Prepare request data
+		const requestData = {
+			method: activeTabContent.method,
+			url: activeTabContent.url,
+			headers: {},
+			query: {},
+			body: ''
+		};
 
-		// Set loading state to true using the proper loading action
-		replayActions.setLoading('execute', true);
+		// Process headers
+		if (activeTabContent.headers) {
+			activeTabContent.headers.forEach(header => {
+				if (header.enabled && header.key && header.value) {
+					requestData.headers[header.key] = header.value;
+				}
+			});
+		}
 
-		// Simulate request execution for 3 seconds
-		setTimeout(() => {
-			// Set loading state to false after 3 seconds
-			replayActions.setLoading('execute', false);
+		// Process query parameters
+		if (activeTabContent.params) {
+			activeTabContent.params.forEach(param => {
+				if (param.enabled && param.key && param.value) {
+					requestData.query[param.key] = param.value;
+				}
+			});
+		}
 
-			// You can also set a mock result here
-			replayActions.setLastResult(null);
+		// Process auth
+		if (activeTabContent.auth?.type !== 'none') {
+			const authConfig = activeTabContent.auth.config;
+			
+			switch (activeTabContent.auth.type) {
+				case 'basic':
+					// Add Basic Auth header
+					if (authConfig.username) {
+						const credentials = btoa(`${authConfig.username}:${authConfig.password || ''}`);
+						requestData.headers['Authorization'] = `Basic ${credentials}`;
+					}
+					break;
+				case 'bearer':
+					// Add Bearer token header
+					if (authConfig.token) {
+						requestData.headers['Authorization'] = `Bearer ${authConfig.token}`;
+					}
+					break;
+				case 'apiKey':
+					// Add API key as header or query param
+					if (authConfig.key && authConfig.value) {
+						if (authConfig.in === 'header') {
+							requestData.headers[authConfig.key] = authConfig.value;
+						} else if (authConfig.in === 'query') {
+							requestData.query[authConfig.key] = authConfig.value;
+						}
+					}
+					break;
+				// Add other auth types as needed
+			}
+		}
 
-			// Simulate response footer expansion after successful execution
-			isFooterExpanded = true;
-			console.log('Request execution completed');
-		}, 3000); // 3 seconds
-
-		// Here you would typically send the request using fetch or another HTTP client
-		// For now, just log the configuration
-		dispatch('executeRequest', { request: activeTabContent });
+		// Dispatch the send event with request data
+		dispatch('send', requestData);
 	}
 
 	function onCancelRequest() {
 		console.log('Cancel request clicked');
-
-		// Set loading state to false to cancel the request
-		replayActions.setLoading('execute', false);
-
-		// TODO: Implement actual request cancellation logic here
-		// This could include:
-		// - Aborting fetch requests using AbortController
-		// - Clearing timeouts
-		// - Resetting request state
-
-		console.log('Request cancelled');
+		// Add logic to cancel the request if needed
 	}
 </script>
 
@@ -487,6 +488,7 @@
 
 	<ReplayResponseFooter
 		bind:isExpanded={isFooterExpanded}
+		{executionResult}
 		on:toggleExpand={handleFooterToggleExpand}
 		on:showHistory={handleFooterShowHistory}
 	/>
