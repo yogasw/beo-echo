@@ -2,74 +2,84 @@ package services
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
+	"net/url"
 	"strings"
 	"time"
 
-	"beo-echo/backend/src/database"
-
+	"github.com/google/uuid"
 	"github.com/rs/zerolog"
 )
 
-// ExecuteReplay executes a replay and logs the request/response
-func (s *ReplayService) ExecuteReplay(ctx context.Context, replayID string) (*ExecuteReplayResponse, error) {
+// ExecuteReplay executes a replay request with the provided configuration
+func (s *ReplayService) ExecuteReplay(ctx context.Context, projectID string, req ExecuteReplayRequest) (*ExecuteReplayResponse, error) {
 	log := zerolog.Ctx(ctx)
 
 	log.Info().
-		Str("replay_id", replayID).
-		Msg("executing replay")
+		Str("project_id", projectID).
+		Str("protocol", req.Protocol).
+		Str("method", req.Method).
+		Str("url", req.URL).
+		Msg("executing replay request")
 
-	// Get replay configuration
-	replay, err := s.repo.FindByID(ctx, replayID)
+	// Validate project exists
+	_, err := s.repo.FindProjectByID(ctx, projectID)
 	if err != nil {
 		log.Error().
 			Err(err).
-			Str("replay_id", replayID).
-			Msg("replay not found")
-		return nil, fmt.Errorf("replay not found: %w", err)
+			Str("project_id", projectID).
+			Msg("project not found")
+		return nil, fmt.Errorf("project not found: %w", err)
 	}
 
-	// Currently only support HTTP protocol
-	if strings.ToLower(string(replay.Protocol)) != "http" {
-		return nil, fmt.Errorf("unsupported protocol: %s", replay.Protocol)
+	// Validate protocol
+	protocol := strings.ToLower(req.Protocol)
+	if protocol != "http" && protocol != "https" {
+		return nil, fmt.Errorf("unsupported protocol: %s (supported: http, https)", req.Protocol)
 	}
 
 	startTime := time.Now()
+	replayID := uuid.New().String()
 
-	// Parse headers
-	var headers map[string]string
-	if replay.Headers != "" {
-		err = json.Unmarshal([]byte(replay.Headers), &headers)
+	// Build URL with query parameters
+	targetURL := req.URL
+	if len(req.Query) > 0 {
+		u, err := url.Parse(req.URL)
 		if err != nil {
 			log.Error().
 				Err(err).
-				Str("replay_id", replayID).
-				Msg("failed to parse headers")
-			return nil, fmt.Errorf("invalid headers in replay: %w", err)
+				Str("url", req.URL).
+				Msg("invalid URL format")
+			return nil, fmt.Errorf("invalid URL format: %w", err)
 		}
+
+		q := u.Query()
+		for key, value := range req.Query {
+			q.Set(key, value)
+		}
+		u.RawQuery = q.Encode()
+		targetURL = u.String()
 	}
 
 	// Create HTTP request
 	var reqBody io.Reader
-	if replay.Payload != "" {
-		reqBody = strings.NewReader(replay.Payload)
+	if req.Body != "" {
+		reqBody = strings.NewReader(req.Body)
 	}
 
-	httpReq, err := http.NewRequestWithContext(ctx, replay.Method, replay.Url, reqBody)
+	httpReq, err := http.NewRequestWithContext(ctx, strings.ToUpper(req.Method), targetURL, reqBody)
 	if err != nil {
 		log.Error().
 			Err(err).
-			Str("replay_id", replayID).
-			Str("target_url", replay.Url).
+			Str("target_url", targetURL).
 			Msg("failed to create HTTP request")
 		return nil, fmt.Errorf("failed to create request: %w", err)
 	}
 
 	// Set headers
-	for key, value := range headers {
+	for key, value := range req.Headers {
 		httpReq.Header.Set(key, value)
 	}
 
@@ -86,15 +96,12 @@ func (s *ReplayService) ExecuteReplay(ctx context.Context, replayID string) (*Ex
 		log.Error().
 			Err(err).
 			Str("replay_id", replayID).
-			Str("target_url", replay.Url).
+			Str("target_url", targetURL).
 			Int("latency_ms", latencyMS).
 			Msg("request execution failed")
 
 		response.Error = err.Error()
 		response.StatusCode = 0
-
-		// Log the failed execution
-		s.logReplayExecution(ctx, replay, "", "", map[string]string{}, 0, "", map[string]string{}, latencyMS, err.Error())
 
 		return response, nil
 	}
@@ -123,62 +130,12 @@ func (s *ReplayService) ExecuteReplay(ctx context.Context, replayID string) (*Ex
 	}
 	response.ResponseHeaders = respHeaders
 
-	// Log the execution
-	logID, err := s.logReplayExecution(ctx, replay, replay.Payload, "", headers, resp.StatusCode, respBody, respHeaders, latencyMS, "")
-	if err != nil {
-		log.Warn().
-			Err(err).
-			Str("replay_id", replayID).
-			Msg("failed to log replay execution")
-	} else {
-		response.LogID = logID
-	}
-
 	log.Info().
 		Str("replay_id", replayID).
+		Str("project_id", projectID).
 		Int("status_code", resp.StatusCode).
 		Int("latency_ms", latencyMS).
-		Msg("successfully executed replay")
+		Msg("successfully executed replay request")
 
 	return response, nil
-}
-
-// logReplayExecution creates a request log entry for replay execution
-func (s *ReplayService) logReplayExecution(ctx context.Context, replay *database.Replay, requestBody, queryParams string, requestHeaders map[string]string, statusCode int, responseBody string, responseHeaders map[string]string, latencyMS int, errorMsg string) (string, error) {
-	log := zerolog.Ctx(ctx)
-
-	// Convert headers to JSON
-	reqHeadersJSON, _ := json.Marshal(requestHeaders)
-	respHeadersJSON, _ := json.Marshal(responseHeaders)
-
-	// Create request log
-	requestLog := &database.RequestLog{
-		ProjectID:       replay.ProjectID,
-		Method:          replay.Method,
-		Path:            replay.Url,
-		QueryParams:     queryParams,
-		RequestHeaders:  string(reqHeadersJSON),
-		RequestBody:     requestBody,
-		ResponseStatus:  statusCode,
-		ResponseBody:    responseBody,
-		ResponseHeaders: string(respHeadersJSON),
-		LatencyMS:       latencyMS,
-		Source:          database.RequestSourceReplay,
-		ExecutionMode:   database.ModeProxy, // Replay acts like proxy mode
-		Matched:         true,               // Replay always "matches" its configuration
-	}
-
-	// Generate hash for integrity
-	requestLog.LogsHash = fmt.Sprintf("%d_%s_%s", time.Now().Unix(), replay.ID, requestLog.ID)
-
-	err := s.repo.CreateRequestLog(ctx, requestLog)
-	if err != nil {
-		log.Error().
-			Err(err).
-			Str("replay_id", replay.ID).
-			Msg("failed to create request log")
-		return "", err
-	}
-
-	return requestLog.ID, nil
 }

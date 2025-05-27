@@ -240,7 +240,7 @@ func SetupRouter() *gin.Engine {
 				projectRoutes.GET("/replays", replayHandler.ListReplays)
 				projectRoutes.POST("/replays", replayHandler.CreateReplay)
 				projectRoutes.GET("/replays/:replayId", replayHandler.GetReplay)
-				projectRoutes.POST("/replays/:replayId/execute", replayHandler.ExecuteReplay)
+				projectRoutes.POST("/replays/execute", replayHandler.ExecuteReplay)
 				projectRoutes.DELETE("/replays/:replayId", replayHandler.DeleteReplay)
 				projectRoutes.GET("/replays/:replayId/logs", replayHandler.GetReplayLogs)
 

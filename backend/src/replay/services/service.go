@@ -56,6 +56,17 @@ type CreateReplayRequest struct {
 	Path       []string          `json:"path"`
 }
 
+// ExecuteReplayRequest represents the request payload for executing a replay test
+type ExecuteReplayRequest struct {
+	Protocol string            `json:"protocol" binding:"required"` // http, https, ws, grpc
+	Method   string            `json:"method" binding:"required"`   // HTTP method or operation type
+	URL      string            `json:"url" binding:"required"`      // Target URL
+	Headers  map[string]string `json:"headers"`                     // Request headers
+	Body     string            `json:"body"`                        // Request body/payload
+	Query    map[string]string `json:"query"`                       // Query parameters
+	Metadata map[string]string `json:"metadata"`                    // Additional protocol-specific metadata
+}
+
 // ExecuteReplayResponse represents the response from executing a replay
 type ExecuteReplayResponse struct {
 	ReplayID        string            `json:"replay_id"`
