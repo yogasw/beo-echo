@@ -10,8 +10,8 @@ type responseRepository struct {
 }
 
 // NewResponseRepository creates a new response repository
-func NewResponseRepository(db *gorm.DB) responseRepository {
-	return responseRepository{
+func NewResponseRepository(db *gorm.DB) *responseRepository {
+	return &responseRepository{
 		db: db,
 	}
 }

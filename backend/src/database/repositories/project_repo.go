@@ -13,8 +13,8 @@ type projectRepository struct {
 }
 
 // NewProjectRepository creates a new project repository
-func NewProjectRepository(db *gorm.DB) projectRepository {
-	return projectRepository{db: db}
+func NewProjectRepository(db *gorm.DB) *projectRepository {
+	return &projectRepository{db: db}
 }
 
 // GetWorkspaceProjects returns all projects in a workspace

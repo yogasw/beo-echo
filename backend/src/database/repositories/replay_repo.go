@@ -15,7 +15,7 @@ type replayRepository struct {
 }
 
 // NewreplayRepository creates a new replay repository
-func NewreplayRepository(db *gorm.DB) replayRepository {
+func NewReplayRepository(db *gorm.DB) replayRepository {
 	return replayRepository{db: db}
 }
 

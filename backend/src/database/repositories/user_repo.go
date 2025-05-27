@@ -9,38 +9,38 @@ import (
 )
 
 // UserRepository implements users.UserRepository
-type UserRepository struct {
+type userRepository struct {
 	db *gorm.DB
 }
 
 // NewUserRepository creates a new user repository
-func NewUserRepository(db *gorm.DB) UserRepository {
-	return UserRepository{db: db}
+func NewUserRepository(db *gorm.DB) *userRepository {
+	return &userRepository{db: db}
 }
 
 // GetUserByID retrieves a user by ID
-func (r *UserRepository) GetUserByID(ctx context.Context, id string) (*database.User, error) {
+func (r *userRepository) GetUserByID(ctx context.Context, id string) (*database.User, error) {
 	var user database.User
 	err := r.db.Preload("Workspaces").Where("id = ?", id).First(&user).Error
 	return &user, err
 }
 
 // GetUserByEmail retrieves a user by their email address
-func (r *UserRepository) GetUserByEmail(ctx context.Context, email string) (*database.User, error) {
+func (r *userRepository) GetUserByEmail(ctx context.Context, email string) (*database.User, error) {
 	var user database.User
 	err := r.db.Where("email = ?", email).First(&user).Error
 	return &user, err
 }
 
 // GetAllUsers retrieves all users in the system
-func (r *UserRepository) GetAllUsers(ctx context.Context) ([]database.User, error) {
+func (r *userRepository) GetAllUsers(ctx context.Context) ([]database.User, error) {
 	var users []database.User
 	err := r.db.Find(&users).Error
 	return users, err
 }
 
 // UpdatePassword updates a user's password with a bcrypt hash
-func (r *UserRepository) UpdatePassword(ctx context.Context, userID string, newPassword string) error {
+func (r *userRepository) UpdatePassword(ctx context.Context, userID string, newPassword string) error {
 	// Hash the new password
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(newPassword), bcrypt.DefaultCost)
 	if err != nil {
@@ -56,7 +56,7 @@ func (r *UserRepository) UpdatePassword(ctx context.Context, userID string, newP
 }
 
 // UpdateUserFields updates specified user fields
-func (r *UserRepository) UpdateUserFields(ctx context.Context, userID string, updates map[string]interface{}) error {
+func (r *userRepository) UpdateUserFields(ctx context.Context, userID string, updates map[string]interface{}) error {
 	result := r.db.Model(&database.User{}).
 		Where("id = ?", userID).
 		Updates(updates)
@@ -67,7 +67,7 @@ func (r *UserRepository) UpdateUserFields(ctx context.Context, userID string, up
 // DeleteUser completely removes a user from the system
 // This will also cascade delete related UserIdentity and UserWorkspace records
 // due to the constraint:OnDelete:CASCADE in the model definitions
-func (r *UserRepository) DeleteUser(ctx context.Context, userID string) error {
+func (r *userRepository) DeleteUser(ctx context.Context, userID string) error {
 	tx := r.db.Begin()
 
 	// Check if user exists
@@ -98,7 +98,7 @@ func (r *UserRepository) DeleteUser(ctx context.Context, userID string) error {
 }
 
 // VerifyPassword checks if the provided password matches the hashed password in the database
-func (r *UserRepository) VerifyPassword(ctx context.Context, userID string, password string) (bool, error) {
+func (r *userRepository) VerifyPassword(ctx context.Context, userID string, password string) (bool, error) {
 	var user database.User
 	err := r.db.Select("password").Where("id = ?", userID).First(&user).Error
 	if err != nil {
@@ -111,7 +111,7 @@ func (r *UserRepository) VerifyPassword(ctx context.Context, userID string, pass
 }
 
 // GetWorkspaceUsers retrieves all users in a specific workspace
-func (r *UserRepository) GetWorkspaceUsers(ctx context.Context, workspaceID string) ([]database.User, error) {
+func (r *userRepository) GetWorkspaceUsers(ctx context.Context, workspaceID string) ([]database.User, error) {
 	var users []database.User
 	err := r.db.Joins("JOIN user_workspaces ON user_workspaces.user_id = users.id").
 		Preload("Workspaces", "workspace_id = ?", workspaceID).
@@ -122,19 +122,19 @@ func (r *UserRepository) GetWorkspaceUsers(ctx context.Context, workspaceID stri
 }
 
 // GetWorkspaceUser retrieves a specific user-workspace relationship
-func (r *UserRepository) GetWorkspaceUser(ctx context.Context, workspaceID string, userID string) (*database.UserWorkspace, error) {
+func (r *userRepository) GetWorkspaceUser(ctx context.Context, workspaceID string, userID string) (*database.UserWorkspace, error) {
 	var userWorkspace database.UserWorkspace
 	err := r.db.Where("workspace_id = ? AND user_id = ?", workspaceID, userID).First(&userWorkspace).Error
 	return &userWorkspace, err
 }
 
 // RemoveUserFromWorkspace removes a user from a workspace
-func (r *UserRepository) RemoveUserFromWorkspace(ctx context.Context, workspaceID string, userID string) error {
+func (r *userRepository) RemoveUserFromWorkspace(ctx context.Context, workspaceID string, userID string) error {
 	return r.db.Delete(&database.UserWorkspace{}, "workspace_id = ? AND user_id = ?", workspaceID, userID).Error
 }
 
 // UpdateUserWorkspaceRole updates a user's role in a workspace
-func (r *UserRepository) UpdateUserWorkspaceRole(ctx context.Context, workspaceID string, userID string, role string) error {
+func (r *userRepository) UpdateUserWorkspaceRole(ctx context.Context, workspaceID string, userID string, role string) error {
 	return r.db.Model(&database.UserWorkspace{}).
 		Where("workspace_id = ? AND user_id = ?", workspaceID, userID).
 		Update("role", role).Error

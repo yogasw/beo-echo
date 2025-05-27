@@ -14,8 +14,8 @@ type ruleRepository struct {
 }
 
 // NewRuleRepository creates a new rule repository that implements the required interface
-func NewRuleRepository(db *gorm.DB) ruleRepository {
-	return ruleRepository{
+func NewRuleRepository(db *gorm.DB) *ruleRepository {
+	return &ruleRepository{
 		db: db,
 	}
 }
