@@ -233,7 +233,7 @@
 							</div>
 						{/if}
 					{:else if activeSection === 'headers'}
-						{#if executionResult.headers && Object.keys(executionResult.headers).length > 0}
+						{#if executionResult.response_headers && Object.keys(executionResult.response_headers).length > 0}
 							<div class="border border-gray-200 dark:border-gray-700 rounded-md overflow-hidden">
 								<table class="w-full">
 									<thead class="bg-gray-100 dark:bg-gray-700">
@@ -249,7 +249,7 @@
 										</tr>
 									</thead>
 									<tbody>
-										{#each Object.entries(executionResult.headers || {}) as [name, value], i}
+										{#each Object.entries(executionResult.response_headers || {}) as [name, value], i}
 											<tr
 												class={i % 2 === 0
 													? 'bg-white dark:bg-gray-800'
