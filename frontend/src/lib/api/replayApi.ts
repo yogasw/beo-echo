@@ -95,7 +95,7 @@ export class ReplayApi {
 			`/workspaces/${workspaceId}/projects/${projectId}/replays/execute`,
 			requestData
 		);
-		return response.data;
+		return response.data?.result;
 	}
 
 	/**

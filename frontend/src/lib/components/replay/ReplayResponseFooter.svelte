@@ -5,8 +5,14 @@
 
 	const dispatch = createEventDispatcher();
 
-	export let isExpanded = false; // Controls the visibility of the response body area - now accepting as prop
-	export let executionResult: ExecuteReplayResponse | null = null; // Add execution result prop with any type
+	// Use $props() for Svelte 5 runes mode
+	let { 
+		isExpanded = $bindable(false), 
+		executionResult = null 
+	}: { 
+		isExpanded?: boolean; 
+		executionResult?: ExecuteReplayResponse | null; 
+	} = $props();
 
 	// For response content tabs
 	let activeSection = 'response'; // 'response', 'headers', 'cookies'
@@ -69,6 +75,10 @@
 			return json;
 		}
 	}
+
+	$effect(() => {
+		console.log('executionResult changed:', executionResult);
+	});
 </script>
 
 <div class="bg-white dark:bg-gray-800 border-t border-gray-300 dark:border-gray-600 relative">
