@@ -83,7 +83,6 @@
 	}
 	
 	// Add props for execution status and results
-	export let isExecuting = false;
 	export let executionResult = null;
 	
 	// Update footer expansion when execution result changes

@@ -2,7 +2,7 @@
 	import { onMount, onDestroy } from 'svelte';
 	import { selectedWorkspace } from '$lib/stores/workspace';
 	import { selectedProject } from '$lib/stores/selectedConfig';
-	import { replays, selectedReplay, replayActions } from '$lib/stores/replay';
+	import { replays, selectedReplay, replayActions, replayLoading } from '$lib/stores/replay';
 	import { toast } from '$lib/stores/toast';
 	import { replayApi } from '$lib/api/replayApi';
 	import { getReplayPanelWidth, setReplayPanelWidth } from '$lib/utils/localStorage';
@@ -11,11 +11,11 @@
 	import SkeletonLoader from '$lib/components/common/SkeletonLoader.svelte';
 	import ErrorDisplay from '$lib/components/common/ErrorDisplay.svelte';
 	import ReplayEditor from './ReplayEditor.svelte';
+	import type { Tab } from './types';
 
 	let isLoading = true;
 	let error: string | null = null;
 	let activeView: 'list' | 'editor' | 'execution' | 'logs' = 'list';
-	let isExecuting = false;
 	let executionResult: any = null;
 
 	// Panel width
@@ -168,7 +168,7 @@
 		}
 
 		try {
-			isExecuting = true;
+			replayActions.setLoading('execute', true);
 			executionResult = null;
 			
 			// Prepare request payload from editor data
@@ -199,7 +199,7 @@
 				error: err.message || 'An unknown error occurred'
 			};
 		} finally {
-			isExecuting = false;
+			replayActions.setLoading('execute', false);
 		}
 	}
 
@@ -319,7 +319,6 @@
 				<ReplayEditor 
 					bind:tabs={editorTabs} 
 					bind:activeTabId={editorActiveTabId} 
-					isExecuting={isExecuting}
 					executionResult={executionResult}
 					on:tabschange={handleTabsChange}
 					on:activeSectionChange={handleActiveSectionChange}

@@ -1,17 +1,17 @@
 export interface Replay {
-  id: string
-  name: string
-  project_id: string
-  folder_id: any
-  protocol: string
-  method: string
-  url: string
-  config: string
-  metadata: string
-  headers: string
-  payload: string
-  created_at: string
-  updated_at: string
+	id: string
+	name: string
+	project_id: string
+	folder_id: any
+	protocol: string
+	method: string
+	url: string
+	config: string
+	metadata: string
+	headers: string
+	payload: string
+	created_at: string
+	updated_at: string
 }
 
 export interface CreateReplayRequest {
@@ -21,7 +21,7 @@ export interface CreateReplayRequest {
 	url: string
 	headers?: Record<string, string>
 	payload?: string
-	body?: string 
+	body?: string
 	folder_id?: string;
 }
 
@@ -82,17 +82,15 @@ export interface ListReplayLogsResponse {
 }
 
 export interface ExecuteReplayResponse {
-	replay_id: string;
-	status_code: number;
-	response_body: string;
-	response_headers: Record<string, string>;
-	latency_ms: number;
-	duration_ms: number; // Alias for latency_ms for compatibility
-	response_size: number;
-	error?: string;
-	error_message?: string; // Alias for error for compatibility
-	log_id: string;
-	executed_at: string;
+	message: string;
+	result: {
+		replay_id: string;
+		status_code: number;
+		response_body: string;
+		response_headers: Record<string, string>;
+		latency_ms: number;
+		log_id: string;
+	};
 }
 
 // HTTP Methods
