@@ -39,9 +39,11 @@ export interface UpdateReplayRequest {
 export interface ReplayExecutionResult {
 	replay_id: string;
 	status_code: number;
+	status_text?: string;
 	response_headers?: Record<string, string>;
 	response_body?: string;
 	latency_ms: number;
+	size: number;
 	error?: string;
 	log_id: string;
 }

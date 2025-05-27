@@ -120,6 +120,8 @@ func (s *ReplayService) ExecuteReplay(ctx context.Context, projectID string, req
 	respBody := string(respBodyBytes)
 	response.StatusCode = resp.StatusCode
 	response.ResponseBody = respBody
+	response.StatusText = resp.Status
+	response.Size = int64(len(respBodyBytes))
 
 	// Convert response headers
 	respHeaders := make(map[string]string)

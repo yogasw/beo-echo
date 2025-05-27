@@ -1,11 +1,12 @@
 <script lang="ts">
 	import { replayLoading } from '$lib/stores/replay';
+	import type { ReplayExecutionResult } from '$lib/types/Replay';
 	import { createEventDispatcher } from 'svelte';
 
 	const dispatch = createEventDispatcher();
 
 	export let isExpanded = false; // Controls the visibility of the response body area - now accepting as prop
-	export let executionResult: any = null; // Add execution result prop with any type
+	export let executionResult: ReplayExecutionResult|null = null; // Add execution result prop with any type
 
 	// For response content tabs
 	let activeSection = 'response'; // 'response', 'headers', 'cookies'
@@ -98,23 +99,23 @@
 		<div class="flex items-center space-x-3">
 			<span class="text-sm font-semibold text-gray-800 dark:text-white">Response</span>
 
-			{#if executionResult && executionResult.statusCode}
+			{#if executionResult && executionResult.status_code}
 				<div class="flex items-center space-x-2">
 					<span
-						class={`px-2 py-0.5 rounded-full text-xs font-medium ${getStatusColor(executionResult.statusCode)}`}
+						class={`px-2 py-0.5 rounded-full text-xs font-medium ${getStatusColor(executionResult.status_code)}`}
 					>
-						{executionResult.statusCode}
+						{executionResult.status_code}
 					</span>
 
-					{#if executionResult.statusText}
+					{#if executionResult.status_text}
 						<span class="text-gray-600 dark:text-gray-300 text-xs">
-							{executionResult.statusText}
+							{executionResult.status_text}
 						</span>
 					{/if}
 
-					{#if executionResult.time}
+					{#if executionResult.latency_ms}
 						<span class="text-gray-600 dark:text-gray-300 text-xs">
-							{formatResponseTime(executionResult.time)}
+							{formatResponseTime(executionResult.latency_ms)}
 						</span>
 					{/if}
 
@@ -200,10 +201,10 @@
 								<h3 class="font-semibold">Error</h3>
 								<p>{executionResult.error}</p>
 							</div>
-						{:else if executionResult.body}
+						{:else if executionResult.response_body}
 							<pre
 								class="bg-gray-800 text-gray-200 p-4 rounded-md overflow-auto font-mono text-sm max-h-52">
-								{formatJson(executionResult.body)}
+								{formatJson(executionResult.response_body)}
 							</pre>
 						{:else}
 							<div

@@ -82,9 +82,11 @@ type ExecuteReplayRequest struct {
 type ExecuteReplayResponse struct {
 	ReplayID        string            `json:"replay_id"`
 	StatusCode      int               `json:"status_code"`
+	StatusText      string            `json:"status_text"`
 	ResponseBody    string            `json:"response_body"`
 	ResponseHeaders map[string]string `json:"response_headers"`
 	LatencyMS       int               `json:"latency_ms"`
+	Size            int64             `json:"size"`
 	Error           string            `json:"error,omitempty"`
 	LogID           string            `json:"log_id"`
 }
