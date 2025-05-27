@@ -108,53 +108,63 @@
 	<div class="flex items-center justify-between p-3 border-b border-gray-200 dark:border-gray-700">
 		<div class="flex items-center space-x-3">
 			<span class="text-sm font-semibold text-gray-800 dark:text-white">Response</span>
-
+		</div>
+		<div class="flex items-center ml-auto space-x-2">
 			{#if executionResult && executionResult.status_code}
-				<div class="flex items-center space-x-2">
-					<span
-						class={`px-2 py-0.5 rounded-full text-xs font-medium ${getStatusColor(executionResult.status_code)}`}
+				<span
+					class={`px-2 py-0.5 rounded-full text-xs font-medium ${getStatusColor(executionResult.status_code)}`}
+					title="HTTP status code"
+					aria-label={`HTTP status code: ${executionResult.status_code}`}
+				>
+					{executionResult.status_code}
+				</span>
+
+				{#if executionResult.status_text}
+					<span class="text-gray-600 dark:text-gray-300 text-xs"
+						title="Status text"
+						aria-label={`Status text: ${executionResult.status_text}`}
 					>
-						{executionResult.status_code}
+						{executionResult.status_text}
 					</span>
+				{/if}
 
-					{#if executionResult.status_text}
-						<span class="text-gray-600 dark:text-gray-300 text-xs">
-							{executionResult.status_text}
-						</span>
-					{/if}
+				{#if executionResult.latency_ms}
+					<span class="text-gray-600 dark:text-gray-300 text-xs"
+						title="Response time"
+						aria-label={`Response time: ${formatResponseTime(executionResult.latency_ms)}`}
+					>
+						{formatResponseTime(executionResult.latency_ms)}
+					</span>
+				{/if}
 
-					{#if executionResult.latency_ms}
-						<span class="text-gray-600 dark:text-gray-300 text-xs">
-							{formatResponseTime(executionResult.latency_ms)}
-						</span>
-					{/if}
-
-					{#if executionResult.size}
-						<span class="text-gray-600 dark:text-gray-300 text-xs">
-							{executionResult.size} bytes
-						</span>
-					{/if}
-				</div>
+				{#if executionResult.size}
+					<span class="text-gray-600 dark:text-gray-300 text-xs"
+						title="Response size"
+						aria-label={`Response size: ${executionResult.size} bytes`}
+					>
+						{executionResult.size} bytes
+					</span>
+				{/if}
 			{/if}
-
+			<!-- History button always on the right -->
 			<button
-				on:click={showHistory}
+				onclick={showHistory}
 				title="View request history"
 				aria-label="View request history"
-				class="flex items-center space-x-2 text-sm text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors duration-200"
+				class="flex items-center space-x-2 text-sm text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors duration-200 ml-4"
 			>
 				<i class="fas fa-history text-sm"></i>
 				<span>History</span>
 			</button>
+			<button
+				onclick={toggleExpand}
+				aria-label="Toggle response body"
+				title="Toggle response body"
+				class="text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors duration-200 ml-2"
+			>
+				<i class="fas {isExpanded ? 'fa-chevron-down' : 'fa-chevron-up'}"></i>
+			</button>
 		</div>
-		<button
-			on:click={toggleExpand}
-			aria-label="Toggle response body"
-			title="Toggle response body"
-			class="text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors duration-200"
-		>
-			<i class="fas {isExpanded ? 'fa-chevron-down' : 'fa-chevron-up'}"></i>
-		</button>
 	</div>
 	{#if isExpanded}
 		{#if executionResult}
@@ -170,7 +180,7 @@
 							aria-label="Response body tab"
 							role="tab"
 							aria-selected={activeSection === 'response'}
-							on:click={() => setActiveSection('response')}
+							onclick={() => setActiveSection('response')}
 						>
 							Body
 						</button>
@@ -182,7 +192,7 @@
 							aria-label="Response headers tab"
 							role="tab"
 							aria-selected={activeSection === 'headers'}
-							on:click={() => setActiveSection('headers')}
+							onclick={() => setActiveSection('headers')}
 						>
 							Headers
 						</button>
@@ -194,7 +204,7 @@
 							aria-label="Response cookies tab"
 							role="tab"
 							aria-selected={activeSection === 'cookies'}
-							on:click={() => setActiveSection('cookies')}
+							onclick={() => setActiveSection('cookies')}
 						>
 							Cookies
 						</button> -->
