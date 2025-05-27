@@ -9,7 +9,8 @@
 	import ParamsTab from './tabs/ParamsTab.svelte';
 	import AuthorizationTab from './tabs/AuthorizationTab.svelte';
 	import HeadersTab from './tabs/HeadersTab.svelte';
-	import ScriptTab from './tabs/ScriptTab.svelte';
+	// ScriptTab is not currently used - will be implemented in the future
+	// import ScriptTab from './tabs/ScriptTab.svelte';
 	import SettingsTab from './tabs/SettingsTab.svelte';
 	import ReplayBody from './tabs/ReplayBody.svelte';
 	import type { Replay } from '$lib/types/Replay';
@@ -52,9 +53,8 @@
 		parsedParams?: Array<{key: string; value: string; description: string; enabled: boolean}>;
 		parsedHeaders?: Array<{key: string; value: string; description: string; enabled: boolean}>;
 		parsedAuth?: {type: string; config: any};
-		parsedScripts?: {preRequestScript: string; testScript: string};
-		parsedSettings?: any;
 		parsedBody?: string;
+		parsedSettings?: any;
 	};
 	
 	// Watch for replayData changes and update activeTabContent
@@ -107,25 +107,10 @@
 		const emptyHeadersJson = JSON.stringify([{ key: '', value: '', description: '', enabled: true }]);
 		const emptyConfigJson = JSON.stringify({
 			auth: { type: 'none', config: {} },
-			settings: {
-				timeout: 30000,
-				followRedirects: true,
-				maxRedirects: 5,
-				verifySsl: true,
-				ignoreSslErrors: false,
-				encoding: 'utf-8',
-				sendCookies: true,
-				storeCookies: true,
-				keepAlive: true,
-				userAgent: 'Beo-Echo/1.0',
-				retryOnFailure: false,
-				retryCount: 3,
-				retryDelay: 1000
-			}
+			settings: {}
 		});
 		const emptyMetadataJson = JSON.stringify({
 			params: [{ key: '', value: '', description: '', enabled: true }],
-			scripts: { preRequestScript: '', testScript: '' }
 		});
 		
 		// Set activeTabContent with raw JSON fields and parsed values
@@ -197,25 +182,10 @@
 			const emptyHeadersJson = JSON.stringify([{ key: '', value: '', description: '', enabled: true }]);
 			const emptyConfigJson = JSON.stringify({
 				auth: { type: 'none', config: {} },
-				settings: {
-					timeout: 30000,
-					followRedirects: true,
-					maxRedirects: 5,
-					verifySsl: true,
-					ignoreSslErrors: false,
-					encoding: 'utf-8',
-					sendCookies: true,
-					storeCookies: true,
-					keepAlive: true,
-					userAgent: 'Beo-Echo/1.0',
-					retryOnFailure: false,
-					retryCount: 3,
-					retryDelay: 1000
-				}
+				settings: {}
 			});
 			const emptyMetadataJson = JSON.stringify({
 				params: [{ key: '', value: '', description: '', enabled: true }],
-				scripts: { preRequestScript: '', testScript: '' }
 			});
 			
 			// Find the replay data for this tab if it exists
@@ -253,25 +223,10 @@
 			const emptyHeadersJson = JSON.stringify([{ key: '', value: '', description: '', enabled: true }]);
 			const emptyConfigJson = JSON.stringify({
 				auth: { type: 'none', config: {} },
-				settings: {
-					timeout: 30000,
-					followRedirects: true,
-					maxRedirects: 5,
-					verifySsl: true,
-					ignoreSslErrors: false,
-					encoding: 'utf-8',
-					sendCookies: true,
-					storeCookies: true,
-					keepAlive: true,
-					userAgent: 'Beo-Echo/1.0',
-					retryOnFailure: false,
-					retryCount: 3,
-					retryDelay: 1000
-				}
+				settings: {}
 			});
 			const emptyMetadataJson = JSON.stringify({
 				params: [{ key: '', value: '', description: '', enabled: true }],
-				scripts: { preRequestScript: '', testScript: '' }
 			});
 			
 			// Find the replay data for this tab if it exists
@@ -303,7 +258,9 @@
 	}
 
 	function setActiveSection(section: string) {
+		// to display the "Coming Soon" message
 		activeTabContent.activeSection = section;
+		
 		dispatch('activeSectionChange', { activeSection: section });
 	}
 
@@ -322,7 +279,6 @@
 			// Create a new metadata object if parsing failed
 			const metadata = {
 				params: event.detail.params,
-				scripts: activeTabContent.parsedScripts || { preRequestScript: '', testScript: '' }
 			};
 			activeTabContent.metadata = JSON.stringify(metadata);
 		}
@@ -361,31 +317,6 @@
 		
 		// Update raw headers JSON string
 		activeTabContent.headers = JSON.stringify(event.detail.headers);
-		
-		dispatch('tabContentChange', activeTabContent);
-	}
-
-	function handleScriptChange(event: CustomEvent) {
-		// Update parsedScripts field
-		activeTabContent.parsedScripts = {
-			preRequestScript: event.detail.preRequestScript,
-			testScript: event.detail.testScript
-		};
-		
-		// Update raw metadata JSON string to reflect the change
-		try {
-			const metadata = activeTabContent.metadata ? JSON.parse(activeTabContent.metadata) : {};
-			metadata.scripts = activeTabContent.parsedScripts;
-			activeTabContent.metadata = JSON.stringify(metadata);
-		} catch (e) {
-			console.error('Failed to update metadata JSON with scripts change:', e);
-			// Create a new metadata object if parsing failed
-			const metadata = {
-				params: activeTabContent.parsedParams || [{ key: '', value: '', description: '', enabled: true }],
-				scripts: activeTabContent.parsedScripts
-			};
-			activeTabContent.metadata = JSON.stringify(metadata);
-		}
 		
 		dispatch('tabContentChange', activeTabContent);
 	}
@@ -515,21 +446,7 @@
 		if (!configJson) {
 			return { 
 				parsedAuth: { type: 'none', config: {} },
-				parsedSettings: {
-					timeout: 30000,
-					followRedirects: true,
-					maxRedirects: 5,
-					verifySsl: true,
-					ignoreSslErrors: false,
-					encoding: 'utf-8',
-					sendCookies: true,
-					storeCookies: true,
-					keepAlive: true,
-					userAgent: 'Beo-Echo/1.0',
-					retryOnFailure: false,
-					retryCount: 3,
-					retryDelay: 1000
-				}
+				parsedSettings: {}
 			};
 		}
 		
@@ -537,50 +454,21 @@
 			const config = JSON.parse(configJson);
 			return {
 				parsedAuth: config.auth || { type: 'none', config: {} },
-				parsedSettings: config.settings || {
-					timeout: 30000,
-					followRedirects: true,
-					maxRedirects: 5,
-					verifySsl: true,
-					ignoreSslErrors: false,
-					encoding: 'utf-8',
-					sendCookies: true,
-					storeCookies: true,
-					keepAlive: true,
-					userAgent: 'Beo-Echo/1.0',
-					retryOnFailure: false,
-					retryCount: 3,
-					retryDelay: 1000
-				}
+				parsedSettings: config.settings || {}
 			};
 		} catch (e) {
 			console.error('Failed to parse config JSON:', e);
 			return { 
 				parsedAuth: { type: 'none', config: {} },
-				parsedSettings: {
-					timeout: 30000,
-					followRedirects: true,
-					maxRedirects: 5,
-					verifySsl: true,
-					ignoreSslErrors: false,
-					encoding: 'utf-8',
-					sendCookies: true,
-					storeCookies: true,
-					keepAlive: true,
-					userAgent: 'Beo-Echo/1.0',
-					retryOnFailure: false,
-					retryCount: 3,
-					retryDelay: 1000
-				}
+				parsedSettings: {}
 			};
 		}
 	}
 	
-	function parseMetadata(metadataJson?: string): { parsedParams?: Array<{key: string; value: string; description: string; enabled: boolean}>; parsedScripts?: {preRequestScript: string; testScript: string} } {
+	function parseMetadata(metadataJson?: string): { parsedParams?: Array<{key: string; value: string; description: string; enabled: boolean}>; } {
 		if (!metadataJson) {
 			return {
 				parsedParams: [{ key: '', value: '', description: '', enabled: true }],
-				parsedScripts: { preRequestScript: '', testScript: '' }
 			};
 		}
 		
@@ -588,13 +476,11 @@
 			const metadata = JSON.parse(metadataJson);
 			return {
 				parsedParams: metadata.params || [{ key: '', value: '', description: '', enabled: true }],
-				parsedScripts: metadata.scripts || { preRequestScript: '', testScript: '' }
 			};
 		} catch (e) {
 			console.error('Failed to parse metadata JSON:', e);
 			return {
 				parsedParams: [{ key: '', value: '', description: '', enabled: true }],
-				parsedScripts: { preRequestScript: '', testScript: '' }
 			};
 		}
 	}
@@ -739,19 +625,7 @@
 				>
 					Body
 				</button>
-				<button
-					class="py-2 px-1 border-b-2 {activeTabContent.activeSection === 'scripts'
-						? 'border-orange-600 text-orange-600'
-						: 'border-transparent hover:theme-text-primary'} transition-colors duration-200"
-					title="Configure pre-request scripts and tests"
-					aria-label="Scripts tab"
-					role="tab"
-					aria-selected={activeTabContent.activeSection === 'scripts'}
-					on:click={() => setActiveSection('scripts')}
-				>
-					Scripts
-				</button>
-				<button
+				<!-- <button
 					class="py-2 px-1 border-b-2 {activeTabContent.activeSection === 'settings'
 						? 'border-orange-600 text-orange-600'
 						: 'border-transparent hover:theme-text-primary'} transition-colors duration-200"
@@ -762,7 +636,7 @@
 					on:click={() => setActiveSection('settings')}
 				>
 					Settings
-				</button>
+				</button> -->
 			</div>
 		</div>
 
@@ -779,12 +653,6 @@
 			<HeadersTab headers={activeTabContent?.parsedHeaders} on:headersChange={handleHeadersChange} />
 		{:else if activeTabContent.activeSection === 'body'}
 			<ReplayBody payload={activeTabContent?.payload} />
-		{:else if activeTabContent.activeSection === 'scripts'}
-			<ScriptTab
-				preRequestScript={activeTabContent?.parsedScripts?.preRequestScript}
-				testScript={activeTabContent?.parsedScripts?.testScript}
-				on:scriptChange={handleScriptChange}
-			/>
 		{:else if activeTabContent.activeSection === 'settings'}
 			<SettingsTab settings={activeTabContent?.parsedSettings} on:settingsChange={handleSettingsChange} />
 		{/if}
