@@ -335,6 +335,9 @@ type Replay struct {
 	Method   string         `gorm:"size:20;not null" json:"method"`          // HTTP method (GET, POST, PUT, DELETE, etc.)
 	Url      string         `gorm:"not null" json:"url"`                     // Target URL or endpoint
 
+	Config   string `gorm:"type:text" json:"config"`   // Additional configuration (e.g. timeout, retries) as JSON string
+	Metadata string `gorm:"type:text" json:"metadata"` // Additional metadata (e.g. tags, notes) as JSON string
+
 	Headers string `gorm:"type:text" json:"headers"` // Headers as JSON string (key-value pairs)
 	Payload string `gorm:"type:text" json:"payload"` // Request payload/body
 

@@ -48,6 +48,23 @@ func (s *ReplayService) CreateReplay(ctx context.Context, projectID string, req 
 		return nil, fmt.Errorf("invalid headers format: %w", err)
 	}
 
+	// Connvert metadata to JSON
+	metadataJSON, err := json.Marshal(req.Metadata)
+	if err != nil {
+		log.Error().
+			Err(err).
+			Msg("failed to marshal metadata")
+		return nil, fmt.Errorf("invalid metadata format: %w", err)
+	}
+	// Convert config to JSON
+	configJSON, err := json.Marshal(req.Config)
+	if err != nil {
+		log.Error().
+			Err(err).
+			Msg("failed to marshal config")
+		return nil, fmt.Errorf("invalid config format: %w", err)
+	}
+
 	replay := &database.Replay{
 		Name:      name,
 		ProjectID: projectID,
@@ -57,6 +74,8 @@ func (s *ReplayService) CreateReplay(ctx context.Context, projectID string, req 
 		Url:       req.Url,
 		Headers:   string(headersJSON),
 		Payload:   req.Payload,
+		Metadata:  string(metadataJSON),
+		Config:    string(configJSON),
 	}
 
 	err = s.repo.Create(ctx, replay)

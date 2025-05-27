@@ -72,6 +72,30 @@ func (s *ReplayService) UpdateReplay(ctx context.Context, replayID string, req U
 		replay.Payload = *req.Payload
 	}
 
+	if req.Metadata != nil {
+		// Convert metadata to JSON
+		metadataJSON, err := json.Marshal(req.Metadata)
+		if err != nil {
+			log.Error().
+				Err(err).
+				Msg("failed to marshal metadata")
+			return nil, fmt.Errorf("invalid metadata format: %w", err)
+		}
+		replay.Metadata = string(metadataJSON)
+	}
+
+	if req.Config != nil {
+		// Convert config to JSON
+		configJSON, err := json.Marshal(req.Config)
+		if err != nil {
+			log.Error().
+				Err(err).
+				Msg("failed to marshal config")
+			return nil, fmt.Errorf("invalid config format: %w", err)
+		}
+		replay.Config = string(configJSON)
+	}
+
 	// Update in database
 	err = s.repo.Update(ctx, replay)
 	if err != nil {
