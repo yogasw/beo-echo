@@ -7,17 +7,16 @@ import (
 	"gorm.io/gorm"
 
 	"beo-echo/backend/src/database"
-	"beo-echo/backend/src/replay/services"
 )
 
-// replayRepository implements services.ReplayRepository
+// replayRepository implements services.replayRepository
 type replayRepository struct {
 	db *gorm.DB
 }
 
-// NewReplayRepository creates a new replay repository
-func NewReplayRepository(db *gorm.DB) services.ReplayRepository {
-	return &replayRepository{db: db}
+// NewreplayRepository creates a new replay repository
+func NewreplayRepository(db *gorm.DB) replayRepository {
+	return replayRepository{db: db}
 }
 
 // FindByProjectID finds all replays for a specific project

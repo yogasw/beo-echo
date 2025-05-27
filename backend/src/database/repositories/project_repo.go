@@ -7,19 +7,14 @@ import (
 	"gorm.io/gorm"
 )
 
-// ProjectRepository defines the data access requirements for project operations
-type ProjectRepository interface {
-	GetWorkspaceProjects(ctx context.Context, workspaceID string) ([]database.Project, error)
-}
-
 // projectRepository implements the ProjectRepository interface
 type projectRepository struct {
 	db *gorm.DB
 }
 
 // NewProjectRepository creates a new project repository
-func NewProjectRepository(db *gorm.DB) ProjectRepository {
-	return &projectRepository{db: db}
+func NewProjectRepository(db *gorm.DB) projectRepository {
+	return projectRepository{db: db}
 }
 
 // GetWorkspaceProjects returns all projects in a workspace
