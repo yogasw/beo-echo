@@ -108,6 +108,15 @@
 	<div class="flex items-center justify-between p-3 border-b border-gray-200 dark:border-gray-700">
 		<div class="flex items-center space-x-3">
 			<span class="text-sm font-semibold text-gray-800 dark:text-white">Response</span>
+			<!-- Move History button to the left, icon-only, next to Response label -->
+			<button
+				onclick={showHistory}
+				title="View request history"
+				aria-label="View request history"
+				class="ml-2 p-2 rounded bg-transparent hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+			>
+				<i class="fas fa-history text-base" aria-hidden="true"></i>
+			</button>
 		</div>
 		<div class="flex items-center ml-auto space-x-2">
 			{#if executionResult && executionResult.status_code}
@@ -146,16 +155,6 @@
 					</span>
 				{/if}
 			{/if}
-			<!-- History button always on the right -->
-			<button
-				onclick={showHistory}
-				title="View request history"
-				aria-label="View request history"
-				class="flex items-center space-x-2 text-sm text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors duration-200 ml-4"
-			>
-				<i class="fas fa-history text-sm"></i>
-				<span>History</span>
-			</button>
 			<button
 				onclick={toggleExpand}
 				aria-label="Toggle response body"
