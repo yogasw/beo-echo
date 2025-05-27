@@ -360,7 +360,13 @@
 
 	function onExcuteRequest() {
 		// Prepare request data
-		const requestData = {
+		const requestData: {
+			method: string;
+			url: string;
+			headers: Record<string, string>;
+			query: Record<string, string>;
+			payload: string;
+		} = {
 			method: activeTabContent.method,
 			url: activeTabContent.url,
 			headers: {},
