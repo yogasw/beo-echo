@@ -19,16 +19,16 @@ The Replay API allows you to execute HTTP requests to external endpoints and rec
 
 | Method | Endpoint | Description |
 |--------|----------|-------------|
-| POST | `/api/projects/{projectId}/replays/execute` | Execute a replay request |
-| GET | `/api/projects/{projectId}/replays` | List all replays for a project |
-| GET | `/api/projects/{projectId}/replays/{replayId}` | Get details of a specific replay |
-| GET | `/api/projects/{projectId}/replays/{replayId}/logs` | Get logs for a specific replay |
+| POST | `/api/workspaces/{workspaceID}/projects/{projectId}/replays/execute` | Execute a replay request |
+| GET | `/api/workspaces/{workspaceID}/projects/{projectId}/replays` | List all replays for a project |
+| GET | `/api/workspaces/{workspaceID}/projects/{projectId}/replays/{replayId}` | Get details of a specific replay |
+| GET | `/api/workspaces/{workspaceID}/projects/{projectId}/replays/{replayId}/logs` | Get logs for a specific replay |
 
 ## Execute Replay
 
 ### Request Format
 
-To execute a replay request, send a POST request to `/api/projects/{projectId}/replays/execute` with the following JSON payload:
+To execute a replay request, send a POST request to `/api/workspaces/{workspaceID}/projects/{projectId}/replays/execute` with the following JSON payload:
 
 ```json
 {
@@ -268,7 +268,7 @@ The Replay API differentiates between several types of errors:
 ### Basic GET Request
 
 ```bash
-curl -X POST https://api.beo-echo.example.com/api/projects/project-uuid/replays/execute \
+curl -X POST https://api.beo-echo.example.com/api/workspaces/workspace-uuid/projects/project-uuid/replays/execute \
   -H "Authorization: Bearer $TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
@@ -281,7 +281,7 @@ curl -X POST https://api.beo-echo.example.com/api/projects/project-uuid/replays/
 ### POST with JSON Body
 
 ```bash
-curl -X POST https://api.beo-echo.example.com/api/projects/project-uuid/replays/execute \
+curl -X POST https://api.beo-echo.example.com/api/workspaces/workspace-uuid/projects/project-uuid/replays/execute \
   -H "Authorization: Bearer $TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
@@ -299,7 +299,7 @@ curl -X POST https://api.beo-echo.example.com/api/projects/project-uuid/replays/
 ### GET with Query Parameters
 
 ```bash
-curl -X POST https://api.beo-echo.example.com/api/projects/project-uuid/replays/execute \
+curl -X POST https://api.beo-echo.example.com/api/workspaces/workspace-uuid/projects/project-uuid/replays/execute \
   -H "Authorization: Bearer $TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
@@ -318,7 +318,7 @@ curl -X POST https://api.beo-echo.example.com/api/projects/project-uuid/replays/
 ### POST with Form Data
 
 ```bash
-curl -X POST https://api.beo-echo.example.com/api/projects/project-uuid/replays/execute \
+curl -X POST https://api.beo-echo.example.com/api/workspaces/workspace-uuid/projects/project-uuid/replays/execute \
   -H "Authorization: Bearer $TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
@@ -335,7 +335,7 @@ curl -X POST https://api.beo-echo.example.com/api/projects/project-uuid/replays/
 ### Authentication Request
 
 ```bash
-curl -X POST https://api.beo-echo.example.com/api/projects/project-uuid/replays/execute \
+curl -X POST https://api.beo-echo.example.com/api/workspaces/workspace-uuid/projects/project-uuid/replays/execute \
   -H "Authorization: Bearer $TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
