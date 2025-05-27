@@ -36,18 +36,6 @@ export interface UpdateReplayRequest {
 	folder_id?: string;
 }
 
-export interface ReplayExecutionResult {
-	replay_id: string;
-	status_code: number;
-	status_text?: string;
-	response_headers?: Record<string, string>;
-	response_body?: string;
-	latency_ms: number;
-	size: number;
-	error?: string;
-	log_id: string;
-}
-
 export interface ReplayLog {
 	id: string;
 	project_id: string;
@@ -84,15 +72,15 @@ export interface ListReplayLogsResponse {
 }
 
 export interface ExecuteReplayResponse {
-	message: string;
-	result: {
-		replay_id: string;
-		status_code: number;
-		response_body: string;
-		response_headers: Record<string, string>;
-		latency_ms: number;
-		log_id: string;
-	};
+	replay_id: string;
+	status_code: number;
+	status_text: string;
+	response_body: string;
+	latency_ms: number;
+	size: number;
+	log_id: string;
+	error: string | null;
+	response_headers: Record<string, string>;
 }
 
 // HTTP Methods

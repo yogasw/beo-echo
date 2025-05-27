@@ -12,11 +12,12 @@
 	import ErrorDisplay from '$lib/components/common/ErrorDisplay.svelte';
 	import ReplayEditor from './ReplayEditor.svelte';
 	import type { Tab } from './types';
+	import type { ExecuteReplayResponse } from '$lib/types/Replay';
 
 	let isLoading = true;
 	let error: string | null = null;
 	let activeView: 'list' | 'editor' | 'execution' | 'logs' = 'list';
-	let executionResult: any = null;
+	let executionResult: ExecuteReplayResponse | null = null;
 
 	// Panel width
 	let panelWidth: number; // Initialized in onMount
@@ -169,7 +170,6 @@
 
 		try {
 			replayActions.setLoading('execute', true);
-			executionResult = null;
 			
 			// Prepare request payload from editor data
 			const payload = {
@@ -189,15 +189,14 @@
 			);
 			
 			executionResult = result;
+			console.log('Execution result:', executionResult);
 			toast.success('Request executed successfully');
 			
 			// You can optionally update UI to show the result or navigate to a result view
 			activeView = 'execution';
 		} catch (err: any) {
 			toast.error(err.message || 'Failed to execute request');
-			executionResult = {
-				error: err.message || 'An unknown error occurred'
-			};
+			executionResult = null
 		} finally {
 			replayActions.setLoading('execute', false);
 		}

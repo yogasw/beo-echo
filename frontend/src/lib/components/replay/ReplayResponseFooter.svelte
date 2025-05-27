@@ -1,12 +1,12 @@
 <script lang="ts">
 	import { replayLoading } from '$lib/stores/replay';
-	import type { ReplayExecutionResult } from '$lib/types/Replay';
+	import type { ExecuteReplayResponse } from '$lib/types/Replay';
 	import { createEventDispatcher } from 'svelte';
 
 	const dispatch = createEventDispatcher();
 
 	export let isExpanded = false; // Controls the visibility of the response body area - now accepting as prop
-	export let executionResult: ReplayExecutionResult|null = null; // Add execution result prop with any type
+	export let executionResult: ExecuteReplayResponse | null = null; // Add execution result prop with any type
 
 	// For response content tabs
 	let activeSection = 'response'; // 'response', 'headers', 'cookies'

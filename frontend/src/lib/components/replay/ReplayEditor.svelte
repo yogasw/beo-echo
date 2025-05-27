@@ -13,7 +13,7 @@
 	// import ScriptTab from './tabs/ScriptTab.svelte';
 	import SettingsTab from './tabs/SettingsTab.svelte';
 	import ReplayBody from './tabs/ReplayBody.svelte';
-	import type { Replay } from '$lib/types/Replay';
+	import type { ExecuteReplayResponse, Replay } from '$lib/types/Replay';
 	import type { Tab } from './types';
 
 	export let tabs: Tab[] = [
@@ -26,7 +26,7 @@
 		}
 	];
 	export let activeTabId = 'tab-1';
-	
+
 	// Original replay data from API
 	export let replayData: Replay | null = null;
 
@@ -39,24 +39,24 @@
 		protocol?: string;
 		method: string;
 		url: string;
-		
+
 		// UI state
 		activeSection: string;
-		
+
 		// Raw fields from replayData
 		headers?: string;
 		config?: string;
 		metadata?: string;
 		payload?: string;
-		
+
 		// Parsed fields for editing
-		parsedParams?: Array<{key: string; value: string; description: string; enabled: boolean}>;
-		parsedHeaders?: Array<{key: string; value: string; description: string; enabled: boolean}>;
-		parsedAuth?: {type: string; config: any};
+		parsedParams?: Array<{ key: string; value: string; description: string; enabled: boolean }>;
+		parsedHeaders?: Array<{ key: string; value: string; description: string; enabled: boolean }>;
+		parsedAuth?: { type: string; config: any };
 		parsedBody?: string;
 		parsedSettings?: any;
 	};
-	
+
 	// Watch for replayData changes and update activeTabContent
 	$: if (replayData) {
 		// Initialize with basic fields from replayData
@@ -68,23 +68,23 @@
 			method: replayData.method || 'GET',
 			url: replayData.url || '',
 			activeSection: 'params',
-			
+
 			// Store raw JSON fields
 			headers: replayData.headers,
 			config: replayData.config,
 			metadata: replayData.metadata,
 			payload: replayData.payload,
-			
+
 			// Parse the JSON fields with default fallbacks
 			parsedHeaders: parseHeaders(replayData.headers),
 			...parseConfig(replayData.config),
 			...parseMetadata(replayData.metadata)
 		};
 	}
-	
+
 	// Add props for execution status and results
-	export let executionResult = null;
-	
+	export let executionResult: ExecuteReplayResponse | null = null;
+
 	// Update footer expansion when execution result changes
 	$: if (executionResult) {
 		isFooterExpanded = true;
@@ -103,28 +103,30 @@
 	// Active tab content reset function
 	function resetActiveTabContent() {
 		// Create default empty strings for JSON fields
-		const emptyHeadersJson = JSON.stringify([{ key: '', value: '', description: '', enabled: true }]);
+		const emptyHeadersJson = JSON.stringify([
+			{ key: '', value: '', description: '', enabled: true }
+		]);
 		const emptyConfigJson = JSON.stringify({
 			auth: { type: 'none', config: {} },
 			settings: {}
 		});
 		const emptyMetadataJson = JSON.stringify({
-			params: [{ key: '', value: '', description: '', enabled: true }],
+			params: [{ key: '', value: '', description: '', enabled: true }]
 		});
-		
+
 		// Set activeTabContent with raw JSON fields and parsed values
 		activeTabContent = {
 			method: 'GET',
 			url: '',
 			protocol: 'http',
 			activeSection: 'params',
-			
+
 			// Store raw JSON fields
 			headers: emptyHeadersJson,
 			config: emptyConfigJson,
 			metadata: emptyMetadataJson,
 			payload: '',
-			
+
 			// Parse the JSON fields with default fallbacks
 			parsedHeaders: parseHeaders(emptyHeadersJson),
 			...parseConfig(emptyConfigJson),
@@ -178,18 +180,20 @@
 		const newActiveTab = tabs.find((t) => t.id === activeTabId);
 		if (newActiveTab) {
 			// Create default empty strings for JSON fields
-			const emptyHeadersJson = JSON.stringify([{ key: '', value: '', description: '', enabled: true }]);
+			const emptyHeadersJson = JSON.stringify([
+				{ key: '', value: '', description: '', enabled: true }
+			]);
 			const emptyConfigJson = JSON.stringify({
 				auth: { type: 'none', config: {} },
 				settings: {}
 			});
 			const emptyMetadataJson = JSON.stringify({
-				params: [{ key: '', value: '', description: '', enabled: true }],
+				params: [{ key: '', value: '', description: '', enabled: true }]
 			});
-			
+
 			// Find the replay data for this tab if it exists
 			const tabReplayData = replayData && replayData.id === newActiveTab.id ? replayData : null;
-			
+
 			// Start with basic fields from tab or default values
 			activeTabContent = {
 				id: newActiveTab.id,
@@ -198,13 +202,13 @@
 				url: newActiveTab.url || '',
 				activeSection: 'params',
 				protocol: 'http',
-				
+
 				// Use replay data fields if available, otherwise defaults
 				headers: tabReplayData?.headers || emptyHeadersJson,
 				config: tabReplayData?.config || emptyConfigJson,
 				metadata: tabReplayData?.metadata || emptyMetadataJson,
 				payload: tabReplayData?.payload || '',
-				
+
 				// Parse JSON fields
 				parsedHeaders: parseHeaders(tabReplayData?.headers || emptyHeadersJson),
 				...parseConfig(tabReplayData?.config || emptyConfigJson),
@@ -219,18 +223,20 @@
 		const tab = tabs.find((t) => t.id === tabId);
 		if (tab) {
 			// Create default empty strings for JSON fields
-			const emptyHeadersJson = JSON.stringify([{ key: '', value: '', description: '', enabled: true }]);
+			const emptyHeadersJson = JSON.stringify([
+				{ key: '', value: '', description: '', enabled: true }
+			]);
 			const emptyConfigJson = JSON.stringify({
 				auth: { type: 'none', config: {} },
 				settings: {}
 			});
 			const emptyMetadataJson = JSON.stringify({
-				params: [{ key: '', value: '', description: '', enabled: true }],
+				params: [{ key: '', value: '', description: '', enabled: true }]
 			});
-			
+
 			// Find the replay data for this tab if it exists
 			const tabReplayData = replayData && replayData.id === tab.id ? replayData : null;
-			
+
 			// Start with basic fields from tab or default values
 			activeTabContent = {
 				id: tab.id,
@@ -239,27 +245,27 @@
 				url: tab.url || '',
 				activeSection: 'params',
 				protocol: 'http',
-				
+
 				// Use replay data fields if available, otherwise defaults
 				headers: tabReplayData?.headers || emptyHeadersJson,
 				config: tabReplayData?.config || emptyConfigJson,
 				metadata: tabReplayData?.metadata || emptyMetadataJson,
 				payload: tabReplayData?.payload || '',
-				
+
 				// Parse JSON fields
 				parsedHeaders: parseHeaders(tabReplayData?.headers || emptyHeadersJson),
 				...parseConfig(tabReplayData?.config || emptyConfigJson),
 				...parseMetadata(tabReplayData?.metadata || emptyMetadataJson)
 			};
 		}
-		
+
 		dispatch('tabschange', { tabs, activeTabId, activeTabContent });
 	}
 
 	function setActiveSection(section: string) {
 		// to display the "Coming Soon" message
 		activeTabContent.activeSection = section;
-		
+
 		dispatch('activeSectionChange', { activeSection: section });
 	}
 
@@ -267,7 +273,7 @@
 	function handleParamsChange(event: CustomEvent) {
 		// Update parsedParams field
 		activeTabContent.parsedParams = event.detail.params;
-		
+
 		// Update raw metadata JSON string to reflect the change
 		try {
 			const metadata = activeTabContent.metadata ? JSON.parse(activeTabContent.metadata) : {};
@@ -277,11 +283,11 @@
 			console.error('Failed to update metadata JSON with params change:', e);
 			// Create a new metadata object if parsing failed
 			const metadata = {
-				params: event.detail.params,
+				params: event.detail.params
 			};
 			activeTabContent.metadata = JSON.stringify(metadata);
 		}
-		
+
 		dispatch('tabContentChange', activeTabContent);
 	}
 
@@ -291,7 +297,7 @@
 			type: event.detail.authType,
 			config: event.detail.authConfig
 		};
-		
+
 		// Update raw config JSON string to reflect the change
 		try {
 			const config = activeTabContent.config ? JSON.parse(activeTabContent.config) : {};
@@ -306,24 +312,24 @@
 			};
 			activeTabContent.config = JSON.stringify(config);
 		}
-		
+
 		dispatch('tabContentChange', activeTabContent);
 	}
 
 	function handleHeadersChange(event: CustomEvent) {
 		// Update parsedHeaders field
 		activeTabContent.parsedHeaders = event.detail.headers;
-		
+
 		// Update raw headers JSON string
 		activeTabContent.headers = JSON.stringify(event.detail.headers);
-		
+
 		dispatch('tabContentChange', activeTabContent);
 	}
 
 	function handleSettingsChange(event: CustomEvent) {
 		// Update parsedSettings field
 		activeTabContent.parsedSettings = event.detail.settings;
-		
+
 		// Update raw config JSON string to reflect the change
 		try {
 			const config = activeTabContent.config ? JSON.parse(activeTabContent.config) : {};
@@ -338,7 +344,7 @@
 			};
 			activeTabContent.config = JSON.stringify(config);
 		}
-		
+
 		dispatch('tabContentChange', activeTabContent);
 	}
 
@@ -375,7 +381,7 @@
 
 		// Process headers
 		if (activeTabContent.parsedHeaders) {
-			activeTabContent.parsedHeaders.forEach(header => {
+			activeTabContent.parsedHeaders.forEach((header) => {
 				if (header.enabled && header.key && header.value) {
 					requestData.headers[header.key] = header.value;
 				}
@@ -384,7 +390,7 @@
 
 		// Process query parameters
 		if (activeTabContent.parsedParams) {
-			activeTabContent.parsedParams.forEach(param => {
+			activeTabContent.parsedParams.forEach((param) => {
 				if (param.enabled && param.key && param.value) {
 					requestData.query[param.key] = param.value;
 				}
@@ -394,7 +400,7 @@
 		// Process auth
 		if (activeTabContent.parsedAuth?.type !== 'none') {
 			const authConfig = activeTabContent.parsedAuth?.config;
-			
+
 			switch (activeTabContent.parsedAuth?.type) {
 				case 'basic':
 					// Add Basic Auth header
@@ -433,28 +439,35 @@
 	}
 
 	// Utility functions to parse the JSON fields from replayData
-	function parseHeaders(headersJson?: string): Array<{key: string; value: string; description: string; enabled: boolean}> {
+	function parseHeaders(
+		headersJson?: string
+	): Array<{ key: string; value: string; description: string; enabled: boolean }> {
 		if (!headersJson) {
 			return [{ key: '', value: '', description: '', enabled: true }];
 		}
-		
+
 		try {
 			const headers = JSON.parse(headersJson);
-			return Array.isArray(headers) ? headers : [{ key: '', value: '', description: '', enabled: true }];
+			return Array.isArray(headers)
+				? headers
+				: [{ key: '', value: '', description: '', enabled: true }];
 		} catch (e) {
 			console.error('Failed to parse headers JSON:', e);
 			return [{ key: '', value: '', description: '', enabled: true }];
 		}
 	}
-	
-	function parseConfig(configJson?: string): { parsedAuth?: {type: string; config: any}; parsedSettings?: any } {
+
+	function parseConfig(configJson?: string): {
+		parsedAuth?: { type: string; config: any };
+		parsedSettings?: any;
+	} {
 		if (!configJson) {
-			return { 
+			return {
 				parsedAuth: { type: 'none', config: {} },
 				parsedSettings: {}
 			};
 		}
-		
+
 		try {
 			const config = JSON.parse(configJson);
 			return {
@@ -463,29 +476,31 @@
 			};
 		} catch (e) {
 			console.error('Failed to parse config JSON:', e);
-			return { 
+			return {
 				parsedAuth: { type: 'none', config: {} },
 				parsedSettings: {}
 			};
 		}
 	}
-	
-	function parseMetadata(metadataJson?: string): { parsedParams?: Array<{key: string; value: string; description: string; enabled: boolean}>; } {
+
+	function parseMetadata(metadataJson?: string): {
+		parsedParams?: Array<{ key: string; value: string; description: string; enabled: boolean }>;
+	} {
 		if (!metadataJson) {
 			return {
-				parsedParams: [{ key: '', value: '', description: '', enabled: true }],
+				parsedParams: [{ key: '', value: '', description: '', enabled: true }]
 			};
 		}
-		
+
 		try {
 			const metadata = JSON.parse(metadataJson);
 			return {
-				parsedParams: metadata.params || [{ key: '', value: '', description: '', enabled: true }],
+				parsedParams: metadata.params || [{ key: '', value: '', description: '', enabled: true }]
 			};
 		} catch (e) {
 			console.error('Failed to parse metadata JSON:', e);
 			return {
-				parsedParams: [{ key: '', value: '', description: '', enabled: true }],
+				parsedParams: [{ key: '', value: '', description: '', enabled: true }]
 			};
 		}
 	}
@@ -655,11 +670,17 @@
 				on:authChange={handleAuthChange}
 			/>
 		{:else if activeTabContent.activeSection === 'headers'}
-			<HeadersTab headers={activeTabContent?.parsedHeaders} on:headersChange={handleHeadersChange} />
+			<HeadersTab
+				headers={activeTabContent?.parsedHeaders}
+				on:headersChange={handleHeadersChange}
+			/>
 		{:else if activeTabContent.activeSection === 'body'}
 			<ReplayBody payload={activeTabContent?.payload} />
 		{:else if activeTabContent.activeSection === 'settings'}
-			<SettingsTab settings={activeTabContent?.parsedSettings} on:settingsChange={handleSettingsChange} />
+			<SettingsTab
+				settings={activeTabContent?.parsedSettings}
+				on:settingsChange={handleSettingsChange}
+			/>
 		{/if}
 	</main>
 
