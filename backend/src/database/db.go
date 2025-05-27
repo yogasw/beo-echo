@@ -23,14 +23,23 @@ func CheckAndHandle() error {
 	dbURL := os.Getenv("DATABASE_URL")
 	var err error
 
-	// Determine if we're in a test environment
-	// GO_TEST is set to "1" in test_helpers.go when running tests
-	isTestEnv := os.Getenv("GO_TEST") == "1"
+	// Set default log level to Silent, but allow overriding via DB_LOG_LEVEL env var
+	// Valid values: "silent", "error", "warn", "info"
+	logLevelStr := strings.ToLower(os.Getenv("DB_LOG_LEVEL"))
+	logLevel := logger.Silent // Default to silent
 
-	// Set appropriate logging level based on environment
-	logLevel := logger.Info
-	if isTestEnv {
-		// Use Silent log level during tests to suppress migration logs
+	// Configure log level based on environment variable if set
+	switch logLevelStr {
+	case "info":
+		logLevel = logger.Info
+	case "warn":
+		logLevel = logger.Warn
+	case "error":
+		logLevel = logger.Error
+	}
+
+	// Force silent logging during tests to suppress SQL query logs
+	if os.Getenv("GO_TEST") == "1" {
 		logLevel = logger.Silent
 	}
 
@@ -54,9 +63,7 @@ func CheckAndHandle() error {
 			os.Setenv("DATABASE_URL", dbURL)
 		}
 
-		if !isTestEnv {
-			log.Println("Using SQLite database:", dbURL)
-		}
+		log.Println("Using SQLite database:", dbURL)
 
 		// Process SQLite connection string based on format
 		var sqlitePath string
@@ -73,25 +80,25 @@ func CheckAndHandle() error {
 		// Ensure the directory for the SQLite file exists
 		dbDir := filepath.Dir(sqlitePath)
 		if _, err := os.Stat(dbDir); os.IsNotExist(err) {
-			if !isTestEnv {
-				log.Println("SQLite directory doesn't exist, creating:", dbDir)
-			}
+			log.Println("SQLite directory doesn't exist, creating:", dbDir)
 			if err := os.MkdirAll(dbDir, 0755); err != nil {
 				return errors.New("Failed to create SQLite database directory: " + err.Error())
 			}
 		}
 
-		// Open SQLite database connection with appropriate log level
+		// Open SQLite database connection
 		DB, err = gorm.Open(sqlite.Open(sqlitePath), &gorm.Config{
 			Logger: logger.Default.LogMode(logLevel),
+			// Disable SQL logs in tests
+			DisableForeignKeyConstraintWhenMigrating: os.Getenv("GO_TEST") == "1",
 		})
 	} else {
 		// Use PostgreSQL for all other database URLs
-		if !isTestEnv {
-			log.Println("Using PostgreSQL database")
-		}
+		log.Println("Using PostgreSQL database")
 		DB, err = gorm.Open(postgres.Open(dbURL), &gorm.Config{
 			Logger: logger.Default.LogMode(logLevel),
+			// Disable SQL logs in tests
+			DisableForeignKeyConstraintWhenMigrating: os.Getenv("GO_TEST") == "1",
 		})
 	}
 	if err != nil {
@@ -119,12 +126,10 @@ func CheckAndHandle() error {
 		return errors.New("Failed to migrate database schema: " + err.Error())
 	}
 
-	if !isTestEnv {
-		log.Println("Database connection established and migrations completed")
-	}
+	log.Println("Database connection established and migrations completed")
 
 	// Initialize default user and workspace if no users exist
-	if err := InitializeDefaultUserAndWorkspace(DB); err != nil && !isTestEnv {
+	if err := InitializeDefaultUserAndWorkspace(DB); err != nil {
 		log.Printf("Warning: Failed to initialize default user: %v", err)
 	}
 
