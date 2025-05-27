@@ -394,9 +394,9 @@
 
 		// Process auth
 		if (activeTabContent.parsedAuth?.type !== 'none') {
-			const authConfig = activeTabContent.parsedAuth.config;
+			const authConfig = activeTabContent.parsedAuth?.config;
 			
-			switch (activeTabContent.parsedAuth.type) {
+			switch (activeTabContent.parsedAuth?.type) {
 				case 'basic':
 					// Add Basic Auth header
 					if (authConfig.username) {
