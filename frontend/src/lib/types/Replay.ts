@@ -1,31 +1,27 @@
 export interface Replay {
-	id: string;
-	project_id: string;
-	name: string;
-	protocol: string;
-	method: string;
-	url: string;
-	headers?: Record<string, string>;
-	payload?: string;
-	body?: string; // Alias for payload for compatibility
-	created_at: string;
-	updated_at: string;
-	folder_id?: string;
-	service?: string;
-	method_name?: string;
-	metadata?: string;
-	is_mutation?: boolean;
-	path?: string[];
+  id: string
+  name: string
+  project_id: string
+  folder_id: any
+  protocol: string
+  method: string
+  url: string
+  config: string
+  metadata: string
+  headers: string
+  payload: string
+  created_at: string
+  updated_at: string
 }
 
 export interface CreateReplayRequest {
-	name: string;
-	protocol: string;
-	method: string;
-	url: string;
-	headers?: Record<string, string>;
-	payload?: string;
-	body?: string; // Alias for payload for compatibility
+	name: string
+	protocol: string
+	method: string
+	url: string
+	headers?: Record<string, string>
+	payload?: string
+	body?: string 
 	folder_id?: string;
 }
 

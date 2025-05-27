@@ -12,6 +12,8 @@
 	import ScriptTab from './tabs/ScriptTab.svelte';
 	import SettingsTab from './tabs/SettingsTab.svelte';
 	import ReplayBody from './tabs/ReplayBody.svelte';
+	import type { Replay } from '$lib/types/Replay';
+	import type { Tab } from './types';
 
 	export let tabs: Tab[] = [
 		{
@@ -23,9 +25,62 @@
 		}
 	];
 	export let activeTabId = 'tab-1';
+	
+	// Original replay data from API
+	export let replayData: Replay | null = null;
 
-	// Active tab content state
-	export let activeTabContent = {};
+	// Active tab content state - UI state and parsed fields separate from raw Replay data
+	let activeTabContent: {
+		// Basic fields for editing
+		id?: string;
+		name?: string;
+		project_id?: string;
+		protocol?: string;
+		method: string;
+		url: string;
+		
+		// UI state
+		activeSection: string;
+		
+		// Raw fields from replayData
+		headers?: string;
+		config?: string;
+		metadata?: string;
+		payload?: string;
+		
+		// Parsed fields for editing
+		parsedParams?: Array<{key: string; value: string; description: string; enabled: boolean}>;
+		parsedHeaders?: Array<{key: string; value: string; description: string; enabled: boolean}>;
+		parsedAuth?: {type: string; config: any};
+		parsedScripts?: {preRequestScript: string; testScript: string};
+		parsedSettings?: any;
+		parsedBody?: string;
+	};
+	
+	// Watch for replayData changes and update activeTabContent
+	$: if (replayData) {
+		// Initialize with basic fields from replayData
+		activeTabContent = {
+			id: replayData.id,
+			name: replayData.name,
+			project_id: replayData.project_id,
+			protocol: replayData.protocol || 'http',
+			method: replayData.method || 'GET',
+			url: replayData.url || '',
+			activeSection: 'params',
+			
+			// Store raw JSON fields
+			headers: replayData.headers,
+			config: replayData.config,
+			metadata: replayData.metadata,
+			payload: replayData.payload,
+			
+			// Parse the JSON fields with default fallbacks
+			parsedHeaders: parseHeaders(replayData.headers),
+			...parseConfig(replayData.config),
+			...parseMetadata(replayData.metadata)
+		};
+	}
 	
 	// Add props for execution status and results
 	export let isExecuting = false;
@@ -48,14 +103,10 @@
 
 	// Active tab content reset function
 	function resetActiveTabContent() {
-		activeTabContent = {
-			method: 'GET',
-			url: '',
-			activeSection: 'params',
-			params: [{ key: '', value: '', description: '', enabled: true }],
-			headers: [{ key: '', value: '', description: '', enabled: true }],
+		// Create default empty strings for JSON fields
+		const emptyHeadersJson = JSON.stringify([{ key: '', value: '', description: '', enabled: true }]);
+		const emptyConfigJson = JSON.stringify({
 			auth: { type: 'none', config: {} },
-			scripts: { preRequestScript: '', testScript: '' },
 			settings: {
 				timeout: 30000,
 				followRedirects: true,
@@ -71,6 +122,29 @@
 				retryCount: 3,
 				retryDelay: 1000
 			}
+		});
+		const emptyMetadataJson = JSON.stringify({
+			params: [{ key: '', value: '', description: '', enabled: true }],
+			scripts: { preRequestScript: '', testScript: '' }
+		});
+		
+		// Set activeTabContent with raw JSON fields and parsed values
+		activeTabContent = {
+			method: 'GET',
+			url: '',
+			protocol: 'http',
+			activeSection: 'params',
+			
+			// Store raw JSON fields
+			headers: emptyHeadersJson,
+			config: emptyConfigJson,
+			metadata: emptyMetadataJson,
+			payload: '',
+			
+			// Parse the JSON fields with default fallbacks
+			parsedHeaders: parseHeaders(emptyHeadersJson),
+			...parseConfig(emptyConfigJson),
+			...parseMetadata(emptyMetadataJson)
 		};
 	}
 
@@ -119,14 +193,10 @@
 		// Update activeTabContent based on the new activeTabId
 		const newActiveTab = tabs.find((t) => t.id === activeTabId);
 		if (newActiveTab) {
-			activeTabContent = {
-				method: newActiveTab.method,
-				url: newActiveTab.url,
-				activeSection: 'params',
-				params: [{ key: '', value: '', description: '', enabled: true }],
-				headers: [{ key: '', value: '', description: '', enabled: true }],
+			// Create default empty strings for JSON fields
+			const emptyHeadersJson = JSON.stringify([{ key: '', value: '', description: '', enabled: true }]);
+			const emptyConfigJson = JSON.stringify({
 				auth: { type: 'none', config: {} },
-				scripts: { preRequestScript: '', testScript: '' },
 				settings: {
 					timeout: 30000,
 					followRedirects: true,
@@ -142,6 +212,34 @@
 					retryCount: 3,
 					retryDelay: 1000
 				}
+			});
+			const emptyMetadataJson = JSON.stringify({
+				params: [{ key: '', value: '', description: '', enabled: true }],
+				scripts: { preRequestScript: '', testScript: '' }
+			});
+			
+			// Find the replay data for this tab if it exists
+			const tabReplayData = replayData && replayData.id === newActiveTab.id ? replayData : null;
+			
+			// Start with basic fields from tab or default values
+			activeTabContent = {
+				id: newActiveTab.id,
+				name: newActiveTab.name || 'New Request',
+				method: newActiveTab.method || 'GET',
+				url: newActiveTab.url || '',
+				activeSection: 'params',
+				protocol: 'http',
+				
+				// Use replay data fields if available, otherwise defaults
+				headers: tabReplayData?.headers || emptyHeadersJson,
+				config: tabReplayData?.config || emptyConfigJson,
+				metadata: tabReplayData?.metadata || emptyMetadataJson,
+				payload: tabReplayData?.payload || '',
+				
+				// Parse JSON fields
+				parsedHeaders: parseHeaders(tabReplayData?.headers || emptyHeadersJson),
+				...parseConfig(tabReplayData?.config || emptyConfigJson),
+				...parseMetadata(tabReplayData?.metadata || emptyMetadataJson)
 			};
 		}
 		dispatch('tabschange', { tabs, activeTabId, activeTabContent });
@@ -151,14 +249,10 @@
 		activeTabId = tabId;
 		const tab = tabs.find((t) => t.id === tabId);
 		if (tab) {
-			activeTabContent = {
-				method: tab.method,
-				url: tab.url,
-				activeSection: 'params',
-				params: [{ key: '', value: '', description: '', enabled: true }],
-				headers: [{ key: '', value: '', description: '', enabled: true }],
+			// Create default empty strings for JSON fields
+			const emptyHeadersJson = JSON.stringify([{ key: '', value: '', description: '', enabled: true }]);
+			const emptyConfigJson = JSON.stringify({
 				auth: { type: 'none', config: {} },
-				scripts: { preRequestScript: '', testScript: '' },
 				settings: {
 					timeout: 30000,
 					followRedirects: true,
@@ -174,8 +268,37 @@
 					retryCount: 3,
 					retryDelay: 1000
 				}
+			});
+			const emptyMetadataJson = JSON.stringify({
+				params: [{ key: '', value: '', description: '', enabled: true }],
+				scripts: { preRequestScript: '', testScript: '' }
+			});
+			
+			// Find the replay data for this tab if it exists
+			const tabReplayData = replayData && replayData.id === tab.id ? replayData : null;
+			
+			// Start with basic fields from tab or default values
+			activeTabContent = {
+				id: tab.id,
+				name: tab.name || 'New Request',
+				method: tab.method || 'GET',
+				url: tab.url || '',
+				activeSection: 'params',
+				protocol: 'http',
+				
+				// Use replay data fields if available, otherwise defaults
+				headers: tabReplayData?.headers || emptyHeadersJson,
+				config: tabReplayData?.config || emptyConfigJson,
+				metadata: tabReplayData?.metadata || emptyMetadataJson,
+				payload: tabReplayData?.payload || '',
+				
+				// Parse JSON fields
+				parsedHeaders: parseHeaders(tabReplayData?.headers || emptyHeadersJson),
+				...parseConfig(tabReplayData?.config || emptyConfigJson),
+				...parseMetadata(tabReplayData?.metadata || emptyMetadataJson)
 			};
 		}
+		
 		dispatch('tabschange', { tabs, activeTabId, activeTabContent });
 	}
 
@@ -186,33 +309,106 @@
 
 	// Event handlers for tab components
 	function handleParamsChange(event: CustomEvent) {
-		activeTabContent.params = event.detail.params;
+		// Update parsedParams field
+		activeTabContent.parsedParams = event.detail.params;
+		
+		// Update raw metadata JSON string to reflect the change
+		try {
+			const metadata = activeTabContent.metadata ? JSON.parse(activeTabContent.metadata) : {};
+			metadata.params = event.detail.params;
+			activeTabContent.metadata = JSON.stringify(metadata);
+		} catch (e) {
+			console.error('Failed to update metadata JSON with params change:', e);
+			// Create a new metadata object if parsing failed
+			const metadata = {
+				params: event.detail.params,
+				scripts: activeTabContent.parsedScripts || { preRequestScript: '', testScript: '' }
+			};
+			activeTabContent.metadata = JSON.stringify(metadata);
+		}
+		
 		dispatch('tabContentChange', activeTabContent);
 	}
 
 	function handleAuthChange(event: CustomEvent) {
-		activeTabContent.auth = {
+		// Update parsedAuth field
+		activeTabContent.parsedAuth = {
 			type: event.detail.authType,
 			config: event.detail.authConfig
 		};
+		
+		// Update raw config JSON string to reflect the change
+		try {
+			const config = activeTabContent.config ? JSON.parse(activeTabContent.config) : {};
+			config.auth = activeTabContent.parsedAuth;
+			activeTabContent.config = JSON.stringify(config);
+		} catch (e) {
+			console.error('Failed to update config JSON with auth change:', e);
+			// Create a new config object if parsing failed
+			const config = {
+				auth: activeTabContent.parsedAuth,
+				settings: activeTabContent.parsedSettings || {}
+			};
+			activeTabContent.config = JSON.stringify(config);
+		}
+		
 		dispatch('tabContentChange', activeTabContent);
 	}
 
 	function handleHeadersChange(event: CustomEvent) {
-		activeTabContent.headers = event.detail.headers;
+		// Update parsedHeaders field
+		activeTabContent.parsedHeaders = event.detail.headers;
+		
+		// Update raw headers JSON string
+		activeTabContent.headers = JSON.stringify(event.detail.headers);
+		
 		dispatch('tabContentChange', activeTabContent);
 	}
 
 	function handleScriptChange(event: CustomEvent) {
-		activeTabContent.scripts = {
+		// Update parsedScripts field
+		activeTabContent.parsedScripts = {
 			preRequestScript: event.detail.preRequestScript,
 			testScript: event.detail.testScript
 		};
+		
+		// Update raw metadata JSON string to reflect the change
+		try {
+			const metadata = activeTabContent.metadata ? JSON.parse(activeTabContent.metadata) : {};
+			metadata.scripts = activeTabContent.parsedScripts;
+			activeTabContent.metadata = JSON.stringify(metadata);
+		} catch (e) {
+			console.error('Failed to update metadata JSON with scripts change:', e);
+			// Create a new metadata object if parsing failed
+			const metadata = {
+				params: activeTabContent.parsedParams || [{ key: '', value: '', description: '', enabled: true }],
+				scripts: activeTabContent.parsedScripts
+			};
+			activeTabContent.metadata = JSON.stringify(metadata);
+		}
+		
 		dispatch('tabContentChange', activeTabContent);
 	}
 
 	function handleSettingsChange(event: CustomEvent) {
-		activeTabContent.settings = event.detail.settings;
+		// Update parsedSettings field
+		activeTabContent.parsedSettings = event.detail.settings;
+		
+		// Update raw config JSON string to reflect the change
+		try {
+			const config = activeTabContent.config ? JSON.parse(activeTabContent.config) : {};
+			config.settings = event.detail.settings;
+			activeTabContent.config = JSON.stringify(config);
+		} catch (e) {
+			console.error('Failed to update config JSON with settings change:', e);
+			// Create a new config object if parsing failed
+			const config = {
+				auth: activeTabContent.parsedAuth || { type: 'none', config: {} },
+				settings: event.detail.settings
+			};
+			activeTabContent.config = JSON.stringify(config);
+		}
+		
 		dispatch('tabContentChange', activeTabContent);
 	}
 
@@ -238,12 +434,12 @@
 			url: activeTabContent.url,
 			headers: {},
 			query: {},
-			body: ''
+			payload: activeTabContent.payload || ''
 		};
 
 		// Process headers
-		if (activeTabContent.headers) {
-			activeTabContent.headers.forEach(header => {
+		if (activeTabContent.parsedHeaders) {
+			activeTabContent.parsedHeaders.forEach(header => {
 				if (header.enabled && header.key && header.value) {
 					requestData.headers[header.key] = header.value;
 				}
@@ -251,8 +447,8 @@
 		}
 
 		// Process query parameters
-		if (activeTabContent.params) {
-			activeTabContent.params.forEach(param => {
+		if (activeTabContent.parsedParams) {
+			activeTabContent.parsedParams.forEach(param => {
 				if (param.enabled && param.key && param.value) {
 					requestData.query[param.key] = param.value;
 				}
@@ -260,10 +456,10 @@
 		}
 
 		// Process auth
-		if (activeTabContent.auth?.type !== 'none') {
-			const authConfig = activeTabContent.auth.config;
+		if (activeTabContent.parsedAuth?.type !== 'none') {
+			const authConfig = activeTabContent.parsedAuth.config;
 			
-			switch (activeTabContent.auth.type) {
+			switch (activeTabContent.parsedAuth.type) {
 				case 'basic':
 					// Add Basic Auth header
 					if (authConfig.username) {
@@ -298,6 +494,114 @@
 	function onCancelRequest() {
 		console.log('Cancel request clicked');
 		// Add logic to cancel the request if needed
+	}
+
+	// Utility functions to parse the JSON fields from replayData
+	function parseHeaders(headersJson?: string): Array<{key: string; value: string; description: string; enabled: boolean}> {
+		if (!headersJson) {
+			return [{ key: '', value: '', description: '', enabled: true }];
+		}
+		
+		try {
+			const headers = JSON.parse(headersJson);
+			return Array.isArray(headers) ? headers : [{ key: '', value: '', description: '', enabled: true }];
+		} catch (e) {
+			console.error('Failed to parse headers JSON:', e);
+			return [{ key: '', value: '', description: '', enabled: true }];
+		}
+	}
+	
+	function parseConfig(configJson?: string): { parsedAuth?: {type: string; config: any}; parsedSettings?: any } {
+		if (!configJson) {
+			return { 
+				parsedAuth: { type: 'none', config: {} },
+				parsedSettings: {
+					timeout: 30000,
+					followRedirects: true,
+					maxRedirects: 5,
+					verifySsl: true,
+					ignoreSslErrors: false,
+					encoding: 'utf-8',
+					sendCookies: true,
+					storeCookies: true,
+					keepAlive: true,
+					userAgent: 'Beo-Echo/1.0',
+					retryOnFailure: false,
+					retryCount: 3,
+					retryDelay: 1000
+				}
+			};
+		}
+		
+		try {
+			const config = JSON.parse(configJson);
+			return {
+				parsedAuth: config.auth || { type: 'none', config: {} },
+				parsedSettings: config.settings || {
+					timeout: 30000,
+					followRedirects: true,
+					maxRedirects: 5,
+					verifySsl: true,
+					ignoreSslErrors: false,
+					encoding: 'utf-8',
+					sendCookies: true,
+					storeCookies: true,
+					keepAlive: true,
+					userAgent: 'Beo-Echo/1.0',
+					retryOnFailure: false,
+					retryCount: 3,
+					retryDelay: 1000
+				}
+			};
+		} catch (e) {
+			console.error('Failed to parse config JSON:', e);
+			return { 
+				parsedAuth: { type: 'none', config: {} },
+				parsedSettings: {
+					timeout: 30000,
+					followRedirects: true,
+					maxRedirects: 5,
+					verifySsl: true,
+					ignoreSslErrors: false,
+					encoding: 'utf-8',
+					sendCookies: true,
+					storeCookies: true,
+					keepAlive: true,
+					userAgent: 'Beo-Echo/1.0',
+					retryOnFailure: false,
+					retryCount: 3,
+					retryDelay: 1000
+				}
+			};
+		}
+	}
+	
+	function parseMetadata(metadataJson?: string): { parsedParams?: Array<{key: string; value: string; description: string; enabled: boolean}>; parsedScripts?: {preRequestScript: string; testScript: string} } {
+		if (!metadataJson) {
+			return {
+				parsedParams: [{ key: '', value: '', description: '', enabled: true }],
+				parsedScripts: { preRequestScript: '', testScript: '' }
+			};
+		}
+		
+		try {
+			const metadata = JSON.parse(metadataJson);
+			return {
+				parsedParams: metadata.params || [{ key: '', value: '', description: '', enabled: true }],
+				parsedScripts: metadata.scripts || { preRequestScript: '', testScript: '' }
+			};
+		} catch (e) {
+			console.error('Failed to parse metadata JSON:', e);
+			return {
+				parsedParams: [{ key: '', value: '', description: '', enabled: true }],
+				parsedScripts: { preRequestScript: '', testScript: '' }
+			};
+		}
+	}
+
+	// Initialize activeTabContent if it's null
+	$: if (activeTabContent === undefined || activeTabContent === null) {
+		resetActiveTabContent();
 	}
 </script>
 
@@ -464,25 +768,25 @@
 
 		<!-- Dynamic content based on active section -->
 		{#if activeTabContent.activeSection === 'params'}
-			<ParamsTab params={activeTabContent?.params} on:paramsChange={handleParamsChange} />
+			<ParamsTab params={activeTabContent?.parsedParams} on:paramsChange={handleParamsChange} />
 		{:else if activeTabContent.activeSection === 'auth'}
 			<AuthorizationTab
-				authType={activeTabContent?.auth?.type}
-				authConfig={activeTabContent?.auth?.config}
+				authType={activeTabContent?.parsedAuth?.type}
+				authConfig={activeTabContent?.parsedAuth?.config}
 				on:authChange={handleAuthChange}
 			/>
 		{:else if activeTabContent.activeSection === 'headers'}
-			<HeadersTab headers={activeTabContent?.headers} on:headersChange={handleHeadersChange} />
+			<HeadersTab headers={activeTabContent?.parsedHeaders} on:headersChange={handleHeadersChange} />
 		{:else if activeTabContent.activeSection === 'body'}
-			<ReplayBody />
+			<ReplayBody payload={activeTabContent?.payload} />
 		{:else if activeTabContent.activeSection === 'scripts'}
 			<ScriptTab
-				preRequestScript={activeTabContent?.scripts?.preRequestScript}
-				testScript={activeTabContent?.scripts?.testScript}
+				preRequestScript={activeTabContent?.parsedScripts?.preRequestScript}
+				testScript={activeTabContent?.parsedScripts?.testScript}
 				on:scriptChange={handleScriptChange}
 			/>
 		{:else if activeTabContent.activeSection === 'settings'}
-			<SettingsTab settings={activeTabContent?.settings} on:settingsChange={handleSettingsChange} />
+			<SettingsTab settings={activeTabContent?.parsedSettings} on:settingsChange={handleSettingsChange} />
 		{/if}
 	</main>
 

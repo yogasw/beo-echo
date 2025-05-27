@@ -55,15 +55,16 @@
 	}
 
 	function handleTabContentChange(event: CustomEvent) {
-		const activeTab = editorTabs.find(tab => tab.id === editorActiveTabId);
-		if (activeTab) {
-			activeTab.method = event.detail.method;
-			activeTab.url = event.detail.url;
-			// Potentially mark as unsaved, etc.
-		}
-		if (editorActiveTabContent) {
-			editorActiveTabContent = {...editorActiveTabContent, ...event.detail};
-		}
+		console.log('Tab content changed:', event);
+		// const activeTab = editorTabs.find(tab => tab.id === editorActiveTabId);
+		// if (activeTab) {
+		// 	activeTab.method = event.detail.method;
+		// 	activeTab.url = event.detail.url;
+		// 	// Potentially mark as unsaved, etc.
+		// }
+		// if (editorActiveTabContent) {
+		// 	editorActiveTabContent = {...editorActiveTabContent, ...event.detail};
+		// }
 	}
 
 
@@ -111,34 +112,24 @@
 			}
 		];
 		editorActiveTabId = editorTabs[0].id;
-		editorActiveTabContent = {
-			method: 'GET',
-			url: '',
-			activeSection: 'params'
-		};
 	}
 
 	function handleEditReplay(event: CustomEvent) {
 		const replay = event.detail;
 		selectedReplay.set(replay);
 		activeView = 'editor';
+		
 		// Populate editor state from the selected replay
-		const replayData = replay; // Assuming replay has the necessary data
 		editorTabs = [
 			{
-				id: replayData.id || `tab-${Date.now()}`,
-				name: replayData.name || 'Edit Request',
-				method: replayData.request?.method || 'GET',
-				url: replayData.request?.url || '',
+				id: replay.id || `tab-${Date.now()}`,
+				name: replay.name || 'Edit Request',
+				method: replay.method || 'GET',
+				url: replay.url || '',
 				isUnsaved: false // Or determine based on actual state
 			}
 		];
 		editorActiveTabId = editorTabs[0].id;
-		editorActiveTabContent = {
-			method: replayData.request?.method || 'GET',
-			url: replayData.request?.url || '',
-			activeSection: 'params' // Or restore last active section for this replay
-		};
 	}
 
 	function handleExecuteReplay(event: CustomEvent) {
@@ -328,7 +319,6 @@
 				<ReplayEditor 
 					bind:tabs={editorTabs} 
 					bind:activeTabId={editorActiveTabId} 
-					bind:activeTabContent={editorActiveTabContent}
 					isExecuting={isExecuting}
 					executionResult={executionResult}
 					on:tabschange={handleTabsChange}
