@@ -15,8 +15,8 @@ type replayRepository struct {
 }
 
 // NewreplayRepository creates a new replay repository
-func NewReplayRepository(db *gorm.DB) replayRepository {
-	return replayRepository{db: db}
+func NewReplayRepository(db *gorm.DB) *replayRepository {
+	return &replayRepository{db: db}
 }
 
 // FindByProjectID finds all replays for a specific project
