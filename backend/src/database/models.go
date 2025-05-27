@@ -331,17 +331,13 @@ type Replay struct {
 	ProjectID string  `gorm:"index;not null" json:"project_id"` // Project scoping
 	FolderID  *string `gorm:"index" json:"folder_id"`           // Optional folder location
 
-	Protocol   ReplayProtocol `gorm:"not null" json:"protocol"` // Protocol: http, grpc, ws, graphql, etc.
-	Method     string         `gorm:"size:20" json:"method"`    // HTTP method or RPC action (e.g., POST, GET, INVOKE)
-	Url        string         `json:"url"`                      // Target URL or endpoint
-	Service    string         `json:"service"`                  // gRPC service name (optional)
-	MethodName string         `json:"method_name"`              // gRPC method name (optional)
+	Protocol ReplayProtocol `gorm:"not null" json:"protocol"` // Protocol: http, grpc, ws, graphql, etc.
+	Method   string         `gorm:"size:20" json:"method"`    // HTTP method or RPC action (e.g., POST, GET, INVOKE)
+	Url      string         `json:"url"`                      // Target URL or endpoint
 
 	Headers  string `gorm:"type:text" json:"headers"`  // Headers as key-value pairs
 	Payload  string `gorm:"type:text" json:"payload"`  // Request payload
 	Metadata string `gorm:"type:text" json:"metadata"` // Optional metadata (e.g., tags, retries)
-
-	Path []string `gorm:"type:json" json:"path"` // Folder path in array form (for UI or indexing)
 
 	CreatedAt time.Time `gorm:"autoCreateTime" json:"created_at"` // Timestamp of creation
 	UpdatedAt time.Time `gorm:"autoUpdateTime" json:"updated_at"` // Timestamp of last update
