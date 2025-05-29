@@ -21,7 +21,7 @@ import (
 	"beo-echo/backend/src/utils"
 )
 
-//go:embed all:assets
+//go:embed all:frontend
 var assets embed.FS
 
 // App struct
