@@ -207,7 +207,6 @@ When running as a desktop app, all data is stored in the user's home directory:
 #### 🖥️ Native System Integration
 - **Menu Bar Integration** - Native application menus for each platform
 - **System Tray Support** - Background operation with system tray icon
-- **File Association** - Register custom file types (.beoecho projects)
 - **Auto-Launch** - Optional startup with system boot
 
 #### 🔧 Cross-Platform Path Handling  
