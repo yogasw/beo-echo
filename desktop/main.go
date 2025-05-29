@@ -23,12 +23,12 @@ func createWindow(app *application.App) *application.WebviewWindow {
 	// Log the time taken to create the window
 	window := app.NewWebviewWindowWithOptions(application.WebviewWindowOptions{
 		Name:            "BeoEcho",
-		AlwaysOnTop:     true,
+		AlwaysOnTop:     false,
 		Hidden:          false,
 		Frameless:       false,
 		DevToolsEnabled: false,
 		Windows: application.WindowsWindow{
-			HiddenOnTaskbar: true,
+			HiddenOnTaskbar: false,
 		},
 	})
 
@@ -111,12 +111,12 @@ func main() {
 		Assets: application.AssetOptions{
 			Handler: application.AssetFileServerFS(assets),
 		},
-		Windows: application.WindowsOptions{
-			DisableQuitOnLastWindowClosed: true,
-		},
-		Mac: application.MacOptions{
-			ActivationPolicy: application.ActivationPolicyAccessory,
-		},
+		// Windows: application.WindowsOptions{
+		// 	DisableQuitOnLastWindowClosed: true,
+		// },
+		// Mac: application.MacOptions{
+		// 	ActivationPolicy: application.ActivationPolicyAccessory,
+		// },
 	})
 
 	// Create a goroutine that emits an event containing the current time every second.
