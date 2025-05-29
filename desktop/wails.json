@@ -1,0 +1,51 @@
+{
+  "name": "BeoEcho Desktop",
+  "outputfilename": "BeoEcho",
+  "version": "1.0.0",
+  "description": "BeoEcho - Desktop API Mocking Service",
+  "author": {
+    "name": "BeoEcho Team",
+    "email": ""
+  },
+  "frontend": {
+    "dir": "../frontend",
+    "install": "npm install",
+    "build": "npm run build:desktop",
+    "dev": "npm run dev -- --port 5173 --host 0.0.0.0",
+    "watcher": {
+      "include": [
+        "../frontend/src/**/*.svelte",
+        "../frontend/src/**/*.ts",
+        "../frontend/src/**/*.js",
+        "../frontend/src/**/*.css"
+      ],
+      "exclude": [
+        "../frontend/node_modules/**/*",
+        "../frontend/.svelte-kit/**/*"
+      ]
+    }
+  },
+  "backend": {
+    "dir": ".",
+    "go": {
+      "main": "./main.go"
+    }
+  },
+  "build": {
+    "dir": "../frontend/build",
+    "clean": true
+  },
+  "devMode": "dev",
+  "info": {
+    "companyName": "BeoEcho",
+    "productName": "BeoEcho Desktop",
+    "productVersion": "1.0.0",
+    "copyright": "Copyright © 2025 BeoEcho Team",
+    "comments": "Desktop API Mocking Service"
+  },
+  "nsisType": "multiple",
+  "obfuscated": false,
+  "garbleargs": "",
+  "upx": false,
+  "upxflags": ""
+}

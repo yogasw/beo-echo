@@ -63,5 +63,10 @@ report.[0-9]*.[0-9]*.[0-9]*.[0-9]*.json
 
 .svelte-kit/
 
+# Desktop application builds
+desktop/build/
+desktop/frontend/
+desktop/app
+
 configs
 tmp/*
