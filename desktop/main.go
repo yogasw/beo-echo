@@ -23,7 +23,7 @@ func createWindow(app *application.App) *application.WebviewWindow {
 	// Log the time taken to create the window
 	window := app.NewWebviewWindowWithOptions(application.WebviewWindowOptions{
 		Name:            "BeoEcho",
-		AlwaysOnTop:     false,
+		AlwaysOnTop:     true,
 		Hidden:          false,
 		Frameless:       false,
 		DevToolsEnabled: false,
@@ -42,9 +42,10 @@ func createWindow(app *application.App) *application.WebviewWindow {
 		fmt.Println("Window minimise event triggered")
 		windowShowing = true
 	})
-	window.OnWindowEvent(events.Common.WindowUnMinimise, func(e *application.WindowEvent) {
-		fmt.Println("Window unminimise event triggered")
-		windowShowing = true
+	window.OnWindowEvent(events.Common.WindowLostFocus, func(e *application.WindowEvent) {
+		fmt.Println("Window lost focus event triggered")
+		windowShowing = false
+		window.Minimise()
 	})
 
 	window.Show()
