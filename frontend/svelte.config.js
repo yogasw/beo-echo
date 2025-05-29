@@ -19,8 +19,8 @@ const config = {
 		adapter: adapter({
 			// default options are shown. On some platforms
 			// these options are set automatically — see below
-			pages: process.env.WAILS_BUILD ? '../desktop/assets' : 'build',
-			assets: process.env.WAILS_BUILD ? '../desktop/assets' : 'build',
+			pages: process.env.VITE_DESKTOP_MODE ? '../desktop/frontend' : 'build',
+			assets: process.env.VITE_DESKTOP_MODE ? '../desktop/frontend' : 'build',
 			fallback: 'index.html', // Add fallback for SPA behavior
 			precompress: false,
 			strict: false
