@@ -12,6 +12,33 @@ import (
 	"github.com/wailsapp/wails/v3/pkg/icons"
 )
 
+var windowShowing bool
+
+func createWindow(app *application.App) {
+	if windowShowing {
+		return
+	}
+	// Log the time taken to create the window
+	window := app.NewWebviewWindowWithOptions(application.WebviewWindowOptions{
+		Name:            "BeoEcho",
+		AlwaysOnTop:     false,
+		Hidden:          true,
+		Frameless:       false,
+		DevToolsEnabled: true,
+		Windows: application.WindowsWindow{
+			HiddenOnTaskbar: true,
+		},
+	})
+
+	windowShowing = true
+
+	window.OnWindowEvent(events.Common.WindowClosing, func(e *application.WindowEvent) {
+		windowShowing = false
+	})
+
+	window.Show()
+}
+
 // Wails uses Go's `embed` package to embed the frontend files into the binary.
 // Any files in the frontend/dist folder will be embedded into the binary and
 // made available to the frontend.
@@ -60,16 +87,16 @@ func main() {
 	// 'Mac' options tailor the window when running on macOS.
 	// 'BackgroundColour' is the background colour of the window.
 	// 'URL' is the URL that will be loaded into the webview.
-	app.NewWebviewWindowWithOptions(application.WebviewWindowOptions{
-		Title: "Window 1",
-		Mac: application.MacWindow{
-			InvisibleTitleBarHeight: 50,
-			Backdrop:                application.MacBackdropTranslucent,
-			TitleBar:                application.MacTitleBarHiddenInset,
-		},
-		BackgroundColour: application.NewRGB(27, 38, 54),
-		URL:              "/",
-	})
+	// app.NewWebviewWindowWithOptions(application.WebviewWindowOptions{
+	// 	Title: "Window 1",
+	// 	Mac: application.MacWindow{
+	// 		InvisibleTitleBarHeight: 50,
+	// 		Backdrop:                application.MacBackdropTranslucent,
+	// 		TitleBar:                application.MacTitleBarHiddenInset,
+	// 	},
+	// 	BackgroundColour: application.NewRGB(27, 38, 54),
+	// 	URL:              "/",
+	// })
 
 	// Create a goroutine that emits an event containing the current time every second.
 	// The frontend can listen to this event and update the UI accordingly.
@@ -82,41 +109,21 @@ func main() {
 	}()
 
 	systemTray := app.NewSystemTray()
-
-	window := app.NewWebviewWindowWithOptions(application.WebviewWindowOptions{
-		Name:            "BeoEcho",
-		AlwaysOnTop:     true,
-		Hidden:          true,
-		Frameless:       false,
-		DevToolsEnabled: true,
-		Windows: application.WindowsWindow{
-			HiddenOnTaskbar: false,
-		},
+	menu := app.NewMenu()
+	menu.Add("Quit").OnClick(func(data *application.Context) {
+		app.Quit()
 	})
-
-	window.RegisterHook(events.Common.WindowClosing, func(e *application.WindowEvent) {
-		window.Hide()
-		e.Cancel()
-	})
+	systemTray.SetMenu(menu)
 
 	if runtime.GOOS == "darwin" {
 		systemTray.SetTemplateIcon(icons.SystrayMacTemplate)
 	}
 
-	myMenu := app.NewMenu()
-
-	myMenu.AddSeparator()
-	myMenu.Add("Quit").OnClick(func(ctx *application.Context) {
-		app.Quit()
+	systemTray.OnClick(func() {
+		createWindow(app)
 	})
 
-	systemTray.SetMenu(myMenu)
-
-	systemTray.AttachWindow(window).WindowOffset(2)
-	// Run the application. This blocks until the application has been exited.
 	err := app.Run()
-
-	// If an error occurred while running the application, log it and exit.
 	if err != nil {
 		log.Fatal(err)
 	}
