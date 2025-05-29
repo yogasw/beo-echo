@@ -139,7 +139,7 @@ func setupDesktopEnvironment() error {
 	// No need to change working directory anymore since backend uses absolute paths
 	log.Printf("✅ Desktop environment initialized in: %s", appDataDir)
 	log.Printf("Current working directory remains: %s", getCurrentWorkingDir())
-	
+
 	return nil
 }
 
