@@ -20,31 +20,6 @@ import (
 //go:embed all:frontend
 var assets embed.FS
 
-var windowShowing bool
-
-func createWindow(app *application.App) {
-	if windowShowing {
-		return
-	}
-	// Log the time taken to create the window
-	window := app.NewWebviewWindowWithOptions(application.WebviewWindowOptions{
-		Name:             "BeoEcho",
-		AlwaysOnTop:      true,
-		Hidden:           true,
-		BackgroundColour: application.NewRGB(33, 37, 41),
-		Windows: application.WindowsWindow{
-			HiddenOnTaskbar: true,
-		},
-	})
-	windowShowing = true
-
-	window.OnWindowEvent(events.Common.WindowClosing, func(e *application.WindowEvent) {
-		windowShowing = false
-	})
-
-	window.Show()
-}
-
 // main function serves as the application's entry point. It initializes the application, creates a window,
 // and starts a goroutine that emits a time-based event every second. It subsequently runs the application and
 // logs any error that might occur.
@@ -62,12 +37,12 @@ func main() {
 	// 'Assets' configures the asset server with the 'FS' variable pointing to the frontend files.
 	// 'Bind' is a list of Go struct instances. The frontend has access to the methods of these instances.
 	// 'Mac' options tailor the application when running an macOS.
-
+	backendService := NewBackendService()
 	app := application.New(application.Options{
 		Name:        "BeoEcho",
 		Description: "Desktop API Mocking Service",
 		Services: []application.Service{
-			application.NewService(NewBackendService(), application.ServiceOptions{}),
+			application.NewService(backendService, application.ServiceOptions{}),
 		},
 		Assets: application.AssetOptions{
 			Handler: application.AssetFileServerFS(assets),
@@ -107,20 +82,37 @@ func main() {
 	}()
 
 	systemTray := app.NewSystemTray()
-	menu := app.NewMenu()
-	menu.Add("Quit").OnClick(func(data *application.Context) {
-		app.Quit()
+
+	window := app.NewWebviewWindowWithOptions(application.WebviewWindowOptions{
+		Name:            "BeoEcho",
+		AlwaysOnTop:     true,
+		Hidden:          true,
+		Frameless:       false,
+		DevToolsEnabled: true,
+		Windows: application.WindowsWindow{
+			HiddenOnTaskbar: false,
+		},
 	})
-	systemTray.SetMenu(menu)
+
+	window.RegisterHook(events.Common.WindowClosing, func(e *application.WindowEvent) {
+		window.Hide()
+		e.Cancel()
+	})
 
 	if runtime.GOOS == "darwin" {
 		systemTray.SetTemplateIcon(icons.SystrayMacTemplate)
 	}
 
-	systemTray.OnClick(func() {
-		createWindow(app)
+	myMenu := app.NewMenu()
+
+	myMenu.AddSeparator()
+	myMenu.Add("Quit").OnClick(func(ctx *application.Context) {
+		app.Quit()
 	})
 
+	systemTray.SetMenu(myMenu)
+
+	systemTray.AttachWindow(window).WindowOffset(2)
 	// Run the application. This blocks until the application has been exited.
 	err := app.Run()
 
