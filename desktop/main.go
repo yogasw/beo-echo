@@ -4,6 +4,7 @@ import (
 	"context"
 	"embed"
 	"fmt"
+	"io"
 	"log"
 	"os"
 	"path/filepath"
@@ -17,6 +18,7 @@ import (
 	"beo-echo/backend/src"
 	"beo-echo/backend/src/database"
 	handlerLogs "beo-echo/backend/src/logs/handlers"
+	"beo-echo/backend/src/lib"
 	systemConfig "beo-echo/backend/src/systemConfigs"
 	"beo-echo/backend/src/utils"
 )
@@ -38,25 +40,36 @@ func NewApp() *App {
 // OnStartup is called when the app starts up. It's used to setup the application context
 func (a *App) OnStartup(ctx context.Context) {
 	a.ctx = ctx
+	
+	log.Println("🔄 OnStartup called...")
+	log.Printf("App startup context: %v", ctx)
 
 	// Initialize application directories and configurations
+	log.Println("🔄 Setting up desktop environment...")
 	if err := setupDesktopEnvironment(); err != nil {
-		log.Printf("Failed to setup desktop environment: %v", err)
-		return
+		log.Printf("❌ Failed to setup desktop environment: %v", err)
+		// Don't return early - try to continue with backend startup
 	}
 
 	// Initialize and start backend server in a goroutine
+	log.Println("🔄 Starting backend server...")
 	backendCtx, cancel := context.WithCancel(ctx)
 	a.backendCancel = cancel
 
 	go func() {
+		defer func() {
+			if r := recover(); r != nil {
+				log.Printf("❌ Backend server panic: %v", r)
+			}
+		}()
+		
 		if err := startBackendServer(backendCtx); err != nil {
-			log.Printf("Backend server error: %v", err)
+			log.Printf("❌ Backend server error: %v", err)
 		}
 	}()
 
 	// Give backend a moment to start
-	time.Sleep(1 * time.Second)
+	time.Sleep(2 * time.Second)
 	log.Println("✅ Desktop application initialized successfully")
 }
 
@@ -92,6 +105,7 @@ func setupDesktopEnvironment() error {
 	if err != nil {
 		return fmt.Errorf("failed to get executable path: %w", err)
 	}
+	log.Printf("Executable path: %s", execPath)
 	_ = filepath.Dir(execPath) // execDir not used for now
 
 	// Setup application folders in user's home directory for desktop app
@@ -128,26 +142,122 @@ func setupDesktopEnvironment() error {
 	return nil
 }
 
+// setupLogging configures logging to both console and file for better debugging
+func setupLogging() {
+	// Get user home directory for log file
+	homeDir, err := os.UserHomeDir()
+	if err != nil {
+		log.Printf("Warning: Could not get home directory for logging: %v", err)
+		return
+	}
+
+	// Create logs directory
+	logDir := filepath.Join(homeDir, ".beoecho", "logs")
+	if err := os.MkdirAll(logDir, 0755); err != nil {
+		log.Printf("Warning: Could not create log directory: %v", err)
+		return
+	}
+
+	// Create log file with timestamp
+	logFile := filepath.Join(logDir, fmt.Sprintf("desktop-%s.log", time.Now().Format("2006-01-02")))
+	file, err := os.OpenFile(logFile, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
+	if err != nil {
+		log.Printf("Warning: Could not create log file: %v", err)
+		return
+	}
+
+	// Setup multi-writer to write to both file and console
+	multiWriter := io.MultiWriter(os.Stdout, file)
+	log.SetOutput(multiWriter)
+	log.SetFlags(log.LstdFlags | log.Lshortfile)
+	
+	log.Printf("📝 Logging initialized. Log file: %s", logFile)
+}
+
+// getCurrentWorkingDir returns current working directory safely
+func getCurrentWorkingDir() string {
+	if wd, err := os.Getwd(); err == nil {
+		return wd
+	}
+	return "unknown"
+}
+
+// getExecutablePath returns executable path safely
+func getExecutablePath() string {
+	if exec, err := os.Executable(); err == nil {
+		return exec
+	}
+	return "unknown"
+}
+
 // startBackendServer initializes and starts the backend server
 func startBackendServer(ctx context.Context) error {
 	log.Println("🚀 Starting backend server...")
+	
+	// Log current environment for debugging
+	log.Printf("Current working directory: %s", getCurrentWorkingDir())
+	log.Printf("HOME: %s", os.Getenv("HOME"))
+	log.Printf("PATH: %s", os.Getenv("PATH"))
+
+	// CRITICAL FIX: Set working directory to executable's parent directory
+	// This ensures backend utilities use the correct relative paths
+	execPath, err := os.Executable()
+	if err != nil {
+		return fmt.Errorf("failed to get executable path: %w", err)
+	}
+	
+	// For macOS app bundles, we want to use the directory containing the .app
+	execDir := filepath.Dir(execPath)
+	if filepath.Base(execDir) == "MacOS" {
+		// We're inside .app/Contents/MacOS, go up to the directory containing the .app
+		execDir = filepath.Dir(filepath.Dir(filepath.Dir(execDir)))
+	}
+	
+	log.Printf("Setting working directory to: %s", execDir)
+	if err := os.Chdir(execDir); err != nil {
+		log.Printf("⚠️  Warning: Could not change to exec directory, using home/.beoecho")
+		// Fallback to ~/.beoecho if we can't use exec dir
+		homeDir, homeErr := os.UserHomeDir()
+		if homeErr != nil {
+			return fmt.Errorf("failed to get home directory: %w", homeErr)
+		}
+		fallbackDir := filepath.Join(homeDir, ".beoecho")
+		if err := os.Chdir(fallbackDir); err != nil {
+			return fmt.Errorf("failed to change to fallback directory: %w", err)
+		}
+		log.Printf("Changed working directory to fallback: %s", fallbackDir)
+	} else {
+		log.Printf("✅ Working directory set to: %s", execDir)
+	}
+	
+	// CRITICAL: Reset backend path constants after changing working directory
+	log.Println("🔄 Resetting backend path constants...")
+	lib.ResetPaths()
+	log.Printf("Updated CONFIGS_DIR: %s", lib.CONFIGS_DIR)
+	log.Printf("Updated UPLOAD_DIR: %s", lib.UPLOAD_DIR)
 
 	// Setup required directories using backend utilities
+	log.Println("🔄 Ensuring required folders and environment...")
 	if err := utils.EnsureRequiredFoldersAndEnv(); err != nil {
+		log.Printf("❌ Failed to setup required folders: %v", err)
 		return fmt.Errorf("failed to setup required folders: %w", err)
 	}
 
 	// Setup database connection
+	log.Println("🔄 Setting up database connection...")
 	if err := database.CheckAndHandle(); err != nil {
+		log.Printf("❌ Failed to setup database: %v", err)
 		return fmt.Errorf("failed to setup database: %w", err)
 	}
 
 	// Initialize default system configuration
+	log.Println("🔄 Initializing system configuration...")
 	if err := systemConfig.InitializeDefaultConfig(); err != nil {
 		log.Printf("⚠️  Warning: Failed to initialize default system configuration: %v", err)
 	}
 
 	// Initialize log service
+	log.Println("🔄 Initializing log service...")
 	handlerLogs.InitLogService()
 
 	// Create a channel to monitor server shutdown
@@ -156,7 +266,16 @@ func startBackendServer(ctx context.Context) error {
 	// Start the server in a separate goroutine
 	go func() {
 		defer close(serverDone)
+		defer func() {
+			if r := recover(); r != nil {
+				log.Printf("❌ Server startup panic: %v", r)
+				serverDone <- fmt.Errorf("server panic: %v", r)
+			}
+		}()
+		
+		log.Println("🔄 Starting HTTP server...")
 		if err := src.StartServer(); err != nil {
+			log.Printf("❌ Server startup error: %v", err)
 			serverDone <- fmt.Errorf("server startup failed: %w", err)
 		}
 	}()
@@ -168,13 +287,23 @@ func startBackendServer(ctx context.Context) error {
 		return ctx.Err()
 	case err := <-serverDone:
 		if err != nil {
+			log.Printf("❌ Backend server error: %v", err)
 			return fmt.Errorf("backend server error: %w", err)
 		}
+		log.Println("✅ Backend server started successfully")
 		return nil
 	}
 }
 
 func main() {
+	// Setup logging to file for desktop app debugging
+	setupLogging()
+	
+	log.Println("🚀 Starting BeoEcho Desktop Application...")
+	log.Printf("Current working directory: %s", getCurrentWorkingDir())
+	log.Printf("Executable path: %s", getExecutablePath())
+	log.Printf("Environment PATH: %s", os.Getenv("PATH"))
+	
 	// Create an instance of the app structure
 	app := NewApp()
 
@@ -204,6 +333,7 @@ func main() {
 	})
 
 	if err != nil {
+		log.Printf("❌ Application error: %v", err)
 		println("Error:", err.Error())
 	}
 }

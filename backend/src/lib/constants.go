@@ -15,6 +15,14 @@ var (
 	JWT_SECRET  = "" // ini from db or from env
 )
 
+// ResetPaths re-initializes all path constants based on current working directory
+// This is useful when the working directory changes after package initialization
+func ResetPaths() {
+	CONFIGS_DIR = filepath.Join(CURRENT_DIR(), "..", "configs")
+	UPLOAD_DIR = filepath.Join(CURRENT_DIR(), "uploads")
+	CANDY_DIR = filepath.Join(CONFIGS_DIR, "caddy")
+}
+
 // Server configuration
 var (
 	IS_DEBUG        = getEnvOrDefault("IS_DEBUG", "false")
