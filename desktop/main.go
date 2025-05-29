@@ -17,8 +17,8 @@ import (
 	// Backend imports
 	"beo-echo/backend/src"
 	"beo-echo/backend/src/database"
-	handlerLogs "beo-echo/backend/src/logs/handlers"
 	"beo-echo/backend/src/lib"
+	handlerLogs "beo-echo/backend/src/logs/handlers"
 	systemConfig "beo-echo/backend/src/systemConfigs"
 	"beo-echo/backend/src/utils"
 )
@@ -40,9 +40,13 @@ func NewApp() *App {
 // OnStartup is called when the app starts up. It's used to setup the application context
 func (a *App) OnStartup(ctx context.Context) {
 	a.ctx = ctx
-	
+
 	log.Println("🔄 OnStartup called...")
 	log.Printf("App startup context: %v", ctx)
+
+	// Set desktop mode for backend to use proper paths
+	log.Println("🔄 Setting desktop mode...")
+	lib.SetDesktopMode(true)
 
 	// Initialize application directories and configurations
 	log.Println("🔄 Setting up desktop environment...")
@@ -62,7 +66,7 @@ func (a *App) OnStartup(ctx context.Context) {
 				log.Printf("❌ Backend server panic: %v", r)
 			}
 		}()
-		
+
 		if err := startBackendServer(backendCtx); err != nil {
 			log.Printf("❌ Backend server error: %v", err)
 		}
@@ -106,7 +110,6 @@ func setupDesktopEnvironment() error {
 		return fmt.Errorf("failed to get executable path: %w", err)
 	}
 	log.Printf("Executable path: %s", execPath)
-	_ = filepath.Dir(execPath) // execDir not used for now
 
 	// Setup application folders in user's home directory for desktop app
 	homeDir, err := os.UserHomeDir()
@@ -133,12 +136,10 @@ func setupDesktopEnvironment() error {
 		}
 	}
 
-	// Change working directory to app data directory
-	if err := os.Chdir(appDataDir); err != nil {
-		return fmt.Errorf("failed to change working directory: %w", err)
-	}
-
+	// No need to change working directory anymore since backend uses absolute paths
 	log.Printf("✅ Desktop environment initialized in: %s", appDataDir)
+	log.Printf("Current working directory remains: %s", getCurrentWorkingDir())
+	
 	return nil
 }
 
@@ -170,7 +171,7 @@ func setupLogging() {
 	multiWriter := io.MultiWriter(os.Stdout, file)
 	log.SetOutput(multiWriter)
 	log.SetFlags(log.LstdFlags | log.Lshortfile)
-	
+
 	log.Printf("📝 Logging initialized. Log file: %s", logFile)
 }
 
@@ -193,48 +194,15 @@ func getExecutablePath() string {
 // startBackendServer initializes and starts the backend server
 func startBackendServer(ctx context.Context) error {
 	log.Println("🚀 Starting backend server...")
-	
+
 	// Log current environment for debugging
 	log.Printf("Current working directory: %s", getCurrentWorkingDir())
+	log.Printf("Backend CURRENT_DIR(): %s", lib.CURRENT_DIR())
 	log.Printf("HOME: %s", os.Getenv("HOME"))
 	log.Printf("PATH: %s", os.Getenv("PATH"))
 
-	// CRITICAL FIX: Set working directory to executable's parent directory
-	// This ensures backend utilities use the correct relative paths
-	execPath, err := os.Executable()
-	if err != nil {
-		return fmt.Errorf("failed to get executable path: %w", err)
-	}
-	
-	// For macOS app bundles, we want to use the directory containing the .app
-	execDir := filepath.Dir(execPath)
-	if filepath.Base(execDir) == "MacOS" {
-		// We're inside .app/Contents/MacOS, go up to the directory containing the .app
-		execDir = filepath.Dir(filepath.Dir(filepath.Dir(execDir)))
-	}
-	
-	log.Printf("Setting working directory to: %s", execDir)
-	if err := os.Chdir(execDir); err != nil {
-		log.Printf("⚠️  Warning: Could not change to exec directory, using home/.beoecho")
-		// Fallback to ~/.beoecho if we can't use exec dir
-		homeDir, homeErr := os.UserHomeDir()
-		if homeErr != nil {
-			return fmt.Errorf("failed to get home directory: %w", homeErr)
-		}
-		fallbackDir := filepath.Join(homeDir, ".beoecho")
-		if err := os.Chdir(fallbackDir); err != nil {
-			return fmt.Errorf("failed to change to fallback directory: %w", err)
-		}
-		log.Printf("Changed working directory to fallback: %s", fallbackDir)
-	} else {
-		log.Printf("✅ Working directory set to: %s", execDir)
-	}
-	
-	// CRITICAL: Reset backend path constants after changing working directory
-	log.Println("🔄 Resetting backend path constants...")
-	lib.ResetPaths()
-	log.Printf("Updated CONFIGS_DIR: %s", lib.CONFIGS_DIR)
-	log.Printf("Updated UPLOAD_DIR: %s", lib.UPLOAD_DIR)
+	// Since we set desktop mode, the backend will automatically use user home/.beoecho
+	// No need to change working directory manually anymore
 
 	// Setup required directories using backend utilities
 	log.Println("🔄 Ensuring required folders and environment...")
@@ -272,7 +240,7 @@ func startBackendServer(ctx context.Context) error {
 				serverDone <- fmt.Errorf("server panic: %v", r)
 			}
 		}()
-		
+
 		log.Println("🔄 Starting HTTP server...")
 		if err := src.StartServer(); err != nil {
 			log.Printf("❌ Server startup error: %v", err)
@@ -298,12 +266,12 @@ func startBackendServer(ctx context.Context) error {
 func main() {
 	// Setup logging to file for desktop app debugging
 	setupLogging()
-	
+
 	log.Println("🚀 Starting BeoEcho Desktop Application...")
 	log.Printf("Current working directory: %s", getCurrentWorkingDir())
 	log.Printf("Executable path: %s", getExecutablePath())
 	log.Printf("Environment PATH: %s", os.Getenv("PATH"))
-	
+
 	// Create an instance of the app structure
 	app := NewApp()
 
