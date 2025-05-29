@@ -2,8 +2,8 @@ package main
 
 import (
 	"embed"
-	_ "embed"
 	"log"
+	"os"
 	"time"
 
 	"github.com/wailsapp/wails/v3/pkg/application"
@@ -21,17 +21,25 @@ var assets embed.FS
 // and starts a goroutine that emits a time-based event every second. It subsequently runs the application and
 // logs any error that might occur.
 func main() {
+	// Setup logging to file for desktop app debugging
+	setupLogging()
+
+	log.Println("🚀 Starting BeoEcho Desktop Application...")
+	log.Printf("Current working directory: %s", getCurrentWorkingDir())
+	log.Printf("Executable path: %s", getExecutablePath())
+	log.Printf("Environment PATH: %s", os.Getenv("PATH"))
 
 	// Create a new Wails application by providing the necessary options.
 	// Variables 'Name' and 'Description' are for application metadata.
 	// 'Assets' configures the asset server with the 'FS' variable pointing to the frontend files.
 	// 'Bind' is a list of Go struct instances. The frontend has access to the methods of these instances.
 	// 'Mac' options tailor the application when running an macOS.
+
 	app := application.New(application.Options{
 		Name:        "BeoEcho",
 		Description: "Desktop API Mocking Service",
 		Services: []application.Service{
-			application.NewService(&BackendService{}),
+			application.NewService(NewBackendService(), application.ServiceOptions{}),
 		},
 		Assets: application.AssetOptions{
 			Handler: application.AssetFileServerFS(assets),
