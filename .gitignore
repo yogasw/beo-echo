@@ -16,9 +16,9 @@ yarn-error.log*
 
 # Build outputs
 dist/
-build/
 out/
 .next/
+frontend/build/
 
 # Coverage directory
 coverage/

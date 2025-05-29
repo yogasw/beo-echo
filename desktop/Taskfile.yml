@@ -1,10 +1,10 @@
 version: '3'
 
 includes:
-  common: ./app/Taskfile.yml
-  windows: ./app/windows/Taskfile.yml
-  darwin: ./app/darwin/Taskfile.yml
-  linux: ./app/linux/Taskfile.yml
+  common: ./build/Taskfile.yml
+  windows: ./build/windows/Taskfile.yml
+  darwin: ./build/darwin/Taskfile.yml
+  linux: ./build/linux/Taskfile.yml
 
 vars:
   APP_NAME: "myfirstapp"
@@ -30,4 +30,4 @@ tasks:
   dev:
     summary: Runs the application in development mode
     cmds:
-      - wails3 dev -config ./app/config.yml -port {{.VITE_PORT}}
+      - wails3 dev -config ./build/config.yml -port {{.VITE_PORT}}
