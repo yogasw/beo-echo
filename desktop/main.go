@@ -2,6 +2,7 @@ package main
 
 import (
 	"embed"
+	"fmt"
 	"log"
 	"os"
 	"runtime"
@@ -12,31 +13,66 @@ import (
 	"github.com/wailsapp/wails/v3/pkg/icons"
 )
 
-var windowShowing bool
+var (
+	windowShowing bool
+	currentWindow *application.WebviewWindow
+	app           *application.App
+)
 
-func createWindow(app *application.App) {
-	if windowShowing {
-		return
-	}
+func createWindow(app *application.App) *application.WebviewWindow {
 	// Log the time taken to create the window
 	window := app.NewWebviewWindowWithOptions(application.WebviewWindowOptions{
 		Name:            "BeoEcho",
 		AlwaysOnTop:     false,
-		Hidden:          true,
+		Hidden:          false,
 		Frameless:       false,
-		DevToolsEnabled: true,
+		DevToolsEnabled: false,
 		Windows: application.WindowsWindow{
 			HiddenOnTaskbar: true,
 		},
 	})
 
-	windowShowing = true
-
 	window.OnWindowEvent(events.Common.WindowClosing, func(e *application.WindowEvent) {
+		fmt.Println("Window closing event triggered")
 		windowShowing = false
+		currentWindow = nil
+	})
+
+	window.OnWindowEvent(events.Common.WindowMinimise, func(e *application.WindowEvent) {
+		fmt.Println("Window minimise event triggered")
+		windowShowing = true
+	})
+	window.OnWindowEvent(events.Common.WindowUnMinimise, func(e *application.WindowEvent) {
+		fmt.Println("Window unminimise event triggered")
+		windowShowing = true
 	})
 
 	window.Show()
+	return window
+}
+
+// checkAndShowWindow checks if a window exists and is showing, creates one if needed
+func checkAndShowWindow() {
+	if currentWindow == nil || !windowShowing {
+		fmt.Println("Creating new window")
+		currentWindow = createWindow(app)
+		windowShowing = true
+		app.Show()
+	} else {
+		fmt.Println("Showing existing window")
+		currentWindow.Show()
+		app.Show()
+	}
+}
+
+// hideWindow hides the current window if it exists
+func hideWindow() {
+	if currentWindow != nil && windowShowing {
+		fmt.Println("Hiding window")
+		currentWindow.Hide()
+		app.Hide()
+		windowShowing = false
+	}
 }
 
 // Wails uses Go's `embed` package to embed the frontend files into the binary.
@@ -65,7 +101,7 @@ func main() {
 	// 'Bind' is a list of Go struct instances. The frontend has access to the methods of these instances.
 	// 'Mac' options tailor the application when running an macOS.
 	backendService := NewBackendService()
-	app := application.New(application.Options{
+	app = application.New(application.Options{
 		Name:        "BeoEcho",
 		Description: "Desktop API Mocking Service",
 		Services: []application.Service{
@@ -81,22 +117,6 @@ func main() {
 			ActivationPolicy: application.ActivationPolicyAccessory,
 		},
 	})
-
-	// Create a new window with the necessary options.
-	// 'Title' is the title of the window.
-	// 'Mac' options tailor the window when running on macOS.
-	// 'BackgroundColour' is the background colour of the window.
-	// 'URL' is the URL that will be loaded into the webview.
-	// app.NewWebviewWindowWithOptions(application.WebviewWindowOptions{
-	// 	Title: "Window 1",
-	// 	Mac: application.MacWindow{
-	// 		InvisibleTitleBarHeight: 50,
-	// 		Backdrop:                application.MacBackdropTranslucent,
-	// 		TitleBar:                application.MacTitleBarHiddenInset,
-	// 	},
-	// 	BackgroundColour: application.NewRGB(27, 38, 54),
-	// 	URL:              "/",
-	// })
 
 	// Create a goroutine that emits an event containing the current time every second.
 	// The frontend can listen to this event and update the UI accordingly.
@@ -120,8 +140,16 @@ func main() {
 	}
 
 	systemTray.OnClick(func() {
-		createWindow(app)
+		if windowShowing {
+			hideWindow()
+		} else {
+			checkAndShowWindow()
+		}
 	})
+
+	// Create initial window
+	currentWindow = createWindow(app)
+	windowShowing = true
 
 	err := app.Run()
 	if err != nil {
