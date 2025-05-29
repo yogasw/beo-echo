@@ -68,5 +68,7 @@ desktop2/build/
 desktop2/frontend/
 desktop2/app
 
+desktop/frontend/
+
 configs
 tmp/*
