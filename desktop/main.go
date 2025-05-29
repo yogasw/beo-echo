@@ -4,9 +4,12 @@ import (
 	"embed"
 	"log"
 	"os"
+	"runtime"
 	"time"
 
 	"github.com/wailsapp/wails/v3/pkg/application"
+	"github.com/wailsapp/wails/v3/pkg/events"
+	"github.com/wailsapp/wails/v3/pkg/icons"
 )
 
 // Wails uses Go's `embed` package to embed the frontend files into the binary.
@@ -16,6 +19,31 @@ import (
 
 //go:embed all:frontend
 var assets embed.FS
+
+var windowShowing bool
+
+func createWindow(app *application.App) {
+	if windowShowing {
+		return
+	}
+	// Log the time taken to create the window
+	window := app.NewWebviewWindowWithOptions(application.WebviewWindowOptions{
+		Name:             "BeoEcho",
+		AlwaysOnTop:      true,
+		Hidden:           true,
+		BackgroundColour: application.NewRGB(33, 37, 41),
+		Windows: application.WindowsWindow{
+			HiddenOnTaskbar: true,
+		},
+	})
+	windowShowing = true
+
+	window.OnWindowEvent(events.Common.WindowClosing, func(e *application.WindowEvent) {
+		windowShowing = false
+	})
+
+	window.Show()
+}
 
 // main function serves as the application's entry point. It initializes the application, creates a window,
 // and starts a goroutine that emits a time-based event every second. It subsequently runs the application and
@@ -44,8 +72,11 @@ func main() {
 		Assets: application.AssetOptions{
 			Handler: application.AssetFileServerFS(assets),
 		},
+		Windows: application.WindowsOptions{
+			DisableQuitOnLastWindowClosed: true,
+		},
 		Mac: application.MacOptions{
-			ApplicationShouldTerminateAfterLastWindowClosed: true,
+			ActivationPolicy: application.ActivationPolicyAccessory,
 		},
 	})
 
@@ -74,6 +105,21 @@ func main() {
 			time.Sleep(time.Second)
 		}
 	}()
+
+	systemTray := app.NewSystemTray()
+	menu := app.NewMenu()
+	menu.Add("Quit").OnClick(func(data *application.Context) {
+		app.Quit()
+	})
+	systemTray.SetMenu(menu)
+
+	if runtime.GOOS == "darwin" {
+		systemTray.SetTemplateIcon(icons.SystrayMacTemplate)
+	}
+
+	systemTray.OnClick(func() {
+		createWindow(app)
+	})
 
 	// Run the application. This blocks until the application has been exited.
 	err := app.Run()
