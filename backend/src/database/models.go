@@ -324,24 +324,22 @@ const (
 )
 
 // Replay stores a preset request configuration to be executed for testing or mocking purposes.
-// It supports multiple protocols and is organized under folders per project.
+// Simplified model for easier management and API interaction.
 type Replay struct {
 	ID        string  `gorm:"primaryKey;type:TEXT" json:"id"`   // Unique identifier (UUID)
 	Name      string  `json:"name"`                             // User-defined name for this replay
 	ProjectID string  `gorm:"index;not null" json:"project_id"` // Project scoping
 	FolderID  *string `gorm:"index" json:"folder_id"`           // Optional folder location
 
-	Protocol   ReplayProtocol `gorm:"not null" json:"protocol"` // Protocol: http, grpc, ws, graphql, etc.
-	Method     string         `gorm:"size:20" json:"method"`    // HTTP method or RPC action (e.g., POST, GET, INVOKE)
-	Url        string         `json:"url"`                      // Target URL or endpoint
-	Service    string         `json:"service"`                  // gRPC service name (optional)
-	MethodName string         `json:"method_name"`              // gRPC method name (optional)
+	Protocol ReplayProtocol `gorm:"not null;default:'http'" json:"protocol"` // Protocol: http, https (simplified to HTTP only for now)
+	Method   string         `gorm:"size:20;not null" json:"method"`          // HTTP method (GET, POST, PUT, DELETE, etc.)
+	Url      string         `gorm:"not null" json:"url"`                     // Target URL or endpoint
 
-	Headers  string `gorm:"type:text" json:"headers"`  // Headers as key-value pairs
-	Payload  string `gorm:"type:text" json:"payload"`  // Request payload
-	Metadata string `gorm:"type:text" json:"metadata"` // Optional metadata (e.g., tags, retries)
+	Config   string `gorm:"type:text" json:"config"`   // Additional configuration (e.g. timeout, retries) as JSON string
+	Metadata string `gorm:"type:text" json:"metadata"` // Additional metadata (e.g. tags, notes) as JSON string
 
-	Path []string `gorm:"type:json" json:"path"` // Folder path in array form (for UI or indexing)
+	Headers string `gorm:"type:text" json:"headers"` // Headers as JSON string (key-value pairs)
+	Payload string `gorm:"type:text" json:"payload"` // Request payload/body
 
 	CreatedAt time.Time `gorm:"autoCreateTime" json:"created_at"` // Timestamp of creation
 	UpdatedAt time.Time `gorm:"autoUpdateTime" json:"updated_at"` // Timestamp of last update

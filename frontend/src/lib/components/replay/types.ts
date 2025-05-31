@@ -1,6 +1,6 @@
 
 // Tab management
-interface Tab {
+export interface Tab {
     id: string;
     name: string;
     method: string;
@@ -9,31 +9,31 @@ interface Tab {
 }
 
 // Data structures for tab components
-interface Param {
+export interface Param {
     key: string;
     value: string;
     description: string;
     enabled: boolean;
 }
 
-interface Header {
+export interface Header {
     key: string;
     value: string;
     description: string;
     enabled: boolean;
 }
 
-interface AuthConfig {
+export interface AuthConfig {
     type: string;
     config: Record<string, any>;
 }
 
-interface ScriptConfig {
+export interface ScriptConfig {
     preRequestScript: string;
     testScript: string;
 }
 
-interface SettingsConfig {
+export interface SettingsConfig {
     timeout: number;
     followRedirects: boolean;
     maxRedirects: number;

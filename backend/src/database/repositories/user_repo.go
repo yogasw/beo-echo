@@ -2,20 +2,19 @@ package repositories
 
 import (
 	"beo-echo/backend/src/database"
-	"beo-echo/backend/src/users"
 	"context"
 
 	"golang.org/x/crypto/bcrypt"
 	"gorm.io/gorm"
 )
 
-// userRepository implements users.UserRepository
+// UserRepository implements users.UserRepository
 type userRepository struct {
 	db *gorm.DB
 }
 
 // NewUserRepository creates a new user repository
-func NewUserRepository(db *gorm.DB) users.UserRepository {
+func NewUserRepository(db *gorm.DB) *userRepository {
 	return &userRepository{db: db}
 }
 

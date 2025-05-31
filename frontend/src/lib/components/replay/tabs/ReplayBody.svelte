@@ -1,6 +1,7 @@
 <script lang="ts">
 	// Effect for MutationObserver and initial check
 	$effect(() => {});
+	let { payload }: { payload?: string } = $props();
 </script>
 
 <!-- Body section -->

@@ -26,7 +26,6 @@ import (
 	"beo-echo/backend/src/health"
 	"beo-echo/backend/src/lib"
 	"beo-echo/backend/src/middlewares"
-	"beo-echo/backend/src/replay"
 	"beo-echo/backend/src/users"
 	"beo-echo/backend/src/utils"
 	"beo-echo/backend/src/workspaces"
@@ -34,6 +33,8 @@ import (
 	// New imports for auth and workspace management
 	authHandler "beo-echo/backend/src/auth/handler"
 	handlerLogs "beo-echo/backend/src/logs/handlers"
+	replayHandler "beo-echo/backend/src/replay/handlers"
+	replayServices "beo-echo/backend/src/replay/services"
 	systemConfigHandler "beo-echo/backend/src/systemConfigs/handler"
 )
 
@@ -116,8 +117,8 @@ func SetupRouter() *gin.Engine {
 
 	// Initialize replay service and handler
 	replayRepo := repositories.NewReplayRepository(database.DB)
-	replayService := replay.NewReplayService(replayRepo)
-	replayHandler := replay.NewReplayHandler(replayService)
+	replayService := replayServices.NewReplayService(replayRepo)
+	replayHandler := replayHandler.NewReplayHandler(replayService)
 
 	// Authentication routes
 	router.POST("/api/auth/login", authHandler.LoginHandler)
@@ -237,12 +238,13 @@ func SetupRouter() *gin.Engine {
 				projectRoutes.DELETE("/logs/bookmark/:bookmarkId", handlerLogs.DeleteBookmarkHandler)
 
 				// Replay management
-				projectRoutes.GET("/replays", replayHandler.ListReplays)
-				projectRoutes.POST("/replays", replayHandler.CreateReplay)
-				projectRoutes.GET("/replays/:replayId", replayHandler.GetReplay)
-				projectRoutes.POST("/replays/:replayId/execute", replayHandler.ExecuteReplay)
-				projectRoutes.DELETE("/replays/:replayId", replayHandler.DeleteReplay)
-				projectRoutes.GET("/replays/:replayId/logs", replayHandler.GetReplayLogs)
+				projectRoutes.GET("/replays", replayHandler.ListReplaysHandler)
+				projectRoutes.POST("/replays", replayHandler.CreateReplayHandler)
+				projectRoutes.GET("/replays/:replayId", replayHandler.GetReplayHandler)
+				projectRoutes.PUT("/replays/:replayId", replayHandler.UpdateReplayHandler)
+				projectRoutes.POST("/replays/execute", replayHandler.ExecuteReplayHandler)
+				projectRoutes.DELETE("/replays/:replayId", replayHandler.DeleteReplayHandler)
+				projectRoutes.GET("/replays/:replayId/logs", replayHandler.GetReplayLogsHandler)
 
 			}
 		}

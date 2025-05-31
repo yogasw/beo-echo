@@ -39,7 +39,7 @@ func (s *ReplayService) CreateReplay(ctx context.Context, projectID string, req 
 		return nil, fmt.Errorf("project not found: %w", err)
 	}
 
-	// Convert headers and metadata to JSON
+	// Convert headers to JSON
 	headersJSON, err := json.Marshal(req.Headers)
 	if err != nil {
 		log.Error().
@@ -48,6 +48,7 @@ func (s *ReplayService) CreateReplay(ctx context.Context, projectID string, req 
 		return nil, fmt.Errorf("invalid headers format: %w", err)
 	}
 
+	// Connvert metadata to JSON
 	metadataJSON, err := json.Marshal(req.Metadata)
 	if err != nil {
 		log.Error().
@@ -55,20 +56,26 @@ func (s *ReplayService) CreateReplay(ctx context.Context, projectID string, req 
 			Msg("failed to marshal metadata")
 		return nil, fmt.Errorf("invalid metadata format: %w", err)
 	}
+	// Convert config to JSON
+	configJSON, err := json.Marshal(req.Config)
+	if err != nil {
+		log.Error().
+			Err(err).
+			Msg("failed to marshal config")
+		return nil, fmt.Errorf("invalid config format: %w", err)
+	}
 
 	replay := &database.Replay{
-		Name:       name,
-		ProjectID:  projectID,
-		FolderID:   req.FolderID,
-		Protocol:   database.ReplayProtocol(strings.ToLower(req.Protocol)),
-		Method:     strings.ToUpper(req.Method),
-		Url:        req.Url,
-		Service:    req.Service,
-		MethodName: req.MethodName,
-		Headers:    string(headersJSON),
-		Payload:    req.Payload,
-		Metadata:   string(metadataJSON),
-		Path:       req.Path,
+		Name:      name,
+		ProjectID: projectID,
+		FolderID:  req.FolderID,
+		Protocol:  database.ReplayProtocol(strings.ToLower(req.Protocol)),
+		Method:    strings.ToUpper(req.Method),
+		Url:       req.Url,
+		Headers:   string(headersJSON),
+		Payload:   req.Payload,
+		Metadata:  string(metadataJSON),
+		Config:    string(configJSON),
 	}
 
 	err = s.repo.Create(ctx, replay)
