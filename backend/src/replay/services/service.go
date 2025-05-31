@@ -43,26 +43,50 @@ func NewReplayService(repo ReplayRepository) *ReplayService {
 
 // CreateReplayRequest represents the request payload for creating a replay
 type CreateReplayRequest struct {
-	Name       string            `json:"name"`
-	FolderID   *string           `json:"folder_id"`
-	Protocol   string            `json:"protocol" binding:"required"`
-	Method     string            `json:"method" binding:"required"`
-	Url        string            `json:"url" binding:"required"`
-	Service    string            `json:"service"`
-	MethodName string            `json:"method_name"`
-	Headers    map[string]string `json:"headers"`
-	Payload    string            `json:"payload"`
-	Metadata   map[string]string `json:"metadata"`
-	Path       []string          `json:"path"`
+	Name     string            `json:"name"`
+	FolderID *string           `json:"folder_id"`
+	Protocol string            `json:"protocol" binding:"required"`
+	Method   string            `json:"method" binding:"required"`
+	Url      string            `json:"url" binding:"required"`
+	Headers  map[string]string `json:"headers"`
+	Payload  string            `json:"payload"`
+	Metadata map[string]string `json:"metadata"` // Additional protocol-specific metadata
+	Config   map[string]string `json:"config"`   // Optional configuration for specific protocols
+}
+
+// UpdateReplayRequest represents the request payload for updating a replay
+type UpdateReplayRequest struct {
+	Name     *string            `json:"name"`
+	FolderID *string            `json:"folder_id"`
+	Protocol *string            `json:"protocol"`
+	Method   *string            `json:"method"`
+	Url      *string            `json:"url"`
+	Headers  *map[string]string `json:"headers"`
+	Payload  *string            `json:"payload"`
+	Metadata map[string]string  `json:"metadata"` // Additional protocol-specific metadata
+	Config   map[string]string  `json:"config"`   // Optional configuration for specific protocols
+}
+
+// ExecuteReplayRequest represents the request payload for executing a replay test
+type ExecuteReplayRequest struct {
+	Protocol string            `json:"protocol" binding:"required"` // http, https, ws, grpc
+	Method   string            `json:"method" binding:"required"`   // HTTP method or operation type
+	URL      string            `json:"url" binding:"required"`      // Target URL
+	Headers  map[string]string `json:"headers"`                     // Request headers
+	Body     string            `json:"body"`                        // Request body/payload
+	Query    map[string]string `json:"query"`                       // Query parameters
+	Metadata map[string]string `json:"metadata"`                    // Additional protocol-specific metadata
 }
 
 // ExecuteReplayResponse represents the response from executing a replay
 type ExecuteReplayResponse struct {
 	ReplayID        string            `json:"replay_id"`
 	StatusCode      int               `json:"status_code"`
+	StatusText      string            `json:"status_text"`
 	ResponseBody    string            `json:"response_body"`
 	ResponseHeaders map[string]string `json:"response_headers"`
 	LatencyMS       int               `json:"latency_ms"`
+	Size            int64             `json:"size"`
 	Error           string            `json:"error,omitempty"`
 	LogID           string            `json:"log_id"`
 }

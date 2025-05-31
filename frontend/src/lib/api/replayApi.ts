@@ -1,8 +1,8 @@
-
 import { apiClient } from './apiClient';
 import type { 
 	Replay, 
-	CreateReplayRequest, 
+	CreateReplayRequest,
+	UpdateReplayRequest, 
 	ListReplaysResponse, 
 	ExecuteReplayResponse,
 	ListReplayLogsResponse
@@ -47,6 +47,22 @@ export class ReplayApi {
 	}
 
 	/**
+	 * Update an existing replay
+	 */
+	static async updateReplay(
+		workspaceId: string, 
+		projectId: string, 
+		replayId: string,
+		replayData: UpdateReplayRequest
+	): Promise<{ replay: Replay; message: string }> {
+		const response = await apiClient.put(
+			`/workspaces/${workspaceId}/projects/${projectId}/replays/${replayId}`,
+			replayData
+		);
+		return response.data;
+	}
+
+	/**
 	 * Execute a replay
 	 */
 	static async executeReplay(
@@ -58,6 +74,28 @@ export class ReplayApi {
 			`/workspaces/${workspaceId}/projects/${projectId}/replays/${replayId}/execute`
 		);
 		return response.data;
+	}
+
+	/**
+	 * Execute a replay request directly (without saving)
+	 */
+	static async executeReplayRequest(
+		workspaceId: string,
+		projectId: string,
+		requestData: {
+			protocol: string;
+			method: string;
+			url: string;
+			headers?: Record<string, string>;
+			body?: string;
+			query?: Record<string, string>;
+		}
+	): Promise<ExecuteReplayResponse> {
+		const response = await apiClient.post(
+			`/workspaces/${workspaceId}/projects/${projectId}/replays/execute`,
+			requestData
+		);
+		return response.data?.result;
 	}
 
 	/**

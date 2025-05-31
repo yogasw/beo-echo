@@ -7,6 +7,7 @@
     "start": "PORT=3005 node build",
     "dev": "vite dev --host 0.0.0.0 --port 3005",
     "build": "vite build",
+    "build:desktop": "VITE_DESKTOP_MODE=true vite build",
     "preview": "vite preview",
     "prepare": "svelte-kit sync || echo ''",
     "check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",

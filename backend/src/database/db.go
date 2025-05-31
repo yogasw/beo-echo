@@ -23,6 +23,26 @@ func CheckAndHandle() error {
 	dbURL := os.Getenv("DATABASE_URL")
 	var err error
 
+	// Set default log level to Silent, but allow overriding via DB_LOG_LEVEL env var
+	// Valid values: "silent", "error", "warn", "info"
+	logLevelStr := strings.ToLower(os.Getenv("DB_LOG_LEVEL"))
+	logLevel := logger.Silent // Default to silent
+
+	// Configure log level based on environment variable if set
+	switch logLevelStr {
+	case "info":
+		logLevel = logger.Info
+	case "warn":
+		logLevel = logger.Warn
+	case "error":
+		logLevel = logger.Error
+	}
+
+	// Force silent logging during tests to suppress SQL query logs
+	if os.Getenv("GO_TEST") == "1" {
+		logLevel = logger.Silent
+	}
+
 	// Check if the database URL is empty or contains "sqlite"
 	if dbURL == "" || strings.Contains(strings.ToLower(dbURL), "sqlite") {
 		// If no URL is provided or if it contains "sqlite", use SQLite
@@ -68,13 +88,17 @@ func CheckAndHandle() error {
 
 		// Open SQLite database connection
 		DB, err = gorm.Open(sqlite.Open(sqlitePath), &gorm.Config{
-			Logger: logger.Default.LogMode(logger.Info),
+			Logger: logger.Default.LogMode(logLevel),
+			// Disable SQL logs in tests
+			DisableForeignKeyConstraintWhenMigrating: os.Getenv("GO_TEST") == "1",
 		})
 	} else {
 		// Use PostgreSQL for all other database URLs
 		log.Println("Using PostgreSQL database")
 		DB, err = gorm.Open(postgres.Open(dbURL), &gorm.Config{
-			Logger: logger.Default.LogMode(logger.Info),
+			Logger: logger.Default.LogMode(logLevel),
+			// Disable SQL logs in tests
+			DisableForeignKeyConstraintWhenMigrating: os.Getenv("GO_TEST") == "1",
 		})
 	}
 	if err != nil {
@@ -83,6 +107,7 @@ func CheckAndHandle() error {
 
 	DB.AutoMigrate(&ProxyTarget{})
 	DB.AutoMigrate(&Project{})
+	DB.AutoMigrate(&Replay{})
 
 	// Auto migrate the models
 	if err := DB.AutoMigrate(
@@ -96,7 +121,6 @@ func CheckAndHandle() error {
 		&Workspace{},
 		&UserWorkspace{},
 		&SSOConfig{},
-		&Replay{},
 		&ReplayFolder{},
 	); err != nil {
 		return errors.New("Failed to migrate database schema: " + err.Error())

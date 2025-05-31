@@ -1,7 +1,8 @@
 import type { User } from '$lib/types/User';
+import { getApiBaseUrl } from './desktopConfig';
 
-// Define API base URL
-export const BASE_URL_API = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3600/api';
+// Define API base URL with desktop mode support
+export const BASE_URL_API = getApiBaseUrl();
 
 /**
  * Fetch full user profile including ownership status

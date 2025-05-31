@@ -9,19 +9,19 @@ import (
 )
 
 // RuleRepository handles CRUD operations for rules
-type RuleRepository struct {
+type ruleRepository struct {
 	db *gorm.DB
 }
 
 // NewRuleRepository creates a new rule repository that implements the required interface
-func NewRuleRepository(db *gorm.DB) *RuleRepository {
-	return &RuleRepository{
+func NewRuleRepository(db *gorm.DB) *ruleRepository {
+	return &ruleRepository{
 		db: db,
 	}
 }
 
 // FindRulesByResponseID gets all rules for a response
-func (r *RuleRepository) FindRulesByResponseID(responseID string) ([]database.MockRule, error) {
+func (r *ruleRepository) FindRulesByResponseID(responseID string) ([]database.MockRule, error) {
 	var rules []database.MockRule
 	result := r.db.Where("response_id = ?", responseID).Find(&rules)
 	if result.Error != nil {
@@ -31,7 +31,7 @@ func (r *RuleRepository) FindRulesByResponseID(responseID string) ([]database.Mo
 }
 
 // FindRuleByID gets a rule by ID
-func (r *RuleRepository) FindRuleByID(ruleID string) (*database.MockRule, error) {
+func (r *ruleRepository) FindRuleByID(ruleID string) (*database.MockRule, error) {
 	var rule database.MockRule
 	result := r.db.Where("id = ?", ruleID).First(&rule)
 	if result.Error != nil {
@@ -41,7 +41,7 @@ func (r *RuleRepository) FindRuleByID(ruleID string) (*database.MockRule, error)
 }
 
 // CreateRule creates a new rule
-func (r *RuleRepository) CreateRule(rule *database.MockRule) error {
+func (r *ruleRepository) CreateRule(rule *database.MockRule) error {
 	// Check if response exists
 	var response database.MockResponse
 	if result := r.db.Where("id = ?", rule.ResponseID).First(&response); result.Error != nil {
@@ -69,16 +69,16 @@ func (r *RuleRepository) CreateRule(rule *database.MockRule) error {
 }
 
 // UpdateRule updates an existing rule
-func (r *RuleRepository) UpdateRule(rule *database.MockRule) error {
+func (r *ruleRepository) UpdateRule(rule *database.MockRule) error {
 	return r.db.Save(rule).Error
 }
 
 // DeleteRule deletes a rule by ID
-func (r *RuleRepository) DeleteRule(ruleID string) error {
+func (r *ruleRepository) DeleteRule(ruleID string) error {
 	return r.db.Delete(&database.MockRule{}, "id = ?", ruleID).Error
 }
 
 // DeleteRulesByResponseID deletes all rules for a response
-func (r *RuleRepository) DeleteRulesByResponseID(responseID string) error {
+func (r *ruleRepository) DeleteRulesByResponseID(responseID string) error {
 	return r.db.Delete(&database.MockRule{}, "response_id = ?", responseID).Error
 }

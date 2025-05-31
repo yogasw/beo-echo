@@ -24,7 +24,7 @@ func (r *workspaceRepository) GetAllWorkspaces(ctx context.Context) ([]database.
 }
 
 // NewWorkspaceRepository creates a new workspace repository
-func NewWorkspaceRepository(db *gorm.DB) workspaces.WorkspaceRepository {
+func NewWorkspaceRepository(db *gorm.DB) *workspaceRepository {
 	return &workspaceRepository{db: db}
 }
 

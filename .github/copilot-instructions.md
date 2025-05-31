@@ -45,9 +45,90 @@ This project is a Beo Echo API mocking service with a Golang backend and Svelte 
 ├── .github/           # GitHub Actions and workflows
 ├── .vscode/           # VSCode settings
 ├── backend/           # Golang Backend (BE)
+├── desktop/           # Desktop Application (Wails v3)
 ├── docs/              # Documentation files
 └── frontend/          # Svelte Frontend (FE) (version 5)
 ```
+
+## Desktop Application Development
+
+### Building and Running the Desktop App
+
+The desktop application is built using **Wails v3** with a Go backend and Svelte frontend integration.
+
+#### Development Mode
+```bash
+# Navigate to desktop directory
+cd desktop
+
+# Run in development mode with hot reload
+wails3 dev
+```
+
+#### Production Build and Package
+```bash
+# Navigate to desktop directory
+cd desktop
+
+# Package the application for production
+wails3 package
+
+# The packaged app will be created at:
+# desktop/bin/BeoEcho.app (macOS)
+# desktop/bin/BeoEcho.exe (Windows)
+# desktop/bin/BeoEcho (Linux)
+```
+
+#### Opening the Packaged Application
+```bash
+# On macOS
+open desktop/bin/BeoEcho.app
+
+# On Windows
+desktop/bin/BeoEcho.exe
+
+# On Linux
+./desktop/bin/BeoEcho
+```
+
+#### Desktop App Structure
+```
+desktop/
+├── main.go              # Go backend entry point
+├── service.go           # Desktop service layer
+├── go.mod              # Go dependencies
+├── Taskfile.yml        # Build tasks
+├── build/              # Build configuration
+│   ├── appicon.png     # Application icon
+│   ├── config.yml      # Wails configuration
+│   └── darwin/         # macOS specific configs
+│       └── Info.plist  # macOS bundle information
+├── frontend/           # Built frontend assets (auto-generated)
+└── bin/               # Compiled binaries
+    └── BeoEcho.app    # Packaged application
+```
+
+#### Desktop Development Notes
+- The desktop app integrates with the main backend services
+- Uses the same Svelte frontend with desktop-specific adaptations
+- Configuration managed through `desktop/build/config.yml`
+- macOS bundle settings in `desktop/build/darwin/Info.plist`
+- For dock/taskbar issues on macOS, ensure `LSUIElement` is set to `false` in Info.plist
+
+#### Troubleshooting Desktop App
+1. **Dock clicking issues on macOS**: 
+   - Check `desktop/build/darwin/Info.plist` configuration
+   - Ensure `LSUIElement` is set to `false`
+   - Rebuild with `wails3 package`
+
+2. **Development hot reload not working**:
+   - Use `wails3 dev` instead of `wails3 build`
+   - Check that frontend dependencies are installed
+
+3. **App not launching**:
+   - Verify the binary exists in `desktop/bin/`
+   - Check console logs for error messages
+   - Ensure all dependencies are properly built
 
 ## Technology Stack
 

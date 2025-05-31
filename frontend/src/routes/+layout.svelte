@@ -17,6 +17,9 @@
 	import { projects } from '$lib/stores/configurations';
 	import Toast from '$lib/components/Toast.svelte';
 	import { isAuthenticated, auth } from '$lib/stores/auth';
+	import DesktopMenuBar from '$lib/components/desktop/DesktopMenuBar.svelte';
+	import BackendStatus from '$lib/components/desktop/BackendStatus.svelte';
+	import { isDesktopMode } from '$lib/utils/desktopConfig';
 
 	let searchTerm = '';
 	let activeTab = 'routes';
@@ -139,12 +142,23 @@
 {#if isLoginPage || !$isAuthenticated}
 	<slot />
 {:else}
-	<div class="min-h-screen w-full theme-bg-tertiary theme-text-primary font-sans transition-colors">
+	<!-- Desktop Menu Bar (only shown in desktop mode) -->
+	{#if isDesktopMode()}
+		<DesktopMenuBar />
+	{/if}
+	
+	<div class="min-h-screen w-full theme-bg-tertiary theme-text-primary font-sans transition-colors {isDesktopMode() ? 'pt-8' : ''}">
 		<div class="mx-auto flex h-screen">
 			<ProjectList {searchTerm} />
 
 			<div class="flex-1 flex flex-col overflow-hidden">
 				<Header on:tabChange={handleTabChange} {handleLogout} />
+				
+				<!-- Backend Status (only shown in desktop mode) -->
+				{#if isDesktopMode()}
+					<BackendStatus />
+				{/if}
+				
 				<div class="flex-1 overflow-auto theme-bg-primary">
 					<slot {activeTab} />
 				</div>
