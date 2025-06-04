@@ -1,6 +1,8 @@
 
 # Beo Echo
 
+> ⚠️ **AI-Generated Code Notice**: A significant portion of this codebase was generated using GitHub Copilot AI agent. While thoroughly tested, users should be aware that any bugs or issues arising from AI-generated code are not the responsibility of the original creator. Please report issues and contribute fixes as needed.
+
 Beo Echo is a powerful API mocking service with a robust Golang backend and sleek Svelte frontend. It serves as a comprehensive control panel for creating, managing, and monitoring mock APIs and request forwarding, similar to popular tools like Beeceptor and Mockoon.
 
 ## 🌟 Project Overview
@@ -10,6 +12,32 @@ Beo Echo provides a user-friendly interface for:
 - Forwarding requests to existing endpoints
 - Real-time request logging and inspection
 - API behavior management with multiple response types
+
+## 🚀 How to Run
+
+### Using Docker (Recommended)
+
+Run Beo Echo using the pre-built Docker image:
+
+```bash
+docker run -d \
+  --platform linux/amd64 \
+  -p 8080:80 \
+  -v $(pwd)/beo-echo-config/:/app/configs/ \
+  ghcr.io/yogasw/beo-echo:latest
+```
+
+> **Note**: The Docker image is built for x86 architecture only. ARM builds are not provided because GitHub Actions requires significantly longer build times for ARM architecture. The `--platform linux/amd64` flag ensures compatibility across different systems, including ARM-based machines running Docker through emulation.
+
+After running the container, access the application at [http://localhost:8080](http://localhost:8080)
+
+**Default Login Credentials:**
+- Email: `admin@admin.com`
+- Password: `admin`
+
+### Local Development
+
+For development purposes, you can run the backend and frontend separately:
 
 ## 🏗️ Architecture
 
@@ -82,8 +110,6 @@ Choose your preferred visual experience:
 ---
 
 ## 📦 Getting Started
-
-### Local Development
 
 1. Clone the repository:
 ```bash

@@ -1,3 +1,4 @@
+<!-- filepath: /Users/yogasetiawan/code/playground/mockoon-control-panel/frontend/src/lib/components/replay/ReplayManager.svelte -->
 <script lang="ts">
 	import { onMount, onDestroy } from 'svelte';
 	import { selectedWorkspace } from '$lib/stores/workspace';
@@ -6,6 +7,16 @@
 	import { toast } from '$lib/stores/toast';
 	import { replayApi } from '$lib/api/replayApi';
 	import { getReplayPanelWidth, setReplayPanelWidth } from '$lib/utils/localStorage';
+	import { 
+		getReplayEditorState, 
+		setReplayEditorState, 
+		clearReplayEditorState,
+		createDefaultReplayEditorState,
+		createDefaultTab,
+		createDefaultTabContent,
+		updateTabContentInStorage,
+		updateActiveSection
+	} from '$lib/utils/replayEditorStorage';
 
 	import ReplayList from './ReplayList.svelte';
 	import SkeletonLoader from '$lib/components/common/SkeletonLoader.svelte';
@@ -25,59 +36,232 @@
 	let startX = 0;
 	let startWidth = 0;
 
-	// State for ReplayEditor, to be passed as props
-	let editorTabs: Tab[] = [
-		{
-			id: 'tab-1',
-			name: 'New Request',
-			method: 'GET',
-			url: '',
-			isUnsaved: true
-		}
-	];
-	let editorActiveTabId = 'tab-1';
+	// State for ReplayEditor - will be loaded from localStorage
+	let editorTabs: Tab[] = [];
+	let editorActiveTabId = '';
 	let editorActiveTabContent = {
 		method: 'GET',
 		url: '',
 		activeSection: 'params'
 	};
 
+	// Flag to track if we should save state changes
+	let shouldSaveState = false; // Start as false, enable after load
+
+	// Load editor state from localStorage
+	function loadEditorState() {
+		// Ensure we have workspace and project IDs before loading state
+		if (!$selectedWorkspace?.id || !$selectedProject?.id) {
+			console.log('⚠️ Missing workspace or project ID, using default state');
+			const defaultState = createDefaultReplayEditorState('default', 'default');
+			editorTabs = [...defaultState.tabs];
+			editorActiveTabId = defaultState.activeTabId;
+			editorActiveTabContent = { ...defaultState.activeTabContent };
+			activeView = defaultState.activeView;
+			return;
+		}
+
+		console.log('📂 Loading editor state from localStorage for workspace:', $selectedWorkspace.id, 'project:', $selectedProject.id);
+		
+		const savedState = getReplayEditorState($selectedWorkspace.id, $selectedProject.id);
+		
+		if (savedState && savedState.tabs && savedState.tabs.length > 0) {
+			console.log('✅ Found saved state:', savedState);
+			
+			// Restore all state
+			editorTabs = [...savedState.tabs]; // Clone to ensure reactivity
+			editorActiveTabId = savedState.activeTabId;
+			editorActiveTabContent = { ...savedState.activeTabContent };
+			activeView = savedState.activeView;
+			
+			// Validate that activeTabId exists in tabs
+			const activeTabExists = editorTabs.some(tab => tab.id === editorActiveTabId);
+			if (!activeTabExists && editorTabs.length > 0) {
+				console.warn('⚠️ Active tab not found, using first tab');
+				editorActiveTabId = editorTabs[0].id;
+				editorActiveTabContent = {
+					method: editorTabs[0].method,
+					url: editorTabs[0].url,
+					activeSection: 'params'
+				};
+			}
+			
+			console.log('✅ Editor state restored successfully');
+		} else {
+			console.log('📝 No saved state found, using default state');
+			
+			// Use default state if no saved state
+			const defaultState = createDefaultReplayEditorState($selectedWorkspace.id, $selectedProject.id);
+			editorTabs = [...defaultState.tabs];
+			editorActiveTabId = defaultState.activeTabId;
+			editorActiveTabContent = { ...defaultState.activeTabContent };
+			activeView = defaultState.activeView;
+		}
+		
+		// Log final state
+		console.log('📊 Final loaded state:', {
+			tabs: editorTabs.length,
+			activeTabId: editorActiveTabId,
+			activeView: activeView
+		});
+	}
+
+	// Save current editor state to localStorage
+	function saveEditorState() {
+		if (!shouldSaveState) {
+			console.log('⏸️ Auto-save disabled, skipping save');
+			return;
+		}
+		
+		// Don't save if we don't have valid state
+		if (!editorTabs || editorTabs.length === 0 || !editorActiveTabId) {
+			console.log('⚠️ Invalid state, skipping save');
+			return;
+		}
+
+		// Ensure we have workspace and project IDs
+		if (!$selectedWorkspace?.id || !$selectedProject?.id) {
+			console.log('⚠️ Missing workspace or project ID, skipping save');
+			return;
+		}
+		
+		const state = {
+			tabs: editorTabs,
+			activeTabId: editorActiveTabId,
+			activeTabContent: editorActiveTabContent,
+			activeView: activeView,
+			selectedReplayId: $selectedReplay?.id,
+			projectId: $selectedProject.id,
+			workspaceId: $selectedWorkspace.id
+		};
+		
+		console.log('💾 Saving editor state:', {
+			tabsCount: state.tabs.length,
+			activeTabId: state.activeTabId,
+			activeView: state.activeView
+		});
+		
+		setReplayEditorState(state);
+	}
+
+	// Auto-save with debouncing
+	let saveTimeout: NodeJS.Timeout | null = null;
+	
+	function debouncedSave() {
+		if (saveTimeout) {
+			clearTimeout(saveTimeout);
+		}
+		
+		saveTimeout = setTimeout(() => {
+			saveEditorState();
+		}, 300); // Save after 300ms of no changes
+	}
+
+	// Watch for changes and trigger save
+	$: if (shouldSaveState && editorTabs && editorTabs.length > 0) {
+		console.log('🔄 Tabs changed, scheduling save...');
+		debouncedSave();
+	}
+
+	$: if (shouldSaveState && editorActiveTabId) {
+		console.log('🔄 Active tab changed, scheduling save...');
+		debouncedSave();
+	}
+
+	$: if (shouldSaveState && activeView) {
+		console.log('🔄 Active view changed, scheduling save...');
+		debouncedSave();
+	}
+
 	// Handlers for events from ReplayEditor
 	function handleTabsChange(event: CustomEvent) {
-		editorTabs = event.detail.tabs;
+		console.log('🔄 Tabs changed from editor:', event.detail);
+		
+		// Update basic tab properties but preserve content structure
+		const newTabs = event.detail.tabs.map(newTab => {
+			// Find existing tab to preserve content
+			const existingTab = editorTabs.find(tab => tab.id === newTab.id);
+			
+			return {
+				...newTab,
+				// Preserve existing content or create default if new tab
+				content: existingTab?.content || createDefaultTabContent()
+			};
+		});
+		
+		editorTabs = [...newTabs]; // Clone to ensure reactivity
 		editorActiveTabId = event.detail.activeTabId;
-		editorActiveTabContent = event.detail.activeTabContent;
+		editorActiveTabContent = { ...event.detail.activeTabContent };
 	}
 
 	function handleActiveSectionChange(event: CustomEvent) {
+		console.log('🔄 Active section changed:', event.detail);
+		
 		if (editorActiveTabContent) {
 			editorActiveTabContent.activeSection = event.detail.activeSection;
+			// Trigger reactivity
+			editorActiveTabContent = { ...editorActiveTabContent };
 		}
+		
+	// Also save to localStorage
+	if ($selectedWorkspace?.id && $selectedProject?.id) {
+		updateActiveSection($selectedWorkspace.id, $selectedProject.id, editorActiveTabId, event.detail.activeSection);
+	}
 	}
 
 	function handleTabContentChange(event: CustomEvent) {
-		console.log('Tab content changed:', event);
-		// const activeTab = editorTabs.find(tab => tab.id === editorActiveTabId);
-		// if (activeTab) {
-		// 	activeTab.method = event.detail.method;
-		// 	activeTab.url = event.detail.url;
-		// 	// Potentially mark as unsaved, etc.
-		// }
-		// if (editorActiveTabContent) {
-		// 	editorActiveTabContent = {...editorActiveTabContent, ...event.detail};
-		// }
+		// Update the active tab content
+		if (editorActiveTabContent) {
+			editorActiveTabContent = { ...editorActiveTabContent, ...event.detail };
+		}
+		
+		// Update the corresponding tab and its content
+		const activeTab = editorTabs.find(tab => tab.id === editorActiveTabId);
+		if (activeTab) {
+			// Update basic tab properties
+			if (event.detail.method) activeTab.method = event.detail.method;
+			if (event.detail.url) activeTab.url = event.detail.url;
+			
+			// Update tab content
+			if (!activeTab.content) {
+				activeTab.content = createDefaultTabContent();
+			}
+			
+			// Handle specific field mappings for TabContent structure
+			const updatedContent = { ...activeTab.content };
+			
+			// Map payload to body.content
+			if (event.detail.payload !== undefined) {
+				updatedContent.body = {
+					...updatedContent.body,
+					content: event.detail.payload
+				};
+			}
+			
+			// Map other fields directly
+			if (event.detail.method) updatedContent.method = event.detail.method;
+			if (event.detail.url) updatedContent.url = event.detail.url;
+			if (event.detail.activeSection) updatedContent.activeSection = event.detail.activeSection;
+			if (event.detail.params) updatedContent.params = event.detail.params;
+			if (event.detail.headers) updatedContent.headers = event.detail.headers;
+			if (event.detail.auth) updatedContent.auth = event.detail.auth;
+			if (event.detail.settings) updatedContent.settings = event.detail.settings;
+			
+			activeTab.content = updatedContent;
+			activeTab.isUnsaved = true; // Mark as unsaved when content changes
+			
+			// Trigger reactivity
+			editorTabs = [...editorTabs];
+					// Also save to localStorage immediately for important changes
+		if ($selectedWorkspace?.id && $selectedProject?.id) {
+			updateTabContentInStorage($selectedWorkspace.id, $selectedProject.id, editorActiveTabId, event.detail);
+		}
+		}
 	}
-
 
 	// Load replays when component mounts or project changes
 	$: if ($selectedWorkspace && $selectedProject) {
 		loadReplays();
-	}
-
-	// Clear replay data when project changes
-	$: if ($selectedProject) {
-		replayActions.clearAll();
-		activeView = 'list';
 	}
 
 	async function loadReplays() {
@@ -102,17 +286,36 @@
 	function handleCreateNew() {
 		selectedReplay.set(null);
 		activeView = 'editor';
-		// Reset editor state for a new replay
-		editorTabs = [
-			{
-				id: `tab-${Date.now()}`,
-				name: 'New Request',
-				method: 'GET',
-				url: '',
-				isUnsaved: true
-			}
-		];
-		editorActiveTabId = editorTabs[0].id;
+		
+		// Create a new tab with full content structure
+		const newTab = createDefaultTab();
+		
+		// Add to existing tabs or replace if only one empty tab exists
+		if (editorTabs.length === 1 && editorTabs[0].isUnsaved && !editorTabs[0].url) {
+			editorTabs = [newTab];
+		} else {
+			editorTabs = [...editorTabs, newTab];
+		}
+		
+		// Set active tab and content properly
+		editorActiveTabId = newTab.id;
+		editorActiveTabContent = newTab.content || {
+			method: 'GET',
+			url: '',
+			activeSection: 'params'
+		};
+		
+		// Save the new tab to localStorage
+		if ($selectedWorkspace?.id && $selectedProject?.id) {
+			setReplayEditorState({
+				tabs: editorTabs,
+				activeTabId: editorActiveTabId,
+				activeTabContent: editorActiveTabContent,
+				activeView: activeView,
+				projectId: $selectedProject.id,
+				workspaceId: $selectedWorkspace.id
+			});
+		}
 	}
 
 	function handleEditReplay(event: CustomEvent) {
@@ -120,17 +323,47 @@
 		selectedReplay.set(replay);
 		activeView = 'editor';
 		
-		// Populate editor state from the selected replay
-		editorTabs = [
-			{
+		// Check if this replay is already open in a tab
+		const existingTab = editorTabs.find(tab => 
+			tab.id === replay.id || 
+			(tab.method === replay.method && tab.url === replay.url && !tab.isUnsaved)
+		);
+		
+		if (existingTab) {
+			// Switch to existing tab
+			editorActiveTabId = existingTab.id;
+			editorActiveTabContent = {
+				method: existingTab.method,
+				url: existingTab.url,
+				activeSection: existingTab.content?.activeSection || 'params'
+			};
+		} else {
+			// Create new tab for this replay with full content
+			const newTab: Tab = {
 				id: replay.id || `tab-${Date.now()}`,
 				name: replay.name || 'Edit Request',
 				method: replay.method || 'GET',
 				url: replay.url || '',
-				isUnsaved: false // Or determine based on actual state
-			}
-		];
-		editorActiveTabId = editorTabs[0].id;
+				isUnsaved: false,
+				content: {
+					...createDefaultTabContent(),
+					method: replay.method || 'GET',
+					url: replay.url || '',
+					// TODO: Populate from replay data if available
+					// params: replay.params || [],
+					// headers: replay.headers || [],
+					// body: replay.body || { type: 'none', content: '' },
+				}
+			};
+			
+			editorTabs = [...editorTabs, newTab];
+			editorActiveTabId = newTab.id;
+			editorActiveTabContent = {
+				method: newTab.method,
+				url: newTab.url,
+				activeSection: 'params'
+			};
+		}
 	}
 
 	function handleExecuteReplay(event: CustomEvent) {
@@ -150,16 +383,90 @@
 	function handleBackToList() {
 		selectedReplay.set(null);
 		activeView = 'list';
+		// Keep tabs open so user can continue working if they go back to editor
+	}
+
+	// Function to manually clear all editor state
+	function clearAllEditorState() {
+		console.log('🗑️ Clearing all editor state...');
+		
+		if ($selectedWorkspace?.id && $selectedProject?.id) {
+			clearReplayEditorState($selectedWorkspace.id, $selectedProject.id);
+			const defaultState = createDefaultReplayEditorState($selectedWorkspace.id, $selectedProject.id);
+			
+			shouldSaveState = false;
+			editorTabs = [...defaultState.tabs];
+			editorActiveTabId = defaultState.activeTabId;
+			editorActiveTabContent = { ...defaultState.activeTabContent };
+			activeView = 'list';
+			selectedReplay.set(null);
+			
+			setTimeout(() => {
+				shouldSaveState = true;
+			}, 100);
+			
+			toast.success('Editor state cleared');
+			console.log('✅ Editor state cleared and reset to default');
+		} else {
+			console.log('⚠️ Cannot clear state - missing workspace or project ID');
+			toast.error('Cannot clear state - no workspace or project selected');
+		}
+	}
+
+	// Debug function to test localStorage
+	function testLocalStorage() {
+		console.log('🧪 Testing localStorage...');
+		
+		if (!$selectedWorkspace?.id || !$selectedProject?.id) {
+			toast.error('Cannot test localStorage - no workspace or project selected');
+			return;
+		}
+		
+		const testState = {
+			tabs: [{ id: 'test', name: 'Test Tab', method: 'GET', url: 'http://test.com', isUnsaved: false }],
+			activeTabId: 'test',
+			activeTabContent: { method: 'GET', url: 'http://test.com', activeSection: 'params' },
+			activeView: 'editor' as const,
+			projectId: $selectedProject.id,
+			workspaceId: $selectedWorkspace.id
+		};
+		
+		// Test save
+		setReplayEditorState(testState);
+		
+		// Test load
+		const loaded = getReplayEditorState($selectedWorkspace.id, $selectedProject.id);
+		console.log('Test result - saved:', testState, 'loaded:', loaded);
+		
+		// Check if they match
+		const matches = JSON.stringify(testState) === JSON.stringify(loaded);
+		console.log('LocalStorage test:', matches ? '✅ PASSED' : '❌ FAILED');
+		
+		toast.success(`LocalStorage test: ${matches ? 'PASSED' : 'FAILED'}`);
 	}
 
 	function handleReplayCreated() {
-		activeView = 'list';
+		// Mark current tab as saved
+		const activeTab = editorTabs.find(tab => tab.id === editorActiveTabId);
+		if (activeTab) {
+			activeTab.isUnsaved = false;
+			editorTabs = [...editorTabs]; // Trigger reactivity
+		}
+		
 		loadReplays(); // Refresh the list
+		toast.success('Replay created successfully');
 	}
 
 	function handleReplayUpdated() {
-		activeView = 'list';
+		// Mark current tab as saved
+		const activeTab = editorTabs.find(tab => tab.id === editorActiveTabId);
+		if (activeTab) {
+			activeTab.isUnsaved = false;
+			editorTabs = [...editorTabs]; // Trigger reactivity
+		}
+		
 		loadReplays(); // Refresh the list
+		toast.success('Replay updated successfully');
 	}
 
 	async function executeReplay(replayData: any) {
@@ -207,26 +514,77 @@
 		executeReplay(requestData);
 	}
 
-	onMount(() => {
-		if ($selectedWorkspace && $selectedProject) {
-			loadReplays();
-		}
+	onMount(async () => {
+		console.log('🚀 ReplayManager mounted');
+		
+		// Load panel width
 		panelWidth = getReplayPanelWidth();
-		// document.addEventListener('click', handleClickOutside); // If needed for closing menus
+		
+		// Load editor state from localStorage FIRST
+		loadEditorState();
+		
+		// Load replays if workspace and project are selected
+		if ($selectedWorkspace && $selectedProject) {
+			console.log('📋 Loading replays for workspace and project');
+			await loadReplays();
+		}
+		
+		// Add beforeunload listener to save state before page closes/refreshes
+		const handleBeforeUnload = (event: BeforeUnloadEvent) => {
+			console.log('📤 Page unloading, saving state...');
+			saveEditorState();
+		};
+		
+		window.addEventListener('beforeunload', handleBeforeUnload);
+		
+		// Enable auto-saving after everything is loaded
+		setTimeout(() => {
+			shouldSaveState = true;
+			console.log('▶️ Auto-save enabled');
+			
+			// Force an immediate save to ensure current state is persisted
+			debouncedSave();
+		}, 500);
 	});
 
 	onDestroy(() => {
+		console.log('🛑 ReplayManager destroyed');
+		
+		// Clear any pending save timeout
+		if (saveTimeout) {
+			clearTimeout(saveTimeout);
+		}
+		
+		// Force save current state before destroy
+		if (shouldSaveState && $selectedWorkspace?.id && $selectedProject?.id) {
+			console.log('💾 Force saving state before destroy');
+			// Use direct save, not debounced
+			const state = {
+				tabs: editorTabs,
+				activeTabId: editorActiveTabId,
+				activeTabContent: editorActiveTabContent,
+				activeView: activeView,
+				selectedReplayId: $selectedReplay?.id,
+				projectId: $selectedProject.id,
+				workspaceId: $selectedWorkspace.id
+			};
+			setReplayEditorState(state);
+		}
+		
 		replayActions.clearAll();
-		// document.removeEventListener('click', handleClickOutside); // If added in onMount
-		if (isResizing) { // Clean up listeners if component is destroyed while resizing
+		
+		// Clean up resize listeners if component is destroyed while resizing
+		if (isResizing) {
 			document.removeEventListener('mousemove', handleResize);
 			document.removeEventListener('mouseup', stopResize);
 		}
+		
+		// Remove beforeunload listener
+		const handleBeforeUnload = (event: BeforeUnloadEvent) => {
+			saveEditorState();
+		};
+		window.removeEventListener('beforeunload', handleBeforeUnload);
 	});
-
-	// function handleClickOutside(event: MouseEvent) {
-	// 	// Logic to close any dropdowns or modals if necessary
-	// }
 
 	// Resize functions
 	function startResize(event: MouseEvent) {
@@ -295,6 +653,36 @@
 						on:logs={handleViewLogs}
 						on:refresh={loadReplays}
 					/>
+					
+					<!-- Debug Panel -->
+					<div class="p-4 border-t border-gray-200 dark:border-gray-700 space-y-2">
+						<div class="text-xs text-gray-500 dark:text-gray-400 mb-2">
+							<div>Tabs: {editorTabs.length}</div>
+							<div>Active: {editorActiveTabId}</div>
+							<div>View: {activeView}</div>
+							<div>Auto-save: {shouldSaveState ? '✅' : '❌'}</div>
+						</div>
+						
+						<button
+							class="w-full bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded text-xs flex items-center justify-center"
+							title="Test localStorage functionality"
+							aria-label="Test localStorage"
+							on:click={testLocalStorage}
+						>
+							<i class="fas fa-flask mr-2"></i>
+							Test LocalStorage
+						</button>
+						
+						<button
+							class="w-full bg-gray-600 hover:bg-gray-700 text-white py-2 px-4 rounded text-xs flex items-center justify-center"
+							title="Clear all editor tabs and reset state"
+							aria-label="Clear editor state"
+							on:click={clearAllEditorState}
+						>
+							<i class="fas fa-trash-alt mr-2"></i>
+							Clear Editor State
+						</button>
+					</div>
 				{/if}
 			</div>
 			<!-- Resizable handle -->

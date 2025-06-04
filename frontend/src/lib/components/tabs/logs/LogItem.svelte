@@ -17,6 +17,7 @@
 	export let formatDate: (dateString: string | Date) => string;
 	export let bookmarkLog: (log: RequestLog) => Promise<void>;
 	export let createMockFromLog: (log: RequestLog) => void;
+	export let replayLog: (log: RequestLog) => void;
 	
 	// Function to export request to cURL command
 	function exportToCurl(log: RequestLog) {
@@ -154,6 +155,17 @@
 			>
 				<i class="fas fa-code mr-1"></i> 
 				Export as cURL
+			</button>
+
+			<!-- New Replay button -->
+			<button
+				class="bg-purple-600 hover:bg-purple-700 text-white py-1 px-3 rounded text-xs flex items-center transition-all duration-200 transform hover:scale-105 mr-2"
+				on:click|stopPropagation={() => replayLog(log)}
+				title="Create new replay from this request data"
+				aria-label="Create new replay from this request data"
+			>
+				<i class="fas fa-plus-circle mr-1"></i> 
+				New Replay
 			</button>
 			
 			<!-- Create Mock button - only for unmatched requests -->

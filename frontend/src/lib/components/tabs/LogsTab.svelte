@@ -10,6 +10,11 @@
 	import * as ThemeUtils from '$lib/utils/themeUtils';
 	import { logs, logsConnectionStatus } from '$lib/stores/logs';
 	import {reconnectLogStream, refreshLogs } from '$lib/services/logsService';
+	import { activeTab } from '$lib/stores/activeTab';
+	import { createDefaultTab, addTabToStorage } from '$lib/utils/replayEditorStorage';
+	import { selectedWorkspace } from '$lib/stores/workspace';
+	import { selectedProject as currentProject } from '$lib/stores/selectedConfig';
+	import { toast } from '$lib/stores/toast';
 
 	export let selectedProject: Project;
 
@@ -191,6 +196,115 @@
 		}, 2000);
 	}
 
+	// New Replay function - creates a new replay tab with existing request data
+	function replayLog(log: RequestLog) {
+		try {
+			// Get current workspace and project context
+			const workspace = $selectedWorkspace;
+			const project = $currentProject;
+			
+			if (!workspace || !project) {
+				toast.error('Unable to create new replay: No workspace or project selected');
+				return;
+			}
+
+			// Extract request data from log
+			const method = log.method.toUpperCase();
+			const headers = log.request_headers || '{}';
+			const body = log.request_body || '';
+			
+			// Parse URL and extract params
+			let baseUrl = `${project.url}${log.path}`;
+			let params: Array<{ key: string; value: string; description: string; enabled: boolean; }> = [];
+			
+			// Extract query params if they exist
+			if (log.query_params) {
+				try {
+					// Parse query params from query_params field
+					const queryString = log.query_params;
+					const urlParams = new URLSearchParams(queryString);
+					
+					params = Array.from(urlParams.entries()).map(([key, value]) => ({
+						key,
+						value,
+						description: '',
+						enabled: true
+					}));
+				} catch (e) {
+					console.warn('Failed to parse query params:', e);
+				}
+			}
+
+			// Parse headers if they're a string
+			let parsedHeaders: Record<string, string> = {};
+			try {
+				if (typeof headers === 'string') {
+					parsedHeaders = JSON.parse(headers);
+				} else {
+					parsedHeaders = headers;
+				}
+			} catch {
+				// If parsing fails, treat as empty headers
+				parsedHeaders = {};
+			}
+
+			// Create new replay tab with request data
+			const newTab = createDefaultTab();
+			
+			// Update tab with the request data
+			newTab.name = `New ${method} ${log.path}`;
+			newTab.method = method;
+			newTab.url = baseUrl; // Base URL without query params
+			newTab.isUnsaved = true;
+			
+			// Update tab content with parsed data
+			if (newTab.content) {
+				newTab.content.method = method;
+				newTab.content.url = baseUrl;
+				
+				// Set params from query string
+				newTab.content.params = params;
+				
+				// Convert headers to Header array format
+				newTab.content.headers = Object.entries(parsedHeaders).map(([key, value]) => ({
+					key,
+					value,
+					description: '',
+					enabled: true
+				}));
+				
+				// Set body content
+				newTab.content.body = {
+					type: 'raw',
+					content: body
+				};
+				
+				// Set minimal auth config
+				newTab.content.auth = {
+					type: 'none',
+					config: {}
+				};
+				
+				// Set scripts to empty
+				newTab.content.scripts = {
+					preRequestScript: '',
+					testScript: ''
+				};
+			}
+
+			// Add tab to storage
+			addTabToStorage(workspace.id, project.id, newTab);
+
+			// Switch to replay tab
+			activeTab.set('replay');
+
+			toast.success('New replay created with request data: headers, body, URL, and params');
+		} catch (error) {
+			console.error('Failed to create new replay:', error);
+			toast.error('Failed to create new replay');
+		}
+	}
+
 	// Clean up on component destroy
 	onDestroy(() => {
 		// No cleanup needed as the closeLogStream is handled at the service level
@@ -242,6 +356,7 @@
 			{formatDate}
 			{bookmarkLog}
 			{createMockFromLog}
+			{replayLog}
 		/>
 	{/if}
 

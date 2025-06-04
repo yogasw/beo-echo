@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { createEventDispatcher } from 'svelte';
+	import { onMount } from 'svelte';
 	import ReplayResponseFooter from './ReplayResponseFooter.svelte'; // Import the new footer component
 	import * as ThemeUtils from '$lib/utils/themeUtils';
 	import ReplayBar from './ReplayBar.svelte';
@@ -134,6 +135,14 @@
 		};
 	}
 
+	// Flag to control when content changes should be automatically dispatched
+	let shouldAutoDispatch = false;
+
+	// Initialize auto-dispatch after component is fully loaded
+	onMount(() => {
+		shouldAutoDispatch = true;
+	});
+
 	function createNewTab() {
 		const newTabId = `tab-${Date.now()}`;
 		const newTab: Tab = {
@@ -145,7 +154,11 @@
 		};
 		tabs = [...tabs, newTab];
 		activeTabId = newTabId;
+		
+		shouldAutoDispatch = false; // Disable during reset
 		resetActiveTabContent();
+		shouldAutoDispatch = true; // Re-enable after reset
+		
 		dispatch('tabschange', { tabs, activeTabId, activeTabContent });
 	}
 
@@ -160,7 +173,11 @@
 				isUnsaved: true
 			};
 			activeTabId = 'tab-1';
+			
+			shouldAutoDispatch = false; // Disable during reset
 			resetActiveTabContent();
+			shouldAutoDispatch = true; // Re-enable after reset
+			
 			dispatch('tabschange', { tabs, activeTabId, activeTabContent });
 			return;
 		}
@@ -179,6 +196,8 @@
 		// Update activeTabContent based on the new activeTabId
 		const newActiveTab = tabs.find((t) => t.id === activeTabId);
 		if (newActiveTab) {
+			shouldAutoDispatch = false; // Disable during content update
+			
 			// Create default empty strings for JSON fields
 			const emptyHeadersJson = JSON.stringify([
 				{ key: '', value: '', description: '', enabled: true }
@@ -214,6 +233,8 @@
 				...parseConfig(tabReplayData?.config || emptyConfigJson),
 				...parseMetadata(tabReplayData?.metadata || emptyMetadataJson)
 			};
+			
+			shouldAutoDispatch = true; // Re-enable after content update
 		}
 		dispatch('tabschange', { tabs, activeTabId, activeTabContent });
 	}
@@ -222,6 +243,8 @@
 		activeTabId = tabId;
 		const tab = tabs.find((t) => t.id === tabId);
 		if (tab) {
+			shouldAutoDispatch = false; // Disable during content update
+			
 			// Create default empty strings for JSON fields
 			const emptyHeadersJson = JSON.stringify([
 				{ key: '', value: '', description: '', enabled: true }
@@ -257,6 +280,8 @@
 				...parseConfig(tabReplayData?.config || emptyConfigJson),
 				...parseMetadata(tabReplayData?.metadata || emptyMetadataJson)
 			};
+			
+			shouldAutoDispatch = true; // Re-enable after content update
 		}
 
 		dispatch('tabschange', { tabs, activeTabId, activeTabContent });
@@ -288,7 +313,7 @@
 			activeTabContent.metadata = JSON.stringify(metadata);
 		}
 
-		dispatch('tabContentChange', activeTabContent);
+		dispatch('tabContentChange', getStructuredContentForStorage());
 	}
 
 	function handleAuthChange(event: CustomEvent) {
@@ -313,7 +338,7 @@
 			activeTabContent.config = JSON.stringify(config);
 		}
 
-		dispatch('tabContentChange', activeTabContent);
+		dispatch('tabContentChange', getStructuredContentForStorage());
 	}
 
 	function handleHeadersChange(event: CustomEvent) {
@@ -323,7 +348,7 @@
 		// Update raw headers JSON string
 		activeTabContent.headers = JSON.stringify(event.detail.headers);
 
-		dispatch('tabContentChange', activeTabContent);
+		dispatch('tabContentChange', getStructuredContentForStorage());
 	}
 
 	function handleSettingsChange(event: CustomEvent) {
@@ -345,11 +370,34 @@
 			activeTabContent.config = JSON.stringify(config);
 		}
 
-		dispatch('tabContentChange', activeTabContent);
+		dispatch('tabContentChange', getStructuredContentForStorage());
 	}
 
-	// Propagate changes upwards
-	$: dispatch('tabContentChange', activeTabContent);
+	function handleBodyContentChange(event: CustomEvent) {
+		// Update payload field
+		activeTabContent.payload = event.detail.payload;
+		
+		dispatch('tabContentChange', getStructuredContentForStorage());
+	}
+
+	// Function to convert activeTabContent to structured format for storage
+	function getStructuredContentForStorage() {
+		return {
+			method: activeTabContent.method,
+			url: activeTabContent.url,
+			activeSection: activeTabContent.activeSection,
+			payload: activeTabContent.payload,
+			params: activeTabContent.parsedParams || [],
+			headers: activeTabContent.parsedHeaders || [],
+			auth: activeTabContent.parsedAuth || { type: 'none', config: {} },
+			settings: activeTabContent.parsedSettings || {}
+		};
+	}
+
+	// Propagate changes upwards with structured content
+	$: if (activeTabContent && shouldAutoDispatch) {
+		dispatch('tabContentChange', getStructuredContentForStorage());
+	}
 
 	// Event handlers for ReplayResponseFooter
 	function handleFooterToggleExpand(event: CustomEvent) {
@@ -508,6 +556,60 @@
 	// Initialize activeTabContent if it's null
 	$: if (activeTabContent === undefined || activeTabContent === null) {
 		resetActiveTabContent();
+	}
+
+	// Sync activeTabContent when activeTabId or tabs change
+	$: if (activeTabId && tabs.length > 0) {
+		const currentTab = tabs.find(tab => tab.id === activeTabId);
+		if (currentTab) {
+			// Check if we need to initialize or update activeTabContent for this tab
+			if (!activeTabContent || activeTabContent.id !== activeTabId) {
+				// Create default empty strings for JSON fields
+				const emptyHeadersJson = JSON.stringify([
+					{ key: '', value: '', description: '', enabled: true }
+				]);
+				const emptyConfigJson = JSON.stringify({
+					auth: { type: 'none', config: {} },
+					settings: {}
+				});
+				const emptyMetadataJson = JSON.stringify({
+					params: [{ key: '', value: '', description: '', enabled: true }]
+				});
+
+				// Use tab content if available, otherwise defaults
+				const tabContent = currentTab.content;
+				
+				activeTabContent = {
+					id: currentTab.id,
+					name: currentTab.name || 'New Request',
+					method: currentTab.method || 'GET',
+					url: currentTab.url || '',
+					activeSection: tabContent?.activeSection || 'params',
+					protocol: 'http',
+
+					// Use proper TabContent structure for data
+					headers: JSON.stringify(tabContent?.headers || [{ key: '', value: '', description: '', enabled: true }]),
+					config: JSON.stringify({
+						auth: tabContent?.auth || { type: 'none', config: {} },
+						settings: tabContent?.settings || {}
+					}),
+					metadata: JSON.stringify({
+						params: tabContent?.params || [{ key: '', value: '', description: '', enabled: true }]
+					}),
+					payload: tabContent?.body?.content || '',
+
+					// Parse JSON fields
+					parsedHeaders: tabContent?.headers || [{ key: '', value: '', description: '', enabled: true }],
+					...parseConfig(JSON.stringify({
+						auth: tabContent?.auth || { type: 'none', config: {} },
+						settings: tabContent?.settings || {}
+					})),
+					...parseMetadata(JSON.stringify({
+						params: tabContent?.params || [{ key: '', value: '', description: '', enabled: true }]
+					}))
+				};
+			}
+		}
 	}
 </script>
 
@@ -675,7 +777,10 @@
 				on:headersChange={handleHeadersChange}
 			/>
 		{:else if activeTabContent.activeSection === 'body'}
-			<ReplayBody payload={activeTabContent?.payload} />
+			<ReplayBody 
+				payload={activeTabContent?.payload} 
+				on:change={handleBodyContentChange}
+			/>
 		{:else if activeTabContent.activeSection === 'settings'}
 			<SettingsTab
 				settings={activeTabContent?.parsedSettings}
