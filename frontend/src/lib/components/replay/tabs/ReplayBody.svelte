@@ -1,7 +1,17 @@
 <script lang="ts">
+	import { createEventDispatcher } from 'svelte';
+	
 	// Effect for MutationObserver and initial check
 	$effect(() => {});
-	let { payload }: { payload?: string } = $props();
+	let { payload = '' }: { payload?: string } = $props();
+	
+	const dispatch = createEventDispatcher();
+	
+	// Handle body content changes
+	function handleBodyContentChange(event: Event) {
+		const target = event.target as HTMLTextAreaElement;
+		dispatch('change', { payload: target.value });
+	}
 </script>
 
 <!-- Body section -->
@@ -75,6 +85,8 @@
 					placeholder="Enter request body content..."
 					title="Request body content"
 					aria-label="Request body textarea"
+					value={payload}
+					oninput={handleBodyContentChange}
 				></textarea>
 				<div class="flex justify-between items-center mt-2">
 					<p class="text-xs theme-text-muted">

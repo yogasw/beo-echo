@@ -16,6 +16,7 @@
 	export let formatDate: (dateString: string | Date) => string;
 	export let bookmarkLog: (log: RequestLog) => Promise<void>;
 	export let createMockFromLog: (log: RequestLog) => void;
+	export let replayLog: (log: RequestLog) => void;
 </script>
 
 {#if filteredLogs.length === 0}
@@ -94,6 +95,7 @@
 				{formatDate}
 				{bookmarkLog}
 				{createMockFromLog}
+				{replayLog}
 			/>
 		{/each}
 	</div>

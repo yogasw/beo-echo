@@ -3,6 +3,7 @@
 	import * as ThemeUtils from '$lib/utils/themeUtils';
 	import { toast } from '$lib/stores/toast';
 	import { workspaceApi } from '$lib/api/workspaceApi';
+	import { cleanupWorkspaceStorage } from '$lib/utils/replayEditorStorage';
 	
 	let editMode = false;
 	let workspaceName = '';
@@ -189,6 +190,9 @@
 		}
 		
 		try {
+			// Clean up replay editor storage for this workspace before deletion
+			cleanupWorkspaceStorage($currentWorkspace.id);
+			
 			await workspaceApi.deleteWorkspace($currentWorkspace.id);
 			toast.success('Workspace deleted successfully');
 			
