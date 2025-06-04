@@ -21,12 +21,13 @@ Run Beo Echo using the pre-built Docker image:
 
 ```bash
 docker run -d \
+  --platform linux/amd64 \
   -p 8080:80 \
   -v $(pwd)/beo-echo-config/:/app/configs/ \
   ghcr.io/yogasw/beo-echo:latest
 ```
 
-> **Note**: The Docker image is built for x86 architecture. Running on ARM-based systems may result in errors as ARM builds are not currently provided due to extended build times.
+> **Note**: The Docker image is built for x86 architecture only. ARM builds are not provided because GitHub Actions requires significantly longer build times for ARM architecture. The `--platform linux/amd64` flag ensures compatibility across different systems, including ARM-based machines running Docker through emulation.
 
 After running the container, access the application at [http://localhost:8080](http://localhost:8080)
 
