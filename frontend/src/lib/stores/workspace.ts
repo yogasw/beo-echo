@@ -3,6 +3,7 @@ import type { Workspace } from '$lib/types/User';
 import authStore from './auth';
 import { createWorkspace, getWorkspaces } from '$lib/api/BeoApi';
 import { setCurrentWorkspaceId } from '$lib/utils/localStorage';
+import { cleanupWorkspaceStorage } from '$lib/utils/replayEditorStorage';
 
 interface WorkspaceState {
   workspaces: Workspace[];
@@ -125,6 +126,19 @@ export const workspaces = {
   // Set the current workspace
   setCurrent: (workspaceId: string) => {
     console.log('Setting current workspace:', workspaceId);
+    
+    // Get current workspace before switching for cleanup
+    let currentWorkspaceId: string | null = null;
+    workspaceStore.subscribe(state => {
+      currentWorkspaceId = state.currentWorkspace?.id || null;
+    })();
+    
+    // If switching to a different workspace, clean up storage for the previous one
+    if (currentWorkspaceId && currentWorkspaceId !== workspaceId) {
+      console.log('Cleaning up storage for previous workspace:', currentWorkspaceId);
+      cleanupWorkspaceStorage(currentWorkspaceId);
+    }
+    
     setCurrentWorkspaceId(workspaceId);
     workspaceStore.update(state => {
       const workspace = state.workspaces.find(w => w.id === workspaceId);
@@ -137,6 +151,19 @@ export const workspaces = {
 
   switchWorkspace: (workspace: Workspace) => {
     console.log('Switching to workspace:', workspace);
+    
+    // Get current workspace before switching for cleanup
+    let currentWorkspaceId: string | null = null;
+    workspaceStore.subscribe(state => {
+      currentWorkspaceId = state.currentWorkspace?.id || null;
+    })();
+    
+    // If switching to a different workspace, clean up storage for the previous one
+    if (currentWorkspaceId && currentWorkspaceId !== workspace.id) {
+      console.log('Cleaning up storage for previous workspace:', currentWorkspaceId);
+      cleanupWorkspaceStorage(currentWorkspaceId);
+    }
+    
     setCurrentWorkspaceId(workspace.id);
     workspaceStore.update(state => ({
       ...state,

@@ -1,0 +1,448 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test localStorage Replay Editor</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #1f2937;
+            color: white;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        .test-section {
+            background-color: #374151;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+        }
+        button {
+            background-color: #3b82f6;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            margin: 5px;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #2563eb;
+        }
+        .button-danger {
+            background-color: #ef4444;
+        }
+        .button-danger:hover {
+            background-color: #dc2626;
+        }
+        .log {
+            background-color: #111827;
+            padding: 15px;
+            border-radius: 5px;
+            font-family: monospace;
+            white-space: pre-wrap;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        input, textarea {
+            background-color: #374151;
+            color: white;
+            border: 1px solid #6b7280;
+            padding: 8px;
+            border-radius: 4px;
+            width: 100%;
+            margin: 5px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧪 Replay Editor localStorage Test</h1>
+        
+        <div class="test-section">
+            <h3>✅ Test localStorage Functions</h3>
+            <button onclick="testStorageFunctions()">Test Storage Functions</button>
+            <button onclick="testTabPersistence()">Test Tab Persistence</button>
+            <button onclick="testTabContent()">Test Tab Content</button>
+            <button class="button-danger" onclick="clearStorage()">Clear All Storage</button>
+        </div>
+
+        <div class="test-section">
+            <h3>📝 Mock Tab Data</h3>
+            <label>Tab Name:</label>
+            <input id="tabName" type="text" value="Test Request" placeholder="Tab name">
+            
+            <label>Method:</label>
+            <select id="tabMethod" style="background-color: #374151; color: white; border: 1px solid #6b7280; padding: 8px; margin: 5px 0;">
+                <option value="GET">GET</option>
+                <option value="POST">POST</option>
+                <option value="PUT">PUT</option>
+                <option value="DELETE">DELETE</option>
+            </select>
+            
+            <label>URL:</label>
+            <input id="tabUrl" type="text" value="https://api.example.com/users" placeholder="URL">
+            
+            <label>Headers (JSON):</label>
+            <textarea id="tabHeaders" rows="3" placeholder='{"Content-Type": "application/json"}'></textarea>
+            
+            <label>Body:</label>
+            <textarea id="tabBody" rows="3" placeholder='{"name": "John Doe"}'></textarea>
+            
+            <button onclick="createMockTab()">Create Mock Tab</button>
+            <button onclick="updateMockTab()">Update Tab Content</button>
+        </div>
+
+        <div class="test-section">
+            <h3>📊 Storage Status</h3>
+            <button onclick="displayStorageInfo()">Show Storage Info</button>
+            <button onclick="displayTabList()">Show All Tabs</button>
+        </div>
+
+        <div class="test-section">
+            <h3>📋 Output Log</h3>
+            <div id="log" class="log"></div>
+            <button onclick="clearLog()">Clear Log</button>
+        </div>
+    </div>
+
+    <script>
+        // Import the localStorage utility functions (simulated)
+        // In a real test, these would be imported from the actual utils
+        
+        // Mock implementation of the localStorage utilities
+        function log(message) {
+            const logElement = document.getElementById('log');
+            const timestamp = new Date().toLocaleTimeString();
+            logElement.textContent += `[${timestamp}] ${message}\n`;
+            logElement.scrollTop = logElement.scrollHeight;
+            console.log(message);
+        }
+
+        function clearLog() {
+            document.getElementById('log').textContent = '';
+        }
+
+        // Test basic localStorage functionality
+        function testStorageFunctions() {
+            log('🧪 Testing basic localStorage functions...');
+            
+            try {
+                // Test basic set/get
+                localStorage.setItem('test_item', 'test_value');
+                const retrieved = localStorage.getItem('test_item');
+                
+                if (retrieved === 'test_value') {
+                    log('✅ Basic localStorage set/get: PASSED');
+                } else {
+                    log('❌ Basic localStorage set/get: FAILED');
+                    return;
+                }
+
+                // Test JSON storage
+                const testObject = { id: 'test', name: 'Test Object', timestamp: Date.now() };
+                localStorage.setItem('test_object', JSON.stringify(testObject));
+                const retrievedObject = JSON.parse(localStorage.getItem('test_object') || '{}');
+                
+                if (retrievedObject.id === 'test' && retrievedObject.name === 'Test Object') {
+                    log('✅ JSON object storage: PASSED');
+                } else {
+                    log('❌ JSON object storage: FAILED');
+                    return;
+                }
+
+                // Clean up test items
+                localStorage.removeItem('test_item');
+                localStorage.removeItem('test_object');
+                
+                log('✅ All basic storage tests passed!');
+                
+            } catch (error) {
+                log(`❌ Storage test failed: ${error.message}`);
+            }
+        }
+
+        // Test tab persistence
+        function testTabPersistence() {
+            log('🧪 Testing tab persistence...');
+            
+            try {
+                // Create test tabs
+                const testTabs = [
+                    {
+                        id: 'tab_test_1',
+                        name: 'Test Tab 1',
+                        method: 'GET',
+                        url: 'https://api.test.com/users',
+                        isUnsaved: false
+                    },
+                    {
+                        id: 'tab_test_2',
+                        name: 'Test Tab 2',
+                        method: 'POST',
+                        url: 'https://api.test.com/users',
+                        isUnsaved: true
+                    }
+                ];
+
+                // Save tabs
+                const replayEditorState = {
+                    tabs: testTabs,
+                    activeTabId: 'tab_test_1',
+                    activeTabContent: {
+                        method: 'GET',
+                        url: 'https://api.test.com/users',
+                        activeSection: 'params'
+                    },
+                    activeView: 'editor'
+                };
+
+                localStorage.setItem('replayEditorState', JSON.stringify(replayEditorState));
+                log('✅ Saved test tabs to localStorage');
+
+                // Retrieve and verify
+                const retrieved = JSON.parse(localStorage.getItem('replayEditorState') || '{}');
+                
+                if (retrieved.tabs && retrieved.tabs.length === 2) {
+                    log('✅ Tab count matches: ' + retrieved.tabs.length);
+                } else {
+                    log('❌ Tab count mismatch');
+                    return;
+                }
+
+                if (retrieved.activeTabId === 'tab_test_1') {
+                    log('✅ Active tab ID matches');
+                } else {
+                    log('❌ Active tab ID mismatch');
+                    return;
+                }
+
+                log('✅ Tab persistence test passed!');
+                
+            } catch (error) {
+                log(`❌ Tab persistence test failed: ${error.message}`);
+            }
+        }
+
+        // Test tab content persistence
+        function testTabContent() {
+            log('🧪 Testing tab content persistence...');
+            
+            try {
+                const tabId = 'tab_content_test';
+                const testContent = {
+                    params: [
+                        { key: 'userId', value: '123', enabled: true },
+                        { key: 'include', value: 'profile', enabled: true }
+                    ],
+                    headers: [
+                        { key: 'Authorization', value: 'Bearer token123', enabled: true },
+                        { key: 'Content-Type', value: 'application/json', enabled: true }
+                    ],
+                    body: {
+                        type: 'json',
+                        content: '{"name": "John Doe", "email": "john@example.com"}'
+                    },
+                    auth: {
+                        type: 'bearer',
+                        token: 'abc123def456'
+                    },
+                    scripts: {
+                        preRequest: 'console.log("Pre-request script");',
+                        tests: 'pm.test("Status code is 200", function () { pm.response.to.have.status(200); });'
+                    },
+                    settings: {
+                        followRedirects: true,
+                        timeout: 5000
+                    }
+                };
+
+                // Save tab content
+                localStorage.setItem(`replay_tab_content_${tabId}`, JSON.stringify(testContent));
+                log('✅ Saved tab content to localStorage');
+
+                // Retrieve and verify
+                const retrieved = JSON.parse(localStorage.getItem(`replay_tab_content_${tabId}`) || '{}');
+                
+                // Check each section
+                const checks = [
+                    { name: 'params', condition: retrieved.params && retrieved.params.length === 2 },
+                    { name: 'headers', condition: retrieved.headers && retrieved.headers.length === 2 },
+                    { name: 'body', condition: retrieved.body && retrieved.body.type === 'json' },
+                    { name: 'auth', condition: retrieved.auth && retrieved.auth.type === 'bearer' },
+                    { name: 'scripts', condition: retrieved.scripts && retrieved.scripts.preRequest },
+                    { name: 'settings', condition: retrieved.settings && retrieved.settings.timeout === 5000 }
+                ];
+
+                let allPassed = true;
+                checks.forEach(check => {
+                    if (check.condition) {
+                        log(`✅ ${check.name} section: PASSED`);
+                    } else {
+                        log(`❌ ${check.name} section: FAILED`);
+                        allPassed = false;
+                    }
+                });
+
+                if (allPassed) {
+                    log('✅ All tab content tests passed!');
+                } else {
+                    log('❌ Some tab content tests failed');
+                }
+
+                // Clean up
+                localStorage.removeItem(`replay_tab_content_${tabId}`);
+                
+            } catch (error) {
+                log(`❌ Tab content test failed: ${error.message}`);
+            }
+        }
+
+        // Create a mock tab using form data
+        function createMockTab() {
+            const name = document.getElementById('tabName').value;
+            const method = document.getElementById('tabMethod').value;
+            const url = document.getElementById('tabUrl').value;
+            const headers = document.getElementById('tabHeaders').value;
+            const body = document.getElementById('tabBody').value;
+
+            const tabId = `tab_${Date.now()}`;
+            
+            // Create tab
+            const tab = {
+                id: tabId,
+                name: name || 'New Request',
+                method: method,
+                url: url,
+                isUnsaved: true
+            };
+
+            // Create tab content
+            const tabContent = {
+                params: [],
+                headers: headers ? JSON.parse(headers) : [],
+                body: {
+                    type: 'json',
+                    content: body || ''
+                },
+                auth: { type: 'none' },
+                scripts: { preRequest: '', tests: '' },
+                settings: { followRedirects: true, timeout: 5000 }
+            };
+
+            try {
+                // Get existing state or create new
+                const existing = JSON.parse(localStorage.getItem('replayEditorState') || '{}');
+                const tabs = existing.tabs || [];
+                tabs.push(tab);
+
+                const newState = {
+                    tabs: tabs,
+                    activeTabId: tabId,
+                    activeTabContent: {
+                        method: method,
+                        url: url,
+                        activeSection: 'params'
+                    },
+                    activeView: 'editor'
+                };
+
+                localStorage.setItem('replayEditorState', JSON.stringify(newState));
+                localStorage.setItem(`replay_tab_content_${tabId}`, JSON.stringify(tabContent));
+
+                log(`✅ Created mock tab: ${name} (${method} ${url})`);
+                log(`📝 Tab ID: ${tabId}`);
+                
+            } catch (error) {
+                log(`❌ Failed to create mock tab: ${error.message}`);
+            }
+        }
+
+        // Update tab content
+        function updateMockTab() {
+            try {
+                const state = JSON.parse(localStorage.getItem('replayEditorState') || '{}');
+                if (!state.activeTabId) {
+                    log('❌ No active tab to update');
+                    return;
+                }
+
+                const headers = document.getElementById('tabHeaders').value;
+                const body = document.getElementById('tabBody').value;
+
+                const existingContent = JSON.parse(localStorage.getItem(`replay_tab_content_${state.activeTabId}`) || '{}');
+                
+                // Update content
+                if (headers) existingContent.headers = JSON.parse(headers);
+                if (body) existingContent.body = { type: 'json', content: body };
+
+                localStorage.setItem(`replay_tab_content_${state.activeTabId}`, JSON.stringify(existingContent));
+                
+                log(`✅ Updated tab content for: ${state.activeTabId}`);
+                
+            } catch (error) {
+                log(`❌ Failed to update tab content: ${error.message}`);
+            }
+        }
+
+        // Display storage information
+        function displayStorageInfo() {
+            log('📊 Storage Information:');
+            
+            const keys = Object.keys(localStorage).filter(key => key.startsWith('replay'));
+            log(`📁 Found ${keys.length} replay-related items in localStorage:`);
+            
+            keys.forEach(key => {
+                const value = localStorage.getItem(key);
+                const size = new Blob([value || '']).size;
+                log(`  - ${key}: ${size} bytes`);
+            });
+
+            // Calculate total size
+            const totalSize = keys.reduce((total, key) => {
+                const value = localStorage.getItem(key) || '';
+                return total + new Blob([value]).size;
+            }, 0);
+            
+            log(`📏 Total size: ${totalSize} bytes (${(totalSize / 1024).toFixed(2)} KB)`);
+        }
+
+        // Display all tabs
+        function displayTabList() {
+            try {
+                const state = JSON.parse(localStorage.getItem('replayEditorState') || '{}');
+                
+                if (!state.tabs || state.tabs.length === 0) {
+                    log('📋 No tabs found in storage');
+                    return;
+                }
+
+                log('📋 Current tabs:');
+                state.tabs.forEach((tab, index) => {
+                    const isActive = tab.id === state.activeTabId ? ' (ACTIVE)' : '';
+                    const hasContent = localStorage.getItem(`replay_tab_content_${tab.id}`) ? ' ✅' : ' ❌';
+                    log(`  ${index + 1}. ${tab.name} - ${tab.method} ${tab.url}${isActive}${hasContent}`);
+                });
+                
+            } catch (error) {
+                log(`❌ Failed to display tabs: ${error.message}`);
+            }
+        }
+
+        // Clear all storage
+        function clearStorage() {
+            const keys = Object.keys(localStorage).filter(key => key.startsWith('replay'));
+            keys.forEach(key => localStorage.removeItem(key));
+            log(`🗑️ Cleared ${keys.length} replay-related items from localStorage`);
+        }
+
+        // Initialize
+        log('🚀 Replay Editor localStorage Test Tool Ready!');
+        log('💡 Use the buttons above to test localStorage functionality');
+    </script>
+</body>
+</html>

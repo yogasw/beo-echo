@@ -3,8 +3,10 @@
 	import { goto } from '$app/navigation';
 	import { projects } from '$lib/stores/configurations';
 	import { selectedProject as selectedProjectStore } from '$lib/stores/selectedConfig';
+	import { currentWorkspace } from '$lib/stores/workspace';
 	import { fade } from 'svelte/transition';
 	import * as ThemeUtils from '$lib/utils/themeUtils';
+	import { cleanupProjectStorage } from '$lib/utils/replayEditorStorage';
 	
 	// Import the component modules
 	import GeneralInfo from './Configuration/GeneralInfo.svelte';
@@ -19,6 +21,11 @@
 	
 	async function handleDelete() {
 		try {
+			// Clean up replay editor storage for this project before deletion
+			if ($currentWorkspace) {
+				cleanupProjectStorage($currentWorkspace.id, selectedProject.id);
+			}
+			
 			await deleteProject(selectedProject.id);
 			// Update configurations store
 			projects.update(configs => configs.filter(c => c.id !== selectedProject.id));
