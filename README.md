@@ -31,6 +31,10 @@ docker run -d \
 
 After running the container, access the application at [http://localhost:8080](http://localhost:8080)
 
+**Default Login Credentials:**
+- Email: `admin@admin.com`
+- Password: `admin`
+
 ### Local Development
 
 For development purposes, you can run the backend and frontend separately:
