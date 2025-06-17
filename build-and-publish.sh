@@ -130,11 +130,41 @@ check_docker() {
     local docker_version=$(docker --version | cut -d ' ' -f3 | tr -d ',')
     echo "Docker version: $docker_version"
     
+    # Check system architecture
+    local arch=$(uname -m)
+    echo "System architecture: $arch"
+    
     # Check if buildx is available for multi-platform builds
     if docker buildx version &> /dev/null; then
         echo "Docker Buildx: Available"
+        
+        # For ARM systems, ensure buildx is properly configured
+        if [[ "$arch" == "arm64" || "$arch" == "aarch64" ]]; then
+            print_color $CYAN "🔧 ARM system detected - configuring buildx for multi-platform builds"
+            
+            # Enable experimental features for manifest commands
+            export DOCKER_CLI_EXPERIMENTAL=enabled
+            
+            # Create/use a builder instance that supports multi-platform
+            if ! docker buildx inspect multiplatform &> /dev/null; then
+                print_color $YELLOW "Creating multiplatform builder..."
+                docker buildx create --name multiplatform --use --bootstrap
+            else
+                print_color $YELLOW "Using existing multiplatform builder..."
+                docker buildx use multiplatform
+            fi
+        fi
     else
-        echo "Docker Buildx: Not available (single-platform builds only)"
+        echo "Docker Buildx: Not available"
+        
+        # For ARM systems, buildx is required for multi-platform builds
+        if [[ "$arch" == "arm64" || "$arch" == "aarch64" ]]; then
+            print_color $RED "❌ Docker Buildx is required for ARM systems to build multi-platform images"
+            echo "Please update Docker to a version that includes buildx"
+            exit 1
+        else
+            echo "(Single-platform builds only)"
+        fi
     fi
     
     print_color $GREEN "✅ Docker is running and ready"
@@ -172,19 +202,55 @@ get_repo_info() {
     echo "   Nightly Latest: ${NIGHTLY_LATEST_TAG}"
 }
 
-# Build Docker image
+# Build Docker image per platform
 build_image() {
-    print_color $YELLOW "🔨 Building Docker image..."
+    print_color $YELLOW "🔨 Building Docker images per platform..."
     
-    docker build \
-        --tag "${IMAGE_NAME}:${NIGHTLY_TAG}" \
-        --tag "${IMAGE_NAME}:${NIGHTLY_LATEST_TAG}" \
-        --label "org.opencontainers.image.source=https://github.com/${OWNER}/${REPO_NAME}" \
-        .
+    # Detect system architecture
+    local arch=$(uname -m)
     
-    print_color $GREEN "✅ Docker image built successfully"
-    echo "   Tagged: ${IMAGE_NAME}:${NIGHTLY_TAG}"
-    echo "   Tagged: ${IMAGE_NAME}:${NIGHTLY_LATEST_TAG}"
+    if [[ "$arch" == "arm64" || "$arch" == "aarch64" ]]; then
+        print_color $CYAN "🏗️  ARM architecture detected ($arch)"
+        print_color $YELLOW "   Building for ARM64 and AMD64 platforms separately..."
+        
+        # Build ARM64 platform
+        print_color $YELLOW "📦 Building ARM64 platform..."
+        docker buildx build \
+            --platform linux/arm64 \
+            --tag "${IMAGE_NAME}:${NIGHTLY_TAG}-arm64" \
+            --tag "${IMAGE_NAME}:${NIGHTLY_LATEST_TAG}-arm64" \
+            --label "org.opencontainers.image.source=https://github.com/${OWNER}/${REPO_NAME}" \
+            --load \
+            .
+        
+        # Build AMD64 platform
+        print_color $YELLOW "📦 Building AMD64 platform..."
+        docker buildx build \
+            --platform linux/amd64 \
+            --tag "${IMAGE_NAME}:${NIGHTLY_TAG}-amd64" \
+            --tag "${IMAGE_NAME}:${NIGHTLY_LATEST_TAG}-amd64" \
+            --label "org.opencontainers.image.source=https://github.com/${OWNER}/${REPO_NAME}" \
+            --load \
+            .
+            
+        print_color $GREEN "✅ Multi-platform images built successfully"
+        echo "   ARM64: ${IMAGE_NAME}:${NIGHTLY_TAG}-arm64"
+        echo "   AMD64: ${IMAGE_NAME}:${NIGHTLY_TAG}-amd64"
+    else
+        print_color $CYAN "🏗️  x86_64 architecture detected ($arch)"
+        print_color $YELLOW "   Building for current platform only..."
+        
+        # Non-ARM system: use regular docker build
+        docker build \
+            --tag "${IMAGE_NAME}:${NIGHTLY_TAG}" \
+            --tag "${IMAGE_NAME}:${NIGHTLY_LATEST_TAG}" \
+            --label "org.opencontainers.image.source=https://github.com/${OWNER}/${REPO_NAME}" \
+            .
+            
+        print_color $GREEN "✅ Docker image built successfully"
+        echo "   Tagged: ${IMAGE_NAME}:${NIGHTLY_TAG}"
+        echo "   Tagged: ${IMAGE_NAME}:${NIGHTLY_LATEST_TAG}"
+    fi
 }
 
 # Login to GitHub Container Registry
@@ -196,16 +262,90 @@ login_registry() {
     print_color $GREEN "✅ Logged in to ghcr.io"
 }
 
-# Push image to registry
+# Push images per platform
 push_image() {
-    print_color $YELLOW "📤 Pushing to GitHub Container Registry..."
+    # Detect system architecture
+    local arch=$(uname -m)
     
-    docker push "${IMAGE_NAME}:${NIGHTLY_TAG}"
-    docker push "${IMAGE_NAME}:${NIGHTLY_LATEST_TAG}"
+    if [[ "$arch" == "arm64" || "$arch" == "aarch64" ]]; then
+        print_color $YELLOW "📤 Pushing platform-specific images to GitHub Container Registry..."
+        
+        # Push ARM64 images
+        print_color $YELLOW "🚀 Pushing ARM64 images..."
+        docker push "${IMAGE_NAME}:${NIGHTLY_TAG}-arm64"
+        docker push "${IMAGE_NAME}:${NIGHTLY_LATEST_TAG}-arm64"
+        
+        # Push AMD64 images
+        print_color $YELLOW "🚀 Pushing AMD64 images..."
+        docker push "${IMAGE_NAME}:${NIGHTLY_TAG}-amd64"
+        docker push "${IMAGE_NAME}:${NIGHTLY_LATEST_TAG}-amd64"
+        
+        print_color $GREEN "✅ Platform-specific images pushed successfully"
+        echo "   ARM64: docker pull ${IMAGE_NAME}:${NIGHTLY_TAG}-arm64"
+        echo "   AMD64: docker pull ${IMAGE_NAME}:${NIGHTLY_TAG}-amd64"
+    else
+        print_color $YELLOW "📤 Pushing to GitHub Container Registry..."
+        
+        docker push "${IMAGE_NAME}:${NIGHTLY_TAG}"
+        docker push "${IMAGE_NAME}:${NIGHTLY_LATEST_TAG}"
+        
+        print_color $GREEN "✅ Images pushed successfully"
+        echo "   Available: docker pull ${IMAGE_NAME}:${NIGHTLY_TAG}"
+        echo "   Available: docker pull ${IMAGE_NAME}:${NIGHTLY_LATEST_TAG}"
+    fi
+}
+
+# Create multi-platform manifest
+create_manifest() {
+    # Detect system architecture
+    local arch=$(uname -m)
     
-    print_color $GREEN "✅ Images pushed successfully"
-    echo "   Available: docker pull ${IMAGE_NAME}:${NIGHTLY_TAG}"
-    echo "   Available: docker pull ${IMAGE_NAME}:${NIGHTLY_LATEST_TAG}"
+    if [[ "$arch" == "arm64" || "$arch" == "aarch64" ]]; then
+        print_color $YELLOW "� Creating multi-platform manifests..."
+        
+        # Create manifest for nightly tag
+        print_color $YELLOW "🔗 Creating manifest for ${NIGHTLY_TAG}..."
+        docker manifest create "${IMAGE_NAME}:${NIGHTLY_TAG}" \
+            "${IMAGE_NAME}:${NIGHTLY_TAG}-arm64" \
+            "${IMAGE_NAME}:${NIGHTLY_TAG}-amd64"
+        
+        # Annotate platform-specific images
+        docker manifest annotate "${IMAGE_NAME}:${NIGHTLY_TAG}" \
+            "${IMAGE_NAME}:${NIGHTLY_TAG}-arm64" --arch arm64 --os linux
+        docker manifest annotate "${IMAGE_NAME}:${NIGHTLY_TAG}" \
+            "${IMAGE_NAME}:${NIGHTLY_TAG}-amd64" --arch amd64 --os linux
+        
+        # Push manifest for nightly tag
+        docker manifest push "${IMAGE_NAME}:${NIGHTLY_TAG}"
+        
+        # Create manifest for nightly-latest tag
+        print_color $YELLOW "🔗 Creating manifest for ${NIGHTLY_LATEST_TAG}..."
+        docker manifest create "${IMAGE_NAME}:${NIGHTLY_LATEST_TAG}" \
+            "${IMAGE_NAME}:${NIGHTLY_LATEST_TAG}-arm64" \
+            "${IMAGE_NAME}:${NIGHTLY_LATEST_TAG}-amd64"
+        
+        # Annotate platform-specific images
+        docker manifest annotate "${IMAGE_NAME}:${NIGHTLY_LATEST_TAG}" \
+            "${IMAGE_NAME}:${NIGHTLY_LATEST_TAG}-arm64" --arch arm64 --os linux
+        docker manifest annotate "${IMAGE_NAME}:${NIGHTLY_LATEST_TAG}" \
+            "${IMAGE_NAME}:${NIGHTLY_LATEST_TAG}-amd64" --arch amd64 --os linux
+        
+        # Push manifest for nightly-latest tag
+        docker manifest push "${IMAGE_NAME}:${NIGHTLY_LATEST_TAG}"
+        
+        print_color $GREEN "✅ Multi-platform manifests created and pushed successfully"
+        echo "   Multi-platform: docker pull ${IMAGE_NAME}:${NIGHTLY_TAG}"
+        echo "   Multi-platform: docker pull ${IMAGE_NAME}:${NIGHTLY_LATEST_TAG}"
+        echo ""
+        echo "Users can now pull:"
+        echo "   docker pull ${IMAGE_NAME}:${NIGHTLY_TAG} (auto-selects platform)"
+        echo "   docker pull ${IMAGE_NAME}:${NIGHTLY_TAG}-arm64 (specific ARM64)"
+        echo "   docker pull ${IMAGE_NAME}:${NIGHTLY_TAG}-amd64 (specific AMD64)"
+    else
+        print_color $CYAN "ℹ️  Single-platform build - no manifest creation needed"
+        echo "   Available: docker pull ${IMAGE_NAME}:${NIGHTLY_TAG}"
+        echo "   Available: docker pull ${IMAGE_NAME}:${NIGHTLY_LATEST_TAG}"
+    fi
 }
 
 # Check repository permissions
@@ -244,14 +384,41 @@ show_build_summary() {
     echo "Version: $VERSION"
     echo "Nightly: $NIGHTLY_TAG"
     echo "Registry: ghcr.io"
+    
+    # Detect system architecture for build info
+    local arch=$(uname -m)
+    echo "Build architecture: $arch"
+    
+    if [[ "$arch" == "arm64" || "$arch" == "aarch64" ]]; then
+        echo "Build strategy: Multi-platform (ARM64 + AMD64) using buildx"
+        echo "Platforms: linux/arm64, linux/amd64"
+    else
+        echo "Build strategy: Single-platform using standard docker build"
+        echo "Platform: Current system architecture"
+    fi
+    
+    echo ""
     echo "Images to be built and pushed:"
     echo "  - ghcr.io/$OWNER/$REPO_NAME:$NIGHTLY_TAG"
     echo "  - ghcr.io/$OWNER/$REPO_NAME:$NIGHTLY_LATEST_TAG"
     echo ""
     echo "This will:"
-    echo "  1. Build Docker image locally"
-    echo "  2. Tag with $NIGHTLY_TAG and $NIGHTLY_LATEST_TAG"
-    echo "  3. Push to GitHub Container Registry"
+    if [[ "$arch" == "arm64" || "$arch" == "aarch64" ]]; then
+        echo "  1. Build platform-specific Docker images (ARM64 and AMD64 separately)"
+        echo "  2. Tag with platform suffixes (-arm64, -amd64)"
+        echo "  3. Push each platform-specific image to GitHub Container Registry"
+        echo "  4. Create multi-platform manifests"
+        echo "  5. Push manifests to enable auto-platform selection"
+        echo ""
+        echo "Final images available:"
+        echo "  - ${IMAGE_NAME}:${NIGHTLY_TAG} (multi-platform manifest)"
+        echo "  - ${IMAGE_NAME}:${NIGHTLY_TAG}-arm64 (ARM64 specific)"
+        echo "  - ${IMAGE_NAME}:${NIGHTLY_TAG}-amd64 (AMD64 specific)"
+    else
+        echo "  1. Build Docker image locally"
+        echo "  2. Tag with $NIGHTLY_TAG and $NIGHTLY_LATEST_TAG"
+        echo "  3. Push to GitHub Container Registry"
+    fi
     echo ""
     read -p "Continue? (Y/n): " -n 1 -r
     echo
@@ -274,6 +441,7 @@ main() {
     build_image
     login_registry
     push_image
+    create_manifest
     
     print_color $GREEN "🎉 Build and publish completed successfully!"
 }
