@@ -46,7 +46,7 @@ func (s *MockService) HandleRequest(alias, method, reqPath string, req *http.Req
 	// Check project mode
 	switch project.Mode {
 	case database.ModeMock:
-		resp, err, mode, matched := s.handleMockMode(project.ID, method, cleanPath, req)
+		resp, err, mode, matched := s.handleMockMode(project, method, cleanPath, req)
 		return resp, err, project.ID, mode, matched
 	case database.ModeProxy:
 		resp, err, matched := s.handleProxyMode(project, method, cleanPath, req)
@@ -62,15 +62,18 @@ func (s *MockService) HandleRequest(alias, method, reqPath string, req *http.Req
 }
 
 // handleMockMode generates mock response and returns if the request matched an endpoint
-func (s *MockService) handleMockMode(projectID string, method, path string, req *http.Request) (*http.Response, error, database.ProjectMode, bool) {
-	endpoint, err := s.Repo.FindMatchingEndpoint(projectID, method, path)
+func (s *MockService) handleMockMode(project *database.Project, method, path string, req *http.Request) (*http.Response, error, database.ProjectMode, bool) {
+	endpoint, err := s.Repo.FindMatchingEndpoint(project.ID, method, path)
 	if err != nil {
-		// No matching endpoint found
+		// No matching endpoint found - apply project-level delay before returning error
+		s.applyDelay(project, nil, nil)
 		return createErrorResponse(http.StatusNotFound, "Endpoint not found"), nil, database.ModeMock, false
 	}
 
 	// Check if endpoint is configured for proxying
 	if endpoint.UseProxy && endpoint.ProxyTarget != nil {
+		// Apply delays before proxying
+		s.applyDelay(project, endpoint, nil)
 		// Forward the request to the proxy target
 		resp, err := executeProxyRequest(endpoint.ProxyTarget.URL, method, path, req.URL.RawQuery, req)
 		return resp, err, database.ModeProxy, true
@@ -79,16 +82,16 @@ func (s *MockService) handleMockMode(projectID string, method, path string, req 
 	// Get all responses for this endpoint
 	responses, err := s.Repo.FindResponsesByEndpointID(endpoint.ID)
 	if err != nil || len(responses) == 0 {
+		// Apply delays before returning error
+		s.applyDelay(project, endpoint, nil)
 		return createErrorResponse(http.StatusInternalServerError, "No responses configured"), nil, database.ModeMock, true
 	}
 
 	// Select response based on ResponseMode
 	response := selectResponse(responses, endpoint.ResponseMode, req)
 
-	// Apply delay if configured
-	if response.DelayMS > 0 {
-		time.Sleep(time.Duration(response.DelayMS) * time.Millisecond)
-	}
+	// Apply delays (response-level delay overrides endpoint-level delay, which overrides project-level delay)
+	s.applyDelay(project, endpoint, &response)
 
 	// Create and return HTTP response with match indicator
 	resp, err := createMockResponse(response)
@@ -117,10 +120,8 @@ func (s *MockService) handleProxyMode(project *database.Project, method, path st
 			// Select response based on ResponseMode
 			response := selectResponse(responses, endpoint.ResponseMode, req)
 
-			// Apply delay if configured
-			if response.DelayMS > 0 {
-				time.Sleep(time.Duration(response.DelayMS) * time.Millisecond)
-			}
+			// Apply delay with proper priority: Response > Endpoint > Project
+			s.applyDelay(project, endpoint, &response)
 
 			// Create and return HTTP response from mock
 			resp, err := createMockResponse(response)
@@ -133,6 +134,8 @@ func (s *MockService) handleProxyMode(project *database.Project, method, path st
 	}
 
 	// No matching mock endpoint found or error occurred, forward to target
+	// Apply project-level delay before forwarding
+	s.applyDelay(project, nil, nil)
 	resp, err := executeProxyRequest(project.ActiveProxy.URL, method, path, req.URL.RawQuery, req)
 	if err == nil && resp != nil && resp.Header != nil {
 		// Add header to indicate response was proxied
@@ -157,6 +160,9 @@ func (s *MockService) handleForwarderMode(project *database.Project, method, pat
 	// Use the common executeProxyRequest helper function, but with the path parameter
 	// which might differ from req.URL.Path in this context
 	// Note: handleForwarderMode always returns false for match status in HandleRequest
+	// Apply project-level delay before forwarding
+	s.applyDelay(project, nil, nil)
+
 	return executeProxyRequest(project.ActiveProxy.URL, method, path, req.URL.RawQuery, req)
 }
 
@@ -475,4 +481,40 @@ func createErrorResponse(statusCode int, message string) *http.Response {
 
 	resp.Header.Set("Content-Type", "application/json")
 	return resp
+}
+
+// applyDelay applies delay based on priority: Response DelayMS > Endpoint DelayMs > Project DelayMs
+// Response parameter is optional - pass nil when response delay is not applicable
+func (s *MockService) applyDelay(project *database.Project, endpoint *database.MockEndpoint, response *database.MockResponse) {
+	var delayMs int
+
+	// Response delay has highest priority
+	if response != nil {
+		if response.DelayMS > 0 {
+			delayMs = response.DelayMS
+		}
+	}
+
+	// Endpoint delay overrides project delay
+	if endpoint != nil && delayMs == 0 {
+		if endpoint.AdvanceConfig != "" {
+			if endpointConfig, err := database.ParseEndpointAdvanceConfig(endpoint.AdvanceConfig); err == nil && endpointConfig.DelayMs > 0 {
+				delayMs = endpointConfig.DelayMs
+			}
+		}
+	}
+
+	// Get project-level delay from advance config
+	if project != nil && delayMs == 0 {
+		if project.AdvanceConfig != "" {
+			if projectConfig, err := database.ParseProjectAdvanceConfig(project.AdvanceConfig); err == nil {
+				delayMs = projectConfig.DelayMs
+			}
+		}
+	}
+
+	// Apply delay if configured
+	if delayMs > 0 {
+		time.Sleep(time.Duration(delayMs) * time.Millisecond)
+	}
 }

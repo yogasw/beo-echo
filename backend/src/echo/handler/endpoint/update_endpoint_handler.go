@@ -1,6 +1,7 @@
 package endpoint
 
 import (
+	"encoding/json"
 	"net/http"
 	"strings"
 
@@ -64,6 +65,7 @@ func UpdateEndpointHandler(c *gin.Context) {
 		Enabled       *bool   `json:"enabled"`
 		ResponseMode  string  `json:"response_mode"`
 		Documentation string  `json:"documentation"`
+		AdvanceConfig *string `json:"advance_config"`  // Changed to pointer to detect if field is provided
 		UseProxy      *bool   `json:"use_proxy"`       // Whether to use proxy for this endpoint
 		ProxyTargetID *string `json:"proxy_target_id"` // ID of the proxy target to use
 	}
@@ -100,6 +102,27 @@ func UpdateEndpointHandler(c *gin.Context) {
 
 	if updateData.Documentation != "" {
 		existingEndpoint.Documentation = updateData.Documentation
+	}
+
+	// Handle advance_config: allow empty string to clear the config
+	// Check if advance_config field is provided (not nil)
+	if updateData.AdvanceConfig != nil {
+		advanceConfig := *updateData.AdvanceConfig
+
+		// Only validate JSON format if the string is not empty
+		if advanceConfig != "" {
+			// Validate JSON format before saving
+			var temp interface{}
+			if err := json.Unmarshal([]byte(advanceConfig), &temp); err != nil {
+				c.JSON(http.StatusBadRequest, gin.H{
+					"error":   true,
+					"message": "Invalid JSON format in advance_config: " + err.Error(),
+				})
+				return
+			}
+		}
+		// Update with the new value (could be empty string)
+		existingEndpoint.AdvanceConfig = advanceConfig
 	}
 
 	// Update proxy settings

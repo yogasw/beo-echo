@@ -68,6 +68,7 @@ export type Endpoint = {
 	created_at: Date;
 	updated_at: Date;
 	documentation: string;
+	advance_config?: string; // Advanced configuration (e.g. timeout) as JSON string
 }
 
 export type Response = {
@@ -607,4 +608,29 @@ export const deleteBookmark = async (projectId: string, logId: string): Promise<
 	if (!response.data.success) {
 		throw new Error(response.data.message || 'Failed to delete bookmark');
 	}
+};
+
+// Project advance config management functions
+
+/**
+ * Get project advance configuration
+ * @param projectId Project ID
+ * @returns Project advance configuration
+ */
+export const getProjectAdvanceConfig = async (projectId: string): Promise<any> => {
+	let workspaceId = getCurrentWorkspaceId();
+	const response = await apiClient.get(`/workspaces/${workspaceId}/projects/${projectId}/advance-config`);
+	return response.data.data;
+};
+
+/**
+ * Update project advance configuration
+ * @param projectId Project ID
+ * @param config Advance configuration object (e.g., {delayMs: 5000})
+ * @returns Updated configuration
+ */
+export const updateProjectAdvanceConfig = async (projectId: string, config: any): Promise<any> => {
+	let workspaceId = getCurrentWorkspaceId();
+	const response = await apiClient.put(`/workspaces/${workspaceId}/projects/${projectId}/advance-config`, config);
+	return response.data.data;
 };

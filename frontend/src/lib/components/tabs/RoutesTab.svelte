@@ -5,6 +5,7 @@
 	import RulesTab from './routes/RulesTab.svelte';
 	import ProxyTab from './routes/ProxyTab.svelte';
 	import NotesTab from './routes/NotesTab.svelte';
+	import AdvancedSettingsTab from './routes/AdvancedSettingsTab.svelte';
 	import RoutesList from '$lib/components/tabs/routes/RoutesList.svelte';
 	import DropdownResponse from '$lib/components/tabs/routes/DropdownResponse.svelte';
 	import * as ThemeUtils from '$lib/utils/themeUtils';
@@ -302,7 +303,7 @@
 
 			<!-- Enhanced Tab Navigation -->
 			<div class="flex mb-4 border-b {ThemeUtils.themeBorder()} overflow-x-auto no-scrollbar">
-				{#each [{ id: 'Status & Body', icon: 'fas fa-code' }, { id: 'Headers', icon: 'fas fa-exchange-alt' }, { id: 'Rules', icon: 'fas fa-filter' }, { id: 'Notes', icon: 'fas fa-sticky-note' }] as tab}				<button
+				{#each [{ id: 'Status & Body', icon: 'fas fa-code' }, { id: 'Headers', icon: 'fas fa-exchange-alt' }, { id: 'Rules', icon: 'fas fa-filter' }, { id: 'Notes', icon: 'fas fa-sticky-note' }, { id: 'Advanced Settings', icon: 'fas fa-cogs' }] as tab}				<button
 					class="relative flex items-center py-3 px-4 font-medium text-sm whitespace-nowrap transition-all duration-200 {tab.id ===
 					activeContentTab
 						? `${ThemeUtils.themeTextPrimary()} border-b-2 border-blue-500`
@@ -378,6 +379,21 @@
 												selectedResponse = updateResponse(
 													'note',
 													trimmedNotes,
+													selectedEndpoint,
+													selectedResponse
+												);
+											}
+										}}
+									/>
+								{:else if activeContentTab === 'Advanced Settings'}
+									<AdvancedSettingsTab
+										delayMs={selectedResponse?.delay_ms || 0}
+										onDelayUpdate={(newDelayMs) => {
+											if (selectedResponse) {
+												console.log('Delay updated:', newDelayMs);
+												selectedResponse = updateResponse(
+													'delay_ms',
+													newDelayMs,
 													selectedEndpoint,
 													selectedResponse
 												);

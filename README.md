@@ -1,8 +1,6 @@
 
 # Beo Echo
 
-> ⚠️ **AI-Generated Code Notice**: A significant portion of this codebase was generated using GitHub Copilot AI agent. While thoroughly tested, users should be aware that any bugs or issues arising from AI-generated code are not the responsibility of the original creator. Please report issues and contribute fixes as needed.
-
 Beo Echo is a powerful API mocking service with a robust Golang backend and sleek Svelte frontend. It serves as a comprehensive control panel for creating, managing, and monitoring mock APIs and request forwarding, similar to popular tools like Beeceptor and Mockoon.
 
 ## 🌟 Project Overview
