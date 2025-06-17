@@ -151,12 +151,25 @@ get_repo_info() {
         VERSION="latest"
     fi
     
+    # Get git branch and commit for nightly tag
+    local branch=$(git branch --show-current 2>/dev/null || echo "unknown")
+    local commit=$(git rev-parse --short HEAD 2>/dev/null || echo "unknown")
+    local timestamp=$(date +%s)
+    
+    # Generate nightly tags: nightly-branch-commit_id-unixtime and nightly-latest
+    NIGHTLY_TAG="nightly-${branch}-${commit}-${timestamp}"
+    NIGHTLY_LATEST_TAG="nightly-latest"
+    
     IMAGE_NAME="ghcr.io/${OWNER}/${REPO_NAME}"
     
     print_color $BLUE "📋 Build Info:"
     echo "   Repository: ${OWNER}/${REPO_NAME}"
     echo "   Image: ${IMAGE_NAME}"
     echo "   Version: ${VERSION}"
+    echo "   Branch: ${branch}"
+    echo "   Commit: ${commit}"
+    echo "   Nightly: ${NIGHTLY_TAG}"
+    echo "   Nightly Latest: ${NIGHTLY_LATEST_TAG}"
 }
 
 # Build Docker image
@@ -164,14 +177,14 @@ build_image() {
     print_color $YELLOW "🔨 Building Docker image..."
     
     docker build \
-        --tag "${IMAGE_NAME}:${VERSION}" \
-        --tag "${IMAGE_NAME}:latest" \
+        --tag "${IMAGE_NAME}:${NIGHTLY_TAG}" \
+        --tag "${IMAGE_NAME}:${NIGHTLY_LATEST_TAG}" \
         --label "org.opencontainers.image.source=https://github.com/${OWNER}/${REPO_NAME}" \
         .
     
     print_color $GREEN "✅ Docker image built successfully"
-    echo "   Tagged: ${IMAGE_NAME}:${VERSION}"
-    echo "   Tagged: ${IMAGE_NAME}:latest"
+    echo "   Tagged: ${IMAGE_NAME}:${NIGHTLY_TAG}"
+    echo "   Tagged: ${IMAGE_NAME}:${NIGHTLY_LATEST_TAG}"
 }
 
 # Login to GitHub Container Registry
@@ -187,12 +200,12 @@ login_registry() {
 push_image() {
     print_color $YELLOW "📤 Pushing to GitHub Container Registry..."
     
-    docker push "${IMAGE_NAME}:${VERSION}"
-    docker push "${IMAGE_NAME}:latest"
+    docker push "${IMAGE_NAME}:${NIGHTLY_TAG}"
+    docker push "${IMAGE_NAME}:${NIGHTLY_LATEST_TAG}"
     
     print_color $GREEN "✅ Images pushed successfully"
-    echo "   Available: docker pull ${IMAGE_NAME}:${VERSION}"
-    echo "   Available: docker pull ${IMAGE_NAME}:latest"
+    echo "   Available: docker pull ${IMAGE_NAME}:${NIGHTLY_TAG}"
+    echo "   Available: docker pull ${IMAGE_NAME}:${NIGHTLY_LATEST_TAG}"
 }
 
 # Check repository permissions
@@ -229,13 +242,15 @@ show_build_summary() {
     echo "================"
     echo "Repository: $OWNER/$REPO_NAME"
     echo "Version: $VERSION"
+    echo "Nightly: $NIGHTLY_TAG"
     echo "Registry: ghcr.io"
-    echo "Image: ghcr.io/$OWNER/$REPO_NAME:$VERSION"
-    echo "Also tagged as: ghcr.io/$OWNER/$REPO_NAME:latest"
+    echo "Images to be built and pushed:"
+    echo "  - ghcr.io/$OWNER/$REPO_NAME:$NIGHTLY_TAG"
+    echo "  - ghcr.io/$OWNER/$REPO_NAME:$NIGHTLY_LATEST_TAG"
     echo ""
     echo "This will:"
     echo "  1. Build Docker image locally"
-    echo "  2. Tag with version $VERSION and latest"
+    echo "  2. Tag with $NIGHTLY_TAG and $NIGHTLY_LATEST_TAG"
     echo "  3. Push to GitHub Container Registry"
     echo ""
     read -p "Continue? (Y/n): " -n 1 -r
