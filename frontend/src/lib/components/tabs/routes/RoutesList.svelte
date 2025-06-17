@@ -7,6 +7,7 @@
 	import ModalCreateMock from '../logs/ModalCreateMock.svelte';
 	import { selectedProject } from '$lib/stores/selectedConfig';
 	import { getRoutesPanelWidth, setRoutesPanelWidth } from '$lib/utils/localStorage';
+	import { getProjectDetail } from '$lib/api/BeoApi';
 
 	export let selectedEndpoint: Endpoint | null;
 	export let activeConfigName: string;
@@ -85,9 +86,14 @@
 			case 'delete':
 				// Add your delete functionality here
 				deleteEndpoint(endpoint.project_id, endpoint.id)
-					.then(() => {
+					.then(async () => {
 						toast.success('Endpoint successfully deleted!');
 						handleRouteStatusChange(endpoint);
+						// Sync ulang project detail agar list endpoint auto update
+						if ($selectedProject) {
+							const refreshedProject = await getProjectDetail($selectedProject.id);
+							selectedProject.set(refreshedProject);
+						}
 					})
 					.catch((error) => {
 						toast.error(`Failed to delete endpoint: ${error.message}`);
