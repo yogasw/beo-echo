@@ -1,7 +1,6 @@
 package project
 
 import (
-	"encoding/json"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -77,11 +76,11 @@ func CreateProjectHandler(c *gin.Context) {
 
 	// Validate advance config JSON format if provided
 	if project.AdvanceConfig != "" {
-		var jsonTest interface{}
-		if err := json.Unmarshal([]byte(project.AdvanceConfig), &jsonTest); err != nil {
+		_, err := database.ParseProjectAdvanceConfig(project.AdvanceConfig)
+		if err != nil {
 			c.JSON(http.StatusBadRequest, gin.H{
 				"error":   true,
-				"message": "Invalid JSON format in advance_config: " + err.Error(),
+				"message": err.Error(),
 			})
 			return
 		}

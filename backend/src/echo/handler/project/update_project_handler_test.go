@@ -225,7 +225,7 @@ func TestUpdateProjectHandler(t *testing.T) {
 		require.NoError(t, err)
 
 		assert.True(t, response["error"].(bool))
-		assert.Contains(t, response["message"].(string), "Invalid JSON format in advance_config")
+		assert.Contains(t, response["message"].(string), "invalid JSON format in advance_config")
 	})
 
 	t.Run("Update Project Clear Advance Config", func(t *testing.T) {
@@ -459,5 +459,154 @@ func TestUpdateProjectHandler(t *testing.T) {
 		err = json.Unmarshal([]byte(projectData["advance_config"].(string)), &storedAdvanceConfig)
 		require.NoError(t, err)
 		assert.Equal(t, float64(3000), storedAdvanceConfig["global_timeout"])
+	})
+
+	t.Run("Update Project With Invalid Timeout Too Low", func(t *testing.T) {
+		// Create test workspace and user
+		user, workspace, err := database.CreateTestWorkspace("test_update_timeout_low@example.com", "Test User Update Timeout Low", "Test Workspace Update Timeout Low")
+		require.NoError(t, err)
+		defer database.CleanupTestData(user.ID, workspace.ID, "", "")
+
+		// Create test project
+		project, err := database.CreateTestProject(workspace.ID, "Test Project Update Timeout Low", generateUniqueAliasUpdate("test-project-update-timeout-low"))
+		require.NoError(t, err)
+
+		// Debug: Ensure project ID is not empty
+		require.NotEmpty(t, project.ID, "Project ID should not be empty")
+		t.Logf("Created project with ID: %s", project.ID)
+
+		// Setup Gin router
+		router := gin.New()
+		router.PUT("/api/projects/:projectId", UpdateProjectHandler)
+
+		// Create update data with invalid timeout (negative)
+		updateData := map[string]interface{}{
+			"advance_config": `{"timeout": -1500}`, // Negative timeout
+		}
+
+		jsonData, err := json.Marshal(updateData)
+		require.NoError(t, err)
+
+		// Create HTTP request
+		url := "/api/projects/" + project.ID
+		t.Logf("Request URL: %s", url)
+		req, err := http.NewRequest("PUT", url, bytes.NewBuffer(jsonData))
+		require.NoError(t, err)
+		req.Header.Set("Content-Type", "application/json")
+
+		// Execute request
+		w := httptest.NewRecorder()
+		router.ServeHTTP(w, req)
+
+		// Debug: Print response if not expected
+		if w.Code != http.StatusBadRequest {
+			t.Logf("Response Code: %d", w.Code)
+			t.Logf("Response Body: %s", w.Body.String())
+		}
+
+		// Verify response
+		assert.Equal(t, http.StatusBadRequest, w.Code)
+
+		var response map[string]interface{}
+		err = json.Unmarshal(w.Body.Bytes(), &response)
+		require.NoError(t, err)
+
+		// Debug: Print actual message if assertion fails
+		if !assert.True(t, response["error"].(bool)) {
+			t.Logf("Actual response: %+v", response)
+		}
+
+		actualMessage := response["message"].(string)
+		if !assert.Contains(t, actualMessage, "timeout cannot be negative") {
+			t.Logf("Actual message: %s", actualMessage)
+		}
+	})
+
+	t.Run("Update Project With Invalid Timeout Too High", func(t *testing.T) {
+		// Create test workspace and user
+		user, workspace, err := database.CreateTestWorkspace("test_update_timeout_high@example.com", "Test User Update Timeout High", "Test Workspace Update Timeout High")
+		require.NoError(t, err)
+		defer database.CleanupTestData(user.ID, workspace.ID, "", "")
+
+		// Create test project
+		project, err := database.CreateTestProject(workspace.ID, "Test Project Update Timeout High", generateUniqueAliasUpdate("test-project-update-timeout-high"))
+		require.NoError(t, err)
+
+		// Setup Gin router
+		router := gin.New()
+		router.PUT("/api/projects/:projectId", UpdateProjectHandler)
+
+		// Create update data with invalid timeout (too high)
+		updateData := map[string]interface{}{
+			"advance_config": `{"timeout": 130000}`, // Above maximum 120000ms (2 minutes)
+		}
+
+		jsonData, err := json.Marshal(updateData)
+		require.NoError(t, err)
+
+		// Create HTTP request
+		req, err := http.NewRequest("PUT", "/api/projects/"+project.ID, bytes.NewBuffer(jsonData))
+		require.NoError(t, err)
+		req.Header.Set("Content-Type", "application/json")
+
+		// Execute request
+		w := httptest.NewRecorder()
+		router.ServeHTTP(w, req)
+
+		// Verify response
+		assert.Equal(t, http.StatusBadRequest, w.Code)
+
+		var response map[string]interface{}
+		err = json.Unmarshal(w.Body.Bytes(), &response)
+		require.NoError(t, err)
+
+		assert.True(t, response["error"].(bool))
+		assert.Contains(t, response["message"].(string), "timeout cannot exceed 120000ms")
+	})
+
+	t.Run("Update Project With Valid Timeout", func(t *testing.T) {
+		// Create test workspace and user
+		user, workspace, err := database.CreateTestWorkspace("test_update_timeout_valid@example.com", "Test User Update Timeout Valid", "Test Workspace Update Timeout Valid")
+		require.NoError(t, err)
+		defer database.CleanupTestData(user.ID, workspace.ID, "", "")
+
+		// Create test project
+		project, err := database.CreateTestProject(workspace.ID, "Test Project Update Timeout Valid", generateUniqueAliasUpdate("test-project-update-timeout-valid"))
+		require.NoError(t, err)
+
+		// Setup Gin router
+		router := gin.New()
+		router.PUT("/api/projects/:projectId", UpdateProjectHandler)
+
+		// Create update data with valid timeout
+		updateData := map[string]interface{}{
+			"advance_config": `{"timeout": 10000}`, // Valid 10 seconds timeout
+		}
+
+		jsonData, err := json.Marshal(updateData)
+		require.NoError(t, err)
+
+		// Create HTTP request
+		req, err := http.NewRequest("PUT", "/api/projects/"+project.ID, bytes.NewBuffer(jsonData))
+		require.NoError(t, err)
+		req.Header.Set("Content-Type", "application/json")
+
+		// Execute request
+		w := httptest.NewRecorder()
+		router.ServeHTTP(w, req)
+
+		// Verify response
+		assert.Equal(t, http.StatusOK, w.Code)
+
+		var response map[string]interface{}
+		err = json.Unmarshal(w.Body.Bytes(), &response)
+		require.NoError(t, err)
+
+		assert.True(t, response["success"].(bool))
+		assert.Equal(t, "Project updated successfully", response["message"])
+
+		// Verify updated project data
+		projectData := response["data"].(map[string]interface{})
+		assert.Equal(t, `{"timeout": 10000}`, projectData["advance_config"])
 	})
 }

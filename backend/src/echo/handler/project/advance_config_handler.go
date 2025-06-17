@@ -117,12 +117,22 @@ func UpdateProjectAdvanceConfigHandler(c *gin.Context) {
 		return
 	}
 
-	// Convert back to JSON string for storage
+	// Convert back to JSON string for storage and validation
 	configJSON, err := json.Marshal(configData)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error":   true,
 			"message": "Failed to process config data: " + err.Error(),
+		})
+		return
+	}
+
+	// Validate the advance config using our validation function
+	_, err = database.ParseProjectAdvanceConfig(string(configJSON))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error":   true,
+			"message": err.Error(),
 		})
 		return
 	}
