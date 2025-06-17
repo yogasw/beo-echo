@@ -45,6 +45,8 @@
 	let startX = 0;
 	let startWidth = panelWidth;
 
+	let deletingId: string | null = null;
+
 	function toggleMenu(event: MouseEvent, endpointId: string) {
 		event.stopPropagation();
 		if (activeMenuEndpointId === endpointId) {
@@ -85,19 +87,24 @@
 				break;
 			case 'delete':
 				// Add your delete functionality here
-				deleteEndpoint(endpoint.project_id, endpoint.id)
-					.then(async () => {
-						toast.success('Endpoint successfully deleted!');
-						handleRouteStatusChange(endpoint);
-						// Sync ulang project detail agar list endpoint auto update
-						if ($selectedProject) {
-							const refreshedProject = await getProjectDetail($selectedProject.id);
-							selectedProject.set(refreshedProject);
-						}
-					})
-					.catch((error) => {
-						toast.error(`Failed to delete endpoint: ${error.message}`);
-					});
+				deletingId = endpoint.id;
+				setTimeout(() => {
+					deleteEndpoint(endpoint.project_id, endpoint.id)
+						.then(async () => {
+							toast.success('Endpoint successfully deleted!');
+							handleRouteStatusChange(endpoint);
+							if ($selectedProject) {
+								const refreshedProject = await getProjectDetail($selectedProject.id);
+								selectedProject.set(refreshedProject);
+							}
+						})
+						.catch((error) => {
+							toast.error(`Failed to delete endpoint: ${error.message}`);
+						})
+						.finally(() => {
+							deletingId = null;
+						});
+				}, 300);
 				break;
 		}
 	}
@@ -203,7 +210,7 @@
 				{#each filteredEndpoints as endpoint}
 					<div
 						class={ThemeUtils.themeBgSecondary(`flex items-center justify-between py-2 px-4 rounded cursor-pointer relative group 
-							${selectedEndpoint === endpoint ? 'border-2 border-blue-500' : 'theme-border'}`)}
+							${selectedEndpoint === endpoint ? 'border-2 border-blue-500' : 'theme-border'} ${deletingId === endpoint.id ? 'flash-delete' : ''}`)}
 						on:click={() => selectRoute(endpoint)}
 						on:keydown={(e) => e.key === 'Enter' && selectRoute(endpoint)}
 						tabindex="0"
@@ -288,3 +295,15 @@
 		<div class="w-full h-full bg-transparent group-hover:bg-blue-500/30"></div>
 	</div>
 </div>
+
+<style>
+.flash-delete {
+	animation: flashRed 0.3s;
+	background-color: rgb(var(--tw-color-red-200, 254 202 202)) !important;
+}
+@keyframes flashRed {
+	0% { background-color: #fff; }
+	50% { background-color: rgb(var(--tw-color-red-300, 252 165 165)); }
+	100% { background-color: #fff; }
+}
+</style>
