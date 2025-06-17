@@ -1,3 +1,7 @@
+## v2.3.2
+_Released on 2025-06-17_
+1. Build docker image nightly from local
+
 ## v2.3.1
 _Released on 2025-06-17_
 
