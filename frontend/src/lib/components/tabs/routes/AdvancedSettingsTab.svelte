@@ -68,7 +68,7 @@
 					id="response-delay-ms"
 					min="0"
 					max="120000"
-					step="100"
+					step="1000"
 					class="{ThemeUtils.inputField()}"
 					value={delayMs}
 					on:input={(e) => {
