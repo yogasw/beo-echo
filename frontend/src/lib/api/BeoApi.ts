@@ -68,6 +68,7 @@ export type Endpoint = {
 	created_at: Date;
 	updated_at: Date;
 	documentation: string;
+	advance_config?: string; // Advanced configuration (e.g. timeout) as JSON string
 }
 
 export type Response = {

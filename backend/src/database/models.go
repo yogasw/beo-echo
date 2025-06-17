@@ -95,6 +95,7 @@ type MockEndpoint struct {
 	Enabled       bool           `json:"enabled" gorm:"default:true"`           // Whether endpoint is active or not
 	ResponseMode  string         `json:"response_mode" gorm:"default:'random'"` // "static", "random", "round_robin"
 	Documentation string         `gorm:"type:text" json:"documentation"`        // Documentation URL or text
+	AdvanceConfig string         `gorm:"type:text" json:"advance_config"`       // Advanced configuration (e.g. timeout) as JSON string
 	Responses     []MockResponse `gorm:"foreignKey:EndpointID;constraint:OnDelete:CASCADE;" json:"responses"`
 	// Proxy configuration for endpoint-level proxying
 	UseProxy      bool         `json:"use_proxy" gorm:"default:false"`               // Whether to use proxy for this endpoint
