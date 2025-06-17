@@ -59,8 +59,7 @@
 	
 	<div class="mt-2 flex justify-between items-center">
 		<p class="text-xs {ThemeUtils.themeTextMuted()}">
-			Notes are useful for documenting the purpose of this response, expected usage scenarios, 
-			and any other important information for team members.
+			Notes are useful for documenting the purpose of this response, expected usage scenarios and any other important information for team members.
 		</p>
 		{#if isOverLimit}
 			<p class="text-xs text-red-500">
