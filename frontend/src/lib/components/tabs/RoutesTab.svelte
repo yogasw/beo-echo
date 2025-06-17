@@ -387,7 +387,18 @@
 									/>
 								{:else if activeContentTab === 'Advanced Settings'}
 									<AdvancedSettingsTab
-										bind:selectedEndpoint
+										delayMs={selectedResponse?.delay_ms || 0}
+										onDelayUpdate={(newDelayMs) => {
+											if (selectedResponse) {
+												console.log('Delay updated:', newDelayMs);
+												selectedResponse = updateResponse(
+													'delay_ms',
+													newDelayMs,
+													selectedEndpoint,
+													selectedResponse
+												);
+											}
+										}}
 									/>
 								{/if}
 							{:else}
