@@ -278,23 +278,23 @@ func TestUpdateProjectAdvanceConfigHandler(t *testing.T) {
 		assert.Contains(t, response["message"].(string), "Invalid JSON data")
 	})
 
-	t.Run("Update Project Advance Config - Invalid Timeout Too High", func(t *testing.T) {
+	t.Run("Update Project Advance Config - Invalid DelayMs Too High", func(t *testing.T) {
 		// Create test workspace and user
-		user, workspace, err := database.CreateTestWorkspace("test_advance_timeout_high@example.com", "Test User Advance Timeout High", "Test Workspace Advance Timeout High")
+		user, workspace, err := database.CreateTestWorkspace("test_advance_delayms_high@example.com", "Test User Advance DelayMs High", "Test Workspace Advance DelayMs High")
 		require.NoError(t, err)
 		defer database.CleanupTestData(user.ID, workspace.ID, "", "")
 
 		// Create test project
-		project, err := database.CreateTestProject(workspace.ID, "Test Project Advance Timeout High", generateUniqueAliasAdvance("test-project-advance-timeout-high"))
+		project, err := database.CreateTestProject(workspace.ID, "Test Project Advance DelayMs High", generateUniqueAliasAdvance("test-project-advance-delayms-high"))
 		require.NoError(t, err)
 
 		// Setup Gin router
 		router := gin.New()
 		router.PUT("/api/projects/:projectId/advance-config", UpdateProjectAdvanceConfigHandler)
 
-		// Invalid config with timeout too high
+		// Invalid config with delayMs too high
 		invalidConfig := map[string]interface{}{
-			"timeout": 400000, // Above maximum 120000ms
+			"delayMs": 400000, // Above maximum 120000ms
 		}
 
 		jsonData, err := json.Marshal(invalidConfig)
@@ -317,26 +317,26 @@ func TestUpdateProjectAdvanceConfigHandler(t *testing.T) {
 		require.NoError(t, err)
 
 		assert.True(t, response["error"].(bool))
-		assert.Contains(t, response["message"].(string), "timeout cannot exceed 120000ms (2 minutes)")
+		assert.Contains(t, response["message"].(string), "delayMs cannot exceed 120000ms (2 minutes)")
 	})
 
-	t.Run("Update Project Advance Config - Valid Timeout", func(t *testing.T) {
+	t.Run("Update Project Advance Config - Valid DelayMs", func(t *testing.T) {
 		// Create test workspace and user
-		user, workspace, err := database.CreateTestWorkspace("test_advance_timeout_valid@example.com", "Test User Advance Timeout Valid", "Test Workspace Advance Timeout Valid")
+		user, workspace, err := database.CreateTestWorkspace("test_advance_delayms_valid@example.com", "Test User Advance DelayMs Valid", "Test Workspace Advance DelayMs Valid")
 		require.NoError(t, err)
 		defer database.CleanupTestData(user.ID, workspace.ID, "", "")
 
 		// Create test project
-		project, err := database.CreateTestProject(workspace.ID, "Test Project Advance Timeout Valid", generateUniqueAliasAdvance("test-project-advance-timeout-valid"))
+		project, err := database.CreateTestProject(workspace.ID, "Test Project Advance DelayMs Valid", generateUniqueAliasAdvance("test-project-advance-delayms-valid"))
 		require.NoError(t, err)
 
 		// Setup Gin router
 		router := gin.New()
 		router.PUT("/api/projects/:projectId/advance-config", UpdateProjectAdvanceConfigHandler)
 
-		// Valid config with proper timeout
+		// Valid config with proper delayMs
 		validConfig := map[string]interface{}{
-			"timeout": 15000, // Valid 15 seconds timeout
+			"delayMs": 15000, // Valid 15 seconds delay
 		}
 
 		jsonData, err := json.Marshal(validConfig)
@@ -365,7 +365,7 @@ func TestUpdateProjectAdvanceConfigHandler(t *testing.T) {
 		var updatedProject database.Project
 		result := database.GetDB().Where("id = ?", project.ID).First(&updatedProject)
 		require.NoError(t, result.Error)
-		assert.Equal(t, `{"timeout":15000}`, updatedProject.AdvanceConfig)
+		assert.Equal(t, `{"delayMs":15000}`, updatedProject.AdvanceConfig)
 	})
 
 }

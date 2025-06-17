@@ -326,9 +326,9 @@ func TestCreateProjectHandler(t *testing.T) {
 		assert.Contains(t, response["message"].(string), "Project alias already exists")
 	})
 
-	t.Run("Create Project With Invalid Timeout Too Low", func(t *testing.T) {
+	t.Run("Create Project With Invalid delayMs Too Low", func(t *testing.T) {
 		// Create test workspace and user
-		user, workspace, err := database.CreateTestWorkspace("test_timeout_low@example.com", "Test User Timeout Low", "Test Workspace Timeout Low")
+		user, workspace, err := database.CreateTestWorkspace("test_delayms_low@example.com", "Test User DelayMs Low", "Test Workspace DelayMs Low")
 		require.NoError(t, err)
 		defer database.CleanupTestData(user.ID, workspace.ID, "", "")
 
@@ -336,14 +336,14 @@ func TestCreateProjectHandler(t *testing.T) {
 		router := gin.New()
 		router.POST("/api/projects", CreateProjectHandler)
 
-		// Create request data with negative timeout
-		projectAlias := generateUniqueAlias("test-project-timeout-low")
+		// Create request data with negative delayMs
+		projectAlias := generateUniqueAlias("test-project-delayms-low")
 		projectData := map[string]interface{}{
-			"name":           "Test Project Timeout Low",
+			"name":           "Test Project DelayMs Low",
 			"alias":          projectAlias,
 			"mode":           "mock",
 			"workspace_id":   workspace.ID,
-			"advance_config": `{"timeout": -1000}`, // Negative timeout
+			"advance_config": `{"delayMs": -1000}`, // Negative delayMs
 		}
 
 		jsonData, err := json.Marshal(projectData)
@@ -366,12 +366,12 @@ func TestCreateProjectHandler(t *testing.T) {
 		require.NoError(t, err)
 
 		assert.True(t, response["error"].(bool))
-		assert.Contains(t, response["message"].(string), "timeout cannot be negative")
+		assert.Contains(t, response["message"].(string), "delayMs cannot be negative")
 	})
 
-	t.Run("Create Project With Invalid Timeout Too High", func(t *testing.T) {
+	t.Run("Create Project With Invalid DelayMs Too High", func(t *testing.T) {
 		// Create test workspace and user
-		user, workspace, err := database.CreateTestWorkspace("test_timeout_high@example.com", "Test User Timeout High", "Test Workspace Timeout High")
+		user, workspace, err := database.CreateTestWorkspace("test_delayms_high@example.com", "Test User DelayMs High", "Test Workspace DelayMs High")
 		require.NoError(t, err)
 		defer database.CleanupTestData(user.ID, workspace.ID, "", "")
 
@@ -379,14 +379,14 @@ func TestCreateProjectHandler(t *testing.T) {
 		router := gin.New()
 		router.POST("/api/projects", CreateProjectHandler)
 
-		// Create request data with timeout too high
-		projectAlias := generateUniqueAlias("test-project-timeout-high")
+		// Create request data with delayMs too high
+		projectAlias := generateUniqueAlias("test-project-delayms-high")
 		projectData := map[string]interface{}{
-			"name":           "Test Project Timeout High",
+			"name":           "Test Project DelayMs High",
 			"alias":          projectAlias,
 			"mode":           "mock",
 			"workspace_id":   workspace.ID,
-			"advance_config": `{"timeout": 130000}`, // Above maximum 120000ms (2 minutes)
+			"advance_config": `{"delayMs": 130000}`, // Above maximum 120000ms (2 minutes)
 		}
 
 		jsonData, err := json.Marshal(projectData)
@@ -409,12 +409,12 @@ func TestCreateProjectHandler(t *testing.T) {
 		require.NoError(t, err)
 
 		assert.True(t, response["error"].(bool))
-		assert.Contains(t, response["message"].(string), "timeout cannot exceed 120000ms")
+		assert.Contains(t, response["message"].(string), "delayMs cannot exceed 120000ms")
 	})
 
-	t.Run("Create Project With Valid Timeout Range", func(t *testing.T) {
+	t.Run("Create Project With Valid DelayMs Range", func(t *testing.T) {
 		// Create test workspace and user
-		user, workspace, err := database.CreateTestWorkspace("test_timeout_valid@example.com", "Test User Timeout Valid", "Test Workspace Timeout Valid")
+		user, workspace, err := database.CreateTestWorkspace("test_delayms_valid@example.com", "Test User DelayMs Valid", "Test Workspace DelayMs Valid")
 		require.NoError(t, err)
 		defer database.CleanupTestData(user.ID, workspace.ID, "", "")
 
@@ -422,14 +422,14 @@ func TestCreateProjectHandler(t *testing.T) {
 		router := gin.New()
 		router.POST("/api/projects", CreateProjectHandler)
 
-		// Create request data with valid timeout
-		projectAlias := generateUniqueAlias("test-project-timeout-valid")
+		// Create request data with valid delayMs
+		projectAlias := generateUniqueAlias("test-project-delayms-valid")
 		projectData := map[string]interface{}{
-			"name":           "Test Project Timeout Valid",
+			"name":           "Test Project DelayMs Valid",
 			"alias":          projectAlias,
 			"mode":           "mock",
 			"workspace_id":   workspace.ID,
-			"advance_config": `{"timeout": 5000}`, // Valid timeout 5 seconds
+			"advance_config": `{"delayMs": 5000}`, // Valid delayMs 5 seconds
 		}
 
 		jsonData, err := json.Marshal(projectData)
@@ -456,8 +456,8 @@ func TestCreateProjectHandler(t *testing.T) {
 
 		// Verify project data
 		responseData := response["data"].(map[string]interface{})
-		assert.Equal(t, "Test Project Timeout Valid", responseData["name"])
+		assert.Equal(t, "Test Project DelayMs Valid", responseData["name"])
 		assert.Equal(t, projectAlias, responseData["alias"])
-		assert.Contains(t, responseData["advance_config"].(string), "5000") // Check timeout value exists
+		assert.Contains(t, responseData["advance_config"].(string), "5000") // Check delayMs value exists
 	})
 }

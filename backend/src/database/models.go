@@ -11,32 +11,32 @@ import (
 
 // AdvanceConfigProject defines advance configuration structure for projects
 type AdvanceConfigProject struct {
-	Timeout int `json:"timeout,omitempty"` // Request timeout in milliseconds (0-120000)
+	DelayMs int `json:"delayMs,omitempty"` // Response delay in milliseconds (0-120000)
 }
 
 // AdvanceConfigEndpoint defines advance configuration structure for endpoints
 type AdvanceConfigEndpoint struct {
-	Timeout int `json:"timeout,omitempty"` // Request timeout in milliseconds (0-120000)
+	DelayMs int `json:"delayMs,omitempty"` // Response delay in milliseconds (0-120000)
 }
 
 // Validate validates the project advance configuration
 func (a *AdvanceConfigProject) Validate() error {
-	if a.Timeout < 0 {
-		return errors.New("timeout cannot be negative")
+	if a.DelayMs < 0 {
+		return errors.New("delayMs cannot be negative")
 	}
-	if a.Timeout > 120000 {
-		return errors.New("timeout cannot exceed 120000ms (2 minutes)")
+	if a.DelayMs > 120000 {
+		return errors.New("delayMs cannot exceed 120000ms (2 minutes)")
 	}
 	return nil
 }
 
 // Validate validates the endpoint advance configuration
 func (a *AdvanceConfigEndpoint) Validate() error {
-	if a.Timeout < 0 {
-		return errors.New("timeout cannot be negative")
+	if a.DelayMs < 0 {
+		return errors.New("delayMs cannot be negative")
 	}
-	if a.Timeout > 120000 {
-		return errors.New("timeout cannot exceed 120000ms (2 minutes)")
+	if a.DelayMs > 120000 {
+		return errors.New("delayMs cannot exceed 120000ms (2 minutes)")
 	}
 	return nil
 }
@@ -79,7 +79,7 @@ func ParseEndpointAdvanceConfig(configJSON string) (*AdvanceConfigEndpoint, erro
 
 // ToJSON converts AdvanceConfigProject to JSON string
 func (a *AdvanceConfigProject) ToJSON() (string, error) {
-	if a.Timeout == 0 {
+	if a.DelayMs == 0 {
 		return "", nil
 	}
 
@@ -92,7 +92,7 @@ func (a *AdvanceConfigProject) ToJSON() (string, error) {
 
 // ToJSON converts AdvanceConfigEndpoint to JSON string
 func (a *AdvanceConfigEndpoint) ToJSON() (string, error) {
-	if a.Timeout == 0 {
+	if a.DelayMs == 0 {
 		return "", nil
 	}
 
