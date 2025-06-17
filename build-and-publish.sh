@@ -247,19 +247,20 @@ get_repo_info() {
     local commit=$(git rev-parse --short HEAD 2>/dev/null || echo "unknown")
     local timestamp=$(date +%s)
     
-    # Generate nightly tags: nightly-branch-commit_id-unixtime and nightly-latest
-    NIGHTLY_TAG="nightly-${branch}-${commit}-${timestamp}"
-    NIGHTLY_LATEST_TAG="nightly-latest"
+    # Generate nightly tags: branch-commit_id-unixtime and latest
+    NIGHTLY_TAG="${branch}-${commit}-${timestamp}"
+    NIGHTLY_LATEST_TAG="latest"
     
-    IMAGE_NAME="ghcr.io/${OWNER}/${REPO_NAME}"
+    # Use separate repository for nightly builds
+    IMAGE_NAME="ghcr.io/${OWNER}/${REPO_NAME}-nightly"
     
     print_color $BLUE "📋 Build Info:"
     echo "   Repository: ${OWNER}/${REPO_NAME}"
-    echo "   Image: ${IMAGE_NAME}"
+    echo "   Nightly Image: ${IMAGE_NAME}"
     echo "   Version: ${VERSION}"
     echo "   Branch: ${branch}"
     echo "   Commit: ${commit}"
-    echo "   Nightly: ${NIGHTLY_TAG}"
+    echo "   Nightly Tag: ${NIGHTLY_TAG}"
     echo "   Nightly Latest: ${NIGHTLY_LATEST_TAG}"
 }
 
@@ -377,7 +378,7 @@ cleanup_temp_images() {
         
         # Fetch all container versions using GitHub API
         local versions_json
-        if versions_json=$(gh api "/users/$OWNER/packages/container/$REPO_NAME/versions" --paginate \
+        if versions_json=$(gh api "/users/$OWNER/packages/container/${REPO_NAME}-nightly/versions" --paginate \
             -H "Accept: application/vnd.github+json" 2>/dev/null); then
             
             print_color $YELLOW "📋 Found container versions, processing deletions..."
@@ -398,7 +399,7 @@ cleanup_temp_images() {
                     
                     if gh api --method DELETE \
                         -H "Accept: application/vnd.github+json" \
-                        "/users/$OWNER/packages/container/$REPO_NAME/versions/$version_id" 2>/dev/null; then
+                        "/users/$OWNER/packages/container/${REPO_NAME}-nightly/versions/$version_id" 2>/dev/null; then
                         print_color $GREEN "   ✅ Deleted: $tag"
                     else
                         echo "   ⚠️  Failed to delete (may not exist): $tag"
@@ -572,8 +573,8 @@ show_build_summary() {
     
     echo ""
     echo "Images to be built and pushed:"
-    echo "  - ghcr.io/$OWNER/$REPO_NAME:$NIGHTLY_TAG"
-    echo "  - ghcr.io/$OWNER/$REPO_NAME:$NIGHTLY_LATEST_TAG"
+    echo "  - ghcr.io/$OWNER/${REPO_NAME}-nightly:$NIGHTLY_TAG"
+    echo "  - ghcr.io/$OWNER/${REPO_NAME}-nightly:$NIGHTLY_LATEST_TAG"
     echo ""
     echo "This will:"
     if [[ "$arch" == "arm64" || "$arch" == "aarch64" ]]; then
