@@ -21,6 +21,7 @@
 	let filterText: string = ''; // Variable to store filter input
 	let localUseProxy: boolean = false; // Local state for proxy status
 	let panelWidth: number = 33; // Panel width as percentage (33% = w-1/3)
+	let lastSelectedEndpointId: string | null = null;
 
 	// Update endpoints and activeConfigName when selectedProject changes
 	$: {
@@ -28,8 +29,14 @@
 			endpoints = $selectedProject.endpoints || [];
 			activeConfigName = $selectedProject.name || '';
 
-			// Automatically select the first endpoint if available
-			if (endpoints.length > 0) {
+			// Automatically select the last selected endpoint if available
+			let toSelect: Endpoint | null = null;
+			if (lastSelectedEndpointId) {
+				toSelect = endpoints.find(e => e.id === lastSelectedEndpointId) || null;
+			}
+			if (toSelect) {
+				selectRoute(toSelect);
+			} else if (endpoints.length > 0) {
 				selectRoute(endpoints[0]);
 			} else {
 				selectedEndpoint = null; // Reset selected endpoint when no endpoints available
@@ -56,6 +63,7 @@
 	});
 
 	function selectRoute(route: Endpoint) {
+		lastSelectedEndpointId = route.id;
 		console.log('Route selected:', route);
 		selectedEndpoint = route;
 		// Reset endpoints update list when changing endpoints
