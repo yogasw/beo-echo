@@ -44,18 +44,6 @@
 	let startX = 0;
 	let startWidth = panelWidth;
 
-	function onEndpointCreated(event: CustomEvent<Endpoint>) {
-		handleAddEndpoint(event.detail);
-		showAddEndpointModal = false;
-		
-		// Scroll to the bottom of the endpoints list after a short delay to ensure rendering is complete
-		setTimeout(() => {
-			if (endpointsContainer) {
-				endpointsContainer.scrollTop = endpointsContainer.scrollHeight;
-			}
-		}, 150);
-	}
-
 	function toggleMenu(event: MouseEvent, endpointId: string) {
 		event.stopPropagation();
 		if (activeMenuEndpointId === endpointId) {
@@ -199,7 +187,7 @@
 			projectId={$selectedProject?.id || ''}
 			onClose={() => (showAddEndpointModal = false)}
 			onSuccess={() => (showAddEndpointModal = false)}
-			on:endpointCreated={onEndpointCreated}
+			onEndpointCreated={handleAddEndpoint}
 			on:close={() => (showAddEndpointModal = false)}
 			log={defaultRequestLog}
 		/>
