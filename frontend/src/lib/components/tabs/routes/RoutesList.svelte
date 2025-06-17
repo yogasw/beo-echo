@@ -210,7 +210,7 @@
 				{#each filteredEndpoints as endpoint}
 					<div
 						class={ThemeUtils.themeBgSecondary(`flex items-center justify-between py-2 px-4 rounded cursor-pointer relative group 
-							${selectedEndpoint === endpoint ? 'border-2 border-blue-500' : 'theme-border'} ${deletingId === endpoint.id ? 'flash-delete' : ''}`)}
+							${selectedEndpoint && selectedEndpoint.id === endpoint.id ? 'border-2 border-blue-500' : 'theme-border'} ${deletingId === endpoint.id ? 'flash-delete' : ''}`)}
 						on:click={() => selectRoute(endpoint)}
 						on:keydown={(e) => e.key === 'Enter' && selectRoute(endpoint)}
 						tabindex="0"
