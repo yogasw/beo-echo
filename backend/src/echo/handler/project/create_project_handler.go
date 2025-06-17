@@ -74,6 +74,18 @@ func CreateProjectHandler(c *gin.Context) {
 		project.Mode = database.ModeMock
 	}
 
+	// Validate advance config JSON format if provided
+	if project.AdvanceConfig != "" {
+		_, err := database.ParseProjectAdvanceConfig(project.AdvanceConfig)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{
+				"error":   true,
+				"message": err.Error(),
+			})
+			return
+		}
+	}
+
 	// Create the project
 	result = database.GetDB().Create(&project)
 	if result.Error != nil {

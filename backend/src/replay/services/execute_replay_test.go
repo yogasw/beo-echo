@@ -16,32 +16,23 @@ func TestExecuteReplay(t *testing.T) {
 	// Setup test environment
 	utils.SetupFolderConfigForTest()
 
-	// Initialize database
-	err := database.CheckAndHandle()
-	require.NoError(t, err, "Failed to initialize database")
-
 	// Cleanup after test
 	t.Cleanup(func() {
 		utils.CleanupTestFolders()
 	})
 
-	// Create test workspace and project
-	testUser, testWorkspace, err := database.CreateTestWorkspace(
+	// Initialize test workspace with project and defer cleanup
+	setup, err := database.InitTestWorkspaceWithProject(
 		"replay_test@example.com",
 		"Replay Test User",
 		"Test Workspace",
-	)
-	require.NoError(t, err, "Failed to create test workspace")
-
-	testProject, err := database.CreateTestProject(
-		testWorkspace.ID,
 		"Test Project",
 		"test-project",
 	)
-	require.NoError(t, err, "Failed to create test project")
+	require.NoError(t, err, "Failed to initialize test workspace")
+	defer setup.Cleanup()
 
-	// Cleanup test data
-	defer database.CleanupTestWorkspaceAndProject(testUser.ID, testWorkspace.ID, testProject.ID)
+	testProject := setup.Project
 
 	// Setup repository and service
 	db := database.DB

@@ -51,6 +51,7 @@ func UpdateProjectHandler(c *gin.Context) {
 		Mode          *database.ProjectMode `json:"mode"`
 		ActiveProxyID *string               `json:"active_proxy_id"`
 		Status        *string               `json:"status"`
+		AdvanceConfig *string               `json:"advance_config"`
 	}
 
 	if err := c.ShouldBindJSON(&updateData); err != nil {
@@ -112,6 +113,22 @@ func UpdateProjectHandler(c *gin.Context) {
 		}
 
 		existingProject.ActiveProxyID = updateData.ActiveProxyID
+	}
+
+	if updateData.AdvanceConfig != nil {
+		// Validate advance config if provided and not empty
+		if *updateData.AdvanceConfig != "" {
+			_, err := database.ParseProjectAdvanceConfig(*updateData.AdvanceConfig)
+			if err != nil {
+				c.JSON(http.StatusBadRequest, gin.H{
+					"error":   true,
+					"message": err.Error(),
+				})
+				return
+			}
+		}
+
+		existingProject.AdvanceConfig = *updateData.AdvanceConfig
 	}
 
 	// Save updates

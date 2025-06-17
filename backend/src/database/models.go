@@ -1,11 +1,107 @@
 package database
 
 import (
+	"encoding/json"
+	"errors"
 	"time"
 
 	"github.com/google/uuid"
 	"gorm.io/gorm"
 )
+
+// AdvanceConfigProject defines advance configuration structure for projects
+type AdvanceConfigProject struct {
+	DelayMs int `json:"delayMs,omitempty"` // Response delay in milliseconds (0-120000)
+}
+
+// AdvanceConfigEndpoint defines advance configuration structure for endpoints
+type AdvanceConfigEndpoint struct {
+	DelayMs int `json:"delayMs,omitempty"` // Response delay in milliseconds (0-120000)
+}
+
+// Validate validates the project advance configuration
+func (a *AdvanceConfigProject) Validate() error {
+	if a.DelayMs < 0 {
+		return errors.New("delayMs cannot be negative")
+	}
+	if a.DelayMs > 120000 {
+		return errors.New("delayMs cannot exceed 120000ms (2 minutes)")
+	}
+	return nil
+}
+
+// Validate validates the endpoint advance configuration
+func (a *AdvanceConfigEndpoint) Validate() error {
+	if a.DelayMs < 0 {
+		return errors.New("delayMs cannot be negative")
+	}
+	if a.DelayMs > 120000 {
+		return errors.New("delayMs cannot exceed 120000ms (2 minutes)")
+	}
+	return nil
+}
+
+// ParseProjectAdvanceConfig parses JSON string to AdvanceConfigProject struct
+func ParseProjectAdvanceConfig(configJSON string) (*AdvanceConfigProject, error) {
+	if configJSON == "" {
+		return &AdvanceConfigProject{}, nil
+	}
+
+	var config AdvanceConfigProject
+	if err := json.Unmarshal([]byte(configJSON), &config); err != nil {
+		return nil, errors.New("invalid JSON format in advance_config")
+	}
+
+	if err := config.Validate(); err != nil {
+		return nil, err
+	}
+
+	return &config, nil
+}
+
+// ParseEndpointAdvanceConfig parses JSON string to AdvanceConfigEndpoint struct
+func ParseEndpointAdvanceConfig(configJSON string) (*AdvanceConfigEndpoint, error) {
+	if configJSON == "" {
+		return &AdvanceConfigEndpoint{}, nil
+	}
+
+	var config AdvanceConfigEndpoint
+	if err := json.Unmarshal([]byte(configJSON), &config); err != nil {
+		return nil, errors.New("invalid JSON format in advance_config")
+	}
+
+	if err := config.Validate(); err != nil {
+		return nil, err
+	}
+
+	return &config, nil
+}
+
+// ToJSON converts AdvanceConfigProject to JSON string
+func (a *AdvanceConfigProject) ToJSON() (string, error) {
+	if a.DelayMs == 0 {
+		return "", nil
+	}
+
+	data, err := json.Marshal(a)
+	if err != nil {
+		return "", err
+	}
+	return string(data), nil
+}
+
+// ToJSON converts AdvanceConfigEndpoint to JSON string
+func (a *AdvanceConfigEndpoint) ToJSON() (string, error) {
+	if a.DelayMs == 0 {
+		return "", nil
+	}
+
+	data, err := json.Marshal(a)
+	if err != nil {
+		return "", err
+	}
+	return string(data), nil
+}
 
 // SystemConfig model for storing system configuration
 type SystemConfig struct {
@@ -51,6 +147,7 @@ type Project struct {
 	Alias         string         `gorm:"type:string;uniqueIndex;not null" json:"alias"` // Subdomain or alias for the project
 	URL           string         `json:"url"`                                           // URL for the project, e.g. "https://example.com" this is used for FE only
 	Documentation string         `gorm:"type:string" json:"documentation"`              // Documentation URL or text
+	AdvanceConfig string         `gorm:"type:text" json:"advance_config"`               // Advanced configuration (e.g. global timeout, rate limiting) as JSON string
 	CreatedAt     time.Time      `gorm:"autoCreateTime" json:"created_at"`
 	UpdatedAt     time.Time      `gorm:"autoUpdateTime" json:"updated_at"`
 }
@@ -95,6 +192,7 @@ type MockEndpoint struct {
 	Enabled       bool           `json:"enabled" gorm:"default:true"`           // Whether endpoint is active or not
 	ResponseMode  string         `json:"response_mode" gorm:"default:'random'"` // "static", "random", "round_robin"
 	Documentation string         `gorm:"type:text" json:"documentation"`        // Documentation URL or text
+	AdvanceConfig string         `gorm:"type:text" json:"advance_config"`       // Advanced configuration (e.g. timeout) as JSON string
 	Responses     []MockResponse `gorm:"foreignKey:EndpointID;constraint:OnDelete:CASCADE;" json:"responses"`
 	// Proxy configuration for endpoint-level proxying
 	UseProxy      bool         `json:"use_proxy" gorm:"default:false"`               // Whether to use proxy for this endpoint

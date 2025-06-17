@@ -1,6 +1,7 @@
 package endpoint
 
 import (
+	"encoding/json"
 	"net/http"
 	"strings"
 
@@ -88,6 +89,18 @@ func CreateEndpointHandler(c *gin.Context) {
 	// Default values
 	if endpoint.ResponseMode == "" {
 		endpoint.ResponseMode = "random"
+	}
+
+	// Validate JSON format in AdvanceConfig if provided
+	if endpoint.AdvanceConfig != "" {
+		var temp interface{}
+		if err := json.Unmarshal([]byte(endpoint.AdvanceConfig), &temp); err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{
+				"error":   true,
+				"message": "Invalid JSON format in advance_config: " + err.Error(),
+			})
+			return
+		}
 	}
 
 	// Validate proxy target if proxy is enabled
