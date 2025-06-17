@@ -199,6 +199,11 @@ func SetupRouter() *gin.Engine {
 				projectRoutes.PUT("", project.UpdateProjectHandler)
 				projectRoutes.DELETE("", project.DeleteProjectHandler)
 
+				// Project Advance Config management
+				projectRoutes.GET("/advance-config", project.GetProjectAdvanceConfigHandler)
+				projectRoutes.PUT("/advance-config", project.UpdateProjectAdvanceConfigHandler)
+				projectRoutes.DELETE("/advance-config", project.ResetProjectAdvanceConfigHandler)
+
 				// Endpoint management
 				projectRoutes.GET("/endpoints", endpoint.ListEndpointsHandler)
 				projectRoutes.POST("/endpoints", endpoint.CreateEndpointHandler)

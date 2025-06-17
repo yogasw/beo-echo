@@ -56,16 +56,22 @@ func CreateTestWorkspace(userEmail string, userName string, workspaceName string
 
 // CreateTestProject creates a test project in the given workspace
 func CreateTestProject(workspaceID string, projectName string, projectAlias string) (*Project, error) {
+	return CreateTestProjectWithConfig(workspaceID, projectName, projectAlias, "")
+}
+
+// CreateTestProjectWithConfig creates a test project in the given workspace with advance config
+func CreateTestProjectWithConfig(workspaceID string, projectName string, projectAlias string, advanceConfig string) (*Project, error) {
 	db := DB
 
 	projectID := uuid.New().String()
 	testProject := &Project{
-		ID:          projectID,
-		Name:        projectName,
-		WorkspaceID: workspaceID,
-		Mode:        ModeMock,
-		Status:      "running",
-		Alias:       projectAlias,
+		ID:            projectID,
+		Name:          projectName,
+		WorkspaceID:   workspaceID,
+		Mode:          ModeMock,
+		Status:        "running",
+		Alias:         projectAlias,
+		AdvanceConfig: advanceConfig,
 	}
 
 	err := db.Create(testProject).Error

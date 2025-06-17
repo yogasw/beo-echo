@@ -51,6 +51,7 @@ type Project struct {
 	Alias         string         `gorm:"type:string;uniqueIndex;not null" json:"alias"` // Subdomain or alias for the project
 	URL           string         `json:"url"`                                           // URL for the project, e.g. "https://example.com" this is used for FE only
 	Documentation string         `gorm:"type:string" json:"documentation"`              // Documentation URL or text
+	AdvanceConfig string         `gorm:"type:text" json:"advance_config"`               // Advanced configuration (e.g. global timeout, rate limiting) as JSON string
 	CreatedAt     time.Time      `gorm:"autoCreateTime" json:"created_at"`
 	UpdatedAt     time.Time      `gorm:"autoUpdateTime" json:"updated_at"`
 }

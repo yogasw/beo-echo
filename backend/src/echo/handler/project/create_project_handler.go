@@ -1,6 +1,7 @@
 package project
 
 import (
+	"encoding/json"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -72,6 +73,18 @@ func CreateProjectHandler(c *gin.Context) {
 	// Default to mock mode if not specified
 	if project.Mode == "" {
 		project.Mode = database.ModeMock
+	}
+
+	// Validate advance config JSON format if provided
+	if project.AdvanceConfig != "" {
+		var jsonTest interface{}
+		if err := json.Unmarshal([]byte(project.AdvanceConfig), &jsonTest); err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{
+				"error":   true,
+				"message": "Invalid JSON format in advance_config: " + err.Error(),
+			})
+			return
+		}
 	}
 
 	// Create the project
