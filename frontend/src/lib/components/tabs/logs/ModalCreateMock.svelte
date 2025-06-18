@@ -11,6 +11,7 @@
   export let projectId: string;
   export let onClose: () => void;
   export let onSuccess: () => void;
+  export let onEndpointCreated: (endpoint: any) => void = () => {};
 
   let path = '';
   let method = 'GET';
@@ -207,6 +208,7 @@
         );
 
         toast.success(`Mock endpoint created: ${method} ${path}`);
+        onEndpointCreated(endpoint);
         onSuccess();
         onClose();
       } else {

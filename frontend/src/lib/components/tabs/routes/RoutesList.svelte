@@ -7,6 +7,7 @@
 	import ModalCreateMock from '../logs/ModalCreateMock.svelte';
 	import { selectedProject } from '$lib/stores/selectedConfig';
 	import { getRoutesPanelWidth, setRoutesPanelWidth } from '$lib/utils/localStorage';
+	import { getProjectDetail } from '$lib/api/BeoApi';
 
 	export let selectedEndpoint: Endpoint | null;
 	export let activeConfigName: string;
@@ -44,17 +45,7 @@
 	let startX = 0;
 	let startWidth = panelWidth;
 
-	function onEndpointCreated(event: CustomEvent<Endpoint>) {
-		handleAddEndpoint(event.detail);
-		showAddEndpointModal = false;
-		
-		// Scroll to the bottom of the endpoints list after a short delay to ensure rendering is complete
-		setTimeout(() => {
-			if (endpointsContainer) {
-				endpointsContainer.scrollTop = endpointsContainer.scrollHeight;
-			}
-		}, 150);
-	}
+	let deletingId: string | null = null;
 
 	function toggleMenu(event: MouseEvent, endpointId: string) {
 		event.stopPropagation();
@@ -96,14 +87,24 @@
 				break;
 			case 'delete':
 				// Add your delete functionality here
-				deleteEndpoint(endpoint.project_id, endpoint.id)
-					.then(() => {
-						toast.success('Endpoint successfully deleted!');
-						handleRouteStatusChange(endpoint);
-					})
-					.catch((error) => {
-						toast.error(`Failed to delete endpoint: ${error.message}`);
-					});
+				deletingId = endpoint.id;
+				setTimeout(() => {
+					deleteEndpoint(endpoint.project_id, endpoint.id)
+						.then(async () => {
+							toast.success('Endpoint successfully deleted!');
+							handleRouteStatusChange(endpoint);
+							if ($selectedProject) {
+								const refreshedProject = await getProjectDetail($selectedProject.id);
+								selectedProject.set(refreshedProject);
+							}
+						})
+						.catch((error) => {
+							toast.error(`Failed to delete endpoint: ${error.message}`);
+						})
+						.finally(() => {
+							deletingId = null;
+						});
+				}, 300);
 				break;
 		}
 	}
@@ -199,7 +200,7 @@
 			projectId={$selectedProject?.id || ''}
 			onClose={() => (showAddEndpointModal = false)}
 			onSuccess={() => (showAddEndpointModal = false)}
-			on:endpointCreated={onEndpointCreated}
+			onEndpointCreated={handleAddEndpoint}
 			on:close={() => (showAddEndpointModal = false)}
 			log={defaultRequestLog}
 		/>
@@ -209,7 +210,7 @@
 				{#each filteredEndpoints as endpoint}
 					<div
 						class={ThemeUtils.themeBgSecondary(`flex items-center justify-between py-2 px-4 rounded cursor-pointer relative group 
-							${selectedEndpoint === endpoint ? 'border-2 border-blue-500' : 'theme-border'}`)}
+							${selectedEndpoint && selectedEndpoint.id === endpoint.id ? 'border-2 border-blue-500' : 'theme-border'} ${deletingId === endpoint.id ? 'flash-delete' : ''}`)}
 						on:click={() => selectRoute(endpoint)}
 						on:keydown={(e) => e.key === 'Enter' && selectRoute(endpoint)}
 						tabindex="0"
@@ -294,3 +295,15 @@
 		<div class="w-full h-full bg-transparent group-hover:bg-blue-500/30"></div>
 	</div>
 </div>
+
+<style>
+.flash-delete {
+	animation: flashRed 0.3s;
+	background-color: rgb(var(--tw-color-red-200, 254 202 202)) !important;
+}
+@keyframes flashRed {
+	0% { background-color: #fff; }
+	50% { background-color: rgb(var(--tw-color-red-300, 252 165 165)); }
+	100% { background-color: #fff; }
+}
+</style>
