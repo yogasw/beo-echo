@@ -213,10 +213,7 @@
         throw new Error('Failed to create endpoint');
       }
     } catch (err) {
-      console.error('Error creating mock:', err);
-      const errorMessage = err instanceof Error ? err.message : 'An unknown error occurred';
-      error = errorMessage;
-      toast.error(`Failed to create mock: ${errorMessage}`);
+      toast.error(err);
     } finally {
       isSubmitting = false;
     }
