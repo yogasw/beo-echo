@@ -15,6 +15,11 @@ const (
 	AUTO_SAVE_LOGS_IN_DB_ENABLED = "AUTO_SAVE_LOGS_IN_DB_ENABLED" // Enable auto-saving of logs
 
 	JWT_SECRET = "JWT_SECRET" // JWT secret for signing tokens
+
+	// Default Response Configuration
+	DEFAULT_RESPONSE_PROJECT_NOT_FOUND      = "This is a default response from Beo Echo mock service."       // Default response when project is not found
+	DEFAULT_RESPONSE_ENDPOINT_NOT_FOUND     = "This is a default response from Beo Echo mock service."       // Default response when endpoint is not found
+	DEFAULT_RESPONSE_NO_RESPONSE_CONFIGURED = "This endpoint exists but no specific response is configured." // Default response when no response is configured
 )
 
 // DefaultConfigSettings contains all system configuration settings with metadata
