@@ -16,8 +16,8 @@
   let path = '';
   let method = 'GET';
   let statusCode = 200;
-  let body = '';
-  let headers = '{}';
+  let body = '{\n  "message": "Hello Word!"\n}';
+  let headers = '{\n  "Content-Type": "application/json"\n}';
   let documentation = '';
   let isSubmitting = false;
   let error: string | null = null;
@@ -35,20 +35,25 @@
     method = log.method;
     path = log.path;
     statusCode = log.response_status;
-    body = log.response_body;
+    body = log.response_body || '{\n  "message": "Hello Word!"\n}';
     
     // Try to format headers as JSON if they aren't already
     try {
       const parsedHeaders = JSON.parse(log.response_headers);
       // Remove Content-Length header if it exists
       delete parsedHeaders['Content-Length'];
+      // Ensure Content-Type is present
+      if (!parsedHeaders['Content-Type']) {
+        parsedHeaders['Content-Type'] = 'application/json';
+      }
       headers = JSON.stringify(parsedHeaders, null, 2);
     } catch (e) {
-      headers = log.response_headers;
+      // If headers can't be parsed, use default with any existing headers as comments
+      headers = '{\n  "Content-Type": "application/json"\n}';
     }
     
     // Initialize documentation with a template
-    documentation = `## ${method} ${path}\n\nAuto-created from unmatched request log.\n\n### Description\nThis endpoint was automatically generated from an unmatched request. Please update the documentation to describe its purpose and behavior.`;
+    documentation = ``;
     
     // Reset form state
     currentStep = 1;
@@ -60,6 +65,14 @@
   // Reset initialization flag when modal closes
   $: if (!isOpen) {
     isInitialized = false;
+  }
+
+  // When modal opens without a log, ensure we have default values
+  $: if (!log && isOpen && !isInitialized) {
+    // Ensure we have the default values when opening fresh
+    if (!body) body = '{\n  "message": "Hello Word!"\n}';
+    if (!headers || headers === '{}') headers = '{\n  "Content-Type": "application/json"\n}';
+    isInitialized = true;
   }
 
   // Validation functions for step navigation
@@ -86,20 +99,27 @@
   function validateStep2(): boolean {
     const errors: Record<string, string> = {};
     
-    if (statusCode < 100 || statusCode > 599) {
-      errors.statusCode = 'Status code must be between 100 and 599';
+    // Status code is required and must be valid
+    if (!statusCode || statusCode < 100 || statusCode > 599) {
+      errors.statusCode = 'Status code is required and must be between 100 and 599';
     }
     
-    // Validate headers JSON format
-    if (headers.trim()) {
+    // Headers are required and must be valid JSON
+    if (!headers.trim()) {
+      errors.headers = 'Headers are required';
+    } else {
       try {
-        JSON.parse(headers);
+        const parsedHeaders = JSON.parse(headers);
+        // Headers must be an object, not an array or primitive
+        if (typeof parsedHeaders !== 'object' || Array.isArray(parsedHeaders) || parsedHeaders === null) {
+          errors.headers = 'Headers must be a valid JSON object';
+        }
       } catch (e) {
         errors.headers = 'Headers must be valid JSON format';
       }
     }
     
-    // Validate body JSON format if it looks like JSON
+    // Validate body JSON format if it's not empty and looks like JSON
     if (body.trim() && (body.trim().startsWith('{') || body.trim().startsWith('['))) {
       try {
         JSON.parse(body);
@@ -109,7 +129,7 @@
     }
     
     // Only update validation errors during step navigation
-    if (arguments.length > 0 || statusCode < 100 || statusCode > 599) {
+    if (arguments.length > 0 || !statusCode || statusCode < 100 || statusCode > 599 || !headers.trim()) {
       validationErrors = errors;
     }
     return Object.keys(errors).length === 0;
@@ -142,7 +162,14 @@
 
   // Check validation for current step
   $: canGoNext = currentStep === 1 ? (path.trim() !== '' && path.startsWith('/') && method !== '') : 
-                 currentStep === 2 ? (statusCode >= 100 && statusCode <= 599) : 
+                 currentStep === 2 ? (statusCode >= 100 && statusCode <= 599 && headers.trim() !== '' && (() => {
+                   try {
+                     const parsed = JSON.parse(headers);
+                     return typeof parsed === 'object' && !Array.isArray(parsed) && parsed !== null;
+                   } catch {
+                     return false;
+                   }
+                 })()) : 
                  true;
 
   // Format JSON nicely for display
@@ -187,11 +214,8 @@
       } else {
         throw new Error('Failed to create endpoint');
       }
-    } catch (err: any) {
-      console.error('Error creating mock:', err);
-      const errorMessage = err?.response?.data?.message || (err instanceof Error ? err.message : 'An unknown error occurred');
-      error = errorMessage;
-      toast.error(`Failed to create mock: ${errorMessage}`);
+    } catch (err) {
+      toast.error(err);
     } finally {
       isSubmitting = false;
     }
@@ -202,8 +226,8 @@
     return path.trim() !== '' || 
            method !== 'GET' || 
            statusCode !== 200 || 
-           body.trim() !== '' || 
-           headers !== '{}' || 
+           body.trim() !== '{\n  "message": "Hello Word!"\n}' || 
+           headers !== '{\n  "Content-Type": "application/json"\n}' || 
            documentation.trim() !== '';
   }
 
@@ -217,6 +241,14 @@
   }
 
   function handleClose() {
+    // Reset to default values
+    path = '';
+    method = 'GET';
+    statusCode = 200;
+    body = '{\n  "message": "Hello Word!"\n}';
+    headers = '{\n  "Content-Type": "application/json"\n}';
+    documentation = '';
+    
     currentStep = 1;
     validationErrors = {};
     error = null;
@@ -260,7 +292,7 @@
       PATCH: '{\n  "id": 1,\n  "message": "Resource partially updated"\n}'
     };
     
-    body = samples[method as keyof typeof samples] || samples.GET;
+    body = samples[method as keyof typeof samples] || '{\n  "message": "Hello Word!"\n}';
   }
 
   function handleStatusCodeChange(event: CustomEvent) {
@@ -385,6 +417,7 @@
         <div class="mb-6">
           <StatusCodeInput 
             bind:value={statusCode}
+            label="Status Code *"
             error={validationErrors.statusCode}
             on:change={handleStatusCodeChange}
           />
@@ -394,7 +427,7 @@
         <div class="mb-6">
           <div class="flex justify-between items-center mb-2">
             <label for="body" class="block text-sm font-medium text-gray-700 dark:text-gray-300">
-              <i class="fas fa-file-code mr-2"></i>Response Body
+              <i class="fas fa-file-code mr-2"></i>Response Body <span class="text-gray-500 text-xs">(optional)</span>
             </label>
             <div class="flex space-x-2">
               <button 
@@ -426,7 +459,7 @@
               class:border-red-500={validationErrors.body}
               class:dark:border-red-500={validationErrors.body}
               rows="8"
-              placeholder='&#123;&#10;  "message": "Hello from mock endpoint",&#10;  "data": &#123;&#10;    "id": 1,&#10;    "name": "Sample"&#10;  &#125;&#10;&#125;'
+              placeholder="Leave empty for no response body, or add JSON content like:&#10;&#123;&#10;  &quot;message&quot;: &quot;Hello from mock endpoint&quot;,&#10;  &quot;data&quot;: &#123;&#10;    &quot;id&quot;: 1,&#10;    &quot;name&quot;: &quot;Sample&quot;&#10;  &#125;&#10;&#125;"
             ></textarea>
             {#if body}
               <div class="absolute top-2 right-2 text-xs text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded">
@@ -436,6 +469,8 @@
           </div>
           {#if validationErrors.body}
             <p class="text-red-500 dark:text-red-400 text-xs mt-1">{validationErrors.body}</p>
+          {:else}
+            <p class="text-gray-500 dark:text-gray-500 text-xs mt-1">Optional: Leave empty for no response body, or provide JSON content</p>
           {/if}
         </div>
         
@@ -443,7 +478,7 @@
         <div class="mb-6">
           <div class="flex justify-between items-center mb-2">
             <label for="headers" class="block text-sm font-medium text-gray-700 dark:text-gray-300">
-              <i class="fas fa-tags mr-2"></i>Response Headers
+              <i class="fas fa-tags mr-2"></i>Response Headers <span class="text-red-500">*</span>
             </label>
             <button 
               type="button"
@@ -467,7 +502,7 @@
           {#if validationErrors.headers}
             <p class="text-red-500 dark:text-red-400 text-xs mt-1">{validationErrors.headers}</p>
           {:else}
-            <p class="text-gray-500 dark:text-gray-500 text-xs mt-1">JSON format - Common headers will be added automatically</p>
+            <p class="text-gray-500 dark:text-gray-500 text-xs mt-1">Required: Valid JSON object with response headers</p>
           {/if}
         </div>
       </div>
@@ -494,15 +529,7 @@
             bind:value={documentation}
             class="bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white rounded-lg block w-full py-3 px-4 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors resize-none focus:outline-none"
             rows="6"
-            placeholder="## Endpoint Description
-
-Describe your endpoint here using Markdown.
-
-### Parameters
-- `id` (path): Resource identifier
-
-### Response
-Returns a JSON object with the requested resource."
+            placeholder="Enter documentation here"
           ></textarea>
           <p class="text-gray-500 dark:text-gray-500 text-xs mt-1">Use Markdown to document your endpoint's purpose, parameters, and expected responses</p>
         </div>

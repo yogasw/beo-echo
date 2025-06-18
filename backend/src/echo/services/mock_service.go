@@ -15,6 +15,7 @@ import (
 
 	"beo-echo/backend/src/database"
 	"beo-echo/backend/src/echo/repositories"
+	systemConfig "beo-echo/backend/src/systemConfigs"
 )
 
 // MockService handles mock response logic
@@ -35,7 +36,8 @@ func (s *MockService) HandleRequest(alias, method, reqPath string, req *http.Req
 	// Find project by alias
 	project, err := s.Repo.FindProjectByAlias(alias)
 	if err != nil {
-		return createErrorResponse(http.StatusNotFound, "Project not found"), nil, "", "", false
+		// Get default response for project not found
+		return createDefaultJSONResponse(systemConfig.DEFAULT_RESPONSE_PROJECT_NOT_FOUND), nil, "", "", false
 	}
 
 	// Extract the actual API endpoint path
@@ -67,7 +69,9 @@ func (s *MockService) handleMockMode(project *database.Project, method, path str
 	if err != nil {
 		// No matching endpoint found - apply project-level delay before returning error
 		s.applyDelay(project, nil, nil)
-		return createErrorResponse(http.StatusNotFound, "Endpoint not found"), nil, database.ModeMock, false
+
+		// Get default response for endpoint not found
+		return createDefaultJSONResponse(systemConfig.DEFAULT_RESPONSE_ENDPOINT_NOT_FOUND), nil, database.ModeMock, false
 	}
 
 	// Check if endpoint is configured for proxying
@@ -84,7 +88,9 @@ func (s *MockService) handleMockMode(project *database.Project, method, path str
 	if err != nil || len(responses) == 0 {
 		// Apply delays before returning error
 		s.applyDelay(project, endpoint, nil)
-		return createErrorResponse(http.StatusInternalServerError, "No responses configured"), nil, database.ModeMock, true
+
+		// Get default response for no response configured
+		return createDefaultJSONResponse(systemConfig.DEFAULT_RESPONSE_NO_RESPONSE_CONFIGURED), nil, database.ModeMock, true
 	}
 
 	// Select response based on ResponseMode
@@ -480,6 +486,28 @@ func createErrorResponse(statusCode int, message string) *http.Response {
 	}
 
 	resp.Header.Set("Content-Type", "application/json")
+	return resp
+}
+
+// createDefaultJSONResponse creates a default JSON response with 200 status code
+func createDefaultJSONResponse(message string) *http.Response {
+	responseBody := map[string]interface{}{
+		"message": message,
+	}
+
+	jsonBody, _ := json.Marshal(responseBody)
+	jsonString := string(jsonBody)
+
+	body := io.NopCloser(strings.NewReader(jsonString))
+
+	resp := &http.Response{
+		StatusCode:    http.StatusOK,
+		Body:          body,
+		Header:        make(http.Header),
+		ContentLength: int64(len(jsonString)),
+	}
+
+	resp.Header.Set("Content-Type", "application/json; charset=utf-8")
 	return resp
 }
 

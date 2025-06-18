@@ -72,7 +72,7 @@ func SetupRouter() *gin.Engine {
 		AllowHeaders:     []string{"Origin", "Content-Length", "Content-Type", "Authorization", "X-Requested-With", "Accept"},
 		ExposeHeaders:    []string{"Content-Range", "X-Content-Range"},
 		AllowCredentials: true,
-		MaxAge:           12 * time.Hour,
+		// MaxAge:           12 * time.Hour,
 	}))
 
 	// Setup file upload directory

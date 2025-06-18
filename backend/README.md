@@ -52,22 +52,6 @@ or
 ./run.sh -p 8080
 ```
 
-## Development
-
-```bash
-# Build the application
-make build
-
-# Run the application
-make run
-
-# Development with hot-reload
-make dev
-
-# Clean build files
-make clean
-```
-
 ## Directory Structure
 
 ```
