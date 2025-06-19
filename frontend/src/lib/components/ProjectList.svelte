@@ -263,9 +263,66 @@
 </script>
 
 <div class="theme-bg-primary p-4 flex flex-col h-full border-r theme-border relative" style="width: {panelWidth}rem;">
-	<h1 class="text-xl font-bold mb-4 flex items-center theme-text-primary">
-		<i class="fas fa-server text-5xl mr-4"></i> Beo Echo
-	</h1>
+	<!-- Brand Section - Clean & Responsive -->
+	<div class="mb-8">
+		<!-- Main Brand Header -->
+		<div class="flex items-center justify-between mb-4 p-4 rounded-xl bg-gradient-to-r from-blue-600/10 to-purple-600/10 border border-blue-500/20 dark:border-blue-400/20">
+			<div class="flex items-center">
+				<div class="w-14 h-14 mr-4 flex items-center justify-center rounded-xl bg-gradient-to-br from-blue-500 to-purple-600 p-3 shadow-lg">
+					<img 
+						src="/icon.svg" 
+						alt="Beo Echo Logo" 
+						class="w-full h-full object-contain filter brightness-110"
+						title="Beo Echo - API Mocking Service"
+						aria-label="Beo Echo API Mocking Service logo"
+					/>
+				</div>
+				{#if panelWidth >= 12}
+					<div class="flex flex-col">
+						<h1 class="font-bold theme-text-primary leading-tight tracking-tight bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent {panelWidth >= 16 ? 'text-2xl' : 'text-lg'}">
+							Beo Echo
+						</h1>
+						{#if panelWidth >= 16}
+							<span class="text-sm theme-text-secondary font-medium opacity-80">
+								API Mocking Service
+							</span>
+						{:else}
+							<span class="text-xs theme-text-secondary font-medium opacity-70">
+								API Mocking Service
+							</span>
+						{/if}
+					</div>
+				{/if}
+			</div>
+		</div>
+		
+		<!-- Version and Links -->
+		<div class="flex items-center justify-between px-2">
+			<span class="inline-flex items-center px-3 py-1.5 rounded-full text-xs font-semibold bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-sm">
+				{#if panelWidth >= 16}
+					<i class="fas fa-tag mr-1.5 text-xs"></i>
+				{/if}
+				v2.3.2
+			</span>
+			
+			<!-- Action Links -->
+			<div class="flex items-center space-x-2">
+				<a 
+					href="https://github.com/yogasw/beo-echo" 
+					target="_blank" 
+					rel="noopener noreferrer"
+					class="group flex items-center justify-center w-8 h-8 rounded-lg theme-bg-secondary hover:bg-gray-600 dark:hover:bg-gray-500 transition-all duration-200 transform hover:scale-105"
+					title="View on GitHub"
+					aria-label="View Beo Echo project on GitHub"
+				>
+					<i class="fab fa-github text-sm theme-text-secondary group-hover:text-white transition-colors"></i>
+				</a>
+			</div>
+		</div>
+		
+		<!-- Subtle Divider -->
+		<div class="mt-6 h-px bg-gradient-to-r from-transparent via-gray-300 dark:via-gray-600 to-transparent opacity-50"></div>
+	</div>
 	<div class="relative mb-4">
 		<div class="absolute inset-y-0 start-0 flex items-center ps-3 pointer-events-none">
 			<i class="fas fa-search text-gray-400"></i>
@@ -452,13 +509,14 @@
 	</div>
 	
 	<!-- Resizable handle -->
-	<div 
-		class="absolute top-0 right-0 bottom-0 w-1 cursor-col-resize hover:bg-blue-500 transition-colors duration-200 group"
+	<button
+		class="absolute top-0 right-0 bottom-0 w-1 cursor-col-resize hover:bg-blue-500 transition-colors duration-200 group bg-transparent border-none"
 		on:mousedown={startResize}
 		title="Drag to resize panel"
+		aria-label="Resize panel"
 	>
 		<div class="w-full h-full bg-transparent group-hover:bg-blue-500/30"></div>
-	</div>
+	</button>
 </div>
 
 <style>

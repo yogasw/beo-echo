@@ -131,6 +131,11 @@
 	}
 </script>
 
+<svelte:head>
+	<title>Login - Beo Echo API Mock Service</title>
+	<meta name="description" content="Login to access your Beo Echo API mock dashboard" />
+</svelte:head>
+
 <div class="min-h-screen w-full flex items-center justify-center theme-bg-tertiary relative">
 	<!-- Theme Toggle Button -->
 	<button
