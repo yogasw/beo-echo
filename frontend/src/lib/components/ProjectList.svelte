@@ -270,7 +270,7 @@
 			<div class="flex items-center">
 				<div class="w-14 h-14 mr-4 flex items-center justify-center rounded-xl bg-gradient-to-br from-blue-500 to-purple-600 p-3 shadow-lg">
 					<img 
-						src="/icon.svg" 
+						src="/favicon.svg" 
 						alt="Beo Echo Logo" 
 						class="w-full h-full object-contain filter brightness-110"
 						title="Beo Echo - API Mocking Service"
