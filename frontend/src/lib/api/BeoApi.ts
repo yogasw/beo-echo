@@ -616,7 +616,20 @@ export const deleteBookmark = async (projectId: string, logId: string): Promise<
 	}
 };
 
-// Project advance config management functions
+/**
+ * Reorder responses by updating their priority values
+ * @param projectId Project ID
+ * @param endpointId Endpoint ID
+ * @param responseOrders Array of response IDs in the desired order
+ * @returns Updated responses
+ */
+export const reorderResponses = async (projectId: string, endpointId: string, responseOrders: string[]): Promise<Response[]> => {
+	let workspaceId = getCurrentWorkspaceId();
+	const response = await apiClient.put(`/workspaces/${workspaceId}/projects/${projectId}/endpoints/${endpointId}/responses/reorder`, {
+		order: responseOrders
+	});
+	return response.data.data;
+};
 
 /**
  * Get project advance configuration

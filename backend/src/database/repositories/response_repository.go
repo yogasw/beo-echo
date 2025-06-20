@@ -41,3 +41,36 @@ func (r *responseRepository) ValidateResponseHierarchy(projectID string, endpoin
 
 	return true, nil
 }
+
+// ReorderResponses updates the priority of responses based on the provided order
+func (r *responseRepository) ReorderResponses(endpointID string, responseOrder []string) error {
+	// Start a transaction to ensure atomicity
+	tx := r.db.Begin()
+	defer func() {
+		if r := recover(); r != nil {
+			tx.Rollback()
+		}
+	}()
+
+	// Update priority for each response in the order provided
+	for i, responseID := range responseOrder {
+		priority := i + 1 // Priority starts from 1
+
+		result := tx.Model(&struct{}{}).
+			Table("mock_responses").
+			Where("id = ? AND endpoint_id = ?", responseID, endpointID).
+			Update("priority", priority)
+
+		if result.Error != nil {
+			tx.Rollback()
+			return result.Error
+		}
+
+		if result.RowsAffected == 0 {
+			tx.Rollback()
+			return gorm.ErrRecordNotFound
+		}
+	}
+
+	return tx.Commit().Error
+}

@@ -217,6 +217,7 @@ func SetupRouter() *gin.Engine {
 				projectRoutes.PUT("/endpoints/:id/responses/:responseId", response.UpdateResponseHandler)
 				projectRoutes.DELETE("/endpoints/:id/responses/:responseId", response.DeleteResponseHandler)
 				projectRoutes.POST("/endpoints/:id/responses/:responseId/duplicate", response.DuplicateResponseHandler)
+				projectRoutes.PUT("/endpoints/:id/responses/reorder", response.ReorderResponsesHandler)
 
 				// Rule management
 				projectRoutes.GET("/endpoints/:id/responses/:responseId/rules", ruleHandler.ListRulesHandler)
