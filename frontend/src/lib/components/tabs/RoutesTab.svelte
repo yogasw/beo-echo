@@ -327,7 +327,10 @@
 
 		<!-- Response section only shown when proxy is disabled -->
 		{#if !localUseProxy}
-			<DropdownResponse bind:selectedEndpoint bind:selectedResponse />
+			<DropdownResponse
+				bind:selectedEndpoint
+				bind:selectedResponse
+			/>
 
 			<!-- Enhanced Tab Navigation -->
 			<div class="flex mb-4 border-b {ThemeUtils.themeBorder()} overflow-x-auto no-scrollbar">
