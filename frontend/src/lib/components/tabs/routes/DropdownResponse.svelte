@@ -373,10 +373,10 @@
 								on:drop={(event) => handleDrop(event, index)}
 							>
 								<!-- Drag handle -->
-								<div class="flex items-center px-2 py-2 cursor-grab active:cursor-grabbing transition-opacity duration-200" 
+								<div class="flex items-center px-2 py-2 cursor-grab active:cursor-grabbing transition-opacity duration-200 hover:bg-gray-100 dark:hover:bg-gray-600 rounded" 
 								     title="Drag to reorder"
 								     aria-label="Drag to reorder response">
-									<i class="fas fa-grip-vertical text-gray-400 text-xs"></i>
+									<i class="fas fa-grip-vertical text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 text-xs"></i>
 								</div>
 								
 								<button
@@ -394,13 +394,13 @@
 										)}
 									</span>
 									{#if !response.enabled}
-										<span class="text-xs text-gray-500 ml-2">[DISABLED]</span>
+										<span class="text-xs text-gray-600 dark:text-gray-400 ml-2">[DISABLED]</span>
 									{/if}
 								</button>
 								<!-- Copy & Delete actions -->
 								<div class="flex items-center space-x-1 mr-2 transition-opacity duration-200">
 									<button
-										class="p-1 rounded hover:bg-gray-700 transition-colors duration-200"
+										class="p-1 rounded hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors duration-200"
 										title="Flag response"
 										aria-label="Flag this response"
 										on:click|stopPropagation={() => {
@@ -409,12 +409,12 @@
 									>
 										<i
 											class="fas fa-flag {flaggedResponseId === response.id
-												? 'text-red-500'
-												: 'text-gray-300'}"
+												? 'text-yellow-500 dark:text-yellow-400'
+												: 'text-gray-500 dark:text-gray-400 hover:text-yellow-400 dark:hover:text-yellow-300'}"
 										></i>
 									</button>
 									<button
-										class="p-1 rounded hover:bg-gray-700 transition-colors duration-200"
+										class="p-1 rounded hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors duration-200"
 										title="{response.enabled ? 'Disable response' : 'Enable response'}"
 										aria-label="{response.enabled ? 'Disable this response' : 'Enable this response'}"
 										on:click|stopPropagation={() => {
@@ -422,28 +422,28 @@
 										}}
 									>
 										<i
-											class="fas {response.enabled ? 'fa-eye text-green-400' : 'fa-eye-slash text-gray-500'}"
+											class="fas {response.enabled ? 'fa-eye text-green-600 dark:text-green-400' : 'fa-eye-slash text-gray-500 dark:text-gray-400'} hover:text-green-500"
 										></i>
 									</button>
 									<button
-										class="p-1 rounded hover:bg-gray-700 transition-colors duration-200"
+										class="p-1 rounded hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors duration-200"
 										title="Duplicate response"
 										aria-label="Duplicate this response"
 										on:click|stopPropagation={() => {
 											handleDuplicateResponse(response);
 										}}
 									>
-										<i class="fas fa-copy text-gray-300"></i>
+										<i class="fas fa-copy text-blue-500 dark:text-blue-400 hover:text-blue-600 dark:hover:text-blue-300"></i>
 									</button>
 									<button
-										class="p-1 rounded hover:bg-gray-700 transition-colors duration-200"
+										class="p-1 rounded hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors duration-200"
 										title="Delete response"
 										aria-label="Delete this response"
 										on:click|stopPropagation={() => {
 											handleDeleteResponse(response);
 										}}
 									>
-										<i class="fas fa-trash text-gray-300"></i>
+										<i class="fas fa-trash text-red-500 dark:text-red-400 hover:text-red-600 dark:hover:text-red-300"></i>
 									</button>
 								</div>
 							</li>
@@ -461,7 +461,7 @@
 			class="p-2 rounded-md text-sm transition-all duration-200 {selectedEndpoint?.response_mode ===
 			'static'
 				? 'bg-blue-600 text-white shadow-md'
-				: 'bg-gray-700 dark:bg-gray-600 text-gray-300 hover:bg-gray-600 dark:hover:bg-gray-500 hover:text-white'}"
+				: 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600 hover:text-gray-800 dark:hover:text-white border border-gray-300 dark:border-gray-600'}"
 			title="Static Mode - Return highest priority response"
 			aria-label="Static response mode"
 			on:click={() => handleResponseModeChange('static')}
@@ -473,7 +473,7 @@
 			class="p-2 rounded-md text-sm transition-all duration-200 {selectedEndpoint?.response_mode ===
 			'random'
 				? 'bg-green-600 text-white shadow-md'
-				: 'bg-gray-700 dark:bg-gray-600 text-gray-300 hover:bg-gray-600 dark:hover:bg-gray-500 hover:text-white'}"
+				: 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600 hover:text-gray-800 dark:hover:text-white border border-gray-300 dark:border-gray-600'}"
 			title="Random Mode - Return random response from available options"
 			aria-label="Random response mode"
 			on:click={() => handleResponseModeChange('random')}
@@ -485,7 +485,7 @@
 			class="p-2 rounded-md text-sm transition-all duration-200 {selectedEndpoint?.response_mode ===
 			'round_robin'
 				? 'bg-purple-600 text-white shadow-md'
-				: 'bg-gray-700 dark:bg-gray-600 text-gray-300 hover:bg-gray-600 dark:hover:bg-gray-500 hover:text-white'}"
+				: 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600 hover:text-gray-800 dark:hover:text-white border border-gray-300 dark:border-gray-600'}"
 			title="Round Robin Mode - Cycle through responses in order"
 			aria-label="Round robin response mode"
 			on:click={() => handleResponseModeChange('round_robin')}
