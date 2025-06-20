@@ -264,7 +264,7 @@
 
 <div class="theme-bg-primary p-4 flex flex-col h-full border-r theme-border relative" style="width: {panelWidth}rem;">
 	<!-- Brand Section - Clean & Responsive -->
-	<div class="mb-8">
+	<div class="mb-4 mt-2">
 		<!-- Main Brand Header -->
 		<div class="flex items-center justify-between mb-4 p-4 rounded-xl bg-gradient-to-r from-blue-600/10 to-purple-600/10 border border-blue-500/20 dark:border-blue-400/20">
 			<div class="flex items-center">
@@ -320,8 +320,6 @@
 			</div>
 		</div>
 		
-		<!-- Subtle Divider -->
-		<div class="mt-6 h-px bg-gradient-to-r from-transparent via-gray-300 dark:via-gray-600 to-transparent opacity-50"></div>
 	</div>
 	<div class="relative mb-4">
 		<div class="absolute inset-y-0 start-0 flex items-center ps-3 pointer-events-none">
