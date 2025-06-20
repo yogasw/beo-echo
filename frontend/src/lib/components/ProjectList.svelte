@@ -312,6 +312,7 @@
 					target="_blank" 
 					rel="noopener noreferrer"
 					class="group flex items-center justify-center w-8 h-8 rounded-lg theme-bg-secondary hover:bg-gray-600 dark:hover:bg-gray-500 transition-all duration-200 transform hover:scale-105"
+					style="text-decoration: none !important;"
 					title="View on GitHub"
 					aria-label="View Beo Echo project on GitHub"
 				>
