@@ -207,10 +207,9 @@
 			}
 
 			const statusMessage = updatedResponse.enabled ? 'enabled' : 'disabled';
-			toast.success(`Response ${statusMessage} successfully`);
 		} catch (error) {
 			console.error('Failed to toggle response enabled state:', error);
-			toast.error('Failed to toggle response state');
+			toast.error(error);
 		}
 	}
 </script>
