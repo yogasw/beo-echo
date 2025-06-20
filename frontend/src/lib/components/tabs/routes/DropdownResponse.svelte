@@ -49,11 +49,6 @@
 	}
 
 	const selectResponse = (index: number, value: Response): void => {
-		selectedValue = formatResponseLabel(index, value);
-		const selectedElement = document.getElementById('selectedValue');
-		if (selectedElement) {
-			selectedElement.innerText = selectedValue;
-		}
 		toggleDropdown();
 		selectedResponse = value;
 	};
@@ -106,10 +101,14 @@
 	};
 
 	$: {
-		if (selectedResponse) {
+		if (selectedResponse && selectedEndpoint?.responses) {
 			// Find the index of the selected response in the endpoint's responses
-			const index = selectedEndpoint?.responses?.findIndex(r => r.id === selectedResponse?.id) || 0;
-			selectedValue = formatResponseLabel(index, selectedResponse);
+			const index = selectedEndpoint.responses.findIndex(r => r.id === selectedResponse.id);
+			if (index !== -1) {
+				selectedValue = formatResponseLabel(index, selectedResponse, true);
+			} else {
+				selectedValue = 'Response not found';
+			}
 		} else {
 			selectedValue = 'No Response';
 		}
@@ -132,7 +131,7 @@
 				title="Select response"
 				aria-label="Select response"
 			>
-				<span id="selectedValue" class="truncate mr-2 inline-block max-w-[calc(100%-20px)] whitespace-nowrap overflow-hidden">{selectedValue}</span>
+				<span class="truncate mr-2 inline-block max-w-[calc(100%-20px)] whitespace-nowrap overflow-hidden">{selectedValue}</span>
 				<i class="fas fa-chevron-down flex-shrink-0"></i>
 			</button>
 			<div id="dropdownMenu" class="absolute mt-1 {ThemeUtils.themeBgSecondary()} {ThemeUtils.themeTextSecondary()} rounded shadow-lg w-full hidden z-50 max-h-60 overflow-y-auto">
