@@ -1,6 +1,6 @@
 <script lang="ts">
 	import type { Endpoint, Response } from '$lib/api/BeoApi';
-	import { addResponse, deleteResponse, duplicateResponse } from '$lib/api/BeoApi';
+	import { addResponse, deleteResponse, duplicateResponse, updateResponse } from '$lib/api/BeoApi';
 	import { updateEndpoint } from '$lib/stores/saveButton';
 	import { toast } from '$lib/stores/toast';
 	import * as ThemeUtils from '$lib/utils/themeUtils';
@@ -41,6 +41,7 @@
 	): string {
 		const statusText = `(${response.status_code})`;
 		let noteText = response.note ? ` ${response.note}` : '';
+		const enabledText = response.enabled ? '' : ' [DISABLED]';
 
 		// Sanitize the note text to remove HTML and collapse whitespace
 		noteText = sanitizeText(noteText);
@@ -49,7 +50,8 @@
 		const maxLength = isForSelectedValue ? 40 : 25;
 
 		// Format display with truncation
-		return `Response ${index + 1} ${statusText} ${truncateText(noteText, maxLength)}`;
+		const baseText = `Response ${index + 1} ${statusText} ${truncateText(noteText, maxLength)}`;
+		return baseText + enabledText;
 	}
 
 	const selectResponse = (index: number, value: Response): void => {
@@ -177,6 +179,40 @@
 			toast.error('Failed to duplicate response');
 		}
 	}
+
+	async function handleToggleResponseEnabled(response: Response): Promise<void> {
+		if (!selectedEndpoint || !response) {
+			toast.error('No endpoint or response selected');
+			return;
+		}
+
+		try {
+			const updatedResponse = await updateResponse(
+				selectedEndpoint.project_id,
+				response.endpoint_id,
+				response.id,
+				{ enabled: !response.enabled }
+			);
+
+			// Update the response in the endpoint's responses array
+			if (selectedEndpoint.responses) {
+				const index = selectedEndpoint.responses.findIndex((r) => r.id === response.id);
+				if (index !== -1) {
+					selectedEndpoint.responses[index] = updatedResponse;
+					// If this is the currently selected response, update it too
+					if (selectedResponse?.id === response.id) {
+						selectedResponse = updatedResponse;
+					}
+				}
+			}
+
+			const statusMessage = updatedResponse.enabled ? 'enabled' : 'disabled';
+			toast.success(`Response ${statusMessage} successfully`);
+		} catch (error) {
+			console.error('Failed to toggle response enabled state:', error);
+			toast.error('Failed to toggle response state');
+		}
+	}
 </script>
 
 <div
@@ -215,16 +251,21 @@
 							<li class="flex items-center">
 								<button
 									type="button"
-									class="w-full text-left px-4 py-2 {ThemeUtils.themeHover()} cursor-pointer"
+									class="w-full text-left px-4 py-2 {ThemeUtils.themeHover()} cursor-pointer {!response.enabled ? 'opacity-50' : ''}"
 									on:click={() => {
 										selectResponse(index, response);
 									}}
 									title="Select this response"
 									aria-label="Select this response"
 								>
-									Response {index + 1} ({response.status_code}) {truncateText(
-										sanitizeText(response?.note)
-									)}
+									<span class="{!response.enabled ? 'line-through' : ''}">
+										Response {index + 1} ({response.status_code}) {truncateText(
+											sanitizeText(response?.note)
+										)}
+									</span>
+									{#if !response.enabled}
+										<span class="text-xs text-gray-500 ml-2">[DISABLED]</span>
+									{/if}
 								</button>
 								<!-- Copy & Delete actions -->
 								<div class="flex items-center space-x-1 ml-2">
@@ -240,6 +281,18 @@
 											class="fas fa-flag {flaggedResponseId === response.id
 												? 'text-red-500'
 												: 'text-gray-300'}"
+										></i>
+									</button>
+									<button
+										class="p-1 rounded hover:bg-gray-700"
+										title="{response.enabled ? 'Disable response' : 'Enable response'}"
+										aria-label="{response.enabled ? 'Disable this response' : 'Enable this response'}"
+										on:click|stopPropagation={() => {
+											handleToggleResponseEnabled(response);
+										}}
+									>
+										<i
+											class="fas {response.enabled ? 'fa-eye text-green-400' : 'fa-eye-slash text-gray-500'}"
 										></i>
 									</button>
 									<button
