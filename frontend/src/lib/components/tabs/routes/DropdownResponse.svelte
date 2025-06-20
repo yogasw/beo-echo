@@ -147,7 +147,6 @@
 				selectedEndpoint.responses = otherResponses || [];
 			}
 		}
-		toast.success('Response deleted successfully');
 	}
 
 	async function handleDuplicateResponse(response: Response): Promise<void> {
