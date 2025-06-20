@@ -155,7 +155,7 @@ func (suite *ReorderResponsesTestSuite) TestReorderResponsesHandler_PriorityOrde
 			Note:       "Low Priority Response",
 		},
 		{
-			ID:         "response-highest", 
+			ID:         "response-highest",
 			EndpointID: endpoint.ID,
 			StatusCode: 201,
 			Body:       `{"message": "Highest Priority"}`,
@@ -227,7 +227,7 @@ func (suite *ReorderResponsesTestSuite) TestReorderResponsesHandler_PriorityOrde
 		note     string
 	}{
 		{"response-highest", 4, "Highest Priority Response"}, // Index 0 → Priority 4 (highest)
-		{"response-high", 3, "High Priority Response"},       // Index 1 → Priority 3  
+		{"response-high", 3, "High Priority Response"},       // Index 1 → Priority 3
 		{"response-medium", 2, "Medium Priority Response"},   // Index 2 → Priority 2
 		{"response-low", 1, "Low Priority Response"},         // Index 3 → Priority 1 (lowest)
 	}
@@ -325,11 +325,11 @@ func (suite *ReorderResponsesTestSuite) TestReorderResponsesHandler_SingleRespon
 	err = json.Unmarshal(w.Body.Bytes(), &resp)
 	assert.NoError(suite.T(), err)
 	assert.Equal(suite.T(), false, resp["error"])
-	
+
 	// Verify single response is returned
 	data := resp["data"].([]interface{})
 	assert.Len(suite.T(), data, 1)
-	
+
 	responseData := data[0].(map[string]interface{})
 	assert.Equal(suite.T(), "response-only", responseData["id"])
 	assert.Equal(suite.T(), float64(1), responseData["priority"]) // Single response gets priority 1
