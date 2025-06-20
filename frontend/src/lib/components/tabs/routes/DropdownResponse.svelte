@@ -115,8 +115,8 @@
 
 	$: {
 		if (selectedResponse && selectedEndpoint?.responses) {
-			// Sort responses by priority before finding index
-			const sortedResponses = selectedEndpoint.responses.sort((a, b) => a.priority - b.priority);
+			// Sort responses by priority before finding index (higher priority first)
+			const sortedResponses = selectedEndpoint.responses.sort((a, b) => b.priority - a.priority);
 			const index = sortedResponses.findIndex((r) => r.id === selectedResponse?.id);
 			if (index !== -1) {
 				selectedValue = formatResponseLabel(index, selectedResponse, true);
@@ -265,8 +265,8 @@
 		}
 
 		try {
-			// Sort responses by priority first to get the correct order
-			const sortedResponses = [...selectedEndpoint.responses].sort((a, b) => a.priority - b.priority);
+			// Sort responses by priority first to get the correct order (higher priority first)
+			const sortedResponses = [...selectedEndpoint.responses].sort((a, b) => b.priority - a.priority);
 			const draggedResponse = sortedResponses[draggedIndex];
 			
 			// Remove from old position
@@ -290,8 +290,8 @@
 			
 			// If the selected response was moved, keep it selected
 			if (selectedResponse && draggedResponse.id === selectedResponse.id) {
-				// Find the new index in the updated responses
-				const newSortedResponses = updatedResponses.sort((a, b) => a.priority - b.priority);
+				// Find the new index in the updated responses (higher priority first)
+				const newSortedResponses = updatedResponses.sort((a, b) => b.priority - a.priority);
 				const newIndex = newSortedResponses.findIndex(r => r.id === draggedResponse.id);
 				if (newIndex !== -1) {
 					selectedResponse = newSortedResponses[newIndex];
@@ -362,7 +362,7 @@
 			>
 				<ul class="text-sm">
 					{#if selectedEndpoint?.responses && selectedEndpoint.responses.length > 0}
-						{#each selectedEndpoint.responses.sort((a, b) => a.priority - b.priority) as response, index}
+						{#each selectedEndpoint.responses.sort((a, b) => b.priority - a.priority) as response, index}
 							<li 
 								class="flex items-center group transition-all duration-200 {dragOverIndex === index ? 'drag-over' : ''} {isDragging && draggedIndex === index ? 'drag-ghost' : ''}"
 								draggable="true"
@@ -373,7 +373,7 @@
 								on:drop={(event) => handleDrop(event, index)}
 							>
 								<!-- Drag handle -->
-								<div class="flex items-center px-2 py-2 cursor-grab active:cursor-grabbing opacity-0 group-hover:opacity-100 transition-opacity duration-200" 
+								<div class="flex items-center px-2 py-2 cursor-grab active:cursor-grabbing transition-opacity duration-200" 
 								     title="Drag to reorder"
 								     aria-label="Drag to reorder response">
 									<i class="fas fa-grip-vertical text-gray-400 text-xs"></i>
@@ -398,7 +398,7 @@
 									{/if}
 								</button>
 								<!-- Copy & Delete actions -->
-								<div class="flex items-center space-x-1 mr-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+								<div class="flex items-center space-x-1 mr-2 transition-opacity duration-200">
 									<button
 										class="p-1 rounded hover:bg-gray-700 transition-colors duration-200"
 										title="Flag response"

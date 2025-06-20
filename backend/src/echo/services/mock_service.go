@@ -94,7 +94,7 @@ func (s *MockService) handleMockMode(project *database.Project, method, path str
 	}
 
 	// Select response based on ResponseMode
-	response := selectResponse(responses, endpoint.ResponseMode, req)
+	response := selectResponseWithEndpoint(endpoint.ID, responses, endpoint.ResponseMode, req)
 
 	// Apply delays (response-level delay overrides endpoint-level delay, which overrides project-level delay)
 	s.applyDelay(project, endpoint, &response)
@@ -124,7 +124,7 @@ func (s *MockService) handleProxyMode(project *database.Project, method, path st
 		responses, err := s.Repo.FindResponsesByEndpointID(endpoint.ID)
 		if err == nil && len(responses) > 0 {
 			// Select response based on ResponseMode
-			response := selectResponse(responses, endpoint.ResponseMode, req)
+			response := selectResponseWithEndpoint(endpoint.ID, responses, endpoint.ResponseMode, req)
 
 			// Apply delay with proper priority: Response > Endpoint > Project
 			s.applyDelay(project, endpoint, &response)
@@ -263,8 +263,8 @@ func executeProxyRequest(targetURLString, method, pathStr, queryString string, r
 
 // Helper functions
 
-// selectResponse selects a response based on mode and rules
-func selectResponse(responses []database.MockResponse, mode string, req *http.Request) database.MockResponse {
+// selectResponseWithEndpoint selects a response based on mode and rules with endpoint ID for round-robin
+func selectResponseWithEndpoint(endpointID string, responses []database.MockResponse, mode string, req *http.Request) database.MockResponse {
 	// Filter responses by rules first
 	validResponses := filterResponsesByRules(responses, req)
 	if len(validResponses) == 0 {
@@ -284,9 +284,8 @@ func selectResponse(responses []database.MockResponse, mode string, req *http.Re
 		// Return random response
 		return validResponses[rand.Intn(len(validResponses))]
 	case "round_robin":
-		// TODO: Implement round-robin selection
-		// For now, return first
-		return validResponses[0]
+		// Use the actual endpoint ID for round-robin selection
+		return getNextRoundRobinResponse(endpointID, validResponses)
 	default:
 		// Default to random
 		return validResponses[rand.Intn(len(validResponses))]
