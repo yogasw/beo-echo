@@ -43,6 +43,7 @@ func (r *responseRepository) ValidateResponseHierarchy(projectID string, endpoin
 }
 
 // ReorderResponses updates the priority of responses based on the provided order
+// Priority is assigned in descending order: first item gets highest priority
 func (r *responseRepository) ReorderResponses(endpointID string, responseOrder []string) error {
 	// Start a transaction to ensure atomicity
 	tx := r.db.Begin()
@@ -52,9 +53,13 @@ func (r *responseRepository) ReorderResponses(endpointID string, responseOrder [
 		}
 	}()
 
+	// Calculate highest priority based on array length
+	totalResponses := len(responseOrder)
+
 	// Update priority for each response in the order provided
+	// First item in array gets highest priority, last item gets lowest priority
 	for i, responseID := range responseOrder {
-		priority := i + 1 // Priority starts from 1
+		priority := totalResponses - i // Descending priority: highest first
 
 		result := tx.Model(&struct{}{}).
 			Table("mock_responses").

@@ -99,9 +99,9 @@ func ReorderResponsesHandler(c *gin.Context) {
 		return
 	}
 
-	// Fetch updated responses to return
+	// Fetch updated responses to return (order by priority DESC for highest priority first)
 	var responses []database.MockResponse
-	result := db.Preload("Rules").Where("endpoint_id = ?", endpointID).Order("priority ASC").Find(&responses)
+	result := db.Preload("Rules").Where("endpoint_id = ?", endpointID).Order("priority DESC").Find(&responses)
 	if result.Error != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error":   true,
