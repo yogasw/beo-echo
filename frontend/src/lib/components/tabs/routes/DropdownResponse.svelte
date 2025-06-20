@@ -1,6 +1,6 @@
 <script lang="ts">
 	import type { Endpoint, Response } from '$lib/api/BeoApi';
-	import { addResponse, deleteResponse } from '$lib/api/BeoApi';
+	import { addResponse, deleteResponse, duplicateResponse } from '$lib/api/BeoApi';
 	import { updateEndpoint } from '$lib/stores/saveButton';
 	import { toast } from '$lib/stores/toast';
 	import * as ThemeUtils from '$lib/utils/themeUtils';
@@ -147,6 +147,36 @@
 		}
 		toast.success('Response deleted successfully');
 	}
+
+	async function handleDuplicateResponse(response: Response): Promise<void> {
+		if (!selectedEndpoint || !response) {
+			toast.error('No endpoint or response selected');
+			return;
+		}
+
+		try {
+			const duplicatedResponse = await duplicateResponse(
+				selectedEndpoint.project_id,
+				response.endpoint_id,
+				response.id
+			);
+
+			// Add the duplicated response to the endpoint's responses array
+			if (selectedEndpoint.responses) {
+				selectedEndpoint.responses = [...selectedEndpoint.responses, duplicatedResponse];
+			} else {
+				selectedEndpoint.responses = [duplicatedResponse];
+			}
+
+			// Auto-select the newly duplicated response
+			selectResponse(selectedEndpoint.responses.length - 1, duplicatedResponse);
+			
+			toast.success('Response duplicated successfully');
+		} catch (error) {
+			console.error('Failed to duplicate response:', error);
+			toast.error('Failed to duplicate response');
+		}
+	}
 </script>
 
 <div
@@ -214,10 +244,10 @@
 									</button>
 									<button
 										class="p-1 rounded hover:bg-gray-700"
-										title="Copy"
-										aria-label="Copy"
+										title="Duplicate response"
+										aria-label="Duplicate this response"
 										on:click|stopPropagation={() => {
-											console.log('Copy', response);
+											handleDuplicateResponse(response);
 										}}
 									>
 										<i class="fas fa-copy text-gray-300"></i>

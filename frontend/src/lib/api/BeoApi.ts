@@ -183,6 +183,12 @@ export const deleteResponse = async (projectId: string, endpointId: string, resp
 	return response.data;
 }
 
+export const duplicateResponse = async (projectId: string, endpointId: string, responseId: string): Promise<Response> => {
+	const workspaceId = getCurrentWorkspaceId();
+	const response = await apiClient.post(`/workspaces/${workspaceId}/projects/${projectId}/endpoints/${endpointId}/responses/${responseId}/duplicate`);
+	return response.data.data;
+};
+
 export const updateProjectStatus = async (projectId: string, status: string): Promise<Project> => {
 	let workspaceId = getCurrentWorkspaceId();
 	const response = await apiClient.put(`/workspaces/${workspaceId}/projects/${projectId}`, {
