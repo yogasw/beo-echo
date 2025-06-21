@@ -128,7 +128,7 @@ func (h *GoogleOAuthHandler) InitiateLogin(c *gin.Context) {
 
 	// Get scheme and host for backend callback URL
 	scheme := "http"
-	if c.Request.TLS != nil || c.Request.Header.Get("X-Forwarded-Scheme") == "https" {
+	if c.Request.TLS != nil || c.Request.Header.Get("X-Forwarded-Scheme") == "https" || strings.Contains(c.Request.Header.Get("Referer"), "https") {
 		scheme = "https"
 	}
 	backendBaseURL := fmt.Sprintf("%s://%s", scheme, c.Request.Host)
