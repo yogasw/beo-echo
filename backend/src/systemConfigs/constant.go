@@ -14,6 +14,11 @@ const (
 
 	AUTO_SAVE_LOGS_IN_DB_ENABLED = "AUTO_SAVE_LOGS_IN_DB_ENABLED" // Enable auto-saving of logs
 
+	// Workspace and Project Limits
+	AUTO_CREATE_WORKSPACE_ON_REGISTER = "AUTO_CREATE_WORKSPACE_ON_REGISTER" // Automatically create a workspace for new users
+	MAX_USER_WORKSPACES               = "MAX_USER_WORKSPACES"               // Maximum number of workspaces a user can create
+	MAX_WORKSPACE_PROJECTS            = "MAX_WORKSPACE_PROJECTS"            // Maximum number of projects allowed in a workspace
+
 	JWT_SECRET = "JWT_SECRET" // JWT secret for signing tokens
 
 	// Default Response Configuration
@@ -68,6 +73,26 @@ var DefaultConfigSettings = map[SystemConfigKey]ConfigSetting{
 		Value:       "false",
 		Description: "Automatically persist request logs to database (may affect performance)",
 		Category:    "Logging",
+	},
+
+	// Workspace and Project Limits
+	AUTO_CREATE_WORKSPACE_ON_REGISTER: {
+		Type:        TypeBoolean,
+		Value:       "false",
+		Description: "Automatically create a workspace for new users upon registration",
+		Category:    "Limits",
+	},
+	MAX_USER_WORKSPACES: {
+		Type:        TypeNumber,
+		Value:       "1",
+		Description: "Maximum number of workspaces a user can create",
+		Category:    "Limits",
+	},
+	MAX_WORKSPACE_PROJECTS: {
+		Type:        TypeNumber,
+		Value:       "100",
+		Description: "Maximum number of projects allowed in a workspace",
+		Category:    "Limits",
 	},
 	JWT_SECRET: {
 		Type:        TypeString,

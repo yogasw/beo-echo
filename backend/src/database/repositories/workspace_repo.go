@@ -24,7 +24,7 @@ func (r *workspaceRepository) GetAllWorkspaces(ctx context.Context) ([]database.
 }
 
 // NewWorkspaceRepository creates a new workspace repository
-func NewWorkspaceRepository(db *gorm.DB) *workspaceRepository {
+func NewWorkspaceRepository(db *gorm.DB) workspaces.WorkspaceRepository {
 	return &workspaceRepository{db: db}
 }
 
@@ -183,4 +183,24 @@ func (r *workspaceRepository) GetWorkspaceMembers(ctx context.Context, workspace
 	}
 
 	return members, nil
+}
+
+// CountUserWorkspaces counts the number of workspaces a user belongs to
+func (r *workspaceRepository) CountUserWorkspaces(ctx context.Context, userID string) (int, error) {
+	var count int64
+	err := r.db.Table("user_workspaces").
+		Where("user_id = ?", userID).
+		Count(&count).Error
+
+	return int(count), err
+}
+
+// GetUserByID retrieves a user by their ID
+func (r *workspaceRepository) GetUserByID(ctx context.Context, userID string) (*database.User, error) {
+	var user database.User
+	err := r.db.Where("id = ?", userID).First(&user).Error
+	if err != nil {
+		return nil, err
+	}
+	return &user, nil
 }
