@@ -73,7 +73,7 @@ func (s *WorkspaceService) CreateWorkspace(ctx context.Context, workspace *datab
 	}
 
 	if currentWorkspaceCount >= maxUserWorkspaces {
-		return fmt.Errorf("workspace limit exceeded: maximum %d workspaces allowed", maxUserWorkspaces)
+		return fmt.Errorf("workspace limit exceeded: maximum %d workspaces allowed. Please contact admin for more information", maxUserWorkspaces)
 	}
 
 	return s.repo.CreateWorkspace(ctx, workspace, userID)

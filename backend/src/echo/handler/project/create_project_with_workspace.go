@@ -122,7 +122,7 @@ func CreateProjectWithWorkspaceHandler(c *gin.Context) {
 	if int(currentProjectCount) >= maxProjectsWorkspace {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"error":   true,
-			"message": fmt.Sprintf("Project limit exceeded: maximum %d projects allowed per workspace", maxProjectsWorkspace),
+			"message": fmt.Sprintf("Project limit exceeded: maximum %d projects allowed in workspace. Please contact admin for more information.", maxProjectsWorkspace),
 		})
 		return
 	}

@@ -2,8 +2,8 @@
 	import { onMount } from 'svelte';
 	import { workspaces, currentWorkspace, workspaceStore } from '$lib/stores/workspace';
 	import { activeTab } from '$lib/stores/activeTab';
-	import { goto } from '$app/navigation';
 	import { auth } from '$lib/stores/auth';
+	import { toast } from '$lib/stores/toast';
 	export let className = '';
 
 	// Local state
@@ -33,7 +33,7 @@
 			newWorkspaceName = '';
 			modalOpen = false;
 		} catch (err: any) {
-			error = err?.message || 'Failed to create workspace';
+			toast.error(err)
 		} finally {
 			loading = false;
 		}
