@@ -84,7 +84,7 @@ var DefaultConfigSettings = map[SystemConfigKey]ConfigSetting{
 	},
 	MAX_USER_WORKSPACES: {
 		Type:        TypeNumber,
-		Value:       "1",
+		Value:       "2",
 		Description: "Maximum number of workspaces a user can create",
 		Category:    "Limits",
 	},
