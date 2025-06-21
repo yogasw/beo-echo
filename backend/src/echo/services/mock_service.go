@@ -2,6 +2,7 @@ package services
 
 import (
 	"bytes"
+	"compress/gzip"
 	"context"
 	"crypto/tls"
 	"encoding/json"
@@ -13,6 +14,8 @@ import (
 	"path"
 	"strings"
 	"time"
+
+	"github.com/andybalholm/brotli"
 
 	"beo-echo/backend/src/database"
 	"beo-echo/backend/src/echo/repositories"
@@ -442,28 +445,73 @@ func getNestedValue(data map[string]interface{}, key string) string {
 
 // createMockResponse builds an HTTP response from a mock response
 func createMockResponse(mockResp database.MockResponse) (*http.Response, error) {
-	// Create response body
-	body := io.NopCloser(strings.NewReader(mockResp.Body))
-
-	// Create response
-	resp := &http.Response{
-		StatusCode: mockResp.StatusCode,
-		Body:       body,
-		Header:     make(http.Header),
-	}
-
+	// Parse headers first to check for Content-Encoding
 	var headers map[string]string
 	if err := json.Unmarshal([]byte(mockResp.Headers), &headers); err != nil {
 		fmt.Println("Error unmarshalling headers:", err)
-	} else {
-		// Set headers
-		for key, value := range headers {
-			resp.Header.Set(key, value)
+		headers = make(map[string]string)
+	}
+
+	// Check for Content-Encoding header
+	contentEncoding := ""
+	for key, value := range headers {
+		if strings.ToLower(key) == "content-encoding" {
+			contentEncoding = strings.ToLower(value)
+			break
 		}
 	}
 
-	// Set content length
-	resp.ContentLength = int64(len(mockResp.Body))
+	// Prepare response body based on Content-Encoding
+	var body io.ReadCloser
+	var contentLength int64
+
+	switch contentEncoding {
+	case "gzip":
+		// Compress the body using gzip
+		var buf bytes.Buffer
+		writer := gzip.NewWriter(&buf)
+		if _, err := writer.Write([]byte(mockResp.Body)); err != nil {
+			writer.Close()
+			return nil, fmt.Errorf("failed to gzip compress response body: %w", err)
+		}
+		if err := writer.Close(); err != nil {
+			return nil, fmt.Errorf("failed to close gzip writer: %w", err)
+		}
+		body = io.NopCloser(&buf)
+		contentLength = int64(buf.Len())
+
+	case "br":
+		// Compress the body using Brotli
+		var buf bytes.Buffer
+		writer := brotli.NewWriter(&buf)
+		if _, err := writer.Write([]byte(mockResp.Body)); err != nil {
+			writer.Close()
+			return nil, fmt.Errorf("failed to brotli compress response body: %w", err)
+		}
+		if err := writer.Close(); err != nil {
+			return nil, fmt.Errorf("failed to close brotli writer: %w", err)
+		}
+		body = io.NopCloser(&buf)
+		contentLength = int64(buf.Len())
+
+	default:
+		// No compression or unsupported encoding, use raw body
+		body = io.NopCloser(strings.NewReader(mockResp.Body))
+		contentLength = int64(len(mockResp.Body))
+	}
+
+	// Create response
+	resp := &http.Response{
+		StatusCode:    mockResp.StatusCode,
+		Body:          body,
+		Header:        make(http.Header),
+		ContentLength: contentLength,
+	}
+
+	// Set headers
+	for key, value := range headers {
+		resp.Header.Set(key, value)
+	}
 
 	return resp, nil
 }
