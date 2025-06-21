@@ -2,6 +2,7 @@ package services
 
 import (
 	"bytes"
+	"context"
 	"crypto/tls"
 	"encoding/json"
 	"fmt"
@@ -31,8 +32,8 @@ func NewMockService(repo *repositories.MockRepository) *MockService {
 }
 
 // HandleRequest processes an incoming request and returns a mock response or proxies it
-// Also returns project ID, execution mode, and whether the request matched an endpoint
-func (s *MockService) HandleRequest(alias, method, reqPath string, req *http.Request) (*http.Response, error, string, database.ProjectMode, bool) {
+// Returns response, error, project ID, execution mode, whether the request matched an endpoint
+func (s *MockService) HandleRequest(ctx context.Context, alias, method, reqPath string, req *http.Request) (*http.Response, error, string, database.ProjectMode, bool) {
 	// Find project by alias
 	project, err := s.Repo.FindProjectByAlias(alias)
 	if err != nil {
@@ -48,13 +49,13 @@ func (s *MockService) HandleRequest(alias, method, reqPath string, req *http.Req
 	// Check project mode
 	switch project.Mode {
 	case database.ModeMock:
-		resp, err, mode, matched := s.handleMockMode(project, method, cleanPath, req)
+		resp, err, mode, matched := s.handleMockMode(ctx, project, method, cleanPath, req)
 		return resp, err, project.ID, mode, matched
 	case database.ModeProxy:
-		resp, err, matched := s.handleProxyMode(project, method, cleanPath, req)
+		resp, matched, err := s.handleProxyMode(ctx, project, method, cleanPath, req)
 		return resp, err, project.ID, project.Mode, matched // Matched is true only if handled by a mock endpoint
 	case database.ModeForwarder:
-		resp, err := s.handleForwarderMode(project, method, cleanPath, req)
+		resp, err := s.handleForwarderMode(ctx, project, method, cleanPath, req)
 		return resp, err, project.ID, project.Mode, false // Forwarder requests are always considered "not matched"
 	case database.ModeDisabled:
 		return createErrorResponse(http.StatusServiceUnavailable, "Service is disabled"), nil, project.ID, project.Mode, false
@@ -64,7 +65,7 @@ func (s *MockService) HandleRequest(alias, method, reqPath string, req *http.Req
 }
 
 // handleMockMode generates mock response and returns if the request matched an endpoint
-func (s *MockService) handleMockMode(project *database.Project, method, path string, req *http.Request) (*http.Response, error, database.ProjectMode, bool) {
+func (s *MockService) handleMockMode(ctx context.Context, project *database.Project, method, path string, req *http.Request) (*http.Response, error, database.ProjectMode, bool) {
 	endpoint, err := s.Repo.FindMatchingEndpoint(project.ID, method, path)
 	if err != nil {
 		// No matching endpoint found - apply project-level delay before returning error
@@ -79,7 +80,7 @@ func (s *MockService) handleMockMode(project *database.Project, method, path str
 		// Apply delays before proxying
 		s.applyDelay(project, endpoint, nil)
 		// Forward the request to the proxy target
-		resp, err := executeProxyRequest(endpoint.ProxyTarget.URL, method, path, req.URL.RawQuery, req)
+		resp, err := executeProxyRequest(ctx, endpoint.ProxyTarget.URL, method, path, req.URL.RawQuery, req)
 		return resp, err, database.ModeProxy, true
 	}
 
@@ -105,15 +106,15 @@ func (s *MockService) handleMockMode(project *database.Project, method, path str
 }
 
 // handleProxyMode checks for mock endpoint first, if not found forwards the request to target
-func (s *MockService) handleProxyMode(project *database.Project, method, path string, req *http.Request) (*http.Response, error, bool) {
+func (s *MockService) handleProxyMode(ctx context.Context, project *database.Project, method, path string, req *http.Request) (*http.Response, bool, error) {
 	if project.ActiveProxy == nil {
-		return createErrorResponse(http.StatusInternalServerError, "No proxy target configured"), nil, false
+		return createErrorResponse(http.StatusInternalServerError, "No proxy target configured"), false, nil
 	}
 
 	// Check for recursive proxy loops by checking for any header with beo-echo prefix
 	for name := range req.Header {
 		if strings.HasPrefix(strings.ToLower(name), "beo-echo") {
-			return createErrorResponse(http.StatusLoopDetected, "Proxy loop detected: request contains beo-echo header"), nil, false
+			return createErrorResponse(http.StatusLoopDetected, "Proxy loop detected: request contains beo-echo header"), false, nil
 		}
 	}
 
@@ -134,7 +135,7 @@ func (s *MockService) handleProxyMode(project *database.Project, method, path st
 			if err == nil {
 				// Add header to indicate response was mocked
 				resp.Header.Set("beo-echo-response-type", "mock")
-				return resp, nil, true // True because it was handled by a mock endpoint
+				return resp, true, nil // True because it was handled by a mock endpoint
 			}
 		}
 	}
@@ -142,16 +143,16 @@ func (s *MockService) handleProxyMode(project *database.Project, method, path st
 	// No matching mock endpoint found or error occurred, forward to target
 	// Apply project-level delay before forwarding
 	s.applyDelay(project, nil, nil)
-	resp, err := executeProxyRequest(project.ActiveProxy.URL, method, path, req.URL.RawQuery, req)
+	resp, err := executeProxyRequest(ctx, project.ActiveProxy.URL, method, path, req.URL.RawQuery, req)
 	if err == nil && resp != nil && resp.Header != nil {
 		// Add header to indicate response was proxied
 		resp.Header.Set("beo-echo-response-type", "proxy")
 	}
-	return resp, err, false // False because it was forwarded to target, not handled by a mock
+	return resp, false, err // False because it was forwarded to target, not handled by a mock
 }
 
 // handleForwarderMode always forwards requests to the target without checking for mock endpoints
-func (s *MockService) handleForwarderMode(project *database.Project, method, path string, req *http.Request) (*http.Response, error) {
+func (s *MockService) handleForwarderMode(ctx context.Context, project *database.Project, method, path string, req *http.Request) (*http.Response, error) {
 	if project.ActiveProxy == nil {
 		return createErrorResponse(http.StatusInternalServerError, "No proxy target configured"), nil
 	}
@@ -169,13 +170,13 @@ func (s *MockService) handleForwarderMode(project *database.Project, method, pat
 	// Apply project-level delay before forwarding
 	s.applyDelay(project, nil, nil)
 
-	return executeProxyRequest(project.ActiveProxy.URL, method, path, req.URL.RawQuery, req)
+	return executeProxyRequest(ctx, project.ActiveProxy.URL, method, path, req.URL.RawQuery, req)
 }
 
 // executeProxyRequest is a common helper function to forward requests to a target URL
 // with proper header and body copying. This centralizes the forwarding logic for both
 // proxy and forwarder modes.
-func executeProxyRequest(targetURLString, method, pathStr, queryString string, req *http.Request) (*http.Response, error) {
+func executeProxyRequest(ctx context.Context, targetURLString, method, pathStr, queryString string, req *http.Request) (*http.Response, error) {
 	// Check for recursive proxy loops by checking for any header with beo-echo prefix
 	for name := range req.Header {
 		if strings.HasPrefix(strings.ToLower(name), "beo-echo") {
@@ -217,7 +218,7 @@ func executeProxyRequest(targetURLString, method, pathStr, queryString string, r
 
 	// Create a new request with all original attributes
 	newReq, err := http.NewRequestWithContext(
-		req.Context(),
+		ctx, // Use the passed context instead of req.Context()
 		method,
 		forwardURL.String(),
 		bytes.NewReader(bodyBytes),
