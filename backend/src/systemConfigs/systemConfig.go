@@ -80,6 +80,16 @@ func GetSystemConfigWithType[T any](key string) (T, error) {
 
 // SetSystemConfig sets a system configuration value in the database with type validation
 func SetSystemConfig(key, value string) error {
+	defaultValue, exists := DefaultConfigSettings[SystemConfigKey(key)]
+	// when not exists return error to avoid creating new config
+	if !exists {
+		return fmt.Errorf("configuration key %s not found", key)
+	}
+
+	if key == "" {
+		return fmt.Errorf("configuration key cannot be empty")
+	}
+
 	// Check if the key exists
 	var config database.SystemConfig
 	result := database.DB.Where("key = ?", key).First(&config)
@@ -87,26 +97,19 @@ func SetSystemConfig(key, value string) error {
 	if result.Error == nil {
 		// Update existing config
 		config.Value = value
+		config.Type = string(defaultValue.Type)
+		config.Key = key
 		if err := database.DB.Save(&config).Error; err != nil {
 			return fmt.Errorf("failed to update system config: %w", err)
 		}
 	} else {
-		var config database.SystemConfig
 		// Create new value
-		defaultValue, exists := DefaultConfigSettings[SystemConfigKey(key)]
-		if !exists {
-			config = database.SystemConfig{
-				Key:   key,
-				Value: value,
-			}
-		} else {
-			config = database.SystemConfig{
-				Key:         key,
-				Value:       value,
-				Type:        string(defaultValue.Type),
-				Description: defaultValue.Description,
-				HideValue:   defaultValue.HideValue,
-			}
+		config := database.SystemConfig{
+			Key:         key,
+			Value:       value,
+			Type:        string(defaultValue.Type),
+			Description: defaultValue.Description,
+			HideValue:   defaultValue.HideValue,
 		}
 
 		if err := database.DB.Create(&config).Error; err != nil {
@@ -143,6 +146,32 @@ func GetAllSystemConfigs() ([]database.SystemConfig, error) {
 	if err := database.DB.Find(&configs).Error; err != nil {
 		return nil, fmt.Errorf("failed to fetch system configs: %w", err)
 	}
+
+	for key, setting := range DefaultConfigSettings {
+		// Check if the default config already exists in the database or in configs skip if it does
+		exists := false
+		for _, config := range configs {
+			if config.Key == string(key) {
+				exists = true
+				break
+			}
+		}
+		if exists {
+			continue
+		}
+
+		// If not, create a new config with default values
+		newConfig := database.SystemConfig{
+			Key:         string(key),
+			Value:       setting.Value,
+			Type:        string(setting.Type),
+			Description: setting.Description,
+			HideValue:   setting.HideValue,
+		}
+		configs = append(configs, newConfig)
+
+	}
+
 	return configs, nil
 }
 

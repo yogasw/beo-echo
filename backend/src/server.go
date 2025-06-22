@@ -36,6 +36,7 @@ import (
 	replayHandler "beo-echo/backend/src/replay/handlers"
 	replayServices "beo-echo/backend/src/replay/services"
 	systemConfigHandler "beo-echo/backend/src/systemConfigs/handler"
+	workspacesHandler "beo-echo/backend/src/workspaces/handler"
 )
 
 // SetupRouter creates and configures a new Gin router
@@ -97,18 +98,19 @@ func SetupRouter() *gin.Engine {
 	userService := users.NewUserService(userRepo)
 	userHandler := users.NewUserHandler(userService)
 
-	// Initialize OAuth and Auth services
-	googleOAuthService := authServices.NewGoogleOAuthService(database.DB)
-	googleOAuthHandler := authHandler.NewGoogleOAuthHandler(googleOAuthService)
-	oauthConfigHandler := authHandler.NewOAuthConfigHandler(database.DB)
+	// Initialize auto-invite handler
+	autoInviteHandler := workspacesHandler.NewAutoInviteHandler(database.DB)
+	autoInviteService := workspaces.NewAutoInviteService(database.DB)
 
 	// Initialize workspace module
 	workspaceRepo := repositories.NewWorkspaceRepository(database.DB)
 	workspaceService := workspaces.NewWorkspaceService(workspaceRepo)
-	workspaceHandler := workspaces.NewWorkspaceHandler(workspaceService)
+	workspaceHandler := workspacesHandler.NewWorkspaceHandler(workspaceService)
 
-	// Initialize auto-invite handler
-	autoInviteHandler := workspaces.NewAutoInviteHandler(database.DB)
+	// Initialize OAuth and Auth services
+	googleOAuthService := authServices.NewGoogleOAuthService(database.DB, autoInviteService, workspaceService)
+	googleOAuthHandler := authHandler.NewGoogleOAuthHandler(googleOAuthService)
+	oauthConfigHandler := authHandler.NewOAuthConfigHandler(database.DB)
 
 	// Initialize Auth service with user repository
 	authHandler.InitAuthService(database.DB, userRepo)
@@ -139,8 +141,8 @@ func SetupRouter() *gin.Engine {
 		ownerGroup := apiGroup.Group("")
 		ownerGroup.Use(middlewares.OwnerOnlyMiddleware())
 		{
-			apiGroup.GET("/system-config/:key", systemConfigHandler.GetSystemConfigHandler)
-			apiGroup.GET("/system-configs", systemConfigHandler.GetAllSystemConfigsHandler)
+			ownerGroup.GET("/system-config/:key", systemConfigHandler.GetSystemConfigHandler)
+			ownerGroup.GET("/system-configs", systemConfigHandler.GetAllSystemConfigsHandler)
 			ownerGroup.PUT("/system-config/:key", systemConfigHandler.UpdateSystemConfigHandler)
 
 			// OAuth Configuration Routes

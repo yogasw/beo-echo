@@ -211,6 +211,8 @@ func (h *GoogleOAuthHandler) InitiateLogin(c *gin.Context) {
 
 // HandleCallback handles OAuth callback from Google
 func (h *GoogleOAuthHandler) HandleCallback(c *gin.Context) {
+	ctx := c.Request.Context()
+
 	code := c.Query("code")
 	state := c.Query("state")
 	if code == "" {
@@ -243,7 +245,7 @@ func (h *GoogleOAuthHandler) HandleCallback(c *gin.Context) {
 	}
 	baseURL := fmt.Sprintf("%s://%s", scheme, c.Request.Host)
 
-	user, token, err := h.service.HandleOAuthCallback(code, baseURL)
+	user, token, err := h.service.HandleOAuthCallback(ctx, code, baseURL)
 	if err != nil {
 		var errorURL string
 
