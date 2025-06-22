@@ -80,6 +80,10 @@ func GetSystemConfigWithType[T any](key string) (T, error) {
 
 // SetSystemConfig sets a system configuration value in the database with type validation
 func SetSystemConfig(key, value string) error {
+	if key == "" {
+		return fmt.Errorf("configuration key cannot be empty")
+	}
+
 	// Check if the key exists
 	var config database.SystemConfig
 	result := database.DB.Where("key = ?", key).First(&config)

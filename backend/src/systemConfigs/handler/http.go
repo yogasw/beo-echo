@@ -82,10 +82,6 @@ func GetAllSystemConfigsHandler(c *gin.Context) {
 		return
 	}
 
-	// Get owner status from context (set by JWTAuthMiddleware)
-	isOwnerValue, exists := c.Get("isOwner")
-	isOwner := exists && isOwnerValue == true
-
 	// Get configs from services
 	configs, err := systemConfig.GetAllSystemConfigs()
 	if err != nil {
@@ -104,11 +100,8 @@ func GetAllSystemConfigsHandler(c *gin.Context) {
 			continue
 		}
 
-		// If user is not an owner, only show feature flags and non-hidden configs
-		if isOwner || strings.HasPrefix(strings.ToLower(config.Key), "feature_") ||
-			strings.HasPrefix(config.Key, "FEATURE_") || !config.HideValue {
-			visibleConfigs = append(visibleConfigs, config)
-		}
+		// push data to visibleConfigs
+		visibleConfigs = append(visibleConfigs, config)
 	}
 
 	c.JSON(http.StatusOK, gin.H{
@@ -194,7 +187,7 @@ func UpdateSystemConfigHandler(c *gin.Context) {
 			return
 		}
 	}
-	err := systemConfig.SetSystemConfig(string(defaultConfig.Key), req.Value)
+	err := systemConfig.SetSystemConfig(key, req.Value)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"success": false,
