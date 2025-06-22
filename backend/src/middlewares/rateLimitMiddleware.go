@@ -19,14 +19,14 @@ type rateLimitState struct {
 
 var (
 	ipRateStates     sync.Map
-	apiRateLimit     = 100        // 100 requests for /api endpoints
+	apiRateLimit     = 60         // 60 requests for /api endpoints
 	generalRateLimit = 200        // 200 requests for other endpoints
 	rateWindow       = int64(60)  // per 60 seconds
 	stateTimeout     = int64(600) // cleanup IPs idle for 10 minutes
 )
 
 // RateLimitByIP applies rate limiting per IP address
-// 100 requests per minute for /api endpoints, 200 for others
+// 60 requests per minute for /api endpoints, 200 for others
 func RateLimitByIP() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		ip := getClientIP(c)

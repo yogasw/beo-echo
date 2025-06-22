@@ -17,7 +17,7 @@ func TestRateLimitConstants(t *testing.T) {
 		// These values should not change without explicit approval
 
 		// Verify API rate limit
-		assert.Equal(t, 100, apiRateLimit, "API rate limit should be 100 requests per minute")
+		assert.Equal(t, 60, apiRateLimit, "API rate limit should be 60 requests per minute")
 
 		// Verify general rate limit
 		assert.Equal(t, 200, generalRateLimit, "General rate limit should be 200 requests per minute")
@@ -45,11 +45,11 @@ func TestRateLimitConstants(t *testing.T) {
 		ipRateStates = sync.Map{}
 
 		// Test that we can make requests up to the production limits
-		// For API endpoints (100 requests)
+		// For API endpoints (60 requests)
 		testIP := "192.168.100.1:12345"
 
-		// Make 99 requests to API endpoint (should all succeed)
-		for i := 0; i < 99; i++ {
+		// Make 60 requests to API endpoint (should all succeed)
+		for i := 1; i < 60; i++ {
 			req := httptest.NewRequest("GET", "/api/test", nil)
 			req.RemoteAddr = testIP
 
@@ -61,19 +61,19 @@ func TestRateLimitConstants(t *testing.T) {
 			}
 		}
 
-		// 100th request should still succeed
+		// 60th request should still succeed
 		req := httptest.NewRequest("GET", "/api/test", nil)
 		req.RemoteAddr = testIP
 		w := httptest.NewRecorder()
 		router.ServeHTTP(w, req)
-		assert.Equal(t, http.StatusOK, w.Code, "100th API request should succeed")
+		assert.Equal(t, http.StatusOK, w.Code, "60th API request should succeed")
 
-		// 101st request should be blocked
+		// 61st request should be blocked
 		req = httptest.NewRequest("GET", "/api/test", nil)
 		req.RemoteAddr = testIP
 		w = httptest.NewRecorder()
 		router.ServeHTTP(w, req)
-		assert.Equal(t, http.StatusTooManyRequests, w.Code, "101st API request should be blocked")
+		assert.Equal(t, http.StatusTooManyRequests, w.Code, "61st API request should be blocked")
 	})
 
 	t.Run("verifies general endpoint rate limit", func(t *testing.T) {
