@@ -1,4 +1,4 @@
-package services
+package workspaces
 
 import (
 	"context"
@@ -25,6 +25,7 @@ func NewAutoInviteService(db *gorm.DB) *AutoInviteService {
 // ProcessUserAutoInvite checks if a user should be automatically invited to any workspaces
 // based on their email domain, and creates the necessary UserWorkspace records if so
 func (s *AutoInviteService) ProcessUserAutoInvite(ctx context.Context, user *database.User) error {
+
 	if user == nil || user.Email == "" {
 		return nil // No user or email, nothing to do
 	}

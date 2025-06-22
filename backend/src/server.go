@@ -36,6 +36,7 @@ import (
 	replayHandler "beo-echo/backend/src/replay/handlers"
 	replayServices "beo-echo/backend/src/replay/services"
 	systemConfigHandler "beo-echo/backend/src/systemConfigs/handler"
+	workspacesHandler "beo-echo/backend/src/workspaces/handler"
 )
 
 // SetupRouter creates and configures a new Gin router
@@ -97,18 +98,19 @@ func SetupRouter() *gin.Engine {
 	userService := users.NewUserService(userRepo)
 	userHandler := users.NewUserHandler(userService)
 
+	// Initialize auto-invite handler
+	autoInviteHandler := workspacesHandler.NewAutoInviteHandler(database.DB)
+	autoInviteService := workspaces.NewAutoInviteService(database.DB)
+
 	// Initialize OAuth and Auth services
-	googleOAuthService := authServices.NewGoogleOAuthService(database.DB)
+	googleOAuthService := authServices.NewGoogleOAuthService(database.DB, autoInviteService)
 	googleOAuthHandler := authHandler.NewGoogleOAuthHandler(googleOAuthService)
 	oauthConfigHandler := authHandler.NewOAuthConfigHandler(database.DB)
 
 	// Initialize workspace module
 	workspaceRepo := repositories.NewWorkspaceRepository(database.DB)
 	workspaceService := workspaces.NewWorkspaceService(workspaceRepo)
-	workspaceHandler := workspaces.NewWorkspaceHandler(workspaceService)
-
-	// Initialize auto-invite handler
-	autoInviteHandler := workspaces.NewAutoInviteHandler(database.DB)
+	workspaceHandler := workspacesHandler.NewWorkspaceHandler(workspaceService)
 
 	// Initialize Auth service with user repository
 	authHandler.InitAuthService(database.DB, userRepo)

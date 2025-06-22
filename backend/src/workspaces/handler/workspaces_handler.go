@@ -1,4 +1,4 @@
-package workspaces
+package handler
 
 import (
 	"net/http"
@@ -7,15 +7,16 @@ import (
 	"gorm.io/gorm"
 
 	"beo-echo/backend/src/database"
+	"beo-echo/backend/src/workspaces"
 )
 
 // WorkspaceHandler handles HTTP requests for workspaces
 type WorkspaceHandler struct {
-	service *WorkspaceService
+	service *workspaces.WorkspaceService
 }
 
 // NewWorkspaceHandler creates a new workspace handler
-func NewWorkspaceHandler(service *WorkspaceService) *WorkspaceHandler {
+func NewWorkspaceHandler(service *workspaces.WorkspaceService) *WorkspaceHandler {
 	return &WorkspaceHandler{service: service}
 }
 
