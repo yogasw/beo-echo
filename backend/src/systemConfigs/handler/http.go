@@ -2,6 +2,7 @@ package systemConfig
 
 import (
 	"net/http"
+	"strconv"
 	"strings"
 
 	"github.com/gin-gonic/gin"
@@ -133,7 +134,6 @@ func UpdateSystemConfigHandler(c *gin.Context) {
 	}
 
 	// Authentication already verified by middleware
-
 	var req UpdateSystemConfigRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
@@ -143,62 +143,82 @@ func UpdateSystemConfigHandler(c *gin.Context) {
 		return
 	}
 
-	// Check if this is a feature flag
-	isFeatureFlag := strings.HasPrefix(strings.ToLower(key), "feature_") || strings.HasPrefix(key, "FEATURE_")
+	// validate key and value
+	// Get default config to validate key and type
+	defaultConfig, exists := systemConfig.DefaultConfigSettings[systemConfig.SystemConfigKey(key)]
+	if !exists {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"success": false,
+			"message": "Invalid configuration key",
+		})
+		return
+	}
 
-	// If it's a feature flag, ensure it's set as a boolean type
-	configType := "string"
-	if isFeatureFlag {
-		configType = "boolean"
+	// disable update hide value from api
+	if defaultConfig.HideValue {
+		c.JSON(http.StatusForbidden, gin.H{
+			"success": false,
+			"message": "You do not have permission to update this configuration",
+		})
+		return
+	}
 
-		// Validate that the value is a valid boolean for feature flags
+	// Ensure value is not empty
+	if req.Value == "" {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"success": false,
+			"message": "Configuration value cannot be empty",
+		})
+		return
+	}
+	// validate type value
+	switch defaultConfig.Type {
+	case systemConfig.TypeString:
+		// String type can accept any value, no additional validation needed
+	case systemConfig.TypeBoolean:
+		// Boolean type must be "true" or "false"
 		if req.Value != "true" && req.Value != "false" {
 			c.JSON(http.StatusBadRequest, gin.H{
 				"success": false,
-				"message": "Feature flag value must be 'true' or 'false'",
+				"message": "Boolean configuration value must be 'true' or 'false'",
+			})
+			return
+		}
+	case systemConfig.TypeNumber:
+		// Number type must be a valid integer
+		if _, err := strconv.Atoi(req.Value); err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{
+				"success": false,
+				"message": "Number configuration value must be a valid integer",
 			})
 			return
 		}
 	}
+	err := systemConfig.SetSystemConfig(string(defaultConfig.Key), req.Value)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"success": false,
+			"message": "Failed to update configuration: " + err.Error(),
+		})
+		return
+	}
 
-	// Find the config
-	var config database.SystemConfig
-	result := database.DB.Where("key = ?", key).First(&config)
-	if result.Error != nil {
-		// Config doesn't exist, create a new one
-		description := ""
-		if isFeatureFlag {
-			description = "Feature flag created via API"
-		}
+	config, err := systemConfig.GetConfigSetting(key)
+	if err != nil || config == nil {
+		c.JSON(http.StatusNotFound, gin.H{
+			"success": false,
+			"message": "Configuration not found",
+		})
+		return
+	}
 
-		// Use the utility function to create new config
-		newConfig, err := systemConfig.AddConfig(key, req.Value, description, systemConfig.ConfigType(configType), false)
-		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{
-				"success": false,
-				"message": "Failed to create configuration: " + err.Error(),
-			})
-			return
-		}
-		config = *newConfig
-	} else {
-		// Use the utility function to update existing config
-		keyWithType := key
-		if config.Type != "" {
-			keyWithType = key + ":" + config.Type
-		}
-
-		err := systemConfig.SetSystemConfig(keyWithType, req.Value)
-		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{
-				"success": false,
-				"message": "Failed to update configuration: " + err.Error(),
-			})
-			return
-		}
-
-		// Refresh config object to return in response
-		database.DB.Where("key = ?", key).First(&config)
+	// validate if the config is updated
+	if config.Value != req.Value {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"success": false,
+			"message": "Configuration value was not updated successfully",
+		})
+		return
 	}
 
 	c.JSON(http.StatusOK, gin.H{
