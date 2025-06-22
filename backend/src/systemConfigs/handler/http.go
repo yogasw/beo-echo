@@ -98,6 +98,11 @@ func GetAllSystemConfigsHandler(c *gin.Context) {
 	// Filter configs based on user permissions
 	var visibleConfigs []database.SystemConfig
 	for _, config := range configs {
+		// skip when hide value
+		if config.HideValue {
+			continue
+		}
+
 		// If user is not an owner, only show feature flags and non-hidden configs
 		if isOwner || strings.HasPrefix(strings.ToLower(config.Key), "feature_") ||
 			strings.HasPrefix(config.Key, "FEATURE_") || !config.HideValue {

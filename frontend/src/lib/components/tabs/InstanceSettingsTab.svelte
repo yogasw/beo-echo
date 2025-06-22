@@ -10,6 +10,7 @@
 	import GeneralSettings from '$lib/components/instance/GeneralSettings.svelte';
 	import FeatureConfigSection from '$lib/components/instance/FeatureConfigSection.svelte';
 	import FeatureDebug from '$lib/components/instance/FeatureDebug.svelte';
+	import AdvanceSystemConfig from '$lib/components/instance/AdvanceSystemConfig.svelte';
 
 	// State for each section's visibility
 	let sectionsVisible = {
@@ -19,6 +20,7 @@
 		domain: false,
 		sso: false,
 		features: false,
+		advanceConfig: false,
 		general: true // General open by default
 	};
 </script>
@@ -135,7 +137,37 @@
 			</div>
 		{/if}
 	</div>
+	<!-- 8. Advanced System Configuration -->
+	<div class={ThemeUtils.card('overflow-hidden')}>
+		<div
+			class="flex justify-between items-center p-3 hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer bg-gray-100 dark:bg-gray-750"
+			on:click={() => (sectionsVisible.advanceConfig = !sectionsVisible.advanceConfig)}
+			on:keydown={(e) =>
+				e.key === 'Enter' && (sectionsVisible.advanceConfig = !sectionsVisible.advanceConfig)}
+			tabindex="0"
+			role="button"
+			title="Advanced system configuration settings"
+			aria-label="Toggle advanced system configuration section"
+		>
+			<div class="flex items-center">
+				<div class="bg-purple-500/20 p-1.5 rounded mr-2">
+					<i class="fas fa-cogs text-purple-400"></i>
+				</div>
+				<h3 class="font-medium theme-text-primary">Advanced System Configuration</h3>
+			</div>
+			<i
+				class="fas {sectionsVisible.advanceConfig
+					? 'fa-chevron-up'
+					: 'fa-chevron-down'} theme-text-muted"
+			></i>
+		</div>
 
+		{#if sectionsVisible.advanceConfig}
+			<div transition:fade={{ duration: 150 }} class="border-t theme-border p-4">
+				<AdvanceSystemConfig />
+			</div>
+		{/if}
+	</div>
 	<!-- Settings Sections -->
 	<div class="space-y-5">
 		<!-- 6. Feature Configuration -->
