@@ -102,15 +102,15 @@ func SetupRouter() *gin.Engine {
 	autoInviteHandler := workspacesHandler.NewAutoInviteHandler(database.DB)
 	autoInviteService := workspaces.NewAutoInviteService(database.DB)
 
-	// Initialize OAuth and Auth services
-	googleOAuthService := authServices.NewGoogleOAuthService(database.DB, autoInviteService)
-	googleOAuthHandler := authHandler.NewGoogleOAuthHandler(googleOAuthService)
-	oauthConfigHandler := authHandler.NewOAuthConfigHandler(database.DB)
-
 	// Initialize workspace module
 	workspaceRepo := repositories.NewWorkspaceRepository(database.DB)
 	workspaceService := workspaces.NewWorkspaceService(workspaceRepo)
 	workspaceHandler := workspacesHandler.NewWorkspaceHandler(workspaceService)
+
+	// Initialize OAuth and Auth services
+	googleOAuthService := authServices.NewGoogleOAuthService(database.DB, autoInviteService, workspaceService)
+	googleOAuthHandler := authHandler.NewGoogleOAuthHandler(googleOAuthService)
+	oauthConfigHandler := authHandler.NewOAuthConfigHandler(database.DB)
 
 	// Initialize Auth service with user repository
 	authHandler.InitAuthService(database.DB, userRepo)
