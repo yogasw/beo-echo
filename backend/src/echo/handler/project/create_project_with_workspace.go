@@ -1,6 +1,7 @@
 package project
 
 import (
+	"fmt"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -8,6 +9,7 @@ import (
 
 	"beo-echo/backend/src/database"
 	"beo-echo/backend/src/echo/handler"
+	systemConfig "beo-echo/backend/src/systemConfigs"
 )
 
 // CreateProjectWithWorkspaceHandler creates a new project within a specified workspace
@@ -86,6 +88,41 @@ func CreateProjectWithWorkspaceHandler(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error":   true,
 			"message": "Failed to verify workspace: " + err.Error(),
+		})
+		return
+	}
+
+	// Check project limit for the workspace - get user-specific limit if available
+	var maxProjectsWorkspace int
+
+	// Use user-specific limit if set, otherwise system default
+	if user.MaxProjectsWorkspace != nil {
+		maxProjectsWorkspace = *user.MaxProjectsWorkspace
+	} else {
+		maxProjectsWorkspace, err = systemConfig.GetSystemConfigWithType[int](systemConfig.MAX_WORKSPACE_PROJECTS)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"error":   true,
+				"message": "Failed to get project limit configuration: " + err.Error(),
+			})
+			return
+		}
+	}
+
+	// Count current projects in the workspace
+	var currentProjectCount int64
+	if err := database.GetDB().Model(&database.Project{}).Where("workspace_id = ?", workspaceID).Count(&currentProjectCount).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error":   true,
+			"message": "Failed to count workspace projects: " + err.Error(),
+		})
+		return
+	}
+
+	if int(currentProjectCount) >= maxProjectsWorkspace {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error":   true,
+			"message": fmt.Sprintf("Project limit exceeded: maximum %d projects allowed in workspace. Please contact admin for more information.", maxProjectsWorkspace),
 		})
 		return
 	}
