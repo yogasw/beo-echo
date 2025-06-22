@@ -420,9 +420,47 @@ func (s *GoogleOAuthService) handleUserCreation(userInfo *GoogleUserInfo, access
 		return nil, err
 	}
 
+	// Check if auto-create workspace is enabled and create workspace for new users
+	autoCreateWorkspace, err := systemConfig.GetSystemConfigWithType[bool](systemConfig.AUTO_CREATE_WORKSPACE_ON_REGISTER)
+	if err == nil && autoCreateWorkspace {
+		// Create a default workspace for the new user
+		if err := s.createDefaultWorkspaceForUser(newUser); err != nil {
+			// Log but don't fail the auth flow
+			fmt.Printf("Warning: Failed to create default workspace for user %s: %v\n", newUser.ID, err)
+		}
+	}
+
 	if err := tx.Commit().Error; err != nil {
 		return nil, err
 	}
 
 	return newUser, nil
+}
+
+// createDefaultWorkspaceForUser creates a default workspace for a new user
+func (s *GoogleOAuthService) createDefaultWorkspaceForUser(user *database.User) error {
+	workspace := &database.Workspace{
+		Name: fmt.Sprintf("%s's Workspace", user.Name),
+	}
+
+	// Create workspace in a transaction
+	return s.db.Transaction(func(tx *gorm.DB) error {
+		// Create the workspace
+		if err := tx.Create(workspace).Error; err != nil {
+			return fmt.Errorf("failed to create workspace: %w", err)
+		}
+
+		// Add the user as an admin
+		userWorkspace := database.UserWorkspace{
+			UserID:      user.ID,
+			WorkspaceID: workspace.ID,
+			Role:        "admin",
+		}
+
+		if err := tx.Create(&userWorkspace).Error; err != nil {
+			return fmt.Errorf("failed to add user to workspace: %w", err)
+		}
+
+		return nil
+	})
 }

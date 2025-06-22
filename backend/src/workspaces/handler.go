@@ -80,7 +80,7 @@ func (h *WorkspaceHandler) CreateWorkspace(c *gin.Context) {
 	if err := h.service.CreateWorkspace(c.Request.Context(), &workspace, userID.(string)); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"success": false,
-			"message": "Failed to create workspace: " + err.Error(),
+			"message": err.Error(),
 		})
 		return
 	}

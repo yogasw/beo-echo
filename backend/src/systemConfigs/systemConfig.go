@@ -48,7 +48,7 @@ func GetSystemConfig(key string) (interface{}, error) {
 }
 
 // GetSystemConfigWithType retrieves a system configuration value with automatic type conversion to T
-// T can be string, bool, float64, or []string
+// T can be string, bool, int, float64, or []string
 func GetSystemConfigWithType[T any](key string) (T, error) {
 	var empty T
 
@@ -58,13 +58,24 @@ func GetSystemConfigWithType[T any](key string) (T, error) {
 		return empty, err
 	}
 
-	// Type assert to the requested type
-	result, ok := value.(T)
-	if !ok {
-		return empty, fmt.Errorf("unable to convert value to requested type for key %s", key)
+	// Try direct type assertion first
+	if converted, ok := value.(T); ok {
+		return converted, nil
 	}
 
-	return result, nil
+	// If direct assertion fails, try special conversions
+	// Handle int type when value is float64
+	switch any(empty).(type) {
+	case int:
+		if f, ok := value.(float64); ok {
+			if converted, ok := any(int(f)).(T); ok {
+				return converted, nil
+			}
+		}
+	}
+
+	// If all conversions fail, return error
+	return empty, fmt.Errorf("unable to convert value to requested type for key %s (value: %v, type: %T)", key, value, value)
 }
 
 // SetSystemConfig sets a system configuration value in the database with type validation
