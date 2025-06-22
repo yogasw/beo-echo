@@ -118,6 +118,15 @@ type UpdateSystemConfigRequest struct {
 // UpdateSystemConfigHandler updates a system configuration
 func UpdateSystemConfigHandler(c *gin.Context) {
 	key := c.Param("key")
+
+	// when key contain : get first part to support legacy configs
+	if strings.Contains(key, ":") {
+		parts := strings.SplitN(key, ":", 2)
+		if len(parts) > 0 {
+			key = parts[0]
+		}
+	}
+
 	if key == "" {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"success": false,
