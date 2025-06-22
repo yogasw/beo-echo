@@ -240,9 +240,10 @@ func (h *GoogleOAuthHandler) HandleCallback(c *gin.Context) {
 
 	// Get scheme and host from request
 	scheme := "http"
-	if c.Request.TLS != nil || c.Request.Header.Get("X-Forwarded-Scheme") == "https" || strings.Contains(c.Request.Header.Get("Referer"), "https") {
+	if strings.Contains(frontendRedirectURI, "https") {
 		scheme = "https"
 	}
+
 	baseURL := fmt.Sprintf("%s://%s", scheme, c.Request.Host)
 
 	user, token, err := h.service.HandleOAuthCallback(ctx, code, baseURL)
