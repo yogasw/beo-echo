@@ -143,6 +143,32 @@ func GetAllSystemConfigs() ([]database.SystemConfig, error) {
 	if err := database.DB.Find(&configs).Error; err != nil {
 		return nil, fmt.Errorf("failed to fetch system configs: %w", err)
 	}
+
+	for key, setting := range DefaultConfigSettings {
+		// Check if the default config already exists in the database or in configs skip if it does
+		exists := false
+		for _, config := range configs {
+			if config.Key == string(key) {
+				exists = true
+				break
+			}
+		}
+		if exists {
+			continue
+		}
+
+		// If not, create a new config with default values
+		newConfig := database.SystemConfig{
+			Key:         string(key),
+			Value:       setting.Value,
+			Type:        string(setting.Type),
+			Description: setting.Description,
+			HideValue:   setting.HideValue,
+		}
+		configs = append(configs, newConfig)
+
+	}
+
 	return configs, nil
 }
 
