@@ -75,7 +75,8 @@ func SetupRouter() *gin.Engine {
 		// MaxAge:           12 * time.Hour,
 	}))
 
-	// Add rate limiting middleware to prevent abuse
+	// Rate limiting middleware - DISABLED for now due to stability issues
+	// TODO: Re-enable once rate limiting middleware is stable
 	// router.Use(middlewares.RateLimitByIP())
 
 	// Setup file upload directory
