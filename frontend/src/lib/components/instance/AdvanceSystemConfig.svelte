@@ -125,20 +125,34 @@
 
 	// Save edited value
 	function saveEdit(config: SystemConfigItem) {
-		const trimmedValue = editingValue.trim();
+		// Handle different types appropriately
+		let finalValue: string;
 		
-		if (!trimmedValue) {
+		if (config.type.toLowerCase() === 'number') {
+			// For numbers, convert to string and handle potential NaN
+			const numValue = Number(editingValue);
+			if (isNaN(numValue)) {
+				toast.error('Please enter a valid number');
+				return;
+			}
+			finalValue = numValue.toString();
+		} else {
+			// For strings and other types, trim normally
+			finalValue = editingValue.trim();
+		}
+		
+		if (!finalValue) {
 			toast.warning('Value cannot be empty');
 			return;
 		}
 		
-		const validation = validateConfigValue(trimmedValue, config.type);
+		const validation = validateConfigValue(finalValue, config.type);
 		if (!validation.isValid) {
 			toast.error(validation.message || `Invalid ${config.type} value`);
 			return;
 		}
 		
-		handleConfigUpdate(config, trimmedValue);
+		handleConfigUpdate(config, finalValue);
 	}
 
 	// Handle Enter key in edit mode
