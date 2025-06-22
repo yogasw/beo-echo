@@ -113,7 +113,11 @@
                                 Automatically invite new users based on email domains
                             </p>
                         </div>
-                        <ToggleSwitch bind:checked={enabled} />
+                        <ToggleSwitch 
+                            bind:checked={enabled} 
+                            title="Enable automatic invitation of users based on email domains"
+                            ariaLabel="Enable auto-invite feature"
+                        />
                     </div>
                     
                     <!-- Role selection -->

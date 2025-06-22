@@ -20,6 +20,7 @@
     export let name = '';
     export let id = '';
     export let ariaLabel = '';
+    export let title = '';
     
     // Create event dispatcher
     const dispatch = createEventDispatcher<{
@@ -48,6 +49,7 @@
         {disabled}
         {name}
         {id}
+        {title}
         aria-label={ariaLabel}
         on:change={handleChange}
         class="sr-only peer"

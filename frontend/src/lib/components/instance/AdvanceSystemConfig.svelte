@@ -345,8 +345,8 @@
 										on:change={(event) => {
                                             handleToggle(config, event)
                                         }}
-                                        
-										ariaLabel="Toggle {config.key}"
+										title="Toggle {formatConfigKey(config.key)}"
+										ariaLabel="Toggle {formatConfigKey(config.key)}"
 									/>
 								{:else if editingConfig === config.key}
 									<!-- Edit Mode -->
