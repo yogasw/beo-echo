@@ -32,11 +32,12 @@ type GoogleOAuthConfig struct {
 type GoogleOAuthService struct {
 	db         *gorm.DB
 	autoInvite *workspaces.AutoInviteService // Reference to AutoInviteService for processing auto-invites
+	workspaces *workspaces.WorkspaceService  // Reference to WorkspaceService for workspace operations
 }
 
 // NewGoogleOAuthService creates a new GoogleOAuthService instance
-func NewGoogleOAuthService(db *gorm.DB, autoInvite *workspaces.AutoInviteService) *GoogleOAuthService {
-	return &GoogleOAuthService{db: db, autoInvite: autoInvite}
+func NewGoogleOAuthService(db *gorm.DB, autoInvite *workspaces.AutoInviteService, workspaces *workspaces.WorkspaceService) *GoogleOAuthService {
+	return &GoogleOAuthService{db: db, autoInvite: autoInvite, workspaces: workspaces}
 }
 
 // SaveGoogleConfig saves Google OAuth configuration
@@ -179,10 +180,14 @@ func (s *GoogleOAuthService) HandleOAuthCallback(ctx context.Context, code strin
 	// We need the AutoInviteService, but to avoid circular dependencies,
 	// We'll handle the auto-invite directly here
 	// auto invite only if the user is new
-	if isNewUser {
+	if isNewUser && user != nil {
 		if err := s.autoInvite.ProcessUserAutoInvite(ctx, user); err != nil {
 			// Log but don't fail the auth flow
 			fmt.Printf("Warning: Failed to process auto-invite for user %s: %v\n", user.ID, err)
+		}
+
+		if err := s.workspaces.AutoCreateWorkspaceOnRegister(ctx, user.ID, user.Name); err != nil {
+			return nil, "", fmt.Errorf("failed to auto create workspace: %w", err)
 		}
 	}
 

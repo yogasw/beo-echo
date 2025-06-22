@@ -87,12 +87,14 @@ var DefaultConfigSettings = map[SystemConfigKey]ConfigSetting{
 		Value:       "2",
 		Description: "Maximum number of workspaces a user can create",
 		Category:    "Limits",
+		HideValue:   true,
 	},
 	MAX_WORKSPACE_PROJECTS: {
 		Type:        TypeNumber,
 		Value:       "100",
 		Description: "Maximum number of projects allowed in a workspace",
 		Category:    "Limits",
+		HideValue:   true,
 	},
 	JWT_SECRET: {
 		Type:        TypeString,
