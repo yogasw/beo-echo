@@ -86,16 +86,6 @@
 		return { isValid: true };
 	}
 
-	// Copy value to clipboard
-	async function copyToClipboard(value: string, configKey: string) {
-		try {
-			await navigator.clipboard.writeText(value);
-			toast.success(`Copied ${configKey} value to clipboard`);
-		} catch (err) {
-			toast.error('Failed to copy to clipboard');
-		}
-	}
-
 	// Handle config value update
 	async function handleConfigUpdate(config: SystemConfigItem, newValue: string) {
 		try {
@@ -177,39 +167,6 @@
 		}
 	}
 
-	// Export configurations to JSON file
-	function exportConfigs() {
-		try {
-			const exportData = {
-				exported_at: new Date().toISOString(),
-				total_configs: configs.length,
-				configurations: configs.map(config => ({
-					key: config.key,
-					value: config.hide_value ? '[HIDDEN]' : config.value,
-					type: config.type,
-					description: config.description,
-					category: getCategoryFromConfig(config)
-				}))
-			};
-
-			const dataStr = JSON.stringify(exportData, null, 2);
-			const dataBlob = new Blob([dataStr], { type: 'application/json' });
-			const url = URL.createObjectURL(dataBlob);
-			
-			const link = document.createElement('a');
-			link.href = url;
-			link.download = `beo-echo-system-configs-${new Date().toISOString().split('T')[0]}.json`;
-			document.body.appendChild(link);
-			link.click();
-			document.body.removeChild(link);
-			URL.revokeObjectURL(url);
-
-			toast.success('Configurations exported successfully');
-		} catch (err) {
-			toast.error('Failed to export configurations');
-		}
-	}
-
 	// Load configs on mount
 	onMount(() => {
 		loadConfigs();
@@ -232,16 +189,6 @@
 			>
 				<i class="fas fa-question-circle mr-1"></i>
 				Help
-			</button>
-			<button 
-				on:click={exportConfigs}
-				class="bg-gray-600 hover:bg-gray-700 text-white px-3 py-1.5 rounded text-sm flex items-center"
-				title="Export configurations to JSON"
-				aria-label="Export system configurations to JSON file"
-				disabled={isLoading || configs.length === 0}
-			>
-				<i class="fas fa-download mr-1"></i>
-				Export
 			</button>
 			<button 
 				on:click={loadConfigs}
@@ -394,17 +341,7 @@
 												<i class="fas fa-edit"></i>
 											</button>
 										{/if}
-										<!-- Copy to Clipboard Button -->
-										{#if config.value && !config.hide_value}
-											<button
-												on:click={() => copyToClipboard(config.value, config.key)}
-												class="bg-green-600 hover:bg-green-700 text-white p-1.5 rounded text-xs"
-												title="Copy {config.key} value to clipboard"
-												aria-label="Copy {config.key} value to clipboard"
-											>
-												<i class="fas fa-copy"></i>
-											</button>
-										{/if}
+										
 									</div>
 								{/if}
 							</div>
