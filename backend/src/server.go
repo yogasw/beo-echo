@@ -76,7 +76,7 @@ func SetupRouter() *gin.Engine {
 	}))
 
 	// Add rate limiting middleware to prevent abuse
-	router.Use(middlewares.RateLimitByIP())
+	// router.Use(middlewares.RateLimitByIP())
 
 	// Setup file upload directory
 	if err := os.MkdirAll(lib.UPLOAD_DIR, os.ModePerm); err != nil {
