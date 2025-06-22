@@ -75,6 +75,9 @@ func SetupRouter() *gin.Engine {
 		// MaxAge:           12 * time.Hour,
 	}))
 
+	// Add rate limiting middleware to prevent abuse
+	router.Use(middlewares.RateLimitByIP())
+
 	// Setup file upload directory
 	if err := os.MkdirAll(lib.UPLOAD_DIR, os.ModePerm); err != nil {
 		log.Printf("Warning: Failed to create upload directory: %v", err)
