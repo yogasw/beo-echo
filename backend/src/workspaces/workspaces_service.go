@@ -44,6 +44,10 @@ type WorkspaceRepository interface {
 	GetWorkspacesWithAutoInvite(ctx context.Context) ([]database.Workspace, error)
 	CheckUserWorkspaceMembership(ctx context.Context, userID string, workspaceID string) (*database.UserWorkspace, error)
 	CreateUserWorkspaceMembership(ctx context.Context, membership *database.UserWorkspace) error
+	// Methods for ambitious workspace creation
+	CreateProject(ctx context.Context, project *database.Project) error
+	CreateEndpoint(ctx context.Context, endpoint *database.MockEndpoint) error
+	CreateResponse(ctx context.Context, response *database.MockResponse) error
 }
 
 // WorkspaceService implements the workspace business operations

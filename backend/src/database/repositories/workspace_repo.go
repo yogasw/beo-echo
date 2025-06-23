@@ -232,3 +232,18 @@ func (r *workspaceRepository) CheckUserWorkspaceMembership(ctx context.Context, 
 func (r *workspaceRepository) CreateUserWorkspaceMembership(ctx context.Context, membership *database.UserWorkspace) error {
 	return r.db.Create(membership).Error
 }
+
+// CreateProject creates a new project
+func (r *workspaceRepository) CreateProject(ctx context.Context, project *database.Project) error {
+	return r.db.Create(project).Error
+}
+
+// CreateEndpoint creates a new mock endpoint
+func (r *workspaceRepository) CreateEndpoint(ctx context.Context, endpoint *database.MockEndpoint) error {
+	return r.db.Create(endpoint).Error
+}
+
+// CreateResponse creates a new mock response
+func (r *workspaceRepository) CreateResponse(ctx context.Context, response *database.MockResponse) error {
+	return r.db.Create(response).Error
+}
