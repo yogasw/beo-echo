@@ -5,6 +5,10 @@ import (
 	systemConfig "beo-echo/backend/src/systemConfigs"
 	"context"
 	"fmt"
+	"strings"
+	"time"
+
+	"github.com/rs/zerolog/log"
 )
 
 // WorkspaceWithRole extends Workspace with user role information
@@ -36,6 +40,10 @@ type WorkspaceRepository interface {
 	GetUserByEmail(ctx context.Context, email string) (*database.User, error)
 	AddUserToWorkspace(ctx context.Context, workspaceID string, userID string, role string) error
 	GetWorkspaceMembers(ctx context.Context, workspaceID string) ([]WorkspaceMember, error)
+	// Methods for auto-invite functionality
+	GetWorkspacesWithAutoInvite(ctx context.Context) ([]database.Workspace, error)
+	CheckUserWorkspaceMembership(ctx context.Context, userID string, workspaceID string) (*database.UserWorkspace, error)
+	CreateUserWorkspaceMembership(ctx context.Context, membership *database.UserWorkspace) error
 }
 
 // WorkspaceService implements the workspace business operations
@@ -187,4 +195,80 @@ func (s *WorkspaceService) GetUserProjectLimit(ctx context.Context, userID strin
 
 	// Fall back to system default
 	return systemConfig.GetSystemConfigWithType[int](systemConfig.MAX_WORKSPACE_PROJECTS)
+}
+
+// ProcessUserAutoInvite checks if a user should be automatically invited to any workspaces
+// based on their email domain, and creates the necessary UserWorkspace records if so
+func (s *WorkspaceService) ProcessUserAutoInvite(ctx context.Context, user *database.User) error {
+
+	if user == nil || user.Email == "" {
+		return nil // No user or email, nothing to do
+	}
+
+	// Extract the domain from the user's email
+	parts := strings.Split(user.Email, "@")
+	if len(parts) != 2 {
+		return nil // Invalid email format, nothing to do
+	}
+	userDomain := strings.ToLower(parts[1]) // Convert to lowercase for case-insensitive comparison
+
+	// Find all workspaces with auto-invite enabled
+	workspaces, err := s.repo.GetWorkspacesWithAutoInvite(ctx)
+	if err != nil {
+		log.Error().Err(err).Str("user_id", user.ID).Msg("failed to get workspaces for auto-invite")
+		return err
+	}
+
+	for _, workspace := range workspaces {
+		// Check if user is already a member of this workspace
+		existingMembership, err := s.repo.CheckUserWorkspaceMembership(ctx, user.ID, workspace.ID)
+		if err == nil && existingMembership != nil {
+			// User already has a membership record for this workspace, skip
+			continue
+		}
+
+		// Check if the user's domain matches any in the workspace's auto-invite domains
+		if workspace.AutoInviteDomains == "" {
+			continue // No domains configured
+		}
+
+		domains := strings.Split(workspace.AutoInviteDomains, ",")
+		for _, domain := range domains {
+			// Trim whitespace and convert to lowercase for comparison
+			domainToCheck := strings.ToLower(strings.TrimSpace(domain))
+
+			if domainToCheck == userDomain {
+				// Create a new UserWorkspace record
+				newMembership := &database.UserWorkspace{
+					UserID:      user.ID,
+					WorkspaceID: workspace.ID,
+					Role:        workspace.AutoInviteRole,
+					CreatedAt:   time.Now(),
+					UpdatedAt:   time.Now(),
+				}
+
+				if err := s.repo.CreateUserWorkspaceMembership(ctx, newMembership); err != nil {
+					log.Error().
+						Err(err).
+						Str("user_id", user.ID).
+						Str("workspace_id", workspace.ID).
+						Str("domain", userDomain).
+						Msg("failed to create auto-invite membership")
+					return err
+				}
+
+				log.Info().
+					Str("user_id", user.ID).
+					Str("email", user.Email).
+					Str("workspace_id", workspace.ID).
+					Str("workspace_name", workspace.Name).
+					Str("role", workspace.AutoInviteRole).
+					Msg("user auto-invited to workspace based on email domain")
+
+				break // No need to check other domains for this workspace
+			}
+		}
+	}
+
+	return nil
 }

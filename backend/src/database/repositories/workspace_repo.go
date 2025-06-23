@@ -204,3 +204,31 @@ func (r *workspaceRepository) GetUserByID(ctx context.Context, userID string) (*
 	}
 	return &user, nil
 }
+
+// GetWorkspacesWithAutoInvite retrieves all workspaces that have auto-invite enabled
+func (r *workspaceRepository) GetWorkspacesWithAutoInvite(ctx context.Context) ([]database.Workspace, error) {
+	var workspaces []database.Workspace
+	err := r.db.Where("auto_invite_enabled = ?", true).Find(&workspaces).Error
+	if err != nil {
+		return nil, err
+	}
+	return workspaces, nil
+}
+
+// CheckUserWorkspaceMembership checks if a user is already a member of a workspace
+func (r *workspaceRepository) CheckUserWorkspaceMembership(ctx context.Context, userID string, workspaceID string) (*database.UserWorkspace, error) {
+	var membership database.UserWorkspace
+	err := r.db.Where("user_id = ? AND workspace_id = ?", userID, workspaceID).First(&membership).Error
+	if err != nil {
+		if err == gorm.ErrRecordNotFound {
+			return nil, nil // User is not a member
+		}
+		return nil, err
+	}
+	return &membership, nil
+}
+
+// CreateUserWorkspaceMembership creates a new user workspace membership record
+func (r *workspaceRepository) CreateUserWorkspaceMembership(ctx context.Context, membership *database.UserWorkspace) error {
+	return r.db.Create(membership).Error
+}

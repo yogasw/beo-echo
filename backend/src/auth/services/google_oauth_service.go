@@ -31,13 +31,12 @@ type GoogleOAuthConfig struct {
 // GoogleOAuthService handles business logic for Google OAuth operations
 type GoogleOAuthService struct {
 	db         *gorm.DB
-	autoInvite *workspaces.AutoInviteService // Reference to AutoInviteService for processing auto-invites
-	workspaces *workspaces.WorkspaceService  // Reference to WorkspaceService for workspace operations
+	workspaces *workspaces.WorkspaceService // Reference to WorkspaceService for workspace operations
 }
 
 // NewGoogleOAuthService creates a new GoogleOAuthService instance
-func NewGoogleOAuthService(db *gorm.DB, autoInvite *workspaces.AutoInviteService, workspaces *workspaces.WorkspaceService) *GoogleOAuthService {
-	return &GoogleOAuthService{db: db, autoInvite: autoInvite, workspaces: workspaces}
+func NewGoogleOAuthService(db *gorm.DB, workspaces *workspaces.WorkspaceService) *GoogleOAuthService {
+	return &GoogleOAuthService{db: db, workspaces: workspaces}
 }
 
 // SaveGoogleConfig saves Google OAuth configuration
@@ -181,7 +180,7 @@ func (s *GoogleOAuthService) HandleOAuthCallback(ctx context.Context, code strin
 	// We'll handle the auto-invite directly here
 	// auto invite only if the user is new
 	if isNewUser && user != nil {
-		if err := s.autoInvite.ProcessUserAutoInvite(ctx, user); err != nil {
+		if err := s.workspaces.ProcessUserAutoInvite(ctx, user); err != nil {
 			// Log but don't fail the auth flow
 			fmt.Printf("Warning: Failed to process auto-invite for user %s: %v\n", user.ID, err)
 		}
