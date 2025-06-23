@@ -77,13 +77,20 @@
 <!-- Workspace Manager Component -->
 <div class="relative {className}">
 	<!-- Company/Workspace Button -->
-	<button on:click={toggleModal} class="flex flex-col items-center">
+	<button 
+		on:click={toggleModal} 
+		class="flex flex-col items-center max-w-20"
+		title={$currentWorkspace?.name || 'Select Workspace'}
+		aria-label={`Current workspace: ${$currentWorkspace?.name || 'None selected'}`}
+	>
 		<div
 			class="w-12 aspect-square theme-bg-secondary theme-text-primary p-3 rounded-full border-2 border-green-500 flex items-center justify-center"
 		>
 			<i class="fas fa-building"></i>
 		</div>
-		<span class="text-xs mt-1 theme-text-primary">{$currentWorkspace?.name}</span>
+		<span class="text-xs mt-1 theme-text-primary truncate w-full text-center">
+			{$currentWorkspace?.name || 'Select'}
+		</span>
 	</button>
 
 	<!-- Workspace Modal -->
@@ -108,12 +115,14 @@
 							<button
 								on:click={() => selectWorkspace(workspace.id)}
 								class="flex items-center w-full px-3 py-2 text-left hover:bg-blue-500/20 rounded-md transition-colors"
+								title={workspace.name}
+								aria-label={`Switch to workspace: ${workspace.name}`}
 							>
-								<div class="flex-1">
+								<div class="flex-1 min-w-0">
 									<div class="flex items-center gap-2">
-										<span class="theme-text-primary">{workspace.name}</span>
+										<span class="theme-text-primary truncate flex-1">{workspace.name}</span>
 										{#if workspace.id === $currentWorkspace?.id}
-											<i class="fas fa-check text-blue-500 text-xs"></i>
+											<i class="fas fa-check text-blue-500 text-xs flex-shrink-0"></i>
 										{/if}
 									</div>
 									{#if workspace.role}
@@ -142,6 +151,8 @@
 								on:click={createWorkspace}
 								disabled={loading || !newWorkspaceName}
 								class="p-1 theme-bg-secondary hover:bg-blue-600 disabled:opacity-50 disabled:hover:bg-gray-700 rounded text-white text-sm"
+								title="Create new workspace"
+								aria-label="Create new workspace"
 							>
 								<i class="fas fa-plus"></i>
 							</button>
