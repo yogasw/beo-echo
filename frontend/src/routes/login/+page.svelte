@@ -16,7 +16,7 @@
 	onMount(async () => {
 		if ($isAuthenticated) {
 			goto('/');
-			window.location.reload();
+			// window.location.reload();
 		}
 		// TODO: When API is ready, fetch third party login availability
 		// hasThirdPartyLogin = await auth.checkThirdPartyLoginAvailability();
@@ -32,7 +32,7 @@
 					// New auth system
 					await auth.login(email, password);
 					await goto('/');
-					window.location.reload();
+					// window.location.reload();
 				}
 			} else {
 				error = 'Please enter both email and password';

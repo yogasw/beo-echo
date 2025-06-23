@@ -33,13 +33,13 @@ var DefaultConfigSettings = map[SystemConfigKey]ConfigSetting{
 	CUSTOM_SUBDOMAIN_ENABLED: {
 		Type:        TypeBoolean,
 		Value:       "false",
-		Description: "Enable custom subdomains for projects (security implications)",
+		Description: "Enable custom subdomains for projects (security implications) - required restart service to apply",
 		Category:    "Domains",
 	},
 	CUSTOM_SUBDOMAIN_DOMAIN: {
 		Type:        TypeString,
 		Value:       "*.beo-echo.com",
-		Description: "Base domain for custom subdomains",
+		Description: "Base domain for custom subdomains - required restart service to apply",
 		Category:    "Domains",
 	},
 
