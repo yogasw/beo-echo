@@ -99,6 +99,7 @@ func SetSystemConfig(key, value string) error {
 		config.Value = value
 		config.Type = string(defaultValue.Type)
 		config.Key = key
+		config.Description = defaultValue.Description
 		if err := database.DB.Save(&config).Error; err != nil {
 			return fmt.Errorf("failed to update system config: %w", err)
 		}
