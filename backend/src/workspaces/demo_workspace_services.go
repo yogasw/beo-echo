@@ -4,6 +4,8 @@ import (
 	"beo-echo/backend/src/database"
 	"context"
 	"fmt"
+	"regexp"
+	"strings"
 	"time"
 
 	"github.com/google/uuid"
@@ -34,8 +36,15 @@ func (s *WorkspaceService) CreateDemoWorkspace(ctx context.Context, userID strin
 		return nil, nil, fmt.Errorf("failed to create workspace: %w", err)
 	}
 
-	// Step 2: Create demo project with uuid to avoid duplicates
-	demoAlias := uuid.New().String()
+	// Step 2: Create demo project with unique readable alias
+	demoAlias, err := s.generateUniqueAlias(ctx, "Demo Project")
+	if err != nil {
+		log.Error().
+			Err(err).
+			Str("workspace_id", workspace.ID).
+			Msg("failed to generate unique alias for demo project")
+		return workspace, nil, fmt.Errorf("failed to generate unique alias: %w", err)
+	}
 
 	demoProject := &database.Project{
 		Name:        "Demo Project",
@@ -172,4 +181,96 @@ func (s *WorkspaceService) createDemoEndpoints(ctx context.Context, projectID st
 		Msg("demo endpoints created successfully with sample responses")
 
 	return nil
+}
+
+// generateCleanAlias converts a name to a clean, URL-friendly alias
+// Replaces spaces with dashes, removes special characters, converts to lowercase
+func generateCleanAlias(name string) string {
+	// Convert to lowercase
+	alias := strings.ToLower(name)
+
+	// Replace spaces with dashes
+	alias = strings.ReplaceAll(alias, " ", "-")
+
+	// Remove special characters, keep only alphanumeric and dashes
+	reg := regexp.MustCompile(`[^a-z0-9\-]`)
+	alias = reg.ReplaceAllString(alias, "")
+
+	// Remove multiple consecutive dashes
+	reg = regexp.MustCompile(`-+`)
+	alias = reg.ReplaceAllString(alias, "-")
+
+	// Remove leading and trailing dashes
+	alias = strings.Trim(alias, "-")
+
+	// If alias is empty or too short, use "demo" as fallback
+	if len(alias) < 2 {
+		alias = "demo"
+	}
+
+	alias = alias + fmt.Sprintf("-%d", time.Now().Unix())
+
+	return alias
+}
+
+// generateUniqueAlias creates a unique alias by checking database and adding number if needed
+func (s *WorkspaceService) generateUniqueAlias(ctx context.Context, baseName string) (string, error) {
+	log := zerolog.Ctx(ctx)
+
+	// Generate clean base alias
+	baseAlias := generateCleanAlias(baseName)
+
+	log.Info().
+		Str("base_name", baseName).
+		Str("base_alias", baseAlias).
+		Msg("generating unique alias from base name")
+
+	// Check if base alias is available
+	exists, err := s.repo.CheckProjectAliasExists(ctx, baseAlias)
+	if err != nil {
+		log.Error().
+			Err(err).
+			Str("base_alias", baseAlias).
+			Msg("failed to check alias existence")
+		return "", fmt.Errorf("failed to check alias existence: %w", err)
+	}
+
+	if !exists {
+		log.Info().
+			Str("unique_alias", baseAlias).
+			Msg("base alias is available")
+		return baseAlias, nil
+	}
+
+	// If base alias exists, try with numbers
+	for i := 1; i <= 100; i++ {
+		candidateAlias := fmt.Sprintf("%s-%d", baseAlias, i)
+
+		exists, err := s.repo.CheckProjectAliasExists(ctx, candidateAlias)
+		if err != nil {
+			log.Error().
+				Err(err).
+				Str("candidate_alias", candidateAlias).
+				Msg("failed to check candidate alias existence")
+			return "", fmt.Errorf("failed to check candidate alias existence: %w", err)
+		}
+
+		if !exists {
+			log.Info().
+				Str("unique_alias", candidateAlias).
+				Int("attempt", i).
+				Msg("found unique alias with number suffix")
+			return candidateAlias, nil
+		}
+	}
+
+	// If we can't find a unique alias after 100 attempts, fall back to UUID (short version)
+	shortUUID := uuid.New().String()[:8]
+	fallbackAlias := fmt.Sprintf("%s-%s", baseAlias, shortUUID)
+
+	log.Warn().
+		Str("fallback_alias", fallbackAlias).
+		Msg("using UUID fallback after 100 attempts")
+
+	return fallbackAlias, nil
 }

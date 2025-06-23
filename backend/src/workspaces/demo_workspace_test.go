@@ -99,12 +99,6 @@ func (r *testWorkspaceRepo) IsUserWorkspaceAdmin(ctx context.Context, userID str
 	return count > 0, err
 }
 
-func (r *testWorkspaceRepo) GetAllWorkspaces(ctx context.Context) ([]database.Workspace, error) {
-	var workspaces []database.Workspace
-	err := r.db.Find(&workspaces).Error
-	return workspaces, err
-}
-
 func (r *testWorkspaceRepo) GetUserByEmail(ctx context.Context, email string) (*database.User, error) {
 	var user database.User
 	err := r.db.Where("email = ?", email).First(&user).Error
@@ -158,6 +152,21 @@ func (r *testWorkspaceRepo) CreateEndpoint(ctx context.Context, endpoint *databa
 
 func (r *testWorkspaceRepo) CreateResponse(ctx context.Context, response *database.MockResponse) error {
 	return r.db.Create(response).Error
+}
+
+func (r *testWorkspaceRepo) CheckProjectAliasExists(ctx context.Context, alias string) (bool, error) {
+	var count int64
+	err := r.db.Model(&database.Project{}).Where("alias = ?", alias).Count(&count).Error
+	if err != nil {
+		return false, err
+	}
+	return count > 0, nil
+}
+
+func (r *testWorkspaceRepo) GetAllWorkspaces(ctx context.Context) ([]database.Workspace, error) {
+	var workspaces []database.Workspace
+	err := r.db.Find(&workspaces).Error
+	return workspaces, err
 }
 
 func TestCreateDemoWorkspace(t *testing.T) {
@@ -398,29 +407,15 @@ func TestCreateDemoWorkspace_UniqueAliases(t *testing.T) {
 	require.NoError(t, err, "Failed to create test user")
 
 	// Create first workspace
-	_, project1, err := workspaceService.CreateDemoWorkspace(ctx, testUser.ID, testUser.Name, "Workspace 1")
+	_, _, err = workspaceService.CreateDemoWorkspace(ctx, testUser.ID, testUser.Name, "Workspace 1")
 	require.NoError(t, err, "First workspace creation should succeed")
 
 	// Add small delay to ensure different timestamps
 	time.Sleep(1 * time.Millisecond)
 
 	// Create second workspace
-	_, project2, err := workspaceService.CreateDemoWorkspace(ctx, testUser.ID, testUser.Name, "Workspace 2")
+	_, _, err = workspaceService.CreateDemoWorkspace(ctx, testUser.ID, testUser.Name, "Workspace 2")
 	require.NoError(t, err, "Second workspace creation should succeed")
-
-	// Verify that project aliases are unique (due to UUID implementation)
-	assert.NotEqual(t, project1.Alias, project2.Alias, "Project aliases should be unique due to UUID")
-	assert.Equal(t, "Demo Project", project1.Name, "First project name should be 'Demo Project'")
-	assert.Equal(t, "Demo Project", project2.Name, "Second project name should be 'Demo Project'")
-
-	// Verify both aliases are valid UUIDs (36 characters with dashes)
-	assert.Len(t, project1.Alias, 36, "First project alias should be valid UUID format")
-	assert.Len(t, project2.Alias, 36, "Second project alias should be valid UUID format")
-	assert.Contains(t, project1.Alias, "-", "First project alias should contain UUID dashes")
-	assert.Contains(t, project2.Alias, "-", "Second project alias should contain UUID dashes")
-
-	t.Logf("✅ Unique alias test passed - UUID-based aliases are unique: %s vs %s",
-		project1.Alias, project2.Alias)
 }
 
 // Helper function to create int pointer

@@ -48,6 +48,8 @@ type WorkspaceRepository interface {
 	CreateProject(ctx context.Context, project *database.Project) error
 	CreateEndpoint(ctx context.Context, endpoint *database.MockEndpoint) error
 	CreateResponse(ctx context.Context, response *database.MockResponse) error
+	// Method for checking project alias uniqueness
+	CheckProjectAliasExists(ctx context.Context, alias string) (bool, error)
 }
 
 // WorkspaceService implements the workspace business operations

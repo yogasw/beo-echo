@@ -247,3 +247,13 @@ func (r *workspaceRepository) CreateEndpoint(ctx context.Context, endpoint *data
 func (r *workspaceRepository) CreateResponse(ctx context.Context, response *database.MockResponse) error {
 	return r.db.Create(response).Error
 }
+
+// CheckProjectAliasExists checks if a project alias already exists
+func (r *workspaceRepository) CheckProjectAliasExists(ctx context.Context, alias string) (bool, error) {
+	var count int64
+	err := r.db.Model(&database.Project{}).Where("alias = ?", alias).Count(&count).Error
+	if err != nil {
+		return false, err
+	}
+	return count > 0, nil
+}
