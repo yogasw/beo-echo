@@ -158,13 +158,8 @@ func (s *WorkspaceService) AutoCreateWorkspaceOnRegister(ctx context.Context, us
 	if !autoCreateEnabled {
 		return nil // Auto-create is disabled, nothing to do
 	}
-
-	// Create a default workspace for the user
-	defaultWorkspace := &database.Workspace{
-		Name: fmt.Sprintf("%s's Workspace", userName),
-	}
-
-	return s.CreateWorkspace(ctx, defaultWorkspace, userID)
+	_, _, err = s.CreateDemoWorkspace(ctx, userID, userName, fmt.Sprintf("%s's Workspace", userName))
+	return err
 }
 
 // GetUserWorkspaceLimit returns the effective workspace limit for a user
