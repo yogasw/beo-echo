@@ -208,4 +208,87 @@ func TestSystemConfigOperations(t *testing.T) {
 		assert.Error(t, err, "Setting config with unknown key should error")
 		assert.Contains(t, err.Error(), "configuration key UNKNOWN_KEY not found", "Error should mention key not found")
 	})
+
+	// Test Hidden Value Validation
+	t.Run("Hidden Value Validation", func(t *testing.T) {
+		// Test that JWT_SECRET has HideValue set to true
+		configs, err := GetAllSystemConfigs()
+		assert.NoError(t, err, "Getting all configs should not error")
+
+		// Find JWT_SECRET config and verify it has HideValue: true
+		foundJWTSecret := false
+		var jwtConfig database.SystemConfig
+		for _, cfg := range configs {
+			if cfg.Key == JWT_SECRET {
+				foundJWTSecret = true
+				jwtConfig = cfg
+				break
+			}
+		}
+
+		assert.True(t, foundJWTSecret, "JWT_SECRET config should be found in all configs")
+		assert.True(t, jwtConfig.HideValue, "JWT_SECRET should have HideValue set to true")
+		assert.Equal(t, "secret-jwt-key", jwtConfig.Value, "JWT_SECRET should have the value we set")
+
+		// Test that configs without HideValue are accessible
+		foundCustomDomain := false
+		var customDomainConfig database.SystemConfig
+		for _, cfg := range configs {
+			if cfg.Key == CUSTOM_SUBDOMAIN_DOMAIN {
+				foundCustomDomain = true
+				customDomainConfig = cfg
+				break
+			}
+		}
+
+		assert.True(t, foundCustomDomain, "CUSTOM_SUBDOMAIN_DOMAIN config should be found")
+		assert.False(t, customDomainConfig.HideValue, "CUSTOM_SUBDOMAIN_DOMAIN should not have HideValue set")
+
+		// Test that GetAllSystemConfigs returns both hidden and non-hidden configs
+		// (The filtering should happen at the handler level, not at the service level)
+		assert.GreaterOrEqual(t, len(configs), 4, "Should return all configs including hidden ones")
+		
+		// Count hidden vs non-hidden configs
+		hiddenCount := 0
+		visibleCount := 0
+		for _, cfg := range configs {
+			if cfg.HideValue {
+				hiddenCount++
+			} else {
+				visibleCount++
+			}
+		}
+		
+		assert.Greater(t, hiddenCount, 0, "Should have at least one hidden config (JWT_SECRET)")
+		assert.Greater(t, visibleCount, 0, "Should have at least one visible config")
+
+		// Test filtering logic similar to what the handler does
+		// Simulate the handler's filtering of hidden values
+		var visibleConfigs []database.SystemConfig
+		for _, config := range configs {
+			// Skip configs with HideValue: true (same logic as handler)
+			if config.HideValue {
+				continue
+			}
+			visibleConfigs = append(visibleConfigs, config)
+		}
+
+		// Verify that hidden configs are filtered out
+		assert.Equal(t, visibleCount, len(visibleConfigs), "Filtered configs should match visible count")
+		
+		// Verify that JWT_SECRET is not in the visible configs
+		foundJWTInVisible := false
+		foundCustomDomainInVisible := false
+		for _, cfg := range visibleConfigs {
+			if cfg.Key == JWT_SECRET {
+				foundJWTInVisible = true
+			}
+			if cfg.Key == CUSTOM_SUBDOMAIN_DOMAIN {
+				foundCustomDomainInVisible = true
+			}
+		}
+		
+		assert.False(t, foundJWTInVisible, "JWT_SECRET should not be in visible configs (should be filtered out)")
+		assert.True(t, foundCustomDomainInVisible, "CUSTOM_SUBDOMAIN_DOMAIN should be in visible configs")
+	})
 }
