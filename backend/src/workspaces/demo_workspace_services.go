@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/rs/zerolog"
 )
 
@@ -33,9 +34,8 @@ func (s *WorkspaceService) CreateDemoWorkspace(ctx context.Context, userID strin
 		return nil, nil, fmt.Errorf("failed to create workspace: %w", err)
 	}
 
-	// Step 2: Create demo project with unix timestamp to avoid duplicates
-	unixTime := time.Now().UnixNano() // Use nano timestamp for better uniqueness
-	demoAlias := fmt.Sprintf("demo_%d", unixTime)
+	// Step 2: Create demo project with uuid to avoid duplicates
+	demoAlias := uuid.New().String()
 
 	demoProject := &database.Project{
 		Name:        "Demo Project",

@@ -214,7 +214,7 @@ func TestCreateDemoWorkspace(t *testing.T) {
 	assert.Equal(t, workspace.ID, project.WorkspaceID, "Project should belong to the workspace")
 	assert.Equal(t, database.ModeMock, project.Mode, "Project mode should be mock")
 	assert.Equal(t, "running", project.Status, "Project status should be running")
-	assert.Contains(t, project.Alias, "demo_", "Project alias should contain 'demo_'")
+	assert.NotEmpty(t, project.Alias, "Project alias should not be empty")
 	assert.NotEmpty(t, project.ID, "Project ID should not be empty")
 
 	t.Logf("Created workspace ID: %s, project ID: %s, alias: %s", workspace.ID, project.ID, project.Alias)
@@ -368,7 +368,7 @@ func TestCreateDemoWorkspace_UserLimitExceeded(t *testing.T) {
 	t.Logf("✅ Workspace limit test passed - correctly prevented exceeding limit")
 }
 
-func TestCreateDemoWorkspace_DuplicateAlias(t *testing.T) {
+func TestCreateDemoWorkspace_UniqueAliases(t *testing.T) {
 	// Setup test database
 	database.SetupTestEnvironment(t)
 
@@ -408,12 +408,18 @@ func TestCreateDemoWorkspace_DuplicateAlias(t *testing.T) {
 	_, project2, err := workspaceService.CreateDemoWorkspace(ctx, testUser.ID, testUser.Name, "Workspace 2")
 	require.NoError(t, err, "Second workspace creation should succeed")
 
-	// Verify that aliases are different (due to unix timestamp)
-	assert.NotEqual(t, project1.Alias, project2.Alias, "Project aliases should be different")
-	assert.Contains(t, project1.Alias, "demo_", "First project alias should contain 'demo_'")
-	assert.Contains(t, project2.Alias, "demo_", "Second project alias should contain 'demo_'")
+	// Verify that project aliases are unique (due to UUID implementation)
+	assert.NotEqual(t, project1.Alias, project2.Alias, "Project aliases should be unique due to UUID")
+	assert.Equal(t, "Demo Project", project1.Name, "First project name should be 'Demo Project'")
+	assert.Equal(t, "Demo Project", project2.Name, "Second project name should be 'Demo Project'")
 
-	t.Logf("✅ Duplicate alias prevention test passed - aliases are unique: %s vs %s",
+	// Verify both aliases are valid UUIDs (36 characters with dashes)
+	assert.Len(t, project1.Alias, 36, "First project alias should be valid UUID format")
+	assert.Len(t, project2.Alias, 36, "Second project alias should be valid UUID format")
+	assert.Contains(t, project1.Alias, "-", "First project alias should contain UUID dashes")
+	assert.Contains(t, project2.Alias, "-", "Second project alias should contain UUID dashes")
+
+	t.Logf("✅ Unique alias test passed - UUID-based aliases are unique: %s vs %s",
 		project1.Alias, project2.Alias)
 }
 
