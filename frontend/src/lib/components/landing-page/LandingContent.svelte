@@ -6,6 +6,7 @@
 	import { toast } from '$lib/stores/toast';
 	import type { Project } from '$lib/api/BeoApi';
 	import SkeletonLoader from '$lib/components/common/SkeletonLoader.svelte';
+	import { theme, toggleTheme } from '$lib/stores/theme';
 
 	let recentProjects: Project[] = [];
 	let projectName = '';
@@ -139,8 +140,9 @@
 
 <!-- Main Content -->
 <main class="flex-1">
+
 	<!-- Hero Section -->
-	<section class="bg-gradient-to-b from-blue-50 to-white dark:from-gray-800 dark:to-gray-900 py-20">
+	<section class="bg-gradient-to-b from-blue-50 to-white dark:from-gray-800 dark:to-gray-900 py-20 pt-32">
 		<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
 			<div class="text-center">
 				<h1 class="text-4xl md:text-6xl font-bold text-gray-900 dark:text-white mb-6">
@@ -152,15 +154,42 @@
 					>
 				</h2>
 				<p class="text-lg text-gray-600 dark:text-gray-400 mb-8 max-w-2xl mx-auto">
-					<i class="fas fa-exchange-alt text-blue-600 mr-2"></i>
+					<i class="fas fa-exchange-alt text-blue-600 dark:text-blue-400 mr-2"></i>
 					No downloads, No dependencies, No Delays.
 				</p>
 
+				<!-- Quick Action Buttons -->
+				<div class="flex flex-col sm:flex-row gap-4 justify-center items-center mb-8">
+					<button
+						on:click={() => {
+							document.getElementById('quick-deploy')?.scrollIntoView({ behavior: 'smooth' });
+						}}
+						class="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white py-4 px-8 rounded-lg text-lg font-medium transition-all duration-300 shadow-lg hover:shadow-xl transform hover:-translate-y-1 flex items-center"
+						title="Deploy instantly with Docker - One command to run!"
+						aria-label="Deploy instantly with Docker"
+					>
+						<i class="fab fa-docker mr-3 text-xl"></i>
+						🚀 Deploy in 30 Seconds
+					</button>
+					
+					{#if !authenticated}
+						<button
+							on:click={handleLogin}
+							class="bg-white dark:bg-gray-800 border-2 border-gray-300 dark:border-gray-600 hover:border-blue-600 dark:hover:border-blue-400 text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 py-4 px-8 rounded-lg text-lg font-medium transition-all duration-300 flex items-center"
+							title="Login to create cloud projects"
+							aria-label="Login to create cloud projects"
+						>
+							<i class="fas fa-cloud mr-3"></i>
+							Try Cloud Version
+						</button>
+					{/if}
+				</div>
+
 				<!-- Quick Start Section -->
 				{#if authenticated}
-					<div class="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-8 max-w-2xl mx-auto mb-8">
+					<div class="bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm rounded-xl shadow-xl border border-gray-200 dark:border-gray-700 p-8 max-w-2xl mx-auto mb-8">
 						<h3 class="text-xl font-semibold text-gray-900 dark:text-white mb-6">
-							<i class="fas fa-rocket text-blue-600 mr-2"></i>
+							<i class="fas fa-rocket text-blue-600 dark:text-blue-400 mr-2"></i>
 							Launch a mock server now!
 						</h3>
 
@@ -241,20 +270,9 @@
 						{/if}
 					</div>
 				{:else}
-					<div class="space-y-4">
-						<button
-							on:click={handleLogin}
-							class="bg-blue-600 hover:bg-blue-700 text-white py-4 px-8 rounded-lg text-lg font-medium transition-colors"
-							title="Login to get started"
-							aria-label="Login to get started"
-						>
-							<i class="fas fa-sign-in-alt mr-2"></i>
-							Get Started - Login
-						</button>
-						<p class="text-sm text-gray-600 dark:text-gray-400">
-							Free to use • No credit card required
-						</p>
-					</div>
+					<p class="text-sm text-gray-600 dark:text-gray-400">
+						Free to use • No credit card required • Deploy locally or in the cloud
+					</p>
 				{/if}
 
 				<!-- Demo Video Button -->
@@ -431,6 +449,104 @@
 		</div>
 	</section>
 
+	<!-- Quick Deploy Section -->
+	<section id="quick-deploy" class="py-16 bg-gradient-to-r from-blue-600 to-purple-600">
+		<div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+			<div class="mb-8">
+				<h2 class="text-3xl font-bold text-white mb-4">
+					<i class="fab fa-docker text-white mr-3"></i>
+					Deploy in Seconds
+				</h2>
+				<p class="text-xl text-blue-100 mb-6">
+					One command to run Beo Echo locally with Docker
+				</p>
+			</div>
+
+			<!-- Docker Command -->
+			<div class="bg-gray-900 rounded-lg p-6 mb-8 text-left overflow-x-auto">
+				<div class="flex items-center justify-between mb-3">
+					<span class="text-green-400 text-sm font-mono">Terminal</span>
+					<button
+						class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded text-xs font-medium transition-colors"
+						title="Copy Docker command to clipboard"
+						aria-label="Copy Docker command to clipboard"
+						on:click={() => {
+							navigator.clipboard.writeText('docker run -d --platform linux/amd64 -p 8080:80 -v $(pwd)/beo-echo-config:/app/configs/ ghcr.io/yogasw/beo-echo:latest');
+							toast.success('Docker command copied to clipboard!');
+						}}
+					>
+						<i class="fas fa-copy mr-1"></i>
+						Copy
+					</button>
+				</div>
+				<code class="text-green-400 font-mono text-sm block leading-relaxed">
+					<span class="text-gray-400">$</span> docker run -d --platform linux/amd64 -p 8080:80 \<br>
+					<span class="ml-4">-v $(pwd)/beo-echo-config:/app/configs/ \</span><br>
+					<span class="ml-4">ghcr.io/yogasw/beo-echo:latest</span>
+				</code>
+			</div>
+
+			<!-- Quick Steps -->
+			<div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+				<div class="bg-white/10 backdrop-blur-sm rounded-lg p-6">
+					<div class="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-4">
+						<span class="text-2xl font-bold text-white">1</span>
+					</div>
+					<h3 class="text-lg font-semibold text-white mb-2">Run Command</h3>
+					<p class="text-blue-100 text-sm">
+						Execute the Docker command in your terminal
+					</p>
+				</div>
+
+				<div class="bg-white/10 backdrop-blur-sm rounded-lg p-6">
+					<div class="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-4">
+						<span class="text-2xl font-bold text-white">2</span>
+					</div>
+					<h3 class="text-lg font-semibold text-white mb-2">Open Browser</h3>
+					<p class="text-blue-100 text-sm">
+						Access at <span class="font-mono bg-white/20 px-1 rounded">localhost:8080</span>
+					</p>
+				</div>
+
+				<div class="bg-white/10 backdrop-blur-sm rounded-lg p-6">
+					<div class="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-4">
+						<span class="text-2xl font-bold text-white">3</span>
+					</div>
+					<h3 class="text-lg font-semibold text-white mb-2">Login & Start</h3>
+					<p class="text-blue-100 text-sm">
+						Use <span class="font-mono bg-white/20 px-1 rounded">admin@admin.com</span> / <span class="font-mono bg-white/20 px-1 rounded">admin</span>
+					</p>
+				</div>
+			</div>
+
+			<!-- Additional Info -->
+			<div class="bg-white/10 backdrop-blur-sm rounded-lg p-6 text-left">
+				<div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+					<div>
+						<h4 class="text-white font-semibold mb-3 flex items-center">
+							<i class="fas fa-database text-blue-200 mr-2"></i>
+							Database Options
+						</h4>
+						<ul class="text-blue-100 text-sm space-y-1">
+							<li>• Default: SQLite (auto-created)</li>
+							<li>• PostgreSQL: Set <span class="font-mono bg-white/20 px-1 rounded">DATABASE_URL</span></li>
+						</ul>
+					</div>
+					<div>
+						<h4 class="text-white font-semibold mb-3 flex items-center">
+							<i class="fas fa-cog text-blue-200 mr-2"></i>
+							Configuration
+						</h4>
+						<ul class="text-blue-100 text-sm space-y-1">
+							<li>• Config stored in <span class="font-mono bg-white/20 px-1 rounded">./beo-echo-config/</span></li>
+							<li>• Persistent data across container restarts</li>
+						</ul>
+					</div>
+				</div>
+			</div>
+		</div>
+	</section>
+
 	<!-- Pricing Section -->
 	<section
 		id="pricing"
@@ -471,26 +587,33 @@
 						</div>
 						<div class="flex items-center">
 							<i class="fas fa-check text-green-500 mr-3"></i>
-							<span class="text-gray-700 dark:text-gray-300">Local development</span>
-						</div>
-
-						<div class="flex items-center">
-							<i class="fas fa-check text-green-500 mr-3"></i>
-							<span class="text-gray-700 dark:text-gray-300">Request logging</span>
+							<span class="text-gray-700 dark:text-gray-300">Request logging & filtering</span>
 						</div>
 						<div class="flex items-center">
 							<i class="fas fa-check text-green-500 mr-3"></i>
-							<span class="text-gray-700 dark:text-gray-300">SSO integration</span>
+							<span class="text-gray-700 dark:text-gray-300">Multi-user workspaces</span>
+						</div>
+						<div class="flex items-center">
+							<i class="fas fa-check text-green-500 mr-3"></i>
+							<span class="text-gray-700 dark:text-gray-300">Docker deployment</span>
+						</div>
+						<div class="flex items-center">
+							<i class="fas fa-check text-green-500 mr-3"></i>
+							<span class="text-gray-700 dark:text-gray-300">SQLite & PostgreSQL support</span>
 						</div>
 					</div>
 
 					<button
-						class="w-full bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 py-3 px-6 rounded-lg font-medium hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
-						title="Download Community Edition"
-						aria-label="Download Community Edition"
+						class="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 px-6 rounded-lg font-medium transition-colors flex items-center justify-center"
+						title="Deploy Beo Echo with Docker"
+						aria-label="Deploy Beo Echo with Docker"
+						on:click={() => {
+							// Scroll to deploy section
+							document.getElementById('quick-deploy')?.scrollIntoView({ behavior: 'smooth' });
+						}}
 					>
-						<i class="fas fa-download mr-2"></i>
-						Download
+						<i class="fab fa-docker mr-2"></i>
+						Deploy Now
 					</button>
 				</div>
 
