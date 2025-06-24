@@ -169,7 +169,7 @@
 						aria-label="Deploy instantly with Docker"
 					>
 						<i class="fab fa-docker mr-3 text-xl"></i>
-						🚀 Deploy in 30 Seconds
+						🚀  Deploy in Seconds
 					</button>
 					
 					{#if !authenticated}
