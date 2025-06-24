@@ -34,6 +34,12 @@ func GetProjectHandler(c *gin.Context) {
 		Where("id = ?", id).
 		First(&project)
 
+	scheme := c.Request.Header.Get("X-Forwarded-Scheme")
+	if scheme == "" {
+		scheme = "http"
+	}
+	project.URL = handler.GetProjectURL(scheme, c.Request.Host, project)
+
 	if result.Error != nil {
 		c.JSON(http.StatusNotFound, gin.H{
 			"error":   true,
