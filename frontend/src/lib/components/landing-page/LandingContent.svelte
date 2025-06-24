@@ -6,12 +6,14 @@
 	import { toast } from '$lib/stores/toast';
 	import type { Project } from '$lib/api/BeoApi';
 	import SkeletonLoader from '$lib/components/common/SkeletonLoader.svelte';
+	import RecentProjects from '$lib/components/common/RecentProjects.svelte';
+	import { recentProjects as recentProjectsStore } from '$lib/stores/recentProjects';
+	import { addProjectToRecentList } from '$lib/utils/recentProjectsHelper';
 	import { theme, toggleTheme } from '$lib/stores/theme';
 
 	let recentProjects: Project[] = [];
 	let projectName = '';
 	let isLoading = false;
-	let loadingRecentProjects = false;
 
 	// Features data for the landing page
 	const features = [
@@ -90,26 +92,8 @@
 		}
 	];
 
-	// Load recent projects if authenticated
-	export let authenticated = false;
-	$: if (authenticated) {
-		loadRecentProjects();
-	}
-
-	async function loadRecentProjects() {
-		if (!authenticated) return;
-
-		try {
-			loadingRecentProjects = true;
-			const projectsData = await getProjects();
-			// Show only the 3 most recent projects
-			recentProjects = projectsData.slice(0, 3);
-		} catch (err) {
-			console.error('Failed to load recent projects:', err);
-		} finally {
-			loadingRecentProjects = false;
-		}
-	}
+	// Authentication state
+	$: authenticated = $isAuthenticated;
 
 	async function createProject() {
 		if (!projectName.trim()) {
@@ -129,6 +113,11 @@
 		}
 	}
 
+	// Function to add project to recent projects when accessed
+	function addToRecentProjects(project: Project, workspaceName?: string) {
+		addProjectToRecentList(project, workspaceName);
+	}
+
 	async function handleLogin() {
 		await goto('/login');
 	}
@@ -146,16 +135,16 @@
 		<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
 			<div class="text-center">
 				<h1 class="text-4xl md:text-6xl font-bold text-gray-900 dark:text-white mb-6">
-					Unfinished APIs slowing you down?
+					Need instant API endpoints?
 				</h1>
 				<h2 class="text-2xl md:text-4xl font-light text-gray-700 dark:text-gray-300 mb-8">
-					Deploy a <span class="text-blue-600 dark:text-blue-400 font-semibold"
-						>mock API in a few seconds</span
+					Create a <span class="text-indigo-600 dark:text-indigo-400 font-semibold"
+						>mock server in seconds</span
 					>
 				</h2>
 				<p class="text-lg text-gray-600 dark:text-gray-400 mb-8 max-w-2xl mx-auto">
-					<i class="fas fa-exchange-alt text-blue-600 dark:text-blue-400 mr-2"></i>
-					No downloads, No dependencies, No Delays.
+					<i class="fas fa-lightning-bolt text-indigo-600 dark:text-indigo-400 mr-2"></i>
+					Zero setup, instant deployment, maximum productivity.
 				</p>
 
 				<!-- Quick Action Buttons -->
@@ -189,8 +178,8 @@
 				{#if authenticated}
 					<div class="bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm rounded-xl shadow-xl border border-gray-200 dark:border-gray-700 p-8 max-w-2xl mx-auto mb-8">
 						<h3 class="text-xl font-semibold text-gray-900 dark:text-white mb-6">
-							<i class="fas fa-rocket text-blue-600 dark:text-blue-400 mr-2"></i>
-							Launch a mock server now!
+							<i class="fas fa-rocket text-indigo-600 dark:text-indigo-400 mr-2"></i>
+							Create Your Next Mock Server
 						</h3>
 
 						<div class="flex flex-col sm:flex-row gap-4 mb-6">
@@ -198,82 +187,60 @@
 								<input
 									bind:value={projectName}
 									type="text"
-									placeholder="Project Name"
-									class="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+									placeholder="Enter project name"
+									class="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-colors"
+									title="Enter a name for your mock server project"
+									aria-label="Project name input"
 								/>
 							</div>
-							<div class="flex items-center text-gray-500 dark:text-gray-400 text-sm">
+							<div class="flex items-center text-gray-500 dark:text-gray-400 text-sm font-medium">
 								.beo-echo.dev
 							</div>
 						</div>
 
 						<p class="text-sm text-gray-600 dark:text-gray-400 mb-6">
-							A sub-domain will be created where you can send HTTP or API requests.
+							We'll generate a unique subdomain where you can send HTTP requests and test your APIs.
 						</p>
 
 						<button
 							on:click={createProject}
 							disabled={isLoading}
-							class="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white py-3 px-6 rounded-lg font-medium transition-colors flex items-center justify-center"
-							title="Create new mock server"
-							aria-label="Create new mock server"
+							class="w-full bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 disabled:from-indigo-400 disabled:to-purple-400 text-white py-3 px-6 rounded-lg font-medium transition-all duration-200 flex items-center justify-center shadow-lg hover:shadow-xl"
+							title="Create new mock server project"
+							aria-label="Create new mock server project"
 						>
 							{#if isLoading}
 								<i class="fas fa-spinner fa-spin mr-2"></i>
-								Creating...
+								Setting up your server...
 							{:else}
-								<i class="fas fa-plus mr-2"></i>
-								Create Mock Server
+								<i class="fas fa-plus-circle mr-2"></i>
+								Launch Mock Server
 							{/if}
 						</button>
-
-						{#if recentProjects.length > 0}
-							<div class="mt-8">
-								<h4 class="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-4">
-									Your recent endpoints:
-								</h4>
-								<div class="space-y-2">
-									{#each recentProjects as project}
-										<div
-											class="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700 rounded-lg"
-										>
-											<div class="flex items-center">
-												<div
-													class="w-8 h-8 bg-blue-100 dark:bg-blue-900 rounded flex items-center justify-center mr-3"
-												>
-													<i class="fas fa-server text-blue-600 dark:text-blue-400 text-sm"></i>
-												</div>
-												<div>
-													<p class="font-medium text-gray-900 dark:text-white text-sm">
-														{project.name}
-													</p>
-													<p class="text-xs text-gray-500 dark:text-gray-400">
-														{generateProjectUrl(project.alias)}
-													</p>
-												</div>
-											</div>
-											<button
-												class="text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 text-sm font-medium"
-												title="Open project"
-												aria-label="Open project {project.name}"
-											>
-												Open
-											</button>
-										</div>
-									{/each}
-								</div>
-							</div>
-						{:else if loadingRecentProjects}
-							<div class="mt-8">
-								<SkeletonLoader type="list" count={3} />
-							</div>
-						{/if}
 					</div>
 				{:else}
-					<p class="text-sm text-gray-600 dark:text-gray-400">
-						Free to use • No credit card required • Deploy locally or in the cloud
-					</p>
+					<div class="text-center">
+						<p class="text-sm text-gray-600 dark:text-gray-400 mb-4">
+							Free to use • No credit card required • Deploy locally or in the cloud
+						</p>
+					</div>
 				{/if}
+
+				<!-- Recent Projects Section - Show for both authenticated and non-authenticated users -->
+				<div class="max-w-2xl mx-auto">
+					<RecentProjects 
+						showTitle={true} 
+						maxItems={3}
+						onProjectSelect={(project) => {
+							// Handle project selection
+							if (authenticated) {
+								goto(`/home/projects/${project.id}`);
+							} else {
+								toast.info('Please login to access your projects');
+							}
+						}}
+					/>
+				</div>
 
 				<!-- Demo Video Button -->
 				<div class="mt-8">

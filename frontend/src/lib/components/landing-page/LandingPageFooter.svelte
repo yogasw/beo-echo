@@ -50,45 +50,17 @@
 							Pricing
 						</a>
 					</li>
-					<li>
-						<a 
-							href="/docs" 
-							class="text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition-colors" 
-							title="View documentation" 
-							aria-label="View documentation"
-						>
-							Documentation
-						</a>
-					</li>
+					
 				</ul>
 			</div>
 
 			<div>
 				<h4 class="font-semibold mb-4 text-gray-900 dark:text-white">Support</h4>
 				<ul class="space-y-2 text-sm">
+					
 					<li>
 						<a 
-							href="/docs" 
-							class="text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition-colors" 
-							title="View documentation" 
-							aria-label="View documentation"
-						>
-							Documentation
-						</a>
-					</li>
-					<li>
-						<a 
-							href="/api" 
-							class="text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition-colors" 
-							title="View API reference" 
-							aria-label="View API reference"
-						>
-							API Reference
-						</a>
-					</li>
-					<li>
-						<a 
-							href="/contact" 
+							href="emailto:ariokidev@gmail.com" 
 							class="text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition-colors" 
 							title="Contact support" 
 							aria-label="Contact support"
@@ -98,14 +70,24 @@
 					</li>
 					<li>
 						<a 
-							href="/community" 
+							href="https://github.com/yogasw/beo-echo/issues" 
 							class="text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition-colors" 
 							title="Community support" 
 							aria-label="Community support"
 						>
-							Community
+							Report an issue
 						</a>
 					</li>
+
+					<li>
+						<a 
+							href="https://github.com/yogasw/beo-echo" 
+							class="text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition-colors" 
+							title="Documentation" 
+							aria-label="Documentation"
+						>
+							Github Repository 
+						</a>
 				</ul>
 			</div>
 		</div>
