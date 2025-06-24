@@ -27,6 +27,7 @@
 
 	// Check authentication from localStorage
 	$: isLoginPage = $page.url.pathname === '/login';
+	$: isLandingPage = $page.url.pathname === '/';
 
 	async function fetchConfigs(workspaceId: string) {
 		try {
@@ -75,6 +76,24 @@
 
 	onMount(async () => {
 		console.log('onMount: layout');
+		
+		// Skip authentication checks for landing page
+		if (isLandingPage) {
+			// If user is authenticated, still initialize workspaces for the landing page
+			if ($isAuthenticated) {
+				try {
+					const currentWorkspaceId = await fetchWorkspaces();
+					if (currentWorkspaceId) {
+						setCurrentWorkspaceId(currentWorkspaceId);
+						await fetchConfigs(currentWorkspaceId);
+					}
+				} catch (e) {
+					console.error('Failed to fetch workspaces for authenticated user on landing page:', e);
+				}
+			}
+			return;
+		}
+		
 		if (!$isAuthenticated && !isLoginPage) {
 			try {
 				// First check authentication by getting workspaces
@@ -139,7 +158,7 @@
 	}
 </script>
 
-{#if isLoginPage || !$isAuthenticated}
+{#if isLoginPage || isLandingPage || !$isAuthenticated}
 	<slot />
 {:else}
 	<!-- Desktop Menu Bar (only shown in desktop mode) -->
