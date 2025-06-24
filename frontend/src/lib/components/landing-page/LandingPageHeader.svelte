@@ -7,8 +7,6 @@
 	const dispatch = createEventDispatcher();
 
 	// Props
-	export let showNavigation = true; // Show navigation links (features, modes, pricing)
-	export let showBackButton = false; // Show back button (for login page)
 	export let showUserMenu = true; // Show user menu when authenticated
 
 	async function handleLogin() {
@@ -30,85 +28,86 @@
 </script>
 
 <!-- Header/Navigation Bar -->
-<header class="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 sticky top-0 z-50">
+<header
+	class="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 sticky top-0 z-50"
+>
 	<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
 		<div class="flex items-center justify-between h-16">
 			<!-- Left Side: Logo + Navigation Menu -->
 			<div class="flex items-center space-x-8">
-				<!-- Back Button (for login page) -->
-				{#if showBackButton}
-					<button
-						on:click={handleBackClick}
-						class="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
-						title="Go back to landing page"
-						aria-label="Go back to landing page"
-					>
-						<i class="fas fa-arrow-left text-gray-600 dark:text-gray-300"></i>
-					</button>
-				{/if}
-
 				<!-- Logo and Brand -->
 				<div class="flex items-center">
 					<div class="flex-shrink-0 flex items-center">
-						<!-- Logo using favicon.svg -->
-						<img src="/favicon.svg" alt="Beo Echo" class="w-8 h-8 mr-3" />
-						<h1 class="text-xl font-bold text-gray-800 dark:text-white">Beo Echo</h1>
+						<!-- Clickable Logo -->
+						<a 
+							href="/" 
+							class="flex items-center hover:opacity-80 transition-opacity"
+							title="Go to home page"
+							aria-label="Go to Beo Echo home page"
+						>
+							<img src="/favicon.svg" alt="Beo Echo" class="w-8 h-8 mr-3" />
+							<h1 class="text-xl font-bold text-gray-800 dark:text-white">Beo Echo</h1>
+						</a>
 					</div>
 				</div>
 
 				<!-- Navigation Links -->
-				{#if showNavigation}
-					<nav class="hidden md:flex items-center space-x-6">
-						<a 
-							href="#features" 
-							class="text-sm font-medium text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
-							title="View features"
-							aria-label="View features"
-						>
-							Features
-						</a>
-						<a 
-							href="#modes" 
-							class="text-sm font-medium text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
-							title="View operating modes"
-							aria-label="View operating modes"
-						>
-							Modes
-						</a>
-						<a 
-							href="#pricing" 
-							class="text-sm font-medium text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
-							title="View pricing plans"
-							aria-label="View pricing plans"
-						>
-							Pricing
-						</a>
-					</nav>
-				{/if}
+				<nav class="hidden md:flex items-center space-x-6">
+					<a
+						href="/#features"
+						class="text-sm font-medium text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+						title="View features"
+						aria-label="View features"
+					>
+						Features
+					</a>
+					<a
+						href="/#modes"
+						class="text-sm font-medium text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+						title="View operating modes"
+						aria-label="View operating modes"
+					>
+						Modes
+					</a>
+					<a
+						href="/#pricing"
+						class="text-sm font-medium text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+						title="View pricing plans"
+						aria-label="View pricing plans"
+					>
+						Pricing
+					</a>
+				</nav>
 			</div>
 
 			<!-- Right Side: Actions -->
 			<div class="flex items-center space-x-3">
 				<!-- GitHub Stars Badge -->
-				<a 
-					href="https://github.com/yogasw/beo-echo" 
-					target="_blank" 
+				<a
+					href="https://github.com/yogasw/beo-echo"
+					target="_blank"
 					rel="noopener noreferrer"
 					class="hidden sm:block"
 					title="Star us on GitHub"
 					aria-label="Star Beo Echo on GitHub"
 				>
-					<img src="https://img.shields.io/github/stars/yogasw/beo-echo?style=social" alt="GitHub stars" class="h-5" />
+					<img
+						src="https://img.shields.io/github/stars/yogasw/beo-echo?style=social"
+						alt="GitHub stars"
+						class="h-5"
+					/>
 				</a>
 
 				<!-- Theme Toggle -->
 				<button
+					type="button"
 					on:click={toggleTheme}
-					class="p-2 rounded-lg bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
+					class="w-10 h-10 flex items-center justify-center rounded-full theme-bg-secondary hover:bg-opacity-80 transition-colors border theme-border"
 					title={$theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
 					aria-label={$theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
 				>
-					<i class="fas {$theme === 'dark' ? 'fa-sun text-yellow-400' : 'fa-moon text-gray-600'} text-sm"></i>
+					<i class="fas {$theme === 'dark' ? 'fa-sun' : 'fa-moon'} text-base theme-text-primary"
+					></i>
 				</button>
 
 				{#if $isAuthenticated && showUserMenu}
@@ -123,7 +122,7 @@
 							<i class="fas fa-tachometer-alt mr-2"></i>
 							Dashboard
 						</button>
-						
+
 						<!-- User Avatar & Dropdown -->
 						<div class="relative">
 							<button
@@ -131,16 +130,20 @@
 								title="User menu"
 								aria-label="User menu"
 							>
-								<div class="w-8 h-8 bg-gradient-to-br from-purple-500 to-pink-500 rounded-full flex items-center justify-center">
+								<div
+									class="w-8 h-8 bg-gradient-to-br from-purple-500 to-pink-500 rounded-full flex items-center justify-center"
+								>
 									<i class="fas fa-user text-white text-xs"></i>
 								</div>
 								<i class="fas fa-chevron-down text-gray-400 ml-2 text-xs"></i>
 							</button>
-							
+
 							<!-- Dropdown Menu (hidden by default, can be toggled with JavaScript) -->
-							<div class="hidden absolute right-0 mt-2 w-48 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 py-1">
-								<a 
-									href="/home" 
+							<div
+								class="hidden absolute right-0 mt-2 w-48 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 py-1"
+							>
+								<a
+									href="/home"
 									class="block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
 									title="Go to dashboard"
 									aria-label="Go to dashboard"
@@ -148,8 +151,8 @@
 									<i class="fas fa-home mr-2"></i>
 									Dashboard
 								</a>
-								<a 
-									href="/settings" 
+								<a
+									href="/settings"
 									class="block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
 									title="Go to settings"
 									aria-label="Go to settings"
@@ -157,7 +160,7 @@
 									<i class="fas fa-cog mr-2"></i>
 									Settings
 								</a>
-								<hr class="border-gray-200 dark:border-gray-700 my-1">
+								<hr class="border-gray-200 dark:border-gray-700 my-1" />
 								<button
 									on:click={handleLogout}
 									class="w-full text-left px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-gray-100 dark:hover:bg-gray-700"
@@ -170,7 +173,8 @@
 							</div>
 						</div>
 					</div>
-				{:else if showUserMenu}
+				{:else}
+					<!-- Login/Signup Buttons for non-authenticated users -->
 					<div class="flex items-center space-x-2">
 						<button
 							on:click={handleLogin}
