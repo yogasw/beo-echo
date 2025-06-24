@@ -39,8 +39,8 @@
 				<div class="flex items-center">
 					<div class="flex-shrink-0 flex items-center">
 						<!-- Clickable Logo -->
-						<a 
-							href="/" 
+						<a
+							href="/"
 							class="flex items-center hover:opacity-80 transition-opacity"
 							title="Go to home page"
 							aria-label="Go to Beo Echo home page"
@@ -81,24 +81,122 @@
 			</div>
 
 			<!-- Right Side: Actions -->
-			<div class="flex items-center space-x-3">
-				<!-- GitHub Stars Badge -->
-				<a
-					href="https://github.com/yogasw/beo-echo"
-					target="_blank"
-					rel="noopener noreferrer"
-					class="hidden sm:block"
-					title="Star us on GitHub"
-					aria-label="Star Beo Echo on GitHub"
-				>
-					<img
-						src="https://img.shields.io/github/stars/yogasw/beo-echo?style=social"
-						alt="GitHub stars"
-						class="h-5"
-					/>
-				</a>
+			<div class="flex items-center space-x-4">
+				<!-- Main Actions Group -->
+				<div class="flex items-center space-x-3">
+					<!-- GitHub Stars Badge -->
+					<a
+						href="https://github.com/yogasw/beo-echo"
+						target="_blank"
+						rel="noopener noreferrer"
+						class="hidden sm:block"
+						title="Star us on GitHub"
+						aria-label="Star Beo Echo on GitHub"
+					>
+						<img
+							src="https://img.shields.io/github/stars/yogasw/beo-echo?style=social"
+							alt="GitHub stars"
+							class="h-5"
+						/>
+					</a>
 
-				<!-- Theme Toggle -->
+					{#if $isAuthenticated && showUserMenu}
+						<!-- User Menu -->
+						<div class="flex items-center space-x-2">
+							<button
+								on:click={goToDashboard}
+								class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center"
+								title="Go to dashboard"
+								aria-label="Go to dashboard"
+							>
+								<i class="fas fa-tachometer-alt mr-2"></i>
+								Dashboard
+							</button>
+
+							<!-- User Avatar & Dropdown -->
+							<div class="relative">
+								<button
+									class="flex items-center p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+									title="User menu"
+									aria-label="User menu"
+								>
+									<div
+										class="w-8 h-8 bg-gradient-to-br from-purple-500 to-pink-500 rounded-full flex items-center justify-center"
+									>
+										<i class="fas fa-user text-white text-xs"></i>
+									</div>
+									<i class="fas fa-chevron-down text-gray-400 ml-2 text-xs"></i>
+								</button>
+
+								<!-- Dropdown Menu (hidden by default, can be toggled with JavaScript) -->
+								<div
+									class="hidden absolute right-0 mt-2 w-48 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 py-1"
+								>
+									<a
+										href="/home"
+										class="block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+										title="Go to dashboard"
+										aria-label="Go to dashboard"
+									>
+										<i class="fas fa-home mr-2"></i>
+										Dashboard
+									</a>
+									<a
+										href="/settings"
+										class="block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+										title="Go to settings"
+										aria-label="Go to settings"
+									>
+										<i class="fas fa-cog mr-2"></i>
+										Settings
+									</a>
+									<hr class="border-gray-200 dark:border-gray-700 my-1" />
+									<button
+										on:click={handleLogout}
+										class="w-full text-left px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-gray-100 dark:hover:bg-gray-700"
+										title="Logout from account"
+										aria-label="Logout from account"
+									>
+										<i class="fas fa-sign-out-alt mr-2"></i>
+										Logout
+									</button>
+								</div>
+							</div>
+						</div>
+					{:else}
+						<!-- Login/Signup Buttons for non-authenticated users -->
+						<div class="flex items-center space-x-2">
+							<button
+								on:click={handleLogin}
+								class="px-4 py-2 text-sm font-medium text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-all duration-200"
+								title="Sign in to your account"
+								aria-label="Sign in to your account"
+							>
+								Sign in
+							</button>
+							<button
+								on:click={handleLogin}
+								class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center"
+								title="Get started with Beo Echo"
+								aria-label="Get started with Beo Echo"
+							>
+								<i class="fas fa-rocket mr-2"></i>
+								Get Started
+							</button>
+						</div>
+					{/if}
+
+					<!-- Mobile Menu Toggle -->
+					<button
+						class="md:hidden p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+						title="Open mobile menu"
+						aria-label="Open mobile menu"
+					>
+						<i class="fas fa-bars text-gray-600 dark:text-gray-300"></i>
+					</button>
+				</div>
+
+				<!-- Theme Toggle - Separated on the right -->
 				<button
 					type="button"
 					on:click={toggleTheme}
@@ -108,101 +206,6 @@
 				>
 					<i class="fas {$theme === 'dark' ? 'fa-sun' : 'fa-moon'} text-base theme-text-primary"
 					></i>
-				</button>
-
-				{#if $isAuthenticated && showUserMenu}
-					<!-- User Menu -->
-					<div class="flex items-center space-x-2">
-						<button
-							on:click={goToDashboard}
-							class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center"
-							title="Go to dashboard"
-							aria-label="Go to dashboard"
-						>
-							<i class="fas fa-tachometer-alt mr-2"></i>
-							Dashboard
-						</button>
-
-						<!-- User Avatar & Dropdown -->
-						<div class="relative">
-							<button
-								class="flex items-center p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
-								title="User menu"
-								aria-label="User menu"
-							>
-								<div
-									class="w-8 h-8 bg-gradient-to-br from-purple-500 to-pink-500 rounded-full flex items-center justify-center"
-								>
-									<i class="fas fa-user text-white text-xs"></i>
-								</div>
-								<i class="fas fa-chevron-down text-gray-400 ml-2 text-xs"></i>
-							</button>
-
-							<!-- Dropdown Menu (hidden by default, can be toggled with JavaScript) -->
-							<div
-								class="hidden absolute right-0 mt-2 w-48 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 py-1"
-							>
-								<a
-									href="/home"
-									class="block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
-									title="Go to dashboard"
-									aria-label="Go to dashboard"
-								>
-									<i class="fas fa-home mr-2"></i>
-									Dashboard
-								</a>
-								<a
-									href="/settings"
-									class="block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
-									title="Go to settings"
-									aria-label="Go to settings"
-								>
-									<i class="fas fa-cog mr-2"></i>
-									Settings
-								</a>
-								<hr class="border-gray-200 dark:border-gray-700 my-1" />
-								<button
-									on:click={handleLogout}
-									class="w-full text-left px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-gray-100 dark:hover:bg-gray-700"
-									title="Logout from account"
-									aria-label="Logout from account"
-								>
-									<i class="fas fa-sign-out-alt mr-2"></i>
-									Logout
-								</button>
-							</div>
-						</div>
-					</div>
-				{:else}
-					<!-- Login/Signup Buttons for non-authenticated users -->
-					<div class="flex items-center space-x-2">
-						<button
-							on:click={handleLogin}
-							class="px-4 py-2 text-sm font-medium text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-all duration-200"
-							title="Sign in to your account"
-							aria-label="Sign in to your account"
-						>
-							Sign in
-						</button>
-						<button
-							on:click={handleLogin}
-							class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center"
-							title="Get started with Beo Echo"
-							aria-label="Get started with Beo Echo"
-						>
-							<i class="fas fa-rocket mr-2"></i>
-							Get Started
-						</button>
-					</div>
-				{/if}
-
-				<!-- Mobile Menu Toggle -->
-				<button
-					class="md:hidden p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
-					title="Open mobile menu"
-					aria-label="Open mobile menu"
-				>
-					<i class="fas fa-bars text-gray-600 dark:text-gray-300"></i>
 				</button>
 			</div>
 		</div>
