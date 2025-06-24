@@ -106,62 +106,12 @@
 							<button
 								on:click={goToDashboard}
 								class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center"
-								title="Go to dashboard"
-								aria-label="Go to dashboard"
+								title="Move to dashboard"
+								aria-label="Move to dashboard"
 							>
 								<i class="fas fa-tachometer-alt mr-2"></i>
-								Dashboard
+								Move to Dashboard
 							</button>
-
-							<!-- User Avatar & Dropdown -->
-							<div class="relative">
-								<button
-									class="flex items-center p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
-									title="User menu"
-									aria-label="User menu"
-								>
-									<div
-										class="w-8 h-8 bg-gradient-to-br from-purple-500 to-pink-500 rounded-full flex items-center justify-center"
-									>
-										<i class="fas fa-user text-white text-xs"></i>
-									</div>
-									<i class="fas fa-chevron-down text-gray-400 ml-2 text-xs"></i>
-								</button>
-
-								<!-- Dropdown Menu (hidden by default, can be toggled with JavaScript) -->
-								<div
-									class="hidden absolute right-0 mt-2 w-48 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 py-1"
-								>
-									<a
-										href="/home"
-										class="block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
-										title="Go to dashboard"
-										aria-label="Go to dashboard"
-									>
-										<i class="fas fa-home mr-2"></i>
-										Dashboard
-									</a>
-									<a
-										href="/settings"
-										class="block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
-										title="Go to settings"
-										aria-label="Go to settings"
-									>
-										<i class="fas fa-cog mr-2"></i>
-										Settings
-									</a>
-									<hr class="border-gray-200 dark:border-gray-700 my-1" />
-									<button
-										on:click={handleLogout}
-										class="w-full text-left px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-gray-100 dark:hover:bg-gray-700"
-										title="Logout from account"
-										aria-label="Logout from account"
-									>
-										<i class="fas fa-sign-out-alt mr-2"></i>
-										Logout
-									</button>
-								</div>
-							</div>
 						</div>
 					{:else}
 						<!-- Login/Signup Buttons for non-authenticated users -->

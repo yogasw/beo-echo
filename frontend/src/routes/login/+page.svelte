@@ -87,7 +87,7 @@
 				if (returnUrl) {
 					goto(returnUrl, { replaceState: true });
 				} else {
-					goto('/', { replaceState: true });
+					goto('/home', { replaceState: true });
 				}
 				return;
 			}
