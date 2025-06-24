@@ -164,7 +164,7 @@
 						on:click={() => {
 							document.getElementById('quick-deploy')?.scrollIntoView({ behavior: 'smooth' });
 						}}
-						class="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white py-4 px-8 rounded-lg text-lg font-medium transition-all duration-300 shadow-lg hover:shadow-xl transform hover:-translate-y-1 flex items-center"
+						class="bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 dark:from-blue-600 dark:to-purple-700 dark:hover:from-blue-700 dark:hover:to-purple-800 text-white py-4 px-8 rounded-lg text-lg font-medium transition-all duration-300 shadow-lg hover:shadow-xl transform hover:-translate-y-1 flex items-center"
 						title="Deploy instantly with Docker - One command to run!"
 						aria-label="Deploy instantly with Docker"
 					>
@@ -175,7 +175,7 @@
 					{#if !authenticated}
 						<button
 							on:click={handleLogin}
-							class="bg-white dark:bg-gray-800 border-2 border-gray-300 dark:border-gray-600 hover:border-blue-600 dark:hover:border-blue-400 text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 py-4 px-8 rounded-lg text-lg font-medium transition-all duration-300 flex items-center"
+							class="bg-white dark:bg-gray-800 border-2 border-gray-200 dark:border-gray-600 hover:border-blue-500 dark:hover:border-blue-400 text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 py-4 px-8 rounded-lg text-lg font-medium transition-all duration-300 flex items-center shadow-md hover:shadow-lg"
 							title="Login to create cloud projects"
 							aria-label="Login to create cloud projects"
 						>
@@ -450,24 +450,24 @@
 	</section>
 
 	<!-- Quick Deploy Section -->
-	<section id="quick-deploy" class="py-16 bg-gradient-to-r from-blue-600 to-purple-600">
+	<section id="quick-deploy" class="py-16 bg-gradient-to-r from-blue-500 to-indigo-600 dark:from-blue-700 dark:to-purple-800">
 		<div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
 			<div class="mb-8">
 				<h2 class="text-3xl font-bold text-white mb-4">
 					<i class="fab fa-docker text-white mr-3"></i>
 					Deploy in Seconds
 				</h2>
-				<p class="text-xl text-blue-100 mb-6">
+				<p class="text-xl text-blue-50 dark:text-blue-100 mb-6">
 					One command to run Beo Echo locally with Docker
 				</p>
 			</div>
 
 			<!-- Docker Command -->
-			<div class="bg-gray-900 rounded-lg p-6 mb-8 text-left overflow-x-auto">
+			<div class="bg-gray-800 dark:bg-gray-900 rounded-lg p-6 mb-8 text-left overflow-x-auto border border-gray-700 dark:border-gray-600">
 				<div class="flex items-center justify-between mb-3">
-					<span class="text-green-400 text-sm font-mono">Terminal</span>
+					<span class="text-green-400 dark:text-green-300 text-sm font-mono">Terminal</span>
 					<button
-						class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded text-xs font-medium transition-colors"
+						class="bg-blue-500 hover:bg-blue-600 dark:bg-blue-600 dark:hover:bg-blue-700 text-white px-3 py-1 rounded text-xs font-medium transition-colors"
 						title="Copy Docker command to clipboard"
 						aria-label="Copy Docker command to clipboard"
 						on:click={() => {
@@ -479,8 +479,8 @@
 						Copy
 					</button>
 				</div>
-				<code class="text-green-400 font-mono text-sm block leading-relaxed">
-					<span class="text-gray-400">$</span> docker run -d --platform linux/amd64 -p 8080:80 \<br>
+				<code class="text-green-400 dark:text-green-300 font-mono text-sm block leading-relaxed">
+					<span class="text-gray-400 dark:text-gray-500">$</span> docker run -d --platform linux/amd64 -p 8080:80 \<br>
 					<span class="ml-4">-v $(pwd)/beo-echo-config:/app/configs/ \</span><br>
 					<span class="ml-4">ghcr.io/yogasw/beo-echo:latest</span>
 				</code>
@@ -488,57 +488,57 @@
 
 			<!-- Quick Steps -->
 			<div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-				<div class="bg-white/10 backdrop-blur-sm rounded-lg p-6">
-					<div class="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-4">
+				<div class="bg-white/15 dark:bg-white/10 backdrop-blur-sm rounded-lg p-6 border border-white/20 dark:border-white/10">
+					<div class="w-12 h-12 bg-white/25 dark:bg-white/20 rounded-full flex items-center justify-center mx-auto mb-4">
 						<span class="text-2xl font-bold text-white">1</span>
 					</div>
 					<h3 class="text-lg font-semibold text-white mb-2">Run Command</h3>
-					<p class="text-blue-100 text-sm">
+					<p class="text-blue-50 dark:text-blue-100 text-sm">
 						Execute the Docker command in your terminal
 					</p>
 				</div>
 
-				<div class="bg-white/10 backdrop-blur-sm rounded-lg p-6">
-					<div class="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-4">
+				<div class="bg-white/15 dark:bg-white/10 backdrop-blur-sm rounded-lg p-6 border border-white/20 dark:border-white/10">
+					<div class="w-12 h-12 bg-white/25 dark:bg-white/20 rounded-full flex items-center justify-center mx-auto mb-4">
 						<span class="text-2xl font-bold text-white">2</span>
 					</div>
 					<h3 class="text-lg font-semibold text-white mb-2">Open Browser</h3>
-					<p class="text-blue-100 text-sm">
-						Access at <span class="font-mono bg-white/20 px-1 rounded">localhost:8080</span>
+					<p class="text-blue-50 dark:text-blue-100 text-sm">
+						Access at <span class="font-mono bg-white/25 dark:bg-white/20 px-1 rounded">localhost:8080</span>
 					</p>
 				</div>
 
-				<div class="bg-white/10 backdrop-blur-sm rounded-lg p-6">
-					<div class="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-4">
+				<div class="bg-white/15 dark:bg-white/10 backdrop-blur-sm rounded-lg p-6 border border-white/20 dark:border-white/10">
+					<div class="w-12 h-12 bg-white/25 dark:bg-white/20 rounded-full flex items-center justify-center mx-auto mb-4">
 						<span class="text-2xl font-bold text-white">3</span>
 					</div>
 					<h3 class="text-lg font-semibold text-white mb-2">Login & Start</h3>
-					<p class="text-blue-100 text-sm">
-						Use <span class="font-mono bg-white/20 px-1 rounded">admin@admin.com</span> / <span class="font-mono bg-white/20 px-1 rounded">admin</span>
+					<p class="text-blue-50 dark:text-blue-100 text-sm">
+						Use <span class="font-mono bg-white/25 dark:bg-white/20 px-1 rounded">admin@admin.com</span> / <span class="font-mono bg-white/25 dark:bg-white/20 px-1 rounded">admin</span>
 					</p>
 				</div>
 			</div>
 
 			<!-- Additional Info -->
-			<div class="bg-white/10 backdrop-blur-sm rounded-lg p-6 text-left">
+			<div class="bg-white/15 dark:bg-white/10 backdrop-blur-sm rounded-lg p-6 text-left border border-white/20 dark:border-white/10">
 				<div class="grid grid-cols-1 md:grid-cols-2 gap-6">
 					<div>
 						<h4 class="text-white font-semibold mb-3 flex items-center">
-							<i class="fas fa-database text-blue-200 mr-2"></i>
+							<i class="fas fa-database text-blue-100 dark:text-blue-200 mr-2"></i>
 							Database Options
 						</h4>
-						<ul class="text-blue-100 text-sm space-y-1">
+						<ul class="text-blue-50 dark:text-blue-100 text-sm space-y-1">
 							<li>• Default: SQLite (auto-created)</li>
-							<li>• PostgreSQL: Set <span class="font-mono bg-white/20 px-1 rounded">DATABASE_URL</span></li>
+							<li>• PostgreSQL: Set <span class="font-mono bg-white/25 dark:bg-white/20 px-1 rounded">DATABASE_URL</span></li>
 						</ul>
 					</div>
 					<div>
 						<h4 class="text-white font-semibold mb-3 flex items-center">
-							<i class="fas fa-cog text-blue-200 mr-2"></i>
+							<i class="fas fa-cog text-blue-100 dark:text-blue-200 mr-2"></i>
 							Configuration
 						</h4>
-						<ul class="text-blue-100 text-sm space-y-1">
-							<li>• Config stored in <span class="font-mono bg-white/20 px-1 rounded">./beo-echo-config/</span></li>
+						<ul class="text-blue-50 dark:text-blue-100 text-sm space-y-1">
+							<li>• Config stored in <span class="font-mono bg-white/25 dark:bg-white/20 px-1 rounded">./beo-echo-config/</span></li>
 							<li>• Persistent data across container restarts</li>
 						</ul>
 					</div>

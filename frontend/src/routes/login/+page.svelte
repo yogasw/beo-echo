@@ -16,7 +16,7 @@
 
 	onMount(async () => {
 		if ($isAuthenticated) {
-			goto('/');
+			goto('/home');
 			// window.location.reload();
 		}
 		// TODO: When API is ready, fetch third party login availability
@@ -32,7 +32,7 @@
 				if (browser) {
 					// New auth system
 					await auth.login(email, password);
-					await goto('/');
+					await goto('/home');
 					// window.location.reload();
 				}
 			} else {
@@ -53,7 +53,7 @@
 	// Check for OAuth response on page load
 	onMount(() => {
 		if ($isAuthenticated) {
-			goto('/');
+			goto('/home');
 			return;
 		}
 
@@ -140,8 +140,6 @@
 <div class="min-h-screen flex flex-col theme-bg-tertiary">
 	<!-- Header -->
 	<LandingPageHeader 
-		showNavigation={false} 
-		showBackButton={true} 
 		showUserMenu={false}
 		on:back={() => goto('/')}
 	/>
