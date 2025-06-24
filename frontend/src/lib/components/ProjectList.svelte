@@ -20,6 +20,7 @@
 	import { initializeLogsStream } from '$lib/services/logsService';
 	import { logStatus } from '$lib/stores/logStatus';
 	import { setCurrentWorkspaceId, getProjectPanelWidth, setProjectPanelWidth } from '$lib/utils/localStorage';
+	import { addProjectToRecent } from '$lib/utils/recentProjectsUtils';
 
 	export let searchTerm = '';
 	export let panelWidth: number = getProjectPanelWidth(); // Panel width in rem units (w-72 = 18rem)
@@ -144,6 +145,10 @@
 			// endpoints = fullConfig.endpoints;
 			fullConfig.url = project.url;
 			selectedProject.set(fullConfig);
+			
+			// Add project to recent projects list
+			addProjectToRecent(project);
+			
 			console.log('Config data loaded:', fullConfig);
 		} catch (err) {
 			console.error('Failed to load config data:', err);
