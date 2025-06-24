@@ -131,131 +131,148 @@
 <main class="flex-1">
 
 	<!-- Hero Section -->
-	<section class="bg-gradient-to-b from-blue-50 to-white dark:from-gray-800 dark:to-gray-900 py-20 pt-32">
+	<section class="bg-gradient-to-b from-blue-50 to-white dark:from-gray-800 dark:to-gray-900 py-12 pt-24">
 		<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
 			<div class="text-center">
-				<h1 class="text-4xl md:text-6xl font-bold text-gray-900 dark:text-white mb-6">
+				<h1 class="text-3xl md:text-5xl font-bold text-gray-900 dark:text-white mb-4">
 					Need instant API endpoints?
 				</h1>
-				<h2 class="text-2xl md:text-4xl font-light text-gray-700 dark:text-gray-300 mb-8">
+				<h2 class="text-xl md:text-2xl font-light text-gray-700 dark:text-gray-300 mb-6">
 					Create a <span class="text-indigo-600 dark:text-indigo-400 font-semibold"
 						>mock server in seconds</span
 					>
 				</h2>
-				<p class="text-lg text-gray-600 dark:text-gray-400 mb-8 max-w-2xl mx-auto">
+				<p class="text-base text-gray-600 dark:text-gray-400 mb-6 max-w-2xl mx-auto">
 					<i class="fas fa-lightning-bolt text-indigo-600 dark:text-indigo-400 mr-2"></i>
 					Zero setup, instant deployment, maximum productivity.
 				</p>
 
 				<!-- Quick Action Buttons -->
-				<div class="flex flex-col sm:flex-row gap-4 justify-center items-center mb-8">
+				<div class="flex flex-col sm:flex-row gap-3 justify-center items-center mb-8">
 					<button
 						on:click={() => {
 							document.getElementById('quick-deploy')?.scrollIntoView({ behavior: 'smooth' });
 						}}
-						class="bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 dark:from-blue-600 dark:to-purple-700 dark:hover:from-blue-700 dark:hover:to-purple-800 text-white py-4 px-8 rounded-lg text-lg font-medium transition-all duration-300 shadow-lg hover:shadow-xl transform hover:-translate-y-1 flex items-center"
+						class="bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 dark:from-blue-600 dark:to-purple-700 dark:hover:from-blue-700 dark:hover:to-purple-800 text-white py-3 px-6 rounded-lg text-base font-medium transition-all duration-300 shadow-lg hover:shadow-xl transform hover:-translate-y-1 flex items-center"
 						title="Deploy instantly with Docker - One command to run!"
 						aria-label="Deploy instantly with Docker"
 					>
-						<i class="fab fa-docker mr-3 text-xl"></i>
+						<i class="fab fa-docker mr-2 text-lg"></i>
 						🚀  Deploy in Seconds
 					</button>
 					
 					{#if !authenticated}
 						<button
 							on:click={handleLogin}
-							class="bg-white dark:bg-gray-800 border-2 border-gray-200 dark:border-gray-600 hover:border-blue-500 dark:hover:border-blue-400 text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 py-4 px-8 rounded-lg text-lg font-medium transition-all duration-300 flex items-center shadow-md hover:shadow-lg"
+							class="bg-white dark:bg-gray-800 border-2 border-gray-200 dark:border-gray-600 hover:border-blue-500 dark:hover:border-blue-400 text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 py-3 px-6 rounded-lg text-base font-medium transition-all duration-300 flex items-center shadow-md hover:shadow-lg"
 							title="Login to create cloud projects"
 							aria-label="Login to create cloud projects"
 						>
-							<i class="fas fa-cloud mr-3"></i>
+							<i class="fas fa-cloud mr-2"></i>
 							Try Cloud Version
 						</button>
 					{/if}
 				</div>
 
-				<!-- Quick Start Section -->
-				{#if authenticated}
-					<div class="bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm rounded-xl shadow-xl border border-gray-200 dark:border-gray-700 p-8 max-w-2xl mx-auto mb-8">
-						<h3 class="text-xl font-semibold text-gray-900 dark:text-white mb-6">
-							<i class="fas fa-rocket text-indigo-600 dark:text-indigo-400 mr-2"></i>
-							Create Your Next Mock Server
-						</h3>
+				<!-- Main Dashboard Section - Side by side layout -->
+				<div class="max-w-6xl mx-auto">
+					<div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+						<!-- Create New Mock Server -->
+						{#if authenticated}
+							<div class="bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm rounded-xl shadow-xl border border-gray-200 dark:border-gray-700 p-6">
+								<h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+									<i class="fas fa-rocket text-indigo-600 dark:text-indigo-400 mr-2"></i>
+									Create Your Next Mock Server
+								</h3>
 
-						<div class="flex flex-col sm:flex-row gap-4 mb-6">
-							<div class="flex-1">
-								<input
-									bind:value={projectName}
-									type="text"
-									placeholder="Enter project name"
-									class="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-colors"
-									title="Enter a name for your mock server project"
-									aria-label="Project name input"
+								<div class="flex flex-col sm:flex-row gap-3 mb-4">
+									<div class="flex-1">
+										<input
+											bind:value={projectName}
+											type="text"
+											placeholder="Enter project name"
+											class="w-full px-3 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-colors text-sm"
+											title="Enter a name for your mock server project"
+											aria-label="Project name input"
+										/>
+									</div>
+									<div class="flex items-center text-gray-500 dark:text-gray-400 text-sm font-medium">
+										.beo-echo.dev
+									</div>
+								</div>
+
+								<p class="text-xs text-gray-600 dark:text-gray-400 mb-4">
+									We'll generate a unique subdomain where you can send HTTP requests and test your APIs.
+								</p>
+
+								<button
+									on:click={createProject}
+									disabled={isLoading}
+									class="w-full bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 disabled:from-indigo-400 disabled:to-purple-400 text-white py-2.5 px-4 rounded-lg font-medium transition-all duration-200 flex items-center justify-center shadow-lg hover:shadow-xl text-sm"
+									title="Create new mock server project"
+									aria-label="Create new mock server project"
+								>
+									{#if isLoading}
+										<i class="fas fa-spinner fa-spin mr-2"></i>
+										Setting up your server...
+									{:else}
+										<i class="fas fa-plus-circle mr-2"></i>
+										Launch Mock Server
+									{/if}
+								</button>
+							</div>
+						{:else}
+							<div class="bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm rounded-xl shadow-xl border border-gray-200 dark:border-gray-700 p-6 text-center">
+								<h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-3">
+									<i class="fas fa-user-circle text-indigo-600 dark:text-indigo-400 mr-2"></i>
+									Get Started
+								</h3>
+								<p class="text-sm text-gray-600 dark:text-gray-400 mb-4">
+									Login to create and manage your mock servers
+								</p>
+								<button
+									on:click={handleLogin}
+									class="w-full bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white py-2.5 px-4 rounded-lg font-medium transition-all duration-200 flex items-center justify-center shadow-lg hover:shadow-xl text-sm"
+									title="Login to create cloud projects"
+									aria-label="Login to create cloud projects"
+								>
+									<i class="fas fa-sign-in-alt mr-2"></i>
+									Login to Continue
+								</button>
+								<p class="text-xs text-gray-500 dark:text-gray-400 mt-3">
+									Free to use • No credit card required
+								</p>
+							</div>
+						{/if}
+
+						<!-- Recent Projects Section -->
+						<div class="bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm rounded-xl shadow-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
+							<div class="p-4 border-b border-gray-200 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-750/50">
+								<h3 class="text-lg font-semibold text-gray-900 dark:text-white flex items-center">
+									<i class="fas fa-history text-indigo-600 dark:text-indigo-400 mr-2"></i>
+									Recent Projects
+								</h3>
+								<p class="text-xs text-gray-600 dark:text-gray-400 mt-1">
+									Quick access to your recently used mock servers
+								</p>
+							</div>
+							
+							<div class="p-1">
+								<RecentProjects 
+									showTitle={false} 
+									maxItems={4}
+									onProjectSelect={(project) => {
+										// Handle project selection
+										if (authenticated) {
+											goto(`/home/projects/${project.id}`);
+										} else {
+											toast.info('Please login to access your projects');
+										}
+									}}
 								/>
 							</div>
-							<div class="flex items-center text-gray-500 dark:text-gray-400 text-sm font-medium">
-								.beo-echo.dev
-							</div>
 						</div>
-
-						<p class="text-sm text-gray-600 dark:text-gray-400 mb-6">
-							We'll generate a unique subdomain where you can send HTTP requests and test your APIs.
-						</p>
-
-						<button
-							on:click={createProject}
-							disabled={isLoading}
-							class="w-full bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 disabled:from-indigo-400 disabled:to-purple-400 text-white py-3 px-6 rounded-lg font-medium transition-all duration-200 flex items-center justify-center shadow-lg hover:shadow-xl"
-							title="Create new mock server project"
-							aria-label="Create new mock server project"
-						>
-							{#if isLoading}
-								<i class="fas fa-spinner fa-spin mr-2"></i>
-								Setting up your server...
-							{:else}
-								<i class="fas fa-plus-circle mr-2"></i>
-								Launch Mock Server
-							{/if}
-						</button>
 					</div>
-				{:else}
-					<div class="text-center">
-						<p class="text-sm text-gray-600 dark:text-gray-400 mb-4">
-							Free to use • No credit card required • Deploy locally or in the cloud
-						</p>
-					</div>
-				{/if}
-
-				<!-- Recent Projects Section - Show for both authenticated and non-authenticated users -->
-				<div class="max-w-2xl mx-auto">
-					<RecentProjects 
-						showTitle={true} 
-						maxItems={3}
-						onProjectSelect={(project) => {
-							// Handle project selection
-							if (authenticated) {
-								goto(`/home/projects/${project.id}`);
-							} else {
-								toast.info('Please login to access your projects');
-							}
-						}}
-					/>
-				</div>
-
-				<!-- Demo Video Button -->
-				<div class="mt-8">
-					<button
-						class="inline-flex items-center text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 font-medium"
-						title="Watch quick demo"
-						aria-label="Watch quick demo"
-					>
-						<div
-							class="flex items-center justify-center w-12 h-12 bg-blue-100 dark:bg-blue-900 rounded-full mr-3"
-						>
-							<i class="fas fa-play text-blue-600 dark:text-blue-400"></i>
-						</div>
-						Check out a quick demo!
-					</button>
 				</div>
 			</div>
 		</div>

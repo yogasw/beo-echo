@@ -78,7 +78,7 @@
 </script>
 
 {#if limitedProjects.length > 0}
-  <div class="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
+  <div class="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden {showTitle ? '' : 'border-0 bg-transparent'}">
     {#if showTitle}
       <div class="px-6 py-4 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-750">
         <h3 class="text-lg font-semibold text-gray-900 dark:text-white flex items-center">
@@ -91,10 +91,10 @@
       </div>
     {/if}
     
-    <div class="divide-y divide-gray-200 dark:divide-gray-700">
+    <div class="divide-y divide-gray-200 dark:divide-gray-700 {showTitle ? '' : 'divide-y-0'}">
       {#each limitedProjects as project (project.id)}
         <div
-          class="group flex items-center justify-between p-4 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors cursor-pointer"
+          class="group flex items-center justify-between {showTitle ? 'p-4' : 'p-3'} hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors cursor-pointer {showTitle ? '' : 'rounded-lg mb-2 last:mb-0'}"
           on:click={() => handleProjectClick(project)}
           on:keydown={(e) => {
             if (e.key === 'Enter' || e.key === ' ') {
@@ -109,30 +109,30 @@
         >
           <div class="flex items-center flex-1 min-w-0">
             <!-- Project Icon -->
-            <div class="flex-shrink-0 w-10 h-10 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-lg flex items-center justify-center mr-3">
-              <i class="fas fa-cube text-white text-sm"></i>
+            <div class="flex-shrink-0 {showTitle ? 'w-10 h-10' : 'w-8 h-8'} bg-gradient-to-br from-indigo-500 to-purple-600 rounded-lg flex items-center justify-center mr-3">
+              <i class="fas fa-cube text-white {showTitle ? 'text-sm' : 'text-xs'}"></i>
             </div>
             
             <!-- Project Info -->
             <div class="flex-1 min-w-0">
               <div class="flex items-center gap-2 mb-1">
-                <p class="text-sm font-medium text-gray-900 dark:text-white truncate">
+                <p class="{showTitle ? 'text-sm' : 'text-xs'} font-medium text-gray-900 dark:text-white truncate">
                   {project.name}
                 </p>
                 {#if project.mode}
-                  <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium {getModeColor(project.mode)}">
+                  <span class="inline-flex items-center px-2 py-0.5 rounded-full {showTitle ? 'text-xs' : 'text-xs'} font-medium {getModeColor(project.mode)}">
                     {project.mode}
                   </span>
                 {/if}
               </div>
               
-              <div class="flex items-center text-xs text-gray-500 dark:text-gray-400 space-x-2">
+              <div class="flex items-center {showTitle ? 'text-xs' : 'text-xs'} text-gray-500 dark:text-gray-400 space-x-2">
                 <span class="truncate">{generateProjectUrl(project.alias)}</span>
                 <span>•</span>
                 <span class="flex-shrink-0">{formatTimeAgo(project.lastUsed)}</span>
               </div>
               
-              {#if project.workspaceName}
+              {#if project.workspaceName && showTitle}
                 <p class="text-xs text-gray-400 dark:text-gray-500 mt-1 flex items-center">
                   <i class="fas fa-users mr-1"></i>
                   {project.workspaceName}
@@ -164,7 +164,7 @@
       {/each}
     </div>
     
-    {#if $recentProjects.length > maxItems}
+    {#if $recentProjects.length > maxItems && showTitle}
       <div class="px-6 py-3 bg-gray-50 dark:bg-gray-750 border-t border-gray-200 dark:border-gray-700">
         <button
           class="text-sm text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 font-medium"
@@ -177,15 +177,15 @@
     {/if}
   </div>
 {:else}
-  <div class="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-8 text-center">
-    <div class="w-16 h-16 bg-gray-100 dark:bg-gray-700 rounded-full flex items-center justify-center mx-auto mb-4">
-      <i class="fas fa-history text-gray-400 text-xl"></i>
+  <div class="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 {showTitle ? 'p-8' : 'p-4'} text-center {showTitle ? '' : 'border-0 bg-transparent'}">
+    <div class="{showTitle ? 'w-16 h-16' : 'w-12 h-12'} bg-gray-100 dark:bg-gray-700 rounded-full flex items-center justify-center mx-auto mb-4">
+      <i class="fas fa-history text-gray-400 {showTitle ? 'text-xl' : 'text-lg'}"></i>
     </div>
-    <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-2">
+    <h3 class="{showTitle ? 'text-lg' : 'text-sm'} font-medium text-gray-900 dark:text-white mb-2">
       No Recent Projects
     </h3>
-    <p class="text-gray-600 dark:text-gray-400 text-sm">
-      Start working with mock servers and they'll appear here for quick access
+    <p class="text-gray-600 dark:text-gray-400 {showTitle ? 'text-sm' : 'text-xs'}">
+      {showTitle ? 'Start working with mock servers and they\'ll appear here for quick access' : 'Recent projects will appear here'}
     </p>
   </div>
 {/if}
