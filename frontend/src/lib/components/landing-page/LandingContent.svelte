@@ -407,6 +407,26 @@
 						View Requests
 					</button>
 				</div>
+
+				<!-- Partial Mocks -->
+				<div class="bg-white dark:bg-gray-700 rounded-lg shadow-md p-8">
+					<h3 class="text-xl font-semibold text-gray-900 dark:text-white mb-4">
+						<i class="fas fa-puzzle-piece text-green-600 mr-2"></i>
+						Partial Mocks
+					</h3>
+					<p class="text-gray-600 dark:text-gray-300 mb-6">
+						Mock only specific endpoints while forwarding others to real services for hybrid testing
+						scenarios.
+					</p>
+					<button
+						class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
+						title="Create a partial mock server"
+						aria-label="Create a partial mock server"
+					>
+						<i class="fas fa-plus mr-2"></i>
+						Create Mock Server
+					</button>
+				</div>
 			</div>
 		</div>
 	</section>
