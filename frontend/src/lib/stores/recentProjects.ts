@@ -7,6 +7,7 @@ export interface RecentProject {
   alias: string;
   lastUsed: string; // ISO date string
   workspaceName?: string;
+  workspaceId?: string;
   mode?: string;
 }
 

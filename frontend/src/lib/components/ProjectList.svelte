@@ -20,7 +20,7 @@
 	import { initializeLogsStream } from '$lib/services/logsService';
 	import { logStatus } from '$lib/stores/logStatus';
 	import { setCurrentWorkspaceId, getProjectPanelWidth, setProjectPanelWidth } from '$lib/utils/localStorage';
-	import { addProjectToRecent } from '$lib/utils/recentProjectsUtils';
+	import { addProjectToRecent } from '$lib/utils/recentProjectUtils';
 
 	export let searchTerm = '';
 	export let panelWidth: number = getProjectPanelWidth(); // Panel width in rem units (w-72 = 18rem)

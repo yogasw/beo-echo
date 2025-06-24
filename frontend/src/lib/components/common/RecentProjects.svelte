@@ -1,6 +1,6 @@
 <script lang="ts">
   import { recentProjects, type RecentProject } from '$lib/stores/recentProjects';
-  import { goto } from '$app/navigation';
+  import { selectRecentProject } from '$lib/utils/recentProjectUtils';
   import { toast } from '$lib/stores/toast';
 
   export let showTitle = true;
@@ -36,20 +36,11 @@
 
   async function handleProjectClick(project: RecentProject) {
     try {
-      // Update the project as recently used
-      recentProjects.addProject({
-        id: project.id,
-        name: project.name,
-        alias: project.alias,
-        workspaceName: project.workspaceName,
-        mode: project.mode
-      });
-
       if (onProjectSelect) {
         onProjectSelect(project);
       } else {
-        // Default navigation to project
-        await goto(`/home/projects/${project.id}`);
+        // Use the new utility function for project selection
+        await selectRecentProject(project);
       }
     } catch (error) {
       toast.error('Failed to open project');

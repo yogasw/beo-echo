@@ -8,7 +8,6 @@
 	import SkeletonLoader from '$lib/components/common/SkeletonLoader.svelte';
 	import RecentProjects from '$lib/components/common/RecentProjects.svelte';
 	import { recentProjects as recentProjectsStore } from '$lib/stores/recentProjects';
-	import { addProjectToRecentList } from '$lib/utils/recentProjectsHelper';
 	import { theme, toggleTheme } from '$lib/stores/theme';
 
 	let recentProjects: Project[] = [];
@@ -113,17 +112,8 @@
 		}
 	}
 
-	// Function to add project to recent projects when accessed
-	function addToRecentProjects(project: Project, workspaceName?: string) {
-		addProjectToRecentList(project, workspaceName);
-	}
-
 	async function handleLogin() {
 		await goto('/login');
-	}
-
-	function generateProjectUrl(alias: string) {
-		return `https://${alias}.beo-echo.dev`;
 	}
 </script>
 

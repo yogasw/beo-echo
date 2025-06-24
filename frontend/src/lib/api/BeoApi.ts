@@ -33,6 +33,7 @@ export type Project = {
 	updated_at: Date;
 	url: string;
 	alias: string;
+	workspace_id: string;
 }
 
 export type RequestLog = {
