@@ -12,14 +12,14 @@
   onMount(async () => {
     try {
       const projectId = $page.params.projectId;
-      
-      if (!projectId) {
-        throw new Error('Project ID is required');
+      const workspaceId = $page.params.workspaceId;
+      if (!projectId || !workspaceId) {
+        throw new Error('Project ID and Workspace ID are required');
       }
 
       // Use the utility function to select project and handle workspace switching
-      await selectProject(projectId);
-      
+      await selectProject(projectId, workspaceId);
+
     } catch (err: any) {
       error = err.message || 'Failed to load project';
       toast.error(err);

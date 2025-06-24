@@ -254,7 +254,7 @@
 									onProjectSelect={(project) => {
 										// Handle project selection
 										if (authenticated) {
-											goto(`/home/projects/${project.id}`);
+											goto(`/home/workspace/${project.workspaceId}/projects/${project.id}`);
 										} else {
 											toast.info('Please login to access your projects');
 										}

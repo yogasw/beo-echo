@@ -7,8 +7,9 @@ export interface RecentProject {
   alias: string;
   lastUsed: string; // ISO date string
   workspaceName?: string;
-  workspaceId?: string;
+  workspaceId: string;
   mode?: string;
+  url: string; // Optional URL for the project
 }
 
 const STORAGE_KEY = 'beo_echo_recent_projects';
@@ -17,7 +18,7 @@ const MAX_RECENT_PROJECTS = 5;
 // Initialize store with data from localStorage
 function createRecentProjectsStore() {
   let initialProjects: RecentProject[] = [];
-  
+
   if (browser) {
     try {
       const stored = localStorage.getItem(STORAGE_KEY);
@@ -35,20 +36,20 @@ function createRecentProjectsStore() {
 
   return {
     subscribe,
-    
+
     // Add or update a project in recent list
     addProject: (project: Omit<RecentProject, 'lastUsed'>) => {
       update(projects => {
         const now = new Date().toISOString();
         const existingIndex = projects.findIndex(p => p.id === project.id);
-        
+
         const recentProject: RecentProject = {
           ...project,
-          lastUsed: now
+          lastUsed: now,
         };
-        
+
         let updatedProjects: RecentProject[];
-        
+
         if (existingIndex >= 0) {
           // Update existing project and move to top
           updatedProjects = [
@@ -59,10 +60,10 @@ function createRecentProjectsStore() {
           // Add new project to top
           updatedProjects = [recentProject, ...projects];
         }
-        
+
         // Keep only the most recent projects
         const limitedProjects = updatedProjects.slice(0, MAX_RECENT_PROJECTS);
-        
+
         // Save to localStorage
         if (browser) {
           try {
@@ -71,16 +72,16 @@ function createRecentProjectsStore() {
             console.error('Error saving recent projects to localStorage:', error);
           }
         }
-        
+
         return limitedProjects;
       });
     },
-    
+
     // Remove a project from recent list
     removeProject: (projectId: string) => {
       update(projects => {
         const filteredProjects = projects.filter(p => p.id !== projectId);
-        
+
         // Save to localStorage
         if (browser) {
           try {
@@ -89,11 +90,11 @@ function createRecentProjectsStore() {
             console.error('Error saving recent projects to localStorage:', error);
           }
         }
-        
+
         return filteredProjects;
       });
     },
-    
+
     // Clear all recent projects (if needed)
     clear: () => {
       if (browser) {

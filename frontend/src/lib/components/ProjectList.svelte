@@ -15,11 +15,15 @@
 	import { toast } from '$lib/stores/toast';
 	import { resetEndpointsList } from '$lib/stores/saveButton';
 	import * as ThemeUtils from '$lib/utils/themeUtils';
-	import { currentWorkspace } from '$lib/stores/workspace';
+	import { currentWorkspace, workspaces } from '$lib/stores/workspace';
 	import { isLoadingContentArea } from '$lib/stores/loadingContentArea';
 	import { initializeLogsStream } from '$lib/services/logsService';
 	import { logStatus } from '$lib/stores/logStatus';
-	import { setCurrentWorkspaceId, getProjectPanelWidth, setProjectPanelWidth } from '$lib/utils/localStorage';
+	import {
+		setCurrentWorkspaceId,
+		getProjectPanelWidth,
+		setProjectPanelWidth
+	} from '$lib/utils/localStorage';
 	import { addProjectToRecent } from '$lib/utils/recentProjectUtils';
 
 	export let searchTerm = '';
@@ -56,7 +60,7 @@
 		isResizing = true;
 		startX = event.clientX;
 		startWidth = panelWidth;
-		
+
 		document.addEventListener('mousemove', handleResize);
 		document.addEventListener('mouseup', stopResize);
 		document.body.style.cursor = 'col-resize';
@@ -65,11 +69,11 @@
 
 	function handleResize(event: MouseEvent) {
 		if (!isResizing) return;
-		
+
 		const deltaX = event.clientX - startX;
 		const containerWidth = window.innerWidth;
 		const newWidthRem = startWidth + (deltaX / containerWidth) * 100; // Convert to rem-like units
-		
+
 		// Constrain between 12rem and 30rem (minimum 192px, maximum 480px)
 		panelWidth = Math.min(Math.max(newWidthRem, 12), 30);
 	}
@@ -80,7 +84,7 @@
 		document.removeEventListener('mouseup', stopResize);
 		document.body.style.cursor = '';
 		document.body.style.userSelect = '';
-		
+
 		// Save panel width to localStorage when resize is complete
 		setProjectPanelWidth(panelWidth);
 	}
@@ -129,7 +133,7 @@
 			logStatus.reset();
 			initializeLogsStream(project.id, 100, isResetLogs);
 		}
-		
+
 		isLoadingContentArea.set(true);
 
 		try {
@@ -145,10 +149,23 @@
 			// endpoints = fullConfig.endpoints;
 			fullConfig.url = project.url;
 			selectedProject.set(fullConfig);
-			
+
 			// Add project to recent projects list
-			addProjectToRecent(project);
+			let workspacesName = $currentWorkspace?.name || 'Default Workspace';
+			let recentProjects = {
+				id: project.id,
+				name: project.name,
+				alias: project.alias || '',
+				url: project.url,
+				mode: project.mode,
+				status: project.status || 'stopped',
+				workspaceId: $currentWorkspace?.id || '',
+				workspaceName: workspacesName,
+				lastUsed:""
+			};
 			
+			addProjectToRecent(recentProjects);
+
 			console.log('Config data loaded:', fullConfig);
 		} catch (err) {
 			console.error('Failed to load config data:', err);
@@ -267,16 +284,23 @@
 	}
 </script>
 
-<div class="theme-bg-primary p-4 flex flex-col h-full border-r theme-border relative" style="width: {panelWidth}rem;">
+<div
+	class="theme-bg-primary p-4 flex flex-col h-full border-r theme-border relative"
+	style="width: {panelWidth}rem;"
+>
 	<!-- Brand Section - Clean & Responsive -->
 	<div class="mb-4 mt-2">
 		<!-- Main Brand Header -->
-		<div class="flex items-center justify-between mb-4 p-4 rounded-xl bg-gradient-to-r from-blue-600/10 to-purple-600/10 border border-blue-500/20 dark:border-blue-400/20">
+		<div
+			class="flex items-center justify-between mb-4 p-4 rounded-xl bg-gradient-to-r from-blue-600/10 to-purple-600/10 border border-blue-500/20 dark:border-blue-400/20"
+		>
 			<div class="flex items-center">
-				<div class="w-14 h-14 mr-4 flex items-center justify-center rounded-xl bg-gradient-to-br from-blue-500 to-purple-600 p-3 shadow-lg">
-					<img 
-						src="/favicon.svg" 
-						alt="Beo Echo Logo" 
+				<div
+					class="w-14 h-14 mr-4 flex items-center justify-center rounded-xl bg-gradient-to-br from-blue-500 to-purple-600 p-3 shadow-lg"
+				>
+					<img
+						src="/favicon.svg"
+						alt="Beo Echo Logo"
 						class="w-full h-full object-contain filter brightness-110"
 						title="Beo Echo - API Mocking Service"
 						aria-label="Beo Echo API Mocking Service logo"
@@ -284,7 +308,12 @@
 				</div>
 				{#if panelWidth >= 12}
 					<div class="flex flex-col">
-						<h1 class="font-bold theme-text-primary leading-tight tracking-tight bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent {panelWidth >= 16 ? 'text-2xl' : 'text-lg'}">
+						<h1
+							class="font-bold theme-text-primary leading-tight tracking-tight bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent {panelWidth >=
+							16
+								? 'text-2xl'
+								: 'text-lg'}"
+						>
 							Beo Echo
 						</h1>
 						{#if panelWidth >= 16}
@@ -300,32 +329,35 @@
 				{/if}
 			</div>
 		</div>
-		
+
 		<!-- Version and Links -->
 		<div class="flex items-center justify-between px-2">
-			<span class="inline-flex items-center px-3 py-1.5 rounded-full text-xs font-semibold bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-sm">
+			<span
+				class="inline-flex items-center px-3 py-1.5 rounded-full text-xs font-semibold bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-sm"
+			>
 				{#if panelWidth >= 16}
 					<i class="fas fa-tag mr-1.5 text-xs"></i>
 				{/if}
 				v2.3.2
 			</span>
-			
+
 			<!-- Action Links -->
 			<div class="flex items-center space-x-2">
-				<a 
-					href="https://github.com/yogasw/beo-echo" 
-					target="_blank" 
+				<a
+					href="https://github.com/yogasw/beo-echo"
+					target="_blank"
 					rel="noopener noreferrer"
 					class="group flex items-center justify-center w-8 h-8 rounded-lg theme-bg-secondary hover:bg-gray-600 dark:hover:bg-gray-500 transition-all duration-200 transform hover:scale-105"
 					style="text-decoration: none !important;"
 					title="View on GitHub"
 					aria-label="View Beo Echo project on GitHub"
 				>
-					<i class="fab fa-github text-sm theme-text-secondary group-hover:text-white transition-colors"></i>
+					<i
+						class="fab fa-github text-sm theme-text-secondary group-hover:text-white transition-colors"
+					></i>
 				</a>
 			</div>
 		</div>
-		
 	</div>
 	<div class="relative mb-4">
 		<div class="absolute inset-y-0 start-0 flex items-center ps-3 pointer-events-none">
@@ -508,10 +540,11 @@
 							<ProjectStatusBadge status={project.status || 'stopped'} size="small" />
 						</div>
 					</div>
-				</div>			{/each}
+				</div>
+			{/each}
 		</div>
 	</div>
-	
+
 	<!-- Resizable handle -->
 	<button
 		class="absolute top-0 right-0 bottom-0 w-1 cursor-col-resize hover:bg-blue-500 transition-colors duration-200 group bg-transparent border-none"
