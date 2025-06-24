@@ -16,7 +16,7 @@
 
 	onMount(async () => {
 		if ($isAuthenticated) {
-			goto('/home');
+			goto('/home', { replaceState: true });
 			// window.location.reload();
 		}
 		// TODO: When API is ready, fetch third party login availability
@@ -32,7 +32,7 @@
 				if (browser) {
 					// New auth system
 					await auth.login(email, password);
-					await goto('/home');
+					await goto('/home', { replaceState: true });
 					// window.location.reload();
 				}
 			} else {
@@ -53,7 +53,7 @@
 	// Check for OAuth response on page load
 	onMount(() => {
 		if ($isAuthenticated) {
-			goto('/home');
+			goto('/home', { replaceState: true });
 			return;
 		}
 
@@ -85,9 +85,9 @@
 				
 				// If we have a returnUrl, go there, otherwise go to home
 				if (returnUrl) {
-					goto(returnUrl);
+					goto(returnUrl, { replaceState: true });
 				} else {
-					goto('/');
+					goto('/', { replaceState: true });
 				}
 				return;
 			}
