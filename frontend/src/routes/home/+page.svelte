@@ -38,6 +38,11 @@
   });
 </script>
 
+<svelte:head>
+	<title>Beo Echo - API Mock Service Dashboard</title>
+	<meta name="description" content="Manage your API mocks and configurations with Beo Echo" />
+</svelte:head>
+
 {#if loading}
   <div class="flex items-center justify-center h-full min-h-[300px]">
     <div class="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-blue-500"></div>

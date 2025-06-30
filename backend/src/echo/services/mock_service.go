@@ -2,6 +2,8 @@ package services
 
 import (
 	"bytes"
+	"compress/gzip"
+	"context"
 	"crypto/tls"
 	"encoding/json"
 	"fmt"
@@ -13,8 +15,11 @@ import (
 	"strings"
 	"time"
 
+	"github.com/andybalholm/brotli"
+
 	"beo-echo/backend/src/database"
 	"beo-echo/backend/src/echo/repositories"
+	systemConfig "beo-echo/backend/src/systemConfigs"
 )
 
 // MockService handles mock response logic
@@ -30,12 +35,13 @@ func NewMockService(repo *repositories.MockRepository) *MockService {
 }
 
 // HandleRequest processes an incoming request and returns a mock response or proxies it
-// Also returns project ID, execution mode, and whether the request matched an endpoint
-func (s *MockService) HandleRequest(alias, method, reqPath string, req *http.Request) (*http.Response, error, string, database.ProjectMode, bool) {
+// Returns response, error, project ID, execution mode, whether the request matched an endpoint
+func (s *MockService) HandleRequest(ctx context.Context, alias, method, reqPath string, req *http.Request) (*http.Response, error, string, database.ProjectMode, bool) {
 	// Find project by alias
 	project, err := s.Repo.FindProjectByAlias(alias)
 	if err != nil {
-		return createErrorResponse(http.StatusNotFound, "Project not found"), nil, "", "", false
+		// Get default response for project not found
+		return createDefaultJSONResponse(systemConfig.DEFAULT_RESPONSE_PROJECT_NOT_FOUND), nil, "", "", false
 	}
 
 	// Extract the actual API endpoint path
@@ -46,13 +52,13 @@ func (s *MockService) HandleRequest(alias, method, reqPath string, req *http.Req
 	// Check project mode
 	switch project.Mode {
 	case database.ModeMock:
-		resp, err, mode, matched := s.handleMockMode(project, method, cleanPath, req)
+		resp, err, mode, matched := s.handleMockMode(ctx, project, method, cleanPath, req)
 		return resp, err, project.ID, mode, matched
 	case database.ModeProxy:
-		resp, err, matched := s.handleProxyMode(project, method, cleanPath, req)
+		resp, matched, err := s.handleProxyMode(ctx, project, method, cleanPath, req)
 		return resp, err, project.ID, project.Mode, matched // Matched is true only if handled by a mock endpoint
 	case database.ModeForwarder:
-		resp, err := s.handleForwarderMode(project, method, cleanPath, req)
+		resp, err := s.handleForwarderMode(ctx, project, method, cleanPath, req)
 		return resp, err, project.ID, project.Mode, false // Forwarder requests are always considered "not matched"
 	case database.ModeDisabled:
 		return createErrorResponse(http.StatusServiceUnavailable, "Service is disabled"), nil, project.ID, project.Mode, false
@@ -62,12 +68,14 @@ func (s *MockService) HandleRequest(alias, method, reqPath string, req *http.Req
 }
 
 // handleMockMode generates mock response and returns if the request matched an endpoint
-func (s *MockService) handleMockMode(project *database.Project, method, path string, req *http.Request) (*http.Response, error, database.ProjectMode, bool) {
+func (s *MockService) handleMockMode(ctx context.Context, project *database.Project, method, path string, req *http.Request) (*http.Response, error, database.ProjectMode, bool) {
 	endpoint, err := s.Repo.FindMatchingEndpoint(project.ID, method, path)
 	if err != nil {
 		// No matching endpoint found - apply project-level delay before returning error
 		s.applyDelay(project, nil, nil)
-		return createErrorResponse(http.StatusNotFound, "Endpoint not found"), nil, database.ModeMock, false
+
+		// Get default response for endpoint not found
+		return createDefaultJSONResponse(systemConfig.DEFAULT_RESPONSE_ENDPOINT_NOT_FOUND), nil, database.ModeMock, false
 	}
 
 	// Check if endpoint is configured for proxying
@@ -75,7 +83,7 @@ func (s *MockService) handleMockMode(project *database.Project, method, path str
 		// Apply delays before proxying
 		s.applyDelay(project, endpoint, nil)
 		// Forward the request to the proxy target
-		resp, err := executeProxyRequest(endpoint.ProxyTarget.URL, method, path, req.URL.RawQuery, req)
+		resp, err := executeProxyRequest(ctx, endpoint.ProxyTarget.URL, method, path, req.URL.RawQuery, req)
 		return resp, err, database.ModeProxy, true
 	}
 
@@ -84,11 +92,13 @@ func (s *MockService) handleMockMode(project *database.Project, method, path str
 	if err != nil || len(responses) == 0 {
 		// Apply delays before returning error
 		s.applyDelay(project, endpoint, nil)
-		return createErrorResponse(http.StatusInternalServerError, "No responses configured"), nil, database.ModeMock, true
+
+		// Get default response for no response configured
+		return createDefaultJSONResponse(systemConfig.DEFAULT_RESPONSE_NO_RESPONSE_CONFIGURED), nil, database.ModeMock, true
 	}
 
 	// Select response based on ResponseMode
-	response := selectResponse(responses, endpoint.ResponseMode, req)
+	response := selectResponseWithEndpoint(endpoint.ID, responses, endpoint.ResponseMode, req)
 
 	// Apply delays (response-level delay overrides endpoint-level delay, which overrides project-level delay)
 	s.applyDelay(project, endpoint, &response)
@@ -99,15 +109,15 @@ func (s *MockService) handleMockMode(project *database.Project, method, path str
 }
 
 // handleProxyMode checks for mock endpoint first, if not found forwards the request to target
-func (s *MockService) handleProxyMode(project *database.Project, method, path string, req *http.Request) (*http.Response, error, bool) {
+func (s *MockService) handleProxyMode(ctx context.Context, project *database.Project, method, path string, req *http.Request) (*http.Response, bool, error) {
 	if project.ActiveProxy == nil {
-		return createErrorResponse(http.StatusInternalServerError, "No proxy target configured"), nil, false
+		return createErrorResponse(http.StatusInternalServerError, "No proxy target configured"), false, nil
 	}
 
 	// Check for recursive proxy loops by checking for any header with beo-echo prefix
 	for name := range req.Header {
 		if strings.HasPrefix(strings.ToLower(name), "beo-echo") {
-			return createErrorResponse(http.StatusLoopDetected, "Proxy loop detected: request contains beo-echo header"), nil, false
+			return createErrorResponse(http.StatusLoopDetected, "Proxy loop detected: request contains beo-echo header"), false, nil
 		}
 	}
 
@@ -118,7 +128,7 @@ func (s *MockService) handleProxyMode(project *database.Project, method, path st
 		responses, err := s.Repo.FindResponsesByEndpointID(endpoint.ID)
 		if err == nil && len(responses) > 0 {
 			// Select response based on ResponseMode
-			response := selectResponse(responses, endpoint.ResponseMode, req)
+			response := selectResponseWithEndpoint(endpoint.ID, responses, endpoint.ResponseMode, req)
 
 			// Apply delay with proper priority: Response > Endpoint > Project
 			s.applyDelay(project, endpoint, &response)
@@ -128,7 +138,7 @@ func (s *MockService) handleProxyMode(project *database.Project, method, path st
 			if err == nil {
 				// Add header to indicate response was mocked
 				resp.Header.Set("beo-echo-response-type", "mock")
-				return resp, nil, true // True because it was handled by a mock endpoint
+				return resp, true, nil // True because it was handled by a mock endpoint
 			}
 		}
 	}
@@ -136,16 +146,16 @@ func (s *MockService) handleProxyMode(project *database.Project, method, path st
 	// No matching mock endpoint found or error occurred, forward to target
 	// Apply project-level delay before forwarding
 	s.applyDelay(project, nil, nil)
-	resp, err := executeProxyRequest(project.ActiveProxy.URL, method, path, req.URL.RawQuery, req)
+	resp, err := executeProxyRequest(ctx, project.ActiveProxy.URL, method, path, req.URL.RawQuery, req)
 	if err == nil && resp != nil && resp.Header != nil {
 		// Add header to indicate response was proxied
 		resp.Header.Set("beo-echo-response-type", "proxy")
 	}
-	return resp, err, false // False because it was forwarded to target, not handled by a mock
+	return resp, false, err // False because it was forwarded to target, not handled by a mock
 }
 
 // handleForwarderMode always forwards requests to the target without checking for mock endpoints
-func (s *MockService) handleForwarderMode(project *database.Project, method, path string, req *http.Request) (*http.Response, error) {
+func (s *MockService) handleForwarderMode(ctx context.Context, project *database.Project, method, path string, req *http.Request) (*http.Response, error) {
 	if project.ActiveProxy == nil {
 		return createErrorResponse(http.StatusInternalServerError, "No proxy target configured"), nil
 	}
@@ -163,13 +173,13 @@ func (s *MockService) handleForwarderMode(project *database.Project, method, pat
 	// Apply project-level delay before forwarding
 	s.applyDelay(project, nil, nil)
 
-	return executeProxyRequest(project.ActiveProxy.URL, method, path, req.URL.RawQuery, req)
+	return executeProxyRequest(ctx, project.ActiveProxy.URL, method, path, req.URL.RawQuery, req)
 }
 
 // executeProxyRequest is a common helper function to forward requests to a target URL
 // with proper header and body copying. This centralizes the forwarding logic for both
 // proxy and forwarder modes.
-func executeProxyRequest(targetURLString, method, pathStr, queryString string, req *http.Request) (*http.Response, error) {
+func executeProxyRequest(ctx context.Context, targetURLString, method, pathStr, queryString string, req *http.Request) (*http.Response, error) {
 	// Check for recursive proxy loops by checking for any header with beo-echo prefix
 	for name := range req.Header {
 		if strings.HasPrefix(strings.ToLower(name), "beo-echo") {
@@ -211,7 +221,7 @@ func executeProxyRequest(targetURLString, method, pathStr, queryString string, r
 
 	// Create a new request with all original attributes
 	newReq, err := http.NewRequestWithContext(
-		req.Context(),
+		ctx, // Use the passed context instead of req.Context()
 		method,
 		forwardURL.String(),
 		bytes.NewReader(bodyBytes),
@@ -257,8 +267,8 @@ func executeProxyRequest(targetURLString, method, pathStr, queryString string, r
 
 // Helper functions
 
-// selectResponse selects a response based on mode and rules
-func selectResponse(responses []database.MockResponse, mode string, req *http.Request) database.MockResponse {
+// selectResponseWithEndpoint selects a response based on mode and rules with endpoint ID for round-robin
+func selectResponseWithEndpoint(endpointID string, responses []database.MockResponse, mode string, req *http.Request) database.MockResponse {
 	// Filter responses by rules first
 	validResponses := filterResponsesByRules(responses, req)
 	if len(validResponses) == 0 {
@@ -278,9 +288,8 @@ func selectResponse(responses []database.MockResponse, mode string, req *http.Re
 		// Return random response
 		return validResponses[rand.Intn(len(validResponses))]
 	case "round_robin":
-		// TODO: Implement round-robin selection
-		// For now, return first
-		return validResponses[0]
+		// Use the actual endpoint ID for round-robin selection
+		return getNextRoundRobinResponse(endpointID, validResponses)
 	default:
 		// Default to random
 		return validResponses[rand.Intn(len(validResponses))]
@@ -436,28 +445,73 @@ func getNestedValue(data map[string]interface{}, key string) string {
 
 // createMockResponse builds an HTTP response from a mock response
 func createMockResponse(mockResp database.MockResponse) (*http.Response, error) {
-	// Create response body
-	body := io.NopCloser(strings.NewReader(mockResp.Body))
-
-	// Create response
-	resp := &http.Response{
-		StatusCode: mockResp.StatusCode,
-		Body:       body,
-		Header:     make(http.Header),
-	}
-
+	// Parse headers first to check for Content-Encoding
 	var headers map[string]string
 	if err := json.Unmarshal([]byte(mockResp.Headers), &headers); err != nil {
 		fmt.Println("Error unmarshalling headers:", err)
-	} else {
-		// Set headers
-		for key, value := range headers {
-			resp.Header.Set(key, value)
+		headers = make(map[string]string)
+	}
+
+	// Check for Content-Encoding header
+	contentEncoding := ""
+	for key, value := range headers {
+		if strings.ToLower(key) == "content-encoding" {
+			contentEncoding = strings.ToLower(value)
+			break
 		}
 	}
 
-	// Set content length
-	resp.ContentLength = int64(len(mockResp.Body))
+	// Prepare response body based on Content-Encoding
+	var body io.ReadCloser
+	var contentLength int64
+
+	switch contentEncoding {
+	case "gzip":
+		// Compress the body using gzip
+		var buf bytes.Buffer
+		writer := gzip.NewWriter(&buf)
+		if _, err := writer.Write([]byte(mockResp.Body)); err != nil {
+			writer.Close()
+			return nil, fmt.Errorf("failed to gzip compress response body: %w", err)
+		}
+		if err := writer.Close(); err != nil {
+			return nil, fmt.Errorf("failed to close gzip writer: %w", err)
+		}
+		body = io.NopCloser(&buf)
+		contentLength = int64(buf.Len())
+
+	case "br":
+		// Compress the body using Brotli
+		var buf bytes.Buffer
+		writer := brotli.NewWriter(&buf)
+		if _, err := writer.Write([]byte(mockResp.Body)); err != nil {
+			writer.Close()
+			return nil, fmt.Errorf("failed to brotli compress response body: %w", err)
+		}
+		if err := writer.Close(); err != nil {
+			return nil, fmt.Errorf("failed to close brotli writer: %w", err)
+		}
+		body = io.NopCloser(&buf)
+		contentLength = int64(buf.Len())
+
+	default:
+		// No compression or unsupported encoding, use raw body
+		body = io.NopCloser(strings.NewReader(mockResp.Body))
+		contentLength = int64(len(mockResp.Body))
+	}
+
+	// Create response
+	resp := &http.Response{
+		StatusCode:    mockResp.StatusCode,
+		Body:          body,
+		Header:        make(http.Header),
+		ContentLength: contentLength,
+	}
+
+	// Set headers
+	for key, value := range headers {
+		resp.Header.Set(key, value)
+	}
 
 	return resp, nil
 }
@@ -480,6 +534,28 @@ func createErrorResponse(statusCode int, message string) *http.Response {
 	}
 
 	resp.Header.Set("Content-Type", "application/json")
+	return resp
+}
+
+// createDefaultJSONResponse creates a default JSON response with 200 status code
+func createDefaultJSONResponse(message string) *http.Response {
+	responseBody := map[string]interface{}{
+		"message": message,
+	}
+
+	jsonBody, _ := json.Marshal(responseBody)
+	jsonString := string(jsonBody)
+
+	body := io.NopCloser(strings.NewReader(jsonString))
+
+	resp := &http.Response{
+		StatusCode:    http.StatusOK,
+		Body:          body,
+		Header:        make(http.Header),
+		ContentLength: int64(len(jsonString)),
+	}
+
+	resp.Header.Set("Content-Type", "application/json; charset=utf-8")
 	return resp
 }
 

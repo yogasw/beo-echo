@@ -8,12 +8,14 @@ import (
 	systemConfig "beo-echo/backend/src/systemConfigs"
 	"beo-echo/backend/src/utils"
 	"bytes"
+	"compress/gzip"
 	"encoding/json"
 	"fmt"
 	"io"
 	"strings"
 	"time"
 
+	"github.com/andybalholm/brotli"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"github.com/rs/zerolog/log"
@@ -68,6 +70,31 @@ func RequestLoggerMiddleware(db *gorm.DB) gin.HandlerFunc {
 		}
 		id := uuid.New().String()
 
+		// Get response body - prefer raw response from handler context
+		var responseBody string
+		// Check if response is compressed and decompress if needed
+		responseBody = respBodyBuf.String()
+		contentEncoding := c.Writer.Header().Get("Content-Encoding")
+
+		if contentEncoding != "" {
+			compressedData := respBodyBuf.Bytes()
+
+			switch strings.ToLower(contentEncoding) {
+			case "gzip":
+				if reader, err := gzip.NewReader(bytes.NewReader(compressedData)); err == nil {
+					if decompressed, err := io.ReadAll(reader); err == nil {
+						responseBody = string(decompressed)
+					}
+					reader.Close()
+				}
+			case "br":
+				decompressed := brotli.NewReader(bytes.NewReader(compressedData))
+				if data, err := io.ReadAll(decompressed); err == nil {
+					responseBody = string(data)
+				}
+			}
+		}
+
 		// Save log with hashed JWTs
 		logEntry := &database.RequestLog{
 			ID:              id,
@@ -79,7 +106,7 @@ func RequestLoggerMiddleware(db *gorm.DB) gin.HandlerFunc {
 			RequestBody:     requestBody,
 			ResponseStatus:  c.Writer.Status(),
 			ResponseHeaders: MapSliceToJSONJoined(c.Writer.Header()),
-			ResponseBody:    respBodyBuf.String(),
+			ResponseBody:    responseBody, // Use the responseBody variable
 			LatencyMS:       int(latency),
 			ExecutionMode:   database.ProjectMode(toString(executionMode)),
 			Matched:         toBool(matched),

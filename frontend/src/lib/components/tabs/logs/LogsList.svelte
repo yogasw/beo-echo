@@ -34,12 +34,24 @@
 		<div class="w-full max-w-2xl mb-6">
 			<div class="flex items-center justify-between mb-2">
 				<h4 class="text-sm font-medium theme-text-primary">Example cURL request</h4>
-				<button
-					class={ThemeUtils.utilityButton()}
-					on:click|stopPropagation={() => copyToClipboard(`curl -X GET "${selectedProject.url}"`, 'Example request')}
-				>
-					<i class="fas fa-copy mr-1"></i> Copy
-				</button>
+				<div class="flex space-x-2">
+					<button
+						class={ThemeUtils.utilityButton()}
+						on:click|stopPropagation={() => copyToClipboard(`curl -X GET "${selectedProject.url}"`, 'Example request')}
+						title="Copy example cURL request to clipboard"
+						aria-label="Copy example cURL request to clipboard"
+					>
+						<i class="fas fa-copy mr-1"></i> Copy
+					</button>
+					<button
+						class={ThemeUtils.utilityButton()}
+						on:click={() => window.open(selectedProject.url, '_blank', 'noopener,noreferrer')}
+						title="Open project endpoint in new tab"
+						aria-label="Open project endpoint in new tab"
+					>
+						<i class="fas fa-external-link-alt mr-1"></i> Open
+					</button>
+				</div>
 			</div>
 			<div class="theme-bg-tertiary border theme-border rounded-md p-3">
 				<pre class="font-mono text-xs theme-text-secondary overflow-x-auto">curl -X GET {selectedProject.url}</pre>

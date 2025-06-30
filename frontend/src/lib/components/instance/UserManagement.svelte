@@ -427,6 +427,7 @@
 							<ToggleSwitch
 								id="add-status"
 								bind:checked={formData.is_active}
+								title="Toggle user status between active and inactive"
 								ariaLabel="User status toggle"
 							>
 								<span class="theme-text-primary text-sm"
@@ -505,6 +506,7 @@
 							<ToggleSwitch
 								id="edit-status"
 								bind:checked={formData.is_active}
+								title="Toggle user status between active and inactive"
 								ariaLabel="User status toggle"
 							>
 								<span class="theme-text-primary text-sm"
@@ -521,6 +523,7 @@
 							<ToggleSwitch
 								id="edit-owner"
 								bind:checked={formData.is_owner}
+								title="Toggle owner privileges for this user"
 								ariaLabel="Owner status toggle"
 							>
 								<span class="theme-text-primary text-sm"

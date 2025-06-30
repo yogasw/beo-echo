@@ -676,7 +676,7 @@ frontend/                  # JavaScript/TypeScript frontend with Svelte and Tail
 │   ├── app.css            # Global CSS
 │   └── app.html           # HTML template
 ├── static/                # Static assets served as-is
-│   ├── favicon.png        # Site favicon
+│   ├── favicon.svg        # Site favicon
 │   └── robots.txt         # Robots crawling instructions
 └── build/                 # Compiled output (generated)
 ```

@@ -128,7 +128,7 @@ func (h *GoogleOAuthHandler) InitiateLogin(c *gin.Context) {
 
 	// Get scheme and host for backend callback URL
 	scheme := "http"
-	if c.Request.TLS != nil || c.Request.Header.Get("X-Forwarded-Scheme") == "https" {
+	if c.Request.TLS != nil || c.Request.Header.Get("X-Forwarded-Scheme") == "https" || strings.Contains(c.Request.Header.Get("Referer"), "https") {
 		scheme = "https"
 	}
 	backendBaseURL := fmt.Sprintf("%s://%s", scheme, c.Request.Host)
@@ -211,6 +211,8 @@ func (h *GoogleOAuthHandler) InitiateLogin(c *gin.Context) {
 
 // HandleCallback handles OAuth callback from Google
 func (h *GoogleOAuthHandler) HandleCallback(c *gin.Context) {
+	ctx := c.Request.Context()
+
 	code := c.Query("code")
 	state := c.Query("state")
 	if code == "" {
@@ -238,12 +240,13 @@ func (h *GoogleOAuthHandler) HandleCallback(c *gin.Context) {
 
 	// Get scheme and host from request
 	scheme := "http"
-	if c.Request.TLS != nil || c.Request.Header.Get("X-Forwarded-Scheme") == "https" {
+	if strings.Contains(frontendRedirectURI, "https") {
 		scheme = "https"
 	}
+
 	baseURL := fmt.Sprintf("%s://%s", scheme, c.Request.Host)
 
-	user, token, err := h.service.HandleOAuthCallback(code, baseURL)
+	user, token, err := h.service.HandleOAuthCallback(ctx, code, baseURL)
 	if err != nil {
 		var errorURL string
 

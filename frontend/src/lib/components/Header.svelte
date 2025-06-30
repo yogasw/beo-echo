@@ -260,16 +260,5 @@
 <SaveButton />
 
 <style>
-	.fa-spin {
-		animation: fa-spin 1s infinite linear;
-	}
-
-	@keyframes fa-spin {
-		0% {
-			transform: rotate(0deg);
-		}
-		100% {
-			transform: rotate(360deg);
-		}
-	}
+	/* Empty style section for future custom styles */
 </style>

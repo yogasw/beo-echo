@@ -137,7 +137,11 @@
             </div>
 
             <div class="flex items-center space-x-3 pt-2">
-                <ToggleSwitch bind:checked={isEnabled} />
+                <ToggleSwitch 
+                    bind:checked={isEnabled} 
+                    title="Enable or disable Google SSO authentication"
+                    ariaLabel="Enable Google SSO authentication"
+                />
                 <span class="theme-text-primary text-sm">Enable Google SSO</span>
             </div>
 

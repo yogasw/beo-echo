@@ -45,8 +45,8 @@ func MockRequestHandler(c *gin.Context) {
 		path = "/"
 	}
 
-	// Process the request
-	resp, err, projectID, mode, matched := mockService.HandleRequest(projectAlias, c.Request.Method, path, c.Request)
+	// Process the request with context
+	resp, err, projectID, mode, matched := mockService.HandleRequest(c.Request.Context(), projectAlias, c.Request.Method, path, c.Request)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error":   true,

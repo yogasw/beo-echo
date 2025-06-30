@@ -13,6 +13,8 @@ import (
 	"beo-echo/backend/src/database"
 	systemConfig "beo-echo/backend/src/systemConfigs"
 
+	"beo-echo/backend/src/workspaces"
+
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/google"
 	"gorm.io/gorm"
@@ -28,12 +30,13 @@ type GoogleOAuthConfig struct {
 
 // GoogleOAuthService handles business logic for Google OAuth operations
 type GoogleOAuthService struct {
-	db *gorm.DB
+	db         *gorm.DB
+	workspaces *workspaces.WorkspaceService // Reference to WorkspaceService for workspace operations
 }
 
 // NewGoogleOAuthService creates a new GoogleOAuthService instance
-func NewGoogleOAuthService(db *gorm.DB) *GoogleOAuthService {
-	return &GoogleOAuthService{db: db}
+func NewGoogleOAuthService(db *gorm.DB, workspaces *workspaces.WorkspaceService) *GoogleOAuthService {
+	return &GoogleOAuthService{db: db, workspaces: workspaces}
 }
 
 // SaveGoogleConfig saves Google OAuth configuration
@@ -148,7 +151,7 @@ type GoogleUserInfo struct {
 }
 
 // HandleOAuthCallback processes the OAuth callback flow
-func (s *GoogleOAuthService) HandleOAuthCallback(code string, baseURL string) (*database.User, string, error) {
+func (s *GoogleOAuthService) HandleOAuthCallback(ctx context.Context, code string, baseURL string) (*database.User, string, error) {
 	// 1. Exchange code for tokens
 	tokens, err := s.exchangeCodeForTokens(code, baseURL)
 	if err != nil {
@@ -167,7 +170,7 @@ func (s *GoogleOAuthService) HandleOAuthCallback(code string, baseURL string) (*
 	}
 
 	// 4. Create/update user and identity with auto-register check
-	user, err := s.handleUserCreation(userInfo, tokens.AccessToken)
+	user, isNewUser, err := s.handleUserCreation(userInfo, tokens.AccessToken)
 	if err != nil {
 		return nil, "", fmt.Errorf("failed to handle user creation: %w", err)
 	}
@@ -175,9 +178,16 @@ func (s *GoogleOAuthService) HandleOAuthCallback(code string, baseURL string) (*
 	// 5. Process auto-invite based on email domain
 	// We need the AutoInviteService, but to avoid circular dependencies,
 	// We'll handle the auto-invite directly here
-	if err := s.processAutoInvite(user); err != nil {
-		// Log but don't fail the auth flow
-		fmt.Printf("Warning: Failed to process auto-invite for user %s: %v\n", user.ID, err)
+	// auto invite only if the user is new
+	if isNewUser && user != nil {
+		if err := s.workspaces.ProcessUserAutoInvite(ctx, user); err != nil {
+			// Log but don't fail the auth flow
+			fmt.Printf("Warning: Failed to process auto-invite for user %s: %v\n", user.ID, err)
+		}
+
+		if err := s.workspaces.AutoCreateWorkspaceOnRegister(ctx, user.ID, user.Name); err != nil {
+			return nil, "", fmt.Errorf("failed to auto create workspace: %w", err)
+		}
 	}
 
 	// 6. Generate JWT token
@@ -302,68 +312,7 @@ func (s *GoogleOAuthService) validateUserDomain(email string) error {
 	return nil
 }
 
-// processAutoInvite checks if a user should be automatically invited to any workspaces
-// based on their email domain, and creates the necessary UserWorkspace records if needed
-func (s *GoogleOAuthService) processAutoInvite(user *database.User) error {
-	if user == nil || user.Email == "" {
-		return nil // No user or email, nothing to do
-	}
-
-	// Extract the domain from the user's email
-	parts := strings.Split(user.Email, "@")
-	if len(parts) != 2 {
-		return nil // Invalid email format, nothing to do
-	}
-	userDomain := strings.ToLower(parts[1]) // Convert to lowercase for case-insensitive comparison
-
-	// Find all workspaces with auto-invite enabled
-	var workspaces []database.Workspace
-	if err := s.db.Where("auto_invite_enabled = ?", true).Find(&workspaces).Error; err != nil {
-		return fmt.Errorf("failed to get workspaces for auto-invite: %w", err)
-	}
-
-	for _, workspace := range workspaces {
-		// Check if user is already a member of this workspace
-		var existingMembership database.UserWorkspace
-		existingMembershipCount := s.db.Where("user_id = ? AND workspace_id = ?", user.ID, workspace.ID).
-			First(&existingMembership).RowsAffected
-
-		if existingMembershipCount > 0 {
-			// User already has a membership record for this workspace, skip
-			continue
-		}
-
-		// Check if the user's domain matches any in the workspace's auto-invite domains
-		if workspace.AutoInviteDomains == "" {
-			continue // No domains configured
-		}
-
-		domains := strings.Split(workspace.AutoInviteDomains, ",")
-		for _, domain := range domains {
-			// Trim whitespace and convert to lowercase for comparison
-			domainToCheck := strings.ToLower(strings.TrimSpace(domain))
-
-			if domainToCheck == userDomain {
-				// Create a new UserWorkspace record
-				newMembership := database.UserWorkspace{
-					UserID:      user.ID,
-					WorkspaceID: workspace.ID,
-					Role:        workspace.AutoInviteRole,
-				}
-
-				if err := s.db.Create(&newMembership).Error; err != nil {
-					return fmt.Errorf("failed to create auto-invite membership for workspace %s: %w", workspace.ID, err)
-				}
-
-				break // No need to check other domains for this workspace
-			}
-		}
-	}
-
-	return nil
-}
-
-func (s *GoogleOAuthService) handleUserCreation(userInfo *GoogleUserInfo, accessToken string) (*database.User, error) {
+func (s *GoogleOAuthService) handleUserCreation(userInfo *GoogleUserInfo, accessToken string) (*database.User, bool, error) {
 	// Check if user exists by identity
 	var identity database.UserIdentity
 	err := s.db.Where("provider = ? AND provider_id = ?", "google", userInfo.Sub).
@@ -376,18 +325,18 @@ func (s *GoogleOAuthService) handleUserCreation(userInfo *GoogleUserInfo, access
 		identity.Name = userInfo.Name
 		identity.AvatarURL = userInfo.Picture
 		if err := s.db.Save(&identity).Error; err != nil {
-			return nil, err
+			return nil, false, err
 		}
-		return &identity.User, nil
+		return &identity.User, false, nil
 	}
 
 	autoRegisterEnabled, err := systemConfig.GetSystemConfigWithType[bool](systemConfig.FEATURE_OAUTH_AUTO_REGISTER)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get auto-register config: %w", err)
+		return nil, false, fmt.Errorf("failed to get auto-register config: %w", err)
 	}
 
 	if !autoRegisterEnabled {
-		return nil, NewAutoRegistrationDisabledError()
+		return nil, false, NewAutoRegistrationDisabledError()
 	}
 
 	// Create new user and identity
@@ -402,7 +351,7 @@ func (s *GoogleOAuthService) handleUserCreation(userInfo *GoogleUserInfo, access
 
 	if err := tx.Create(newUser).Error; err != nil {
 		tx.Rollback()
-		return nil, err
+		return nil, false, err
 	}
 
 	newIdentity := &database.UserIdentity{
@@ -417,12 +366,50 @@ func (s *GoogleOAuthService) handleUserCreation(userInfo *GoogleUserInfo, access
 
 	if err := tx.Create(newIdentity).Error; err != nil {
 		tx.Rollback()
-		return nil, err
+		return nil, false, err
+	}
+
+	// Check if auto-create workspace is enabled and create workspace for new users
+	autoCreateWorkspace, err := systemConfig.GetSystemConfigWithType[bool](systemConfig.AUTO_CREATE_WORKSPACE_ON_REGISTER)
+	if err == nil && autoCreateWorkspace {
+		// Create a default workspace for the new user
+		if err := s.createDefaultWorkspaceForUser(newUser); err != nil {
+			// Log but don't fail the auth flow
+			fmt.Printf("Warning: Failed to create default workspace for user %s: %v\n", newUser.ID, err)
+		}
 	}
 
 	if err := tx.Commit().Error; err != nil {
-		return nil, err
+		return nil, false, err
 	}
 
-	return newUser, nil
+	return newUser, true, nil
+}
+
+// createDefaultWorkspaceForUser creates a default workspace for a new user
+func (s *GoogleOAuthService) createDefaultWorkspaceForUser(user *database.User) error {
+	workspace := &database.Workspace{
+		Name: fmt.Sprintf("%s's Workspace", user.Name),
+	}
+
+	// Create workspace in a transaction
+	return s.db.Transaction(func(tx *gorm.DB) error {
+		// Create the workspace
+		if err := tx.Create(workspace).Error; err != nil {
+			return fmt.Errorf("failed to create workspace: %w", err)
+		}
+
+		// Add the user as an admin
+		userWorkspace := database.UserWorkspace{
+			UserID:      user.ID,
+			WorkspaceID: workspace.ID,
+			Role:        "admin",
+		}
+
+		if err := tx.Create(&userWorkspace).Error; err != nil {
+			return fmt.Errorf("failed to add user to workspace: %w", err)
+		}
+
+		return nil
+	})
 }

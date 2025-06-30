@@ -36,6 +36,7 @@ import (
 	replayHandler "beo-echo/backend/src/replay/handlers"
 	replayServices "beo-echo/backend/src/replay/services"
 	systemConfigHandler "beo-echo/backend/src/systemConfigs/handler"
+	workspacesHandler "beo-echo/backend/src/workspaces/handler"
 )
 
 // SetupRouter creates and configures a new Gin router
@@ -75,6 +76,10 @@ func SetupRouter() *gin.Engine {
 		// MaxAge:           12 * time.Hour,
 	}))
 
+	// Rate limiting middleware - DISABLED for now due to stability issues
+	// TODO: Re-enable once rate limiting middleware is stable
+	// router.Use(middlewares.RateLimitByIP())
+
 	// Setup file upload directory
 	if err := os.MkdirAll(lib.UPLOAD_DIR, os.ModePerm); err != nil {
 		log.Printf("Warning: Failed to create upload directory: %v", err)
@@ -88,23 +93,26 @@ func SetupRouter() *gin.Engine {
 	// Health check route
 	router.GET("/api/health", health.HealthCheckHandler)
 
+	// Public configuration route (no authentication required)
+	router.GET("/api/config/public", systemConfigHandler.GetPublicConfigHandler, middlewares.JWTGetUserIdMiddleware())
+
 	// Initialize user repository for auth service
 	userRepo := repositories.NewUserRepository(database.DB)
 	userService := users.NewUserService(userRepo)
 	userHandler := users.NewUserHandler(userService)
 
-	// Initialize OAuth and Auth services
-	googleOAuthService := authServices.NewGoogleOAuthService(database.DB)
-	googleOAuthHandler := authHandler.NewGoogleOAuthHandler(googleOAuthService)
-	oauthConfigHandler := authHandler.NewOAuthConfigHandler(database.DB)
+	// Initialize auto-invite handler
+	autoInviteHandler := workspacesHandler.NewAutoInviteHandler(database.DB)
 
 	// Initialize workspace module
 	workspaceRepo := repositories.NewWorkspaceRepository(database.DB)
 	workspaceService := workspaces.NewWorkspaceService(workspaceRepo)
-	workspaceHandler := workspaces.NewWorkspaceHandler(workspaceService)
+	workspaceHandler := workspacesHandler.NewWorkspaceHandler(workspaceService)
 
-	// Initialize auto-invite handler
-	autoInviteHandler := workspaces.NewAutoInviteHandler(database.DB)
+	// Initialize OAuth and Auth services
+	googleOAuthService := authServices.NewGoogleOAuthService(database.DB, workspaceService)
+	googleOAuthHandler := authHandler.NewGoogleOAuthHandler(googleOAuthService)
+	oauthConfigHandler := authHandler.NewOAuthConfigHandler(database.DB)
 
 	// Initialize Auth service with user repository
 	authHandler.InitAuthService(database.DB, userRepo)
@@ -135,8 +143,8 @@ func SetupRouter() *gin.Engine {
 		ownerGroup := apiGroup.Group("")
 		ownerGroup.Use(middlewares.OwnerOnlyMiddleware())
 		{
-			apiGroup.GET("/system-config/:key", systemConfigHandler.GetSystemConfigHandler)
-			apiGroup.GET("/system-configs", systemConfigHandler.GetAllSystemConfigsHandler)
+			ownerGroup.GET("/system-config/:key", systemConfigHandler.GetSystemConfigHandler)
+			ownerGroup.GET("/system-configs", systemConfigHandler.GetAllSystemConfigsHandler)
 			ownerGroup.PUT("/system-config/:key", systemConfigHandler.UpdateSystemConfigHandler)
 
 			// OAuth Configuration Routes
@@ -216,6 +224,8 @@ func SetupRouter() *gin.Engine {
 				projectRoutes.GET("/endpoints/:id/responses/:responseId", response.GetResponseHandler)
 				projectRoutes.PUT("/endpoints/:id/responses/:responseId", response.UpdateResponseHandler)
 				projectRoutes.DELETE("/endpoints/:id/responses/:responseId", response.DeleteResponseHandler)
+				projectRoutes.POST("/endpoints/:id/responses/:responseId/duplicate", response.DuplicateResponseHandler)
+				projectRoutes.PUT("/endpoints/:id/responses/reorder", response.ReorderResponsesHandler)
 
 				// Rule management
 				projectRoutes.GET("/endpoints/:id/responses/:responseId/rules", ruleHandler.ListRulesHandler)

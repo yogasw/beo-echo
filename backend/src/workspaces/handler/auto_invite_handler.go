@@ -1,4 +1,4 @@
-package workspaces
+package handler
 
 import (
 	"net/http"

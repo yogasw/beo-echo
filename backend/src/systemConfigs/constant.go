@@ -14,7 +14,21 @@ const (
 
 	AUTO_SAVE_LOGS_IN_DB_ENABLED = "AUTO_SAVE_LOGS_IN_DB_ENABLED" // Enable auto-saving of logs
 
+	// Workspace and Project Limits
+	AUTO_CREATE_WORKSPACE_ON_REGISTER = "AUTO_CREATE_WORKSPACE_ON_REGISTER" // Automatically create a workspace for new users
+	MAX_USER_WORKSPACES               = "MAX_USER_WORKSPACES"               // Maximum number of workspaces a user can create
+	MAX_WORKSPACE_PROJECTS            = "MAX_WORKSPACE_PROJECTS"            // Maximum number of projects allowed in a workspace
+
 	JWT_SECRET = "JWT_SECRET" // JWT secret for signing tokens
+
+	// Default Response Configuration
+	DEFAULT_RESPONSE_PROJECT_NOT_FOUND      = "This is a default response from Beo Echo mock service."       // Default response when project is not found
+	DEFAULT_RESPONSE_ENDPOINT_NOT_FOUND     = "This is a default response from Beo Echo mock service."       // Default response when endpoint is not found
+	DEFAULT_RESPONSE_NO_RESPONSE_CONFIGURED = "This endpoint exists but no specific response is configured." // Default response when no response is configured
+
+	// Landing Page Configuration
+	LANDING_PAGE_ENABLED = "LANDING_PAGE_ENABLED" // Enable/disable landing page
+	MOCK_URL_FORMAT      = "MOCK_URL_FORMAT"      // URL format: "subdomain" or "path"
 )
 
 // DefaultConfigSettings contains all system configuration settings with metadata
@@ -23,13 +37,13 @@ var DefaultConfigSettings = map[SystemConfigKey]ConfigSetting{
 	CUSTOM_SUBDOMAIN_ENABLED: {
 		Type:        TypeBoolean,
 		Value:       "false",
-		Description: "Enable custom subdomains for projects (security implications)",
+		Description: "Enable custom subdomains for projects (security implications) - required restart service to apply",
 		Category:    "Domains",
 	},
 	CUSTOM_SUBDOMAIN_DOMAIN: {
 		Type:        TypeString,
 		Value:       "*.beo-echo.com",
-		Description: "Base domain for custom subdomains",
+		Description: "Base domain for custom subdomains - required restart service to apply",
 		Category:    "Domains",
 	},
 
@@ -64,12 +78,46 @@ var DefaultConfigSettings = map[SystemConfigKey]ConfigSetting{
 		Description: "Automatically persist request logs to database (may affect performance)",
 		Category:    "Logging",
 	},
+
+	// Workspace and Project Limits
+	AUTO_CREATE_WORKSPACE_ON_REGISTER: {
+		Type:        TypeBoolean,
+		Value:       "false",
+		Description: "Automatically create a workspace for new users upon registration",
+		Category:    "Limits",
+	},
+	MAX_USER_WORKSPACES: {
+		Type:        TypeNumber,
+		Value:       "2",
+		Description: "Maximum number of workspaces a user can create",
+		Category:    "Limits",
+	},
+	MAX_WORKSPACE_PROJECTS: {
+		Type:        TypeNumber,
+		Value:       "100",
+		Description: "Maximum number of projects allowed in a workspace",
+		Category:    "Limits",
+	},
 	JWT_SECRET: {
 		Type:        TypeString,
 		Value:       "",
 		Description: "JWT secret for signing tokens",
 		Category:    "Security",
 		HideValue:   true,
+	},
+
+	// Landing Page Configuration
+	LANDING_PAGE_ENABLED: {
+		Type:        TypeBoolean,
+		Value:       "false",
+		Description: "Enable or disable the landing page display",
+		Category:    "Landing Page",
+	},
+	MOCK_URL_FORMAT: {
+		Type:        TypeString,
+		Value:       "subdomain",
+		Description: "Mock URL format: 'subdomain' (alias.domain.com) or 'path' (domain.com/alias)",
+		Category:    "Landing Page",
 	},
 }
 

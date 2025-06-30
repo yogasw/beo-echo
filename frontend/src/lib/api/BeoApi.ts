@@ -9,6 +9,12 @@ interface AuthCredentials {
 	password: string;
 }
 
+export interface PublicConfigResponse {
+	is_authenticated: boolean;
+	landing_enabled: boolean;
+	mock_url_format: string;
+}
+
 export interface ConfigResponse {
 	uuid: string;
 	name: string;
@@ -33,6 +39,7 @@ export type Project = {
 	updated_at: Date;
 	url: string;
 	alias: string;
+	workspace_id: string;
 }
 
 export type RequestLog = {
@@ -182,6 +189,12 @@ export const deleteResponse = async (projectId: string, endpointId: string, resp
 	const response = await apiClient.delete(`/workspaces/${workspaceId}/projects/${projectId}/endpoints/${endpointId}/responses/${responseId}`);
 	return response.data;
 }
+
+export const duplicateResponse = async (projectId: string, endpointId: string, responseId: string): Promise<Response> => {
+	const workspaceId = getCurrentWorkspaceId();
+	const response = await apiClient.post(`/workspaces/${workspaceId}/projects/${projectId}/endpoints/${endpointId}/responses/${responseId}/duplicate`);
+	return response.data.data;
+};
 
 export const updateProjectStatus = async (projectId: string, status: string): Promise<Project> => {
 	let workspaceId = getCurrentWorkspaceId();
@@ -610,7 +623,20 @@ export const deleteBookmark = async (projectId: string, logId: string): Promise<
 	}
 };
 
-// Project advance config management functions
+/**
+ * Reorder responses by updating their priority values
+ * @param projectId Project ID
+ * @param endpointId Endpoint ID
+ * @param responseOrders Array of response IDs in the desired order
+ * @returns Updated responses
+ */
+export const reorderResponses = async (projectId: string, endpointId: string, responseOrders: string[]): Promise<Response[]> => {
+	let workspaceId = getCurrentWorkspaceId();
+	const response = await apiClient.put(`/workspaces/${workspaceId}/projects/${projectId}/endpoints/${endpointId}/responses/reorder`, {
+		order: responseOrders
+	});
+	return response.data.data;
+};
 
 /**
  * Get project advance configuration
@@ -632,5 +658,15 @@ export const getProjectAdvanceConfig = async (projectId: string): Promise<any> =
 export const updateProjectAdvanceConfig = async (projectId: string, config: any): Promise<any> => {
 	let workspaceId = getCurrentWorkspaceId();
 	const response = await apiClient.put(`/workspaces/${workspaceId}/projects/${projectId}/advance-config`, config);
+	return response.data.data;
+};
+
+/**
+ * Get public configuration (landing page settings, authentication status, etc.)
+ * This endpoint is accessible without authentication
+ * @returns Public configuration data
+ */
+export const getPublicConfig = async (): Promise<PublicConfigResponse> => {
+	const response = await apiClient.get('/config/public');
 	return response.data.data;
 };
