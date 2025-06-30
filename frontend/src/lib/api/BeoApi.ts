@@ -9,6 +9,12 @@ interface AuthCredentials {
 	password: string;
 }
 
+export interface PublicConfigResponse {
+	is_authenticated: boolean;
+	landing_enabled: boolean;
+	mock_url_format: string;
+}
+
 export interface ConfigResponse {
 	uuid: string;
 	name: string;
@@ -652,5 +658,15 @@ export const getProjectAdvanceConfig = async (projectId: string): Promise<any> =
 export const updateProjectAdvanceConfig = async (projectId: string, config: any): Promise<any> => {
 	let workspaceId = getCurrentWorkspaceId();
 	const response = await apiClient.put(`/workspaces/${workspaceId}/projects/${projectId}/advance-config`, config);
+	return response.data.data;
+};
+
+/**
+ * Get public configuration (landing page settings, authentication status, etc.)
+ * This endpoint is accessible without authentication
+ * @returns Public configuration data
+ */
+export const getPublicConfig = async (): Promise<PublicConfigResponse> => {
+	const response = await apiClient.get('/config/public');
 	return response.data.data;
 };

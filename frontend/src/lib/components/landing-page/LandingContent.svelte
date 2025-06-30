@@ -1,18 +1,15 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
 	import { isAuthenticated } from '$lib/stores/auth';
 	import { goto } from '$app/navigation';
-	import { getProjects } from '$lib/api/BeoApi';
 	import { toast } from '$lib/stores/toast';
-	import type { Project } from '$lib/api/BeoApi';
-	import SkeletonLoader from '$lib/components/common/SkeletonLoader.svelte';
 	import RecentProjects from '$lib/components/common/RecentProjects.svelte';
-	import { recentProjects as recentProjectsStore } from '$lib/stores/recentProjects';
-	import { theme, toggleTheme } from '$lib/stores/theme';
-
-	let recentProjects: Project[] = [];
+	import { publicConfig } from '$lib/stores/publicConfig';
 	let projectName = '';
 	let isLoading = false;
+
+	// Computed property for URL format display
+	$: urlFormatDisplay = getUrlFormatDisplay(projectName, $publicConfig?.mock_url_format || 'subdomain');
+	$: mockDomain =  $publicConfig?.mock_url_format.replaceAll("/alias", "") || "boe-echo.xyz";
 
 	// Features data for the landing page
 	const features = [
@@ -93,6 +90,25 @@
 
 	// Authentication state
 	$: authenticated = $isAuthenticated;
+
+	// Function to generate URL format display based on configuration
+	function getUrlFormatDisplay(alias: string, format: string): string {
+		const cleanAlias = alias.trim() || 'your-project';
+		
+		// Backend sends the exact format, e.g.:
+		// - "alias.localhost:3600" for subdomain mode
+		// - "localhost:3600/alias" for path mode
+		if (format && format.includes('alias')) {
+			return format.replace('alias', cleanAlias);
+		}
+		
+		// Fallback if format is just "subdomain" or "path" (for backward compatibility)
+		if (format === 'subdomain') {
+			return `${cleanAlias}.localhost:3600`;
+		} else {
+			return `localhost:3600/${cleanAlias}`;
+		}
+	}
 
 	async function createProject() {
 		if (!projectName.trim()) {
@@ -176,23 +192,45 @@
 								</h3>
 
 								<div class="flex flex-col sm:flex-row gap-3 mb-4">
-									<div class="flex-1">
-										<input
-											bind:value={projectName}
-											type="text"
-											placeholder="Enter project name"
-											class="w-full px-3 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-colors text-sm"
-											title="Enter a name for your mock server project"
-											aria-label="Project name input"
-										/>
-									</div>
-									<div class="flex items-center text-gray-500 dark:text-gray-400 text-sm font-medium">
-										.beo-echo.dev
-									</div>
+									{#if $publicConfig?.mock_url_format === 'subdomain'}
+										<!-- Subdomain format: project.domain -->
+										<div class="flex-1 flex focus-within:ring-2 focus-within:ring-indigo-500 rounded-lg">
+											<input
+												bind:value={projectName}
+												type="text"
+												placeholder="your-project"
+												class="flex-1 px-3 py-2.5 rounded-l-lg border border-r-0 border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none transition-colors text-sm"
+												title="Enter a name for your mock server project"
+												aria-label="Project name input"
+											/>
+											<div class="flex items-center px-3 py-2.5 rounded-r-lg border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-600 text-gray-500 dark:text-gray-400 text-sm font-medium">
+												.{mockDomain}
+											</div>
+										</div>
+									{:else}
+										<!-- Path format: domain/project -->
+										<div class="flex-1 flex focus-within:ring-2 focus-within:ring-indigo-500 rounded-lg">
+											<div class="flex items-center px-3 py-2.5 rounded-l-lg border border-r-0 border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-600 text-gray-500 dark:text-gray-400 text-sm font-medium">
+												{mockDomain}/
+											</div>
+											<input
+												bind:value={projectName}
+												type="text"
+												placeholder="your-project"
+												class="flex-1 px-3 py-2.5 rounded-r-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none transition-colors text-sm"
+												title="Enter a name for your mock server project"
+												aria-label="Project name input"
+											/>
+										</div>
+									{/if}
 								</div>
 
 								<p class="text-xs text-gray-600 dark:text-gray-400 mb-4">
-									We'll generate a unique subdomain where you can send HTTP requests and test your APIs.
+									{#if $publicConfig?.mock_url_format === 'subdomain'}
+										Your mock server will be available at: <span class="font-mono text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20 px-2 py-1 rounded">{urlFormatDisplay}</span>
+									{:else}
+										Your mock server will be available at: <span class="font-mono text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20 px-2 py-1 rounded">{urlFormatDisplay}</span>
+									{/if}
 								</p>
 
 								<button
