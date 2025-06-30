@@ -7,25 +7,22 @@
 	import { BASE_URL_API } from '$lib/utils/authUtils';
 	import LandingPageHeader from '$lib/components/landing-page/LandingPageHeader.svelte';
 	import LandingPageFooter from '$lib/components/landing-page/LandingPageFooter.svelte';
-	import { getPublicConfig, type PublicConfigResponse } from '$lib/api/BeoApi';
+	import { publicConfig, loadPublicConfig } from '$lib/stores/publicConfig';
 
 	let email = '';
 	let password = '';
 	let error = '';
 	let loading = false;
 	let showPassword = false;
-	let publicConfig: PublicConfigResponse | null = null;
 	let configLoading = true;
 
 	// Load public configuration
-	async function loadPublicConfig() {
+	async function loadConfig() {
 		try {
 			configLoading = true;
-			publicConfig = await getPublicConfig();
+			await loadPublicConfig();
 		} catch (err) {
 			console.error('Failed to load public config:', err);
-			// On error, default to showing landing page elements
-			publicConfig = { landing_enabled: true, is_authenticated: false, mock_url_format: '' };
 		} finally {
 			configLoading = false;
 		}
@@ -33,7 +30,7 @@
 
 	onMount(async () => {
 		// Load public configuration first
-		await loadPublicConfig();
+		await loadConfig();
 		
 		if ($isAuthenticated) {
 			goto('/home', { replaceState: true });
@@ -159,7 +156,7 @@
 
 <div class="min-h-screen flex flex-col theme-bg-tertiary">
 	<!-- Header - only show if landing page is enabled and config is loaded -->
-	{#if !configLoading && publicConfig?.landing_enabled}
+	{#if !configLoading && $publicConfig?.landing_enabled}
 		<LandingPageHeader 
 			showUserMenu={false}
 			on:back={() => goto('/')}
@@ -284,7 +281,7 @@
 	</div>
 
 	<!-- Footer - only show if landing page is enabled and config is loaded -->
-	{#if !configLoading && publicConfig?.landing_enabled}
+	{#if !configLoading && $publicConfig?.landing_enabled}
 		<LandingPageFooter />
 	{/if}
 </div>

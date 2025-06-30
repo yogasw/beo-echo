@@ -6,24 +6,25 @@
 	import LandingPage from '$lib/components/landing-page/LandingPage.svelte';
 	import SkeletonLoader from '$lib/components/common/SkeletonLoader.svelte';
 	import ErrorDisplay from '$lib/components/common/ErrorDisplay.svelte';
-	import { getPublicConfig, type PublicConfigResponse } from '$lib/api/BeoApi';
+	import { publicConfig, loadPublicConfig } from '$lib/stores/publicConfig';
 	import { toast } from '$lib/stores/toast';
 
 	// State management
-	let publicConfig: PublicConfigResponse | null = null;
 	let isLoading = true;
 	let error: Error | null = null;
 	let showLandingPage = false; // Default to false until config is loaded
 
 	// Load public configuration
-	async function loadPublicConfig() {
+	async function loadConfig() {
 		try {
 			isLoading = true;
 			error = null;
-			publicConfig = await getPublicConfig();
+			
+			// Load config using store (will only hit API once)
+			const config = await loadPublicConfig();
 			
 			// Handle redirection based on configuration and authentication
-			if (publicConfig.landing_enabled) {
+			if (config?.landing_enabled) {
 				showLandingPage = true;
 			} else {
 				// Landing page disabled - redirect based on auth status
@@ -48,7 +49,7 @@
 		console.log('onMount: page - loading public configuration');
 		
 		// Load public configuration first
-		await loadPublicConfig();
+		await loadConfig();
 		
 		// Handle first open behavior
 		if ($isFirstOpenPage) {
@@ -72,7 +73,7 @@
 			message={error.message} 
 			type="error" 
 			retryable={true}
-			onRetry={loadPublicConfig}
+			onRetry={loadConfig}
 		/>
 	</div>
 {:else if showLandingPage}
