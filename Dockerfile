@@ -14,6 +14,9 @@ COPY frontend/package*.json ./
 
 RUN npm install
 
+# Copy VERSION file to the app root for access during build
+COPY VERSION /app/VERSION
+
 # Copy the rest of the frontend code
 COPY frontend/ ./
 
