@@ -9,6 +9,7 @@
 
 	// Computed property for URL format display
 	$: urlFormatDisplay = getUrlFormatDisplay(projectName, $publicConfig?.mock_url_format || 'subdomain');
+	$: mockDomain =  $publicConfig?.mock_url_format.replaceAll("/alias", "") || "boe-echo.xyz";
 
 	// Features data for the landing page
 	const features = [
@@ -94,12 +95,18 @@
 	function getUrlFormatDisplay(alias: string, format: string): string {
 		const cleanAlias = alias.trim() || 'your-project';
 		
+		// Backend sends the exact format, e.g.:
+		// - "alias.localhost:3600" for subdomain mode
+		// - "localhost:3600/alias" for path mode
+		if (format && format.includes('alias')) {
+			return format.replace('alias', cleanAlias);
+		}
+		
+		// Fallback if format is just "subdomain" or "path" (for backward compatibility)
 		if (format === 'subdomain') {
-			// Format: alias.localhost:3600
-			return `${cleanAlias}.beo-echo.dev`;
+			return `${cleanAlias}.localhost:3600`;
 		} else {
-			// Format: localhost:3600/alias (path mode)
-			return `beo-echo.dev/${cleanAlias}`;
+			return `localhost:3600/${cleanAlias}`;
 		}
 	}
 
@@ -197,14 +204,14 @@
 												aria-label="Project name input"
 											/>
 											<div class="flex items-center px-3 py-2.5 rounded-r-lg border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-600 text-gray-500 dark:text-gray-400 text-sm font-medium">
-												.beo-echo.dev
+												.{mockDomain}
 											</div>
 										</div>
 									{:else}
 										<!-- Path format: domain/project -->
 										<div class="flex-1 flex focus-within:ring-2 focus-within:ring-indigo-500 rounded-lg">
 											<div class="flex items-center px-3 py-2.5 rounded-l-lg border border-r-0 border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-600 text-gray-500 dark:text-gray-400 text-sm font-medium">
-												beo-echo.dev/
+												{mockDomain}/
 											</div>
 											<input
 												bind:value={projectName}
