@@ -1,11 +1,9 @@
 <script lang="ts">
 	import {
-		getProxyTargets,
 		updateEndpoint,
 		type ProxyTarget,
 		type Endpoint
 	} from '$lib/api/BeoApi';
-	import { onMount } from 'svelte';
 	import { toast } from '$lib/stores/toast';
 	import * as ThemeUtils from '$lib/utils/themeUtils';
 	import { updateEndpoint as storeUpdateEndpoint } from '$lib/stores/saveButton';

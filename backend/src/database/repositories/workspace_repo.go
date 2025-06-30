@@ -24,7 +24,7 @@ func (r *workspaceRepository) GetAllWorkspaces(ctx context.Context) ([]database.
 }
 
 // NewWorkspaceRepository creates a new workspace repository
-func NewWorkspaceRepository(db *gorm.DB) *workspaceRepository {
+func NewWorkspaceRepository(db *gorm.DB) workspaces.WorkspaceRepository {
 	return &workspaceRepository{db: db}
 }
 
@@ -183,4 +183,77 @@ func (r *workspaceRepository) GetWorkspaceMembers(ctx context.Context, workspace
 	}
 
 	return members, nil
+}
+
+// CountUserWorkspaces counts the number of workspaces a user belongs to
+func (r *workspaceRepository) CountUserWorkspaces(ctx context.Context, userID string) (int, error) {
+	var count int64
+	err := r.db.Table("user_workspaces").
+		Where("user_id = ?", userID).
+		Count(&count).Error
+
+	return int(count), err
+}
+
+// GetUserByID retrieves a user by their ID
+func (r *workspaceRepository) GetUserByID(ctx context.Context, userID string) (*database.User, error) {
+	var user database.User
+	err := r.db.Where("id = ?", userID).First(&user).Error
+	if err != nil {
+		return nil, err
+	}
+	return &user, nil
+}
+
+// GetWorkspacesWithAutoInvite retrieves all workspaces that have auto-invite enabled
+func (r *workspaceRepository) GetWorkspacesWithAutoInvite(ctx context.Context) ([]database.Workspace, error) {
+	var workspaces []database.Workspace
+	err := r.db.Where("auto_invite_enabled = ?", true).Find(&workspaces).Error
+	if err != nil {
+		return nil, err
+	}
+	return workspaces, nil
+}
+
+// CheckUserWorkspaceMembership checks if a user is already a member of a workspace
+func (r *workspaceRepository) CheckUserWorkspaceMembership(ctx context.Context, userID string, workspaceID string) (*database.UserWorkspace, error) {
+	var membership database.UserWorkspace
+	err := r.db.Where("user_id = ? AND workspace_id = ?", userID, workspaceID).First(&membership).Error
+	if err != nil {
+		if err == gorm.ErrRecordNotFound {
+			return nil, nil // User is not a member
+		}
+		return nil, err
+	}
+	return &membership, nil
+}
+
+// CreateUserWorkspaceMembership creates a new user workspace membership record
+func (r *workspaceRepository) CreateUserWorkspaceMembership(ctx context.Context, membership *database.UserWorkspace) error {
+	return r.db.Create(membership).Error
+}
+
+// CreateProject creates a new project
+func (r *workspaceRepository) CreateProject(ctx context.Context, project *database.Project) error {
+	return r.db.Create(project).Error
+}
+
+// CreateEndpoint creates a new mock endpoint
+func (r *workspaceRepository) CreateEndpoint(ctx context.Context, endpoint *database.MockEndpoint) error {
+	return r.db.Create(endpoint).Error
+}
+
+// CreateResponse creates a new mock response
+func (r *workspaceRepository) CreateResponse(ctx context.Context, response *database.MockResponse) error {
+	return r.db.Create(response).Error
+}
+
+// CheckProjectAliasExists checks if a project alias already exists
+func (r *workspaceRepository) CheckProjectAliasExists(ctx context.Context, alias string) (bool, error) {
+	var count int64
+	err := r.db.Model(&database.Project{}).Where("alias = ?", alias).Count(&count).Error
+	if err != nil {
+		return false, err
+	}
+	return count > 0, nil
 }

@@ -1,4 +1,3 @@
-<!-- filepath: /Users/yogasetiawan/code/playground/mockoon-control-panel/frontend/src/lib/components/replay/ReplayManager.svelte -->
 <script lang="ts">
 	import { onMount, onDestroy } from 'svelte';
 	import { selectedWorkspace } from '$lib/stores/workspace';

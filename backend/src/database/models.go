@@ -1,107 +1,11 @@
 package database
 
 import (
-	"encoding/json"
-	"errors"
 	"time"
 
 	"github.com/google/uuid"
 	"gorm.io/gorm"
 )
-
-// AdvanceConfigProject defines advance configuration structure for projects
-type AdvanceConfigProject struct {
-	DelayMs int `json:"delayMs,omitempty"` // Response delay in milliseconds (0-120000)
-}
-
-// AdvanceConfigEndpoint defines advance configuration structure for endpoints
-type AdvanceConfigEndpoint struct {
-	DelayMs int `json:"delayMs,omitempty"` // Response delay in milliseconds (0-120000)
-}
-
-// Validate validates the project advance configuration
-func (a *AdvanceConfigProject) Validate() error {
-	if a.DelayMs < 0 {
-		return errors.New("delayMs cannot be negative")
-	}
-	if a.DelayMs > 120000 {
-		return errors.New("delayMs cannot exceed 120000ms (2 minutes)")
-	}
-	return nil
-}
-
-// Validate validates the endpoint advance configuration
-func (a *AdvanceConfigEndpoint) Validate() error {
-	if a.DelayMs < 0 {
-		return errors.New("delayMs cannot be negative")
-	}
-	if a.DelayMs > 120000 {
-		return errors.New("delayMs cannot exceed 120000ms (2 minutes)")
-	}
-	return nil
-}
-
-// ParseProjectAdvanceConfig parses JSON string to AdvanceConfigProject struct
-func ParseProjectAdvanceConfig(configJSON string) (*AdvanceConfigProject, error) {
-	if configJSON == "" {
-		return &AdvanceConfigProject{}, nil
-	}
-
-	var config AdvanceConfigProject
-	if err := json.Unmarshal([]byte(configJSON), &config); err != nil {
-		return nil, errors.New("invalid JSON format in advance_config")
-	}
-
-	if err := config.Validate(); err != nil {
-		return nil, err
-	}
-
-	return &config, nil
-}
-
-// ParseEndpointAdvanceConfig parses JSON string to AdvanceConfigEndpoint struct
-func ParseEndpointAdvanceConfig(configJSON string) (*AdvanceConfigEndpoint, error) {
-	if configJSON == "" {
-		return &AdvanceConfigEndpoint{}, nil
-	}
-
-	var config AdvanceConfigEndpoint
-	if err := json.Unmarshal([]byte(configJSON), &config); err != nil {
-		return nil, errors.New("invalid JSON format in advance_config")
-	}
-
-	if err := config.Validate(); err != nil {
-		return nil, err
-	}
-
-	return &config, nil
-}
-
-// ToJSON converts AdvanceConfigProject to JSON string
-func (a *AdvanceConfigProject) ToJSON() (string, error) {
-	if a.DelayMs == 0 {
-		return "", nil
-	}
-
-	data, err := json.Marshal(a)
-	if err != nil {
-		return "", err
-	}
-	return string(data), nil
-}
-
-// ToJSON converts AdvanceConfigEndpoint to JSON string
-func (a *AdvanceConfigEndpoint) ToJSON() (string, error) {
-	if a.DelayMs == 0 {
-		return "", nil
-	}
-
-	data, err := json.Marshal(a)
-	if err != nil {
-		return "", err
-	}
-	return string(data), nil
-}
 
 // SystemConfig model for storing system configuration
 type SystemConfig struct {
@@ -309,16 +213,18 @@ func (rl *RequestLog) BeforeCreate(tx *gorm.DB) error {
 // Salt is generated using unixtime + random number (8 bytes total).
 // NOT recommended for cryptographic use — better to use crypto/rand if possible.
 type User struct {
-	ID         string          `gorm:"type:string;primaryKey" json:"id"`                                // Unique user ID
-	Email      string          `gorm:"uniqueIndex" json:"email"`                                        // Unique email (used for login/identity)
-	Name       string          `json:"name"`                                                            // Display name
-	Password   string          `json:"-"`                                                               // Argon2id hashed password (when using password login)
-	IsOwner    bool            `gorm:"default:false" json:"is_owner"`                                   // System-wide owner (can manage SSO configs, manage all workspaces and etc)
-	IsActive   bool            `gorm:"default:true" json:"is_active"`                                   // Whether this user account is active
-	Identities []UserIdentity  `gorm:"foreignKey:UserID;constraint:OnDelete:CASCADE" json:"identities"` // Linked SSO accounts
-	Workspaces []UserWorkspace `gorm:"foreignKey:UserID;constraint:OnDelete:CASCADE" json:"workspaces"` // Memberships in workspaces
-	CreatedAt  time.Time       `gorm:"autoCreateTime" json:"created_at"`
-	UpdatedAt  time.Time       `gorm:"autoUpdateTime" json:"updated_at"`
+	ID                   string          `gorm:"type:string;primaryKey" json:"id"`                                // Unique user ID
+	Email                string          `gorm:"uniqueIndex" json:"email"`                                        // Unique email (used for login/identity)
+	Name                 string          `json:"name"`                                                            // Display name
+	Password             string          `json:"-"`                                                               // Argon2id hashed password (when using password login)
+	IsOwner              bool            `gorm:"default:false" json:"is_owner"`                                   // System-wide owner (can manage SSO configs, manage all workspaces and etc)
+	IsActive             bool            `gorm:"default:true" json:"is_active"`                                   // Whether this user account is active
+	MaxWorkspaces        *int            `gorm:"default:null" json:"max_workspaces"`                              // User-specific workspace limit (overrides system default if set)
+	MaxProjectsWorkspace *int            `gorm:"default:null" json:"max_projects_workspace"`                      // User-specific project limit (overrides system default if set)
+	Identities           []UserIdentity  `gorm:"foreignKey:UserID;constraint:OnDelete:CASCADE" json:"identities"` // Linked SSO accounts
+	Workspaces           []UserWorkspace `gorm:"foreignKey:UserID;constraint:OnDelete:CASCADE" json:"workspaces"` // Memberships in workspaces
+	CreatedAt            time.Time       `gorm:"autoCreateTime" json:"created_at"`
+	UpdatedAt            time.Time       `gorm:"autoUpdateTime" json:"updated_at"`
 }
 
 func (u *User) BeforeCreate(tx *gorm.DB) error {

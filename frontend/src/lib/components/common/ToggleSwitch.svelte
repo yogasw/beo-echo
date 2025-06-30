@@ -20,6 +20,7 @@
     export let name = '';
     export let id = '';
     export let ariaLabel = '';
+    export let title = '';
     
     // Create event dispatcher
     const dispatch = createEventDispatcher<{
@@ -41,13 +42,14 @@
     }
 </script>
 
-<label class="inline-flex items-center cursor-pointer {disabled ? 'opacity-60 cursor-not-allowed' : ''}">
+<label class="relative inline-flex items-center cursor-pointer {disabled ? 'opacity-60 cursor-not-allowed' : ''}">
     <input 
         type="checkbox" 
         bind:checked
         {disabled}
         {name}
         {id}
+        {title}
         aria-label={ariaLabel}
         on:change={handleChange}
         class="sr-only peer"
@@ -58,7 +60,7 @@
         peer-focus:ring-blue-300 dark:peer-focus:ring-blue-600 
         peer-checked:after:translate-x-full peer-checked:after:border-white 
         after:content-[''] after:absolute after:top-[2px] after:start-[2px] 
-        after:bg-white after:rounded-full 
+        after:bg-white after:border-gray-300 after:border after:rounded-full 
         after:transition-all dark:border-gray-600 relative">
     </div>
     
