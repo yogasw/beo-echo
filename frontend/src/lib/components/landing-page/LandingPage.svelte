@@ -26,8 +26,6 @@
 <div class="min-h-screen bg-white dark:bg-gray-900 transition-colors duration-200">
 	<!-- Header -->
 	<LandingPageHeader 
-		showNavigation={true} 
-		showBackButton={false} 
 		showUserMenu={true}
 		on:logout={handleLogout}
 		on:back={handleBackToLanding}
