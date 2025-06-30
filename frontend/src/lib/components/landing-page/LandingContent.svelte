@@ -93,7 +93,7 @@
 
 	// Function to generate URL format display based on configuration
 	function getUrlFormatDisplay(alias: string, format: string): string {
-		const cleanAlias = alias.trim() || 'your-project';
+		const cleanAlias = alias.trim() || 'alias';
 		
 		// Backend sends the exact format, e.g.:
 		// - "alias.localhost:3600" for subdomain mode
@@ -112,7 +112,7 @@
 
 	async function createProject() {
 		if (!projectName.trim()) {
-			toast.error('Please enter a project name');
+			toast.error('Please enter a project alias');
 			return;
 		}
 
@@ -198,10 +198,10 @@
 											<input
 												bind:value={projectName}
 												type="text"
-												placeholder="your-project"
+												placeholder="your-project-alias"
 												class="flex-1 px-3 py-2.5 rounded-l-lg border border-r-0 border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none transition-colors text-sm"
-												title="Enter a name for your mock server project"
-												aria-label="Project name input"
+												title="Enter a alias for your mock server project"
+												aria-label="Project alias input"
 											/>
 											<div class="flex items-center px-3 py-2.5 rounded-r-lg border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-600 text-gray-500 dark:text-gray-400 text-sm font-medium">
 												.{mockDomain}
@@ -216,10 +216,10 @@
 											<input
 												bind:value={projectName}
 												type="text"
-												placeholder="your-project"
+												placeholder="your-project-alias"
 												class="flex-1 px-3 py-2.5 rounded-r-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none transition-colors text-sm"
-												title="Enter a name for your mock server project"
-												aria-label="Project name input"
+												title="Enter a alias for your mock server project"
+												aria-label="Project alias input"
 											/>
 										</div>
 									{/if}
