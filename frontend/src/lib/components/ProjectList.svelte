@@ -15,6 +15,7 @@
 	import { toast } from '$lib/stores/toast';
 	import { resetEndpointsList } from '$lib/stores/saveButton';
 	import * as ThemeUtils from '$lib/utils/themeUtils';
+	import { getVersionWithPrefix } from '$lib/utils/version';
 	import { currentWorkspace, workspaces } from '$lib/stores/workspace';
 	import { isLoadingContentArea } from '$lib/stores/loadingContentArea';
 	import { initializeLogsStream } from '$lib/services/logsService';
@@ -338,7 +339,7 @@
 				{#if panelWidth >= 16}
 					<i class="fas fa-tag mr-1.5 text-xs"></i>
 				{/if}
-				v2.3.2
+				{getVersionWithPrefix('v')}
 			</span>
 
 			<!-- Action Links -->
