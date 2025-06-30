@@ -25,6 +25,10 @@ const (
 	DEFAULT_RESPONSE_PROJECT_NOT_FOUND      = "This is a default response from Beo Echo mock service."       // Default response when project is not found
 	DEFAULT_RESPONSE_ENDPOINT_NOT_FOUND     = "This is a default response from Beo Echo mock service."       // Default response when endpoint is not found
 	DEFAULT_RESPONSE_NO_RESPONSE_CONFIGURED = "This endpoint exists but no specific response is configured." // Default response when no response is configured
+
+	// Landing Page Configuration
+	LANDING_PAGE_ENABLED = "LANDING_PAGE_ENABLED" // Enable/disable landing page
+	MOCK_URL_FORMAT      = "MOCK_URL_FORMAT"      // URL format: "subdomain" or "path"
 )
 
 // DefaultConfigSettings contains all system configuration settings with metadata
@@ -100,6 +104,20 @@ var DefaultConfigSettings = map[SystemConfigKey]ConfigSetting{
 		Description: "JWT secret for signing tokens",
 		Category:    "Security",
 		HideValue:   true,
+	},
+
+	// Landing Page Configuration
+	LANDING_PAGE_ENABLED: {
+		Type:        TypeBoolean,
+		Value:       "false",
+		Description: "Enable or disable the landing page display",
+		Category:    "Landing Page",
+	},
+	MOCK_URL_FORMAT: {
+		Type:        TypeString,
+		Value:       "subdomain",
+		Description: "Mock URL format: 'subdomain' (alias.domain.com) or 'path' (domain.com/alias)",
+		Category:    "Landing Page",
 	},
 }
 
