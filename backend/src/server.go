@@ -94,7 +94,7 @@ func SetupRouter() *gin.Engine {
 	router.GET("/api/health", health.HealthCheckHandler)
 
 	// Public configuration route (no authentication required)
-	router.GET("/api/config/public", systemConfigHandler.GetPublicConfigHandler)
+	router.GET("/api/config/public", systemConfigHandler.GetPublicConfigHandler, middlewares.JWTGetUserIdMiddleware())
 
 	// Initialize user repository for auth service
 	userRepo := repositories.NewUserRepository(database.DB)

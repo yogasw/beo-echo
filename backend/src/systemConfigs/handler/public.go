@@ -23,7 +23,12 @@ func GetPublicConfigHandler(c *gin.Context) {
 	logger := log.Ctx(ctx)
 
 	// Check if user is authenticated (optional for this endpoint)
-	_, isAuthenticated := c.Get("userID")
+	isAuthenticated := false
+	if authValue, exists := c.Get("isAuthenticated"); exists {
+		if authBool, ok := authValue.(bool); ok {
+			isAuthenticated = authBool
+		}
+	}
 
 	// Get required configurations
 	landingEnabled, err := systemConfig.GetSystemConfigWithType[bool](systemConfig.LANDING_PAGE_ENABLED)
@@ -67,19 +72,11 @@ func GetPublicConfigHandler(c *gin.Context) {
 	}
 
 	// Parse boolean values - no longer needed since GetSystemConfigWithType returns proper types
-
 	response := PublicConfigResponse{
 		IsAuthenticated: isAuthenticated,
 		LandingEnabled:  landingEnabled,
 		MockURLFormat:   mockURLFormat,
 	}
-
-	logger.Info().
-		Bool("is_authenticated", isAuthenticated).
-		Bool("landing_enabled", landingEnabled).
-		Str("mock_url_format", mockURLFormat).
-		Bool("custom_subdomain_enabled", customSubdomainEnabled).
-		Msg("Returning public configuration")
 
 	c.JSON(http.StatusOK, gin.H{
 		"success": true,
