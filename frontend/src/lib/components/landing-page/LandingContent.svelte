@@ -8,6 +8,7 @@
 	import { publicConfig } from '$lib/stores/publicConfig';
 	import { onMount } from 'svelte';
 	import { checkAliasAndSearchProjects, type ProjectSearchResult } from '$lib/api/BeoApi';
+	import { sanitizeAlias } from '$lib/utils/aliasUtils';
 	
 	let projectName = '';
 	let isLoading = false;
@@ -147,7 +148,23 @@
 	}
 
 	// Debounced search function
-	function handleSearchInput() {
+	function handleSearchInput(event: Event) {
+		// Get the input element and current value
+		const input = event.target as HTMLInputElement;
+		const rawValue = input.value;
+		
+		// Sanitize the input
+		const sanitizedValue = sanitizeAlias(rawValue);
+		
+		// Update the input value if sanitization changed it
+		if (sanitizedValue !== rawValue) {
+			projectName = sanitizedValue;
+			// Update the input field value to reflect sanitization
+			input.value = sanitizedValue;
+		} else {
+			projectName = sanitizedValue;
+		}
+
 		// Clear previous timeout
 		if (searchTimeout) {
 			clearTimeout(searchTimeout);
@@ -291,16 +308,15 @@
 									<div class="flex flex-col sm:flex-row gap-3 mb-4">
 										{#if $publicConfig?.mock_url_format === 'subdomain'}
 											<!-- Subdomain format: project.domain -->
-											<div class="flex-1 flex focus-within:ring-2 focus-within:ring-indigo-500 rounded-lg">
-												<input
-													bind:value={projectName}
-													on:input={handleSearchInput}
-													type="text"
-													placeholder="your-project-alias"
-													class="flex-1 px-3 py-2.5 rounded-l-lg border border-r-0 border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none transition-colors text-sm"
-													title="Enter a alias for your mock server project"
-													aria-label="Project alias input"
-												/>
+											<div class="flex-1 flex focus-within:ring-2 focus-within:ring-indigo-500 rounded-lg">											<input
+												bind:value={projectName}
+												on:input={handleSearchInput}
+												type="text"
+												placeholder="your-project-alias"
+												class="flex-1 px-3 py-2.5 rounded-l-lg border border-r-0 border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none transition-colors text-sm"
+												title="Enter a alias for your mock server project"
+												aria-label="Project alias input"
+											/>
 												<div class="flex items-center px-3 py-2.5 rounded-r-lg border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-600 text-gray-500 dark:text-gray-400 text-sm font-medium">
 													.{mockDomain}
 												</div>
@@ -310,16 +326,15 @@
 											<div class="flex-1 flex focus-within:ring-2 focus-within:ring-indigo-500 rounded-lg">
 												<div class="flex items-center px-3 py-2.5 rounded-l-lg border border-r-0 border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-600 text-gray-500 dark:text-gray-400 text-sm font-medium">
 													{mockDomain}/
-												</div>
-												<input
-													bind:value={projectName}
-													on:input={handleSearchInput}
-													type="text"
-													placeholder="your-project-alias"
-													class="flex-1 px-3 py-2.5 rounded-r-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none transition-colors text-sm"
-													title="Enter a alias for your mock server project"
-													aria-label="Project alias input"
-												/>
+												</div>											<input
+												bind:value={projectName}
+												on:input={handleSearchInput}
+												type="text"
+												placeholder="your-project-alias"
+												class="flex-1 px-3 py-2.5 rounded-r-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none transition-colors text-sm"
+												title="Enter a alias for your mock server project"
+												aria-label="Project alias input"
+											/>
 											</div>
 										{/if}
 									</div>
@@ -349,6 +364,19 @@
 										<span class="text-red-600 dark:text-red-400">
 											<i class="fas fa-times-circle mr-1"></i>
 											Alias "{projectName}" is already used by another project
+										</span>
+									{:else if projectName.trim()}
+										<span class="text-gray-500 dark:text-gray-400">
+											<i class="fas fa-info-circle mr-1"></i>
+											Only lowercase letters, numbers, and hyphens allowed. Spaces converted to hyphens.
+										</span>
+										<br />
+										<span class="text-gray-600 dark:text-gray-300">
+											{#if $publicConfig?.mock_url_format === 'subdomain'}
+												Your mock server will be available at: <span class="font-mono text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20 px-2 py-1 rounded">{urlFormatDisplay}</span>
+											{:else}
+												Your mock server will be available at: <span class="font-mono text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20 px-2 py-1 rounded">{urlFormatDisplay}</span>
+											{/if}
 										</span>
 									{:else if $publicConfig?.mock_url_format === 'subdomain'}
 										Your mock server will be available at: <span class="font-mono text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20 px-2 py-1 rounded">{urlFormatDisplay}</span>
