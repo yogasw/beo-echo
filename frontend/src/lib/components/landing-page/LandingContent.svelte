@@ -440,7 +440,7 @@
 							<div class="p-1">
 								<RecentProjects 
 									showTitle={false} 
-									maxItems={4}
+									maxItems={5}
 									onProjectSelect={(project) => {
 										// Handle project selection
 										if (authenticated) {
