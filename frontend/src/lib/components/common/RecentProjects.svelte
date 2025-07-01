@@ -80,7 +80,7 @@
 			</div>
 		{/if}
 
-		<div class="divide-y divide-gray-200 dark:divide-gray-700 {showTitle ? '' : 'divide-y-0'}">
+		<div class="divide-y divide-gray-200 dark:divide-gray-700 {showTitle ? '' : 'divide-y-0'} {!showTitle && limitedProjects.length > 2 ? 'max-h-32 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-400 dark:scrollbar-thumb-gray-600 scrollbar-track-transparent' : ''}">
 			{#each limitedProjects as project (project.id)}
 				<div
 					class="group flex items-center justify-between {showTitle

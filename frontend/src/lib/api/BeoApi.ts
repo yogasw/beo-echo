@@ -15,6 +15,20 @@ export interface PublicConfigResponse {
 	mock_url_format: string;
 }
 
+// Project search types (migrated from projectsApi.ts)
+export interface ProjectSearchResult {
+	id: string;
+	name: string;
+	alias: string;
+	workspace_id: string;
+	workspace_name: string;
+}
+
+export interface AliasAvailabilityResponse {
+	available: boolean;
+	projects: ProjectSearchResult[];
+}
+
 export interface ConfigResponse {
 	uuid: string;
 	name: string;
@@ -658,6 +672,16 @@ export const getProjectAdvanceConfig = async (projectId: string): Promise<any> =
 export const updateProjectAdvanceConfig = async (projectId: string, config: any): Promise<any> => {
 	let workspaceId = getCurrentWorkspaceId();
 	const response = await apiClient.put(`/workspaces/${workspaceId}/projects/${projectId}/advance-config`, config);
+	return response.data.data;
+};
+
+/**
+ * Search for existing projects by name/alias and check alias availability
+ * @param query Search query string
+ * @returns Alias availability and matching projects
+ */
+export const checkAliasAndSearchProjects = async (query: string): Promise<AliasAvailabilityResponse> => {
+	const response = await apiClient.post('/projects/check-alias', { query });
 	return response.data.data;
 };
 

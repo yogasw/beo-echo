@@ -43,11 +43,11 @@ func CreateProjectHandler(c *gin.Context) {
 		return
 	}
 
-	// project alias only allow alphanumeric characters, dashes and underscores
+	// project alias only allow lowercase letters, numbers, and hyphens
 	if !handler.IsValidAlias(project.Alias) {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"error":   true,
-			"message": "Project alias can only contain alphanumeric characters, dashes and underscores",
+			"message": "Project alias can only contain lowercase letters, numbers, and hyphens",
 		})
 		return
 	}

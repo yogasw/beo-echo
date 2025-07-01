@@ -7,6 +7,7 @@ import (
 	"github.com/google/uuid"
 )
 
+// recommendation to add this function in init test file to ensure database is initialized before running tests
 // CreateTestWorkspace creates a test workspace and user for testing purposes
 func CreateTestWorkspace(userEmail string, userName string, workspaceName string) (*User, *Workspace, error) {
 	db := DB
