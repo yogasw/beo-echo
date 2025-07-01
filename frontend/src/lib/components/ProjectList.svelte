@@ -27,6 +27,7 @@
 	} from '$lib/utils/localStorage';
 	import { addProjectToRecent } from '$lib/utils/recentProjectUtils';
 	import { sanitizeAlias } from '$lib/utils/aliasUtils';
+	import { scrollToProjectStore } from '$lib/stores/scrollToProject';
 
 	export let searchTerm = '';
 	export let panelWidth: number = getProjectPanelWidth(); // Panel width in rem units (w-72 = 18rem)
@@ -48,6 +49,10 @@
 	let projectAlias = '';
 	let isAddingProject = false;
 	let userEditedAlias = false;
+
+	// For auto-scroll functionality
+	let scrollContainer: HTMLElement;
+	let projectElements: { [key: string]: HTMLElement } = {};
 
 	// For project status updates
 	let updatingStatus: string | null = null;
@@ -120,6 +125,105 @@
 	// Reset the tracking when modal is opened or closed
 	function resetAliasTracking() {
 		userEditedAlias = false;
+	}
+
+	// Auto-scroll to a specific project by ID
+	export function scrollToProject(projectId: string) {
+		if (!scrollContainer) {
+			console.warn('Cannot scroll: missing scroll container');
+			return;
+		}
+
+		// Try to find element by ID first, then by binding
+		let projectElement = projectElements[projectId];
+		if (!projectElement) {
+			// Fallback: find by ID attribute
+			projectElement = scrollContainer.querySelector(`#project-${projectId}`) as HTMLElement;
+		}
+
+		if (!projectElement) {
+			console.warn('Cannot scroll: element not found for project ID:', projectId);
+			return;
+		}
+
+		// Method 1: Try using scrollIntoView with center behavior (most reliable)
+		try {
+			projectElement.scrollIntoView({
+				behavior: 'smooth',
+				block: 'center',
+				inline: 'nearest'
+			});
+			console.log('✅ Scrolled to center using scrollIntoView for project:', projectId);
+			return;
+		} catch (error) {
+			console.log('scrollIntoView failed, falling back to manual calculation:', error);
+		}
+		
+		// Method 2: Fallback to manual calculation
+		const containerHeight = scrollContainer.clientHeight;
+		const elementHeight = projectElement.offsetHeight;
+		const elementTop = projectElement.offsetTop;
+		
+		// Calculate the scroll position to center the element
+		const elementCenter = elementTop + (elementHeight / 2);
+		const containerCenter = containerHeight / 2;
+		const targetScrollTop = elementCenter - containerCenter;
+		
+		// Ensure we don't scroll beyond boundaries
+		const maxScrollTop = scrollContainer.scrollHeight - containerHeight;
+		const finalScrollTop = Math.max(0, Math.min(targetScrollTop, maxScrollTop));
+
+		console.log('📐 Manual scroll calculation for project:', {
+			projectId,
+			elementTop,
+			elementHeight,
+			elementCenter,
+			containerHeight,
+			containerCenter,
+			targetScrollTop,
+			finalScrollTop
+		});
+
+		scrollContainer.scrollTo({
+			top: finalScrollTop,
+			behavior: 'smooth'
+		});
+	}
+
+	// Function to handle external project selection (from recent projects)
+	export async function selectAndScrollToProject(projectId: string) {
+		// Find the project in the current list
+		const project = $projects.find(p => p.id === projectId);
+		if (project) {
+			// First select the project
+			await handleConfigClick(project);
+			// Then scroll to it with a longer delay to ensure DOM updates and animations complete
+			setTimeout(() => scrollToProject(projectId), 300);
+		} else {
+			console.warn('Project not found in current workspace:', projectId);
+			toast.error('Project not found in current workspace');
+		}
+	}
+
+	// Auto-scroll when selectedProject changes (for recent project selection)
+	$: if ($selectedProject && scrollContainer && projectElements[$selectedProject.id]) {
+		// Use longer timeout to ensure DOM has fully updated
+		setTimeout(() => scrollToProject($selectedProject.id), 200);
+	}
+
+	// Listen to explicit scroll requests from external components
+	$: if ($scrollToProjectStore) {
+		const { projectId } = $scrollToProjectStore;
+		setTimeout(() => scrollToProject(projectId), 300);
+		// Reset the store
+		scrollToProjectStore.set(null);
+	}
+
+	// Debug: Log when element bindings change
+	$: if (filteredConfigurations.length > 0) {
+		setTimeout(() => {
+			console.log('Project elements bound:', Object.keys(projectElements).length, 'out of', filteredConfigurations.length);
+		}, 100);
 	}
 
 	async function handleConfigClick(project: Project) {
@@ -483,10 +587,12 @@
 	{/if}
 
 	<!-- Configuration List -->
-	<div class="flex-1 min-h-0 overflow-auto hide-scrollbar">
+	<div class="flex-1 min-h-0 overflow-auto hide-scrollbar" bind:this={scrollContainer}>
 		<div class="space-y-4">
 			{#each filteredConfigurations as project}
 				<div
+					bind:this={projectElements[project.id]}
+					id="project-{project.id}"
 					role="button"
 					tabindex="0"
 					class={ThemeUtils.themeBgSecondary(`p-4 rounded cursor-pointer transition-colors 

@@ -9,6 +9,7 @@ import { get } from 'svelte/store';
 import { logStatus } from '$lib/stores/logStatus';
 import { initializeLogsStream } from '$lib/services/logsService';
 import { activeTab } from '$lib/stores/activeTab';
+import { triggerScrollToProject } from '$lib/stores/scrollToProject';
 
 /**
  * Add a project to the recent projects list with comprehensive error handling
@@ -96,6 +97,8 @@ export async function selectProject(
         // This allows users to immediately see request logs when switching projects
         setTimeout(() => {
             activeTab.set('logs');
+            // Trigger scroll to project after tab is set
+            triggerScrollToProject(project.id);
         }, 200); // Ensure tab switch happens after next tick
 
         return project;
@@ -121,7 +124,7 @@ export function projectToRecentProject(project: Project, workspaceName?: string)
         name: project.name,
         alias: project.alias,
         workspaceName: workspaceName || workspace?.name || 'Unknown Workspace',
-        workspaceId: project.workspace_id || workspace?.id,
+        workspaceId: project.workspace_id || workspace?.id || '',
         mode: project.mode || 'mock',
         lastUsed: new Date().toISOString(),
         url: project.url || '',
