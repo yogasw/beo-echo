@@ -4,6 +4,7 @@
 	import { toast } from '$lib/stores/toast';
 	import RecentProjects from '$lib/components/common/RecentProjects.svelte';
 	import ProjectSearchResults from '$lib/components/common/ProjectSearchResults.svelte';
+	import WorkspaceSelectionModal from '$lib/components/common/WorkspaceSelectionModal.svelte';
 	import { publicConfig } from '$lib/stores/publicConfig';
 	import { onMount } from 'svelte';
 	import { checkAliasAndSearchProjects, type ProjectSearchResult } from '$lib/api/BeoApi';
@@ -15,6 +16,7 @@
 	let searchTimeout: ReturnType<typeof setTimeout>;
 	let isSearching = false;
 	let aliasAvailable = true; // Track if alias is available
+	let showWorkspaceModal = false; // Track workspace selection modal
 
 	// Computed property for URL format display
 	$: urlFormatDisplay = getUrlFormatDisplay(projectName, $publicConfig?.mock_url_format || 'subdomain');
@@ -126,16 +128,17 @@
 			return;
 		}
 
-		isLoading = true;
-		try {
-			// For now, redirect to home to create project
-			// In the future, we can implement inline project creation
-			await goto('/home');
-		} catch (err) {
-			toast.error(err);
-		} finally {
-			isLoading = false;
+		if (!aliasAvailable) {
+			toast.error('This alias is already taken. Please choose a different one.');
+			return;
 		}
+
+		// Show workspace selection modal
+		showWorkspaceModal = true;
+	}
+
+	function handleWorkspaceModalClose() {
+		showWorkspaceModal = false;
 	}
 
 	async function handleLogin() {
@@ -334,15 +337,12 @@
 
 								<button
 									on:click={createProject}
-									disabled={isLoading || (!aliasAvailable && !!projectName.trim())}
+									disabled={(!aliasAvailable && !!projectName.trim())}
 									class="w-full bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 disabled:from-gray-400 disabled:to-gray-500 disabled:cursor-not-allowed text-white py-2.5 px-4 rounded-lg font-medium transition-all duration-200 flex items-center justify-center shadow-lg hover:shadow-xl text-sm"
 									title={(!aliasAvailable && !!projectName.trim()) ? "Alias is not available" : "Create new mock server project"}
 									aria-label={(!aliasAvailable && !!projectName.trim()) ? "Alias is not available" : "Create new mock server project"}
 								>
-									{#if isLoading}
-										<i class="fas fa-spinner fa-spin mr-2"></i>
-										Setting up your server...
-									{:else if !aliasAvailable && projectName.trim()}
+									{#if !aliasAvailable && !!projectName.trim()}
 										<i class="fas fa-exclamation-triangle mr-2"></i>
 										Alias Not Available
 									{:else}
@@ -826,3 +826,11 @@
 		</div>
 	</section>
 </main>
+
+<!-- Workspace Selection Modal -->
+<WorkspaceSelectionModal 
+	isOpen={showWorkspaceModal}
+	{projectName}
+	projectAlias={projectName}
+	onClose={handleWorkspaceModalClose}
+/>
