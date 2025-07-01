@@ -20,6 +20,7 @@
 
 	// Computed property for URL format display
 	$: urlFormatDisplay = getUrlFormatDisplay(projectName, $publicConfig?.mock_url_format || 'subdomain');
+	$: mockDomain =  $publicConfig?.mock_url_format.replaceAll("/alias", "") || "boe-echo.xyz";
 
 	// Features data for the landing page
 	const features = [
@@ -288,18 +289,39 @@
 
 								<div class="search-container relative">
 									<div class="flex flex-col sm:flex-row gap-3 mb-4">
-										<!-- Use a single input with placeholder based on format -->
-										<div class="flex-1 flex focus-within:ring-2 focus-within:ring-indigo-500 rounded-lg">
-											<input
-												bind:value={projectName}
-												on:input={handleSearchInput}
-												type="text"
-												placeholder="your-project-alias"
-												class="flex-1 px-3 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none transition-colors text-sm"
-												title="Enter a alias for your mock server project"
-												aria-label="Project alias input"
-											/>
-										</div>
+										{#if $publicConfig?.mock_url_format === 'subdomain'}
+											<!-- Subdomain format: project.domain -->
+											<div class="flex-1 flex focus-within:ring-2 focus-within:ring-indigo-500 rounded-lg">
+												<input
+													bind:value={projectName}
+													on:input={handleSearchInput}
+													type="text"
+													placeholder="your-project-alias"
+													class="flex-1 px-3 py-2.5 rounded-l-lg border border-r-0 border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none transition-colors text-sm"
+													title="Enter a alias for your mock server project"
+													aria-label="Project alias input"
+												/>
+												<div class="flex items-center px-3 py-2.5 rounded-r-lg border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-600 text-gray-500 dark:text-gray-400 text-sm font-medium">
+													.{mockDomain}
+												</div>
+											</div>
+										{:else}
+											<!-- Path format: domain/project -->
+											<div class="flex-1 flex focus-within:ring-2 focus-within:ring-indigo-500 rounded-lg">
+												<div class="flex items-center px-3 py-2.5 rounded-l-lg border border-r-0 border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-600 text-gray-500 dark:text-gray-400 text-sm font-medium">
+													{mockDomain}/
+												</div>
+												<input
+													bind:value={projectName}
+													on:input={handleSearchInput}
+													type="text"
+													placeholder="your-project-alias"
+													class="flex-1 px-3 py-2.5 rounded-r-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none transition-colors text-sm"
+													title="Enter a alias for your mock server project"
+													aria-label="Project alias input"
+												/>
+											</div>
+										{/if}
 									</div>
 
 									<!-- Search Results Component -->
