@@ -26,6 +26,7 @@
 		setProjectPanelWidth
 	} from '$lib/utils/localStorage';
 	import { addProjectToRecent } from '$lib/utils/recentProjectUtils';
+	import { sanitizeAlias } from '$lib/utils/aliasUtils';
 
 	export let searchTerm = '';
 	export let panelWidth: number = getProjectPanelWidth(); // Panel width in rem units (w-72 = 18rem)
@@ -90,19 +91,9 @@
 		setProjectPanelWidth(panelWidth);
 	}
 
-	// Function to generate alias from project name
-	function generateAlias(name: string): string {
-		// First convert to lowercase and replace spaces with hyphens
-		// Then remove all characters except lowercase letters, numbers, underscores and hyphens
-		return name
-			.toLowerCase()
-			.replace(/\s+/g, '-')
-			.replace(/[^a-z0-9_-]/g, '');
-	}
-
 	// Update project alias when project name changes and user hasn't manually edited the alias
 	$: if (projectName && !userEditedAlias) {
-		projectAlias = generateAlias(projectName);
+		projectAlias = sanitizeAlias(projectName);
 	}
 
 	// Track when user manually edits the alias and enforce validation
@@ -111,14 +102,18 @@
 
 		// Get input element and current value
 		const input = event.target as HTMLInputElement;
-		const currentValue = input.value;
+		const rawValue = input.value;
 
-		// Apply validation rules: lowercase, only allow lowercase letters, numbers, underscores and hyphens
-		const validatedValue = currentValue.toLowerCase().replace(/[^a-z0-9_-]/g, '');
+		// Apply sanitization using the utility function
+		const sanitizedValue = sanitizeAlias(rawValue);
 
-		// Update the value if it was changed by validation
-		if (currentValue !== validatedValue) {
-			projectAlias = validatedValue;
+		// Update the input value if sanitization changed it
+		if (sanitizedValue !== rawValue) {
+			projectAlias = sanitizedValue;
+			// Update the input field value to reflect sanitization
+			input.value = sanitizedValue;
+		} else {
+			projectAlias = sanitizedValue;
 		}
 	}
 
@@ -442,7 +437,7 @@
 						/>
 					</div>
 					<p class="text-xs theme-text-muted mt-1">
-						Only lowercase letters, numbers, underscores (_) and hyphens (-) allowed
+						Only lowercase letters, numbers, and hyphens allowed. Spaces converted to hyphens.
 					</p>
 				</div>
 
