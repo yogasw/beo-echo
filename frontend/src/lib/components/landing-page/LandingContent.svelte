@@ -3,9 +3,21 @@
 	import { goto } from '$app/navigation';
 	import { toast } from '$lib/stores/toast';
 	import RecentProjects from '$lib/components/common/RecentProjects.svelte';
+	import ProjectSearchResults from '$lib/components/common/ProjectSearchResults.svelte';
+	import WorkspaceSelectionModal from '$lib/components/common/WorkspaceSelectionModal.svelte';
 	import { publicConfig } from '$lib/stores/publicConfig';
+	import { onMount } from 'svelte';
+	import { checkAliasAndSearchProjects, type ProjectSearchResult } from '$lib/api/BeoApi';
+	import { sanitizeAlias } from '$lib/utils/aliasUtils';
+	
 	let projectName = '';
 	let isLoading = false;
+	let searchResults: ProjectSearchResult[] = [];
+	let showSearchResults = false;
+	let searchTimeout: ReturnType<typeof setTimeout>;
+	let isSearching = false;
+	let aliasAvailable = true; // Track if alias is available
+	let showWorkspaceModal = false; // Track workspace selection modal
 
 	// Computed property for URL format display
 	$: urlFormatDisplay = getUrlFormatDisplay(projectName, $publicConfig?.mock_url_format || 'subdomain');
@@ -93,7 +105,7 @@
 
 	// Function to generate URL format display based on configuration
 	function getUrlFormatDisplay(alias: string, format: string): string {
-		const cleanAlias = alias.trim() || 'your-project';
+		const cleanAlias = alias.trim() || 'alias';
 		
 		// Backend sends the exact format, e.g.:
 		// - "alias.localhost:3600" for subdomain mode
@@ -110,27 +122,128 @@
 		}
 	}
 
+
+
 	async function createProject() {
 		if (!projectName.trim()) {
-			toast.error('Please enter a project name');
+			toast.error('Please enter a project alias');
 			return;
 		}
 
-		isLoading = true;
-		try {
-			// For now, redirect to home to create project
-			// In the future, we can implement inline project creation
-			await goto('/home');
-		} catch (err) {
-			toast.error(err);
-		} finally {
-			isLoading = false;
+		if (!aliasAvailable) {
+			toast.error('This alias is already taken. Please choose a different one.');
+			return;
 		}
+
+		// Show workspace selection modal
+		showWorkspaceModal = true;
+	}
+
+	function handleWorkspaceModalClose() {
+		showWorkspaceModal = false;
 	}
 
 	async function handleLogin() {
 		await goto('/login');
 	}
+
+	// Debounced search function
+	function handleSearchInput(event: Event) {
+		// Get the input element and current value
+		const input = event.target as HTMLInputElement;
+		const rawValue = input.value;
+		
+		// Sanitize the input
+		const sanitizedValue = sanitizeAlias(rawValue);
+		
+		// Update the input value if sanitization changed it
+		if (sanitizedValue !== rawValue) {
+			projectName = sanitizedValue;
+			// Update the input field value to reflect sanitization
+			input.value = sanitizedValue;
+		} else {
+			projectName = sanitizedValue;
+		}
+
+		// Clear previous timeout
+		if (searchTimeout) {
+			clearTimeout(searchTimeout);
+		}
+
+		// Hide results if input is empty
+		if (!projectName.trim()) {
+			showSearchResults = false;
+			searchResults = [];
+			aliasAvailable = true; // Reset to available when empty
+			return;
+		}
+
+		// Clear search results while searching but don't reset aliasAvailable yet
+		showSearchResults = false;
+		searchResults = [];
+
+		// Set timeout for 500ms
+		searchTimeout = setTimeout(async () => {
+			await searchProjects(projectName);
+		}, 500);
+	}
+
+	// Search for existing projects
+	async function searchProjects(query: string) {
+		if (!query.trim() || !authenticated) return;
+
+		isSearching = true;
+		try {
+			const response = await checkAliasAndSearchProjects(query.trim());
+			if (response.projects) {
+				searchResults = response.projects;
+				showSearchResults = searchResults.length > 0;
+				aliasAvailable = response.available; // Update availability state
+			} else {
+				searchResults = [];
+				showSearchResults = false;
+				aliasAvailable = true; // Default to available if no response
+			}
+		} catch (error) {
+			console.error('Search error:', error);
+			toast.error('Failed to search projects');
+			searchResults = [];
+			showSearchResults = false;
+			aliasAvailable = true; // Default to available on error
+		} finally {
+			isSearching = false;
+		}
+	}
+
+	// Handle project selection from search results
+	function handleProjectSelect(project: ProjectSearchResult) {
+		// Navigate to project management page like recent projects
+		goto(`/home/workspace/${project.workspace_id}/projects/${project.id}`);
+		
+		// Clear search
+		projectName = '';
+		showSearchResults = false;
+		searchResults = [];
+		aliasAvailable = true; // Reset availability
+	}
+
+	// Close search results when clicking outside
+	function handleClickOutside(event: MouseEvent) {
+		const target = event.target as Element;
+		if (target && !target.closest('.search-container')) {
+			showSearchResults = false;
+		}
+	}
+
+	onMount(() => {
+		document.addEventListener('click', handleClickOutside);
+		return () => {
+			document.removeEventListener('click', handleClickOutside);
+			if (searchTimeout) {
+				clearTimeout(searchTimeout);
+			}
+		};
+	});
 </script>
 
 <!-- Main Content -->
@@ -191,42 +304,81 @@
 									Create Your Next Mock Server
 								</h3>
 
-								<div class="flex flex-col sm:flex-row gap-3 mb-4">
-									{#if $publicConfig?.mock_url_format === 'subdomain'}
-										<!-- Subdomain format: project.domain -->
-										<div class="flex-1 flex focus-within:ring-2 focus-within:ring-indigo-500 rounded-lg">
-											<input
+								<div class="search-container relative">
+									<div class="flex flex-col sm:flex-row gap-3 mb-4">
+										{#if $publicConfig?.mock_url_format === 'subdomain'}
+											<!-- Subdomain format: project.domain -->
+											<div class="flex-1 flex focus-within:ring-2 focus-within:ring-indigo-500 rounded-lg">											<input
 												bind:value={projectName}
+												on:input={handleSearchInput}
 												type="text"
-												placeholder="your-project"
+												placeholder="your-project-alias"
 												class="flex-1 px-3 py-2.5 rounded-l-lg border border-r-0 border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none transition-colors text-sm"
-												title="Enter a name for your mock server project"
-												aria-label="Project name input"
+												title="Enter a alias for your mock server project"
+												aria-label="Project alias input"
 											/>
-											<div class="flex items-center px-3 py-2.5 rounded-r-lg border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-600 text-gray-500 dark:text-gray-400 text-sm font-medium">
-												.{mockDomain}
+												<div class="flex items-center px-3 py-2.5 rounded-r-lg border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-600 text-gray-500 dark:text-gray-400 text-sm font-medium">
+													.{mockDomain}
+												</div>
 											</div>
-										</div>
-									{:else}
-										<!-- Path format: domain/project -->
-										<div class="flex-1 flex focus-within:ring-2 focus-within:ring-indigo-500 rounded-lg">
-											<div class="flex items-center px-3 py-2.5 rounded-l-lg border border-r-0 border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-600 text-gray-500 dark:text-gray-400 text-sm font-medium">
-												{mockDomain}/
-											</div>
-											<input
+										{:else}
+											<!-- Path format: domain/project -->
+											<div class="flex-1 flex focus-within:ring-2 focus-within:ring-indigo-500 rounded-lg">
+												<div class="flex items-center px-3 py-2.5 rounded-l-lg border border-r-0 border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-600 text-gray-500 dark:text-gray-400 text-sm font-medium">
+													{mockDomain}/
+												</div>											<input
 												bind:value={projectName}
+												on:input={handleSearchInput}
 												type="text"
-												placeholder="your-project"
+												placeholder="your-project-alias"
 												class="flex-1 px-3 py-2.5 rounded-r-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none transition-colors text-sm"
-												title="Enter a name for your mock server project"
-												aria-label="Project name input"
+												title="Enter a alias for your mock server project"
+												aria-label="Project alias input"
 											/>
+											</div>
+										{/if}
+									</div>
+
+									<!-- Search Results Component -->
+									<ProjectSearchResults 
+										{searchResults}
+										showResults={showSearchResults}
+										onProjectSelect={handleProjectSelect}
+									/>
+
+									<!-- Search Loading Indicator -->
+									{#if isSearching}
+										<div class="absolute right-3 top-[58px] text-gray-400">
+											<i class="fas fa-spinner fa-spin text-sm"></i>
 										</div>
 									{/if}
 								</div>
 
 								<p class="text-xs text-gray-600 dark:text-gray-400 mb-4">
-									{#if $publicConfig?.mock_url_format === 'subdomain'}
+									{#if showSearchResults && searchResults.length > 0}
+										<span class="text-orange-600 dark:text-orange-400">
+											<i class="fas fa-info-circle mr-1"></i>
+											Found existing projects. Click to open or continue typing to create new.
+										</span>
+									{:else if projectName.trim() && !aliasAvailable}
+										<span class="text-red-600 dark:text-red-400">
+											<i class="fas fa-times-circle mr-1"></i>
+											Alias "{projectName}" is already used by another project
+										</span>
+									{:else if projectName.trim()}
+										<span class="text-gray-500 dark:text-gray-400">
+											<i class="fas fa-info-circle mr-1"></i>
+											Only lowercase letters, numbers, and hyphens allowed.
+										</span>
+										<br />
+										<span class="text-gray-600 dark:text-gray-300">
+											{#if $publicConfig?.mock_url_format === 'subdomain'}
+												Your mock server will be available at: <span class="font-mono text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20 px-2 py-1 rounded">{urlFormatDisplay}</span>
+											{:else}
+												Your mock server will be available at: <span class="font-mono text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20 px-2 py-1 rounded">{urlFormatDisplay}</span>
+											{/if}
+										</span>
+									{:else if $publicConfig?.mock_url_format === 'subdomain'}
 										Your mock server will be available at: <span class="font-mono text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20 px-2 py-1 rounded">{urlFormatDisplay}</span>
 									{:else}
 										Your mock server will be available at: <span class="font-mono text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20 px-2 py-1 rounded">{urlFormatDisplay}</span>
@@ -235,17 +387,17 @@
 
 								<button
 									on:click={createProject}
-									disabled={isLoading}
-									class="w-full bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 disabled:from-indigo-400 disabled:to-purple-400 text-white py-2.5 px-4 rounded-lg font-medium transition-all duration-200 flex items-center justify-center shadow-lg hover:shadow-xl text-sm"
-									title="Create new mock server project"
-									aria-label="Create new mock server project"
+									disabled={(!aliasAvailable && !!projectName.trim())}
+									class="w-full bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 disabled:from-gray-400 disabled:to-gray-500 disabled:cursor-not-allowed text-white py-2.5 px-4 rounded-lg font-medium transition-all duration-200 flex items-center justify-center shadow-lg hover:shadow-xl text-sm"
+									title={(!aliasAvailable && !!projectName.trim()) ? "Alias is not available" : "Create new mock server project"}
+									aria-label={(!aliasAvailable && !!projectName.trim()) ? "Alias is not available" : "Create new mock server project"}
 								>
-									{#if isLoading}
-										<i class="fas fa-spinner fa-spin mr-2"></i>
-										Setting up your server...
+									{#if !aliasAvailable && !!projectName.trim()}
+										<i class="fas fa-exclamation-triangle mr-2"></i>
+										Alias Not Available
 									{:else}
 										<i class="fas fa-plus-circle mr-2"></i>
-										Launch Mock Server
+										Create Mock Server
 									{/if}
 								</button>
 							</div>
@@ -288,7 +440,7 @@
 							<div class="p-1">
 								<RecentProjects 
 									showTitle={false} 
-									maxItems={4}
+									maxItems={5}
 									onProjectSelect={(project) => {
 										// Handle project selection
 										if (authenticated) {
@@ -724,3 +876,11 @@
 		</div>
 	</section>
 </main>
+
+<!-- Workspace Selection Modal -->
+<WorkspaceSelectionModal 
+	isOpen={showWorkspaceModal}
+	{projectName}
+	projectAlias={projectName}
+	onClose={handleWorkspaceModalClose}
+/>

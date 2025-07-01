@@ -24,6 +24,7 @@
 	let searchTerm = '';
 	let activeTab = 'routes';
 	let panelWidth: number = 18; // Panel width in rem units (w-72 = 18rem)
+	let projectListComponent: ProjectList;
 
 	// Check authentication from localStorage
 	$: isLoginPage = $page.url.pathname === '/login';
@@ -168,7 +169,7 @@
 	
 	<div class="min-h-screen w-full theme-bg-tertiary theme-text-primary font-sans transition-colors {isDesktopMode() ? 'pt-8' : ''}">
 		<div class="mx-auto flex h-screen">
-			<ProjectList {searchTerm} />
+			<ProjectList {searchTerm} bind:this={projectListComponent} />
 
 			<div class="flex-1 flex flex-col overflow-hidden">
 				<Header on:tabChange={handleTabChange} {handleLogout} />

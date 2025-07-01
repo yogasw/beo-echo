@@ -1,4 +1,3 @@
-````instructions
 # Beo Echo Project Guide
 
 ## MANDATORY ACCESSIBILITY REQUIREMENTS
@@ -1172,31 +1171,280 @@ func SetupRouter() *gin.Engine {
 3. **Clean Architecture**: Clear separation of concerns
 4. **Consistent Patterns**: Standard approach for all features
 
-## Testing Requirements
-- Every new feature must include unit tests
-- Use testify for assertions and mocking
-- Use mockery for generating mocks
-- Test coverage should be maintained or improved
-- Run all tests after any changes
+## MANDATORY TESTING REQUIREMENTS
 
-### Test Structure
+**🚨 CRITICAL: ALL NEW FEATURES MUST INCLUDE COMPREHENSIVE TESTS**
+
+### Backend Testing Standards (MANDATORY)
+
+#### Test Coverage Requirements
+1. **Every new feature MUST include unit tests** - No exceptions
+2. **Integration tests MUST be written for repositories and handlers**
+3. **Test coverage should be maintained or improved** - Never decrease existing coverage
+4. **Use real SQLite database for integration tests** - Not mocks for data layer testing
+5. **All tests MUST pass before committing** - Run `go test ./...` in backend directory
+
+#### Testing Framework and Tools
+- **Primary Framework**: Go's built-in `testing` package
+- **Assertions**: `github.com/stretchr/testify/assert` and `github.com/stretchr/testify/require`
+- **Mocking**: `github.com/stretchr/testify/mock` for service layer mocks
+- **Database Testing**: Use existing `test_helpers.go` functions for SQLite setup
+- **Mock Generation**: Use `mockery` for generating interface mocks when needed
+
+#### Test Structure and Naming
 ```go
-func TestServiceMethod(t *testing.T) {
+// Test function naming: TestFunctionName_Scenario_ExpectedBehavior
+func TestUserService_CreateUser_ValidInput_ReturnsSuccess(t *testing.T) {
     // Given - Setup test dependencies and expectations
-    mockRepo := mocks.NewMockRepository(t)
-    mockRepo.EXPECT().Method(mock.Anything, "input").Return(expectedValue, nil)
+    mockRepo := mocks.NewMockUserRepository(t)
+    mockRepo.EXPECT().Create(mock.Anything, mock.AnythingOfType("*database.User")).Return(nil)
     
-    svc := NewService(mockRepo)
+    service := users.NewUserService(mockRepo)
+    testUser := &database.User{Name: "Test User", Email: "test@example.com"}
     
     // When - Call the method under test
-    result, err := svc.Method(context.Background(), "input")
+    err := service.CreateUser(context.Background(), testUser)
     
     // Then - Verify results and behaviors
     assert.NoError(t, err)
-    assert.Equal(t, expectedValue, result)
     mockRepo.AssertExpectations(t) // Verify all expected calls were made
 }
 ```
+
+#### Table-Driven Tests (Preferred Pattern)
+```go
+func TestUserService_ValidateEmail(t *testing.T) {
+    tests := []struct {
+        name     string
+        email    string
+        expected bool
+        wantErr  bool
+    }{
+        {
+            name:     "valid email",
+            email:    "user@example.com",
+            expected: true,
+            wantErr:  false,
+        },
+        {
+            name:     "invalid email format",
+            email:    "invalid-email",
+            expected: false,
+            wantErr:  true,
+        },
+        {
+            name:     "empty email",
+            email:    "",
+            expected: false,
+            wantErr:  true,
+        },
+    }
+    
+    for _, tt := range tests {
+        t.Run(tt.name, func(t *testing.T) {
+            result, err := validateEmail(tt.email)
+            
+            if tt.wantErr {
+                assert.Error(t, err)
+            } else {
+                assert.NoError(t, err)
+                assert.Equal(t, tt.expected, result)
+            }
+        })
+    }
+}
+```
+
+#### Integration Test Requirements
+For repositories and handlers, use real database connections:
+
+```go
+func TestProjectRepository_CreateProject_Integration(t *testing.T) {
+    // Setup test database using existing helpers
+    user, workspace, err := database.CreateTestWorkspace("test@example.com", "Test User", "Test Workspace")
+    require.NoError(t, err)
+    defer database.CleanupTestWorkspaceAndProject(user.ID, workspace.ID, "")
+    
+    // Create repository with real database
+    repo := repositories.NewProjectRepository(database.DB)
+    
+    // Test data
+    project := &database.Project{
+        Name:        "Test Project",
+        WorkspaceID: workspace.ID,
+        Alias:       "test-project",
+    }
+    
+    // When
+    err = repo.Create(context.Background(), project)
+    
+    // Then
+    assert.NoError(t, err)
+    assert.NotEmpty(t, project.ID)
+    
+    // Verify project was actually created in database
+    var savedProject database.Project
+    err = database.DB.Where("alias = ?", "test-project").First(&savedProject).Error
+    assert.NoError(t, err)
+    assert.Equal(t, project.Name, savedProject.Name)
+}
+```
+
+#### Handler Testing Requirements
+All HTTP handlers MUST include comprehensive tests:
+
+```go
+func TestUserHandler_GetUser_Integration(t *testing.T) {
+    // Setup test database
+    user, workspace, err := database.CreateTestWorkspace("test@example.com", "Test User", "Test Workspace")
+    require.NoError(t, err)
+    defer database.CleanupTestWorkspaceAndProject(user.ID, workspace.ID, "")
+    
+    // Setup Gin router and handler
+    gin.SetMode(gin.TestMode)
+    router := gin.New()
+    
+    userRepo := repositories.NewUserRepository(database.DB)
+    userService := users.NewUserService(userRepo)
+    userHandler := users.NewUserHandler(userService)
+    
+    router.GET("/users/:id", userHandler.GetUser)
+    
+    tests := []struct {
+        name           string
+        userID         string
+        expectedStatus int
+        expectedBody   string
+    }{
+        {
+            name:           "existing user returns success",
+            userID:         user.ID,
+            expectedStatus: http.StatusOK,
+            expectedBody:   user.Email, // Check response contains user email
+        },
+        {
+            name:           "non-existent user returns not found",
+            userID:         "non-existent-id",
+            expectedStatus: http.StatusNotFound,
+            expectedBody:   "User not found",
+        },
+    }
+    
+    for _, tt := range tests {
+        t.Run(tt.name, func(t *testing.T) {
+            // Create request
+            req := httptest.NewRequest(http.MethodGet, "/users/"+tt.userID, nil)
+            w := httptest.NewRecorder()
+            
+            // Perform request
+            router.ServeHTTP(w, req)
+            
+            // Assert response
+            assert.Equal(t, tt.expectedStatus, w.Code)
+            if tt.expectedBody != "" {
+                assert.Contains(t, w.Body.String(), tt.expectedBody)
+            }
+        })
+    }
+}
+```
+
+#### Error Handling Testing (MANDATORY)
+Every function that returns an error MUST have error case tests:
+
+```go
+func TestUserService_CreateUser_DatabaseError_ReturnsError(t *testing.T) {
+    // Given
+    mockRepo := mocks.NewMockUserRepository(t)
+    mockRepo.EXPECT().Create(mock.Anything, mock.AnythingOfType("*database.User")).
+        Return(errors.New("database connection failed"))
+    
+    service := users.NewUserService(mockRepo)
+    testUser := &database.User{Name: "Test User"}
+    
+    // When
+    err := service.CreateUser(context.Background(), testUser)
+    
+    // Then
+    assert.Error(t, err)
+    assert.Contains(t, err.Error(), "database connection failed")
+    mockRepo.AssertExpectations(t)
+}
+```
+
+#### Test File Organization
+```
+backend/src/
+├── users/
+│   ├── service.go
+│   ├── service_test.go      # Unit tests for service logic
+│   ├── handler.go
+│   └── handler_test.go      # Integration tests for HTTP handlers
+├── database/
+│   └── repositories/
+│       ├── user_repo.go
+│       └── user_repo_test.go  # Integration tests with real database
+```
+
+#### Required Test Categories
+1. **Happy Path Tests**: Test successful operations with valid inputs
+2. **Error Handling Tests**: Test all error conditions and edge cases
+3. **Boundary Tests**: Test limits, empty inputs, maximum values
+4. **Integration Tests**: Test complete workflows with real dependencies
+5. **Validation Tests**: Test input validation and business rules
+
+#### Test Data Management
+- **Use test helpers**: Leverage existing `CreateTestWorkspace()` and `CleanupTestWorkspaceAndProject()` functions
+- **Clean up after tests**: Always use `defer` to clean up test data
+- **Isolated tests**: Each test should be independent and not affect others
+- **Realistic test data**: Use meaningful test data that reflects real usage
+
+#### Running Tests Commands
+```bash
+# Run all backend tests (MUST pass before committing)
+cd backend && go test ./...
+
+# Run tests with coverage report
+cd backend && go test -cover ./...
+
+# Run specific package tests
+cd backend && go test ./src/users -v
+
+# Run tests with race detection
+cd backend && go test -race ./...
+
+# Run tests in verbose mode to see all test names
+cd backend && go test -v ./...
+```
+
+#### Pre-commit Test Requirements
+Before committing ANY code changes:
+1. **Run all tests**: `cd backend && go test ./...` - All tests MUST pass
+2. **Check test coverage**: Ensure coverage is maintained or improved
+3. **Run with race detection**: `go test -race ./...` for concurrency issues
+4. **Verify integration tests**: Ensure database tests work with clean state
+
+#### Test Documentation Requirements
+- **Document test scenarios**: Use clear, descriptive test names
+- **Explain complex test setup**: Add comments for non-obvious test arrangements
+- **Document expected behaviors**: Make assertions explicit and clear
+- **Include edge cases**: Document why specific edge cases are tested
+
+### Frontend Testing Standards (RECOMMENDED)
+
+#### Frontend Test Requirements
+- **Component tests**: Test Svelte component behavior and props
+- **Integration tests**: Test complete user workflows
+- **Accessibility tests**: Verify keyboard navigation and screen readers
+- **Visual regression tests**: Ensure UI changes don't break layouts
+
+#### Testing Tools
+- **Unit Testing**: Vitest or Jest for component logic
+- **Integration Testing**: Playwright or Cypress for user workflows
+- **Accessibility Testing**: axe-core for a11y compliance
+- **Visual Testing**: Storybook with visual regression tools
+
+**NO EXCEPTIONS**: These testing requirements are non-negotiable and must be implemented for every new feature.
 
 ## Code Quality Requirements
 

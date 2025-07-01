@@ -46,9 +46,9 @@ func GetProjectURL(scheme, host string, project database.Project) string {
 
 // add validation for project alias
 func IsValidAlias(alias string) bool {
-	// Check if the alias contains only alphanumeric characters, dashes, and underscores
+	// Only allow lowercase letters, numbers, and hyphens
 	for _, char := range alias {
-		if !(char >= 'a' && char <= 'z') && !(char >= 'A' && char <= 'Z') && !(char >= '0' && char <= '9') && char != '-' && char != '_' {
+		if !(char >= 'a' && char <= 'z') && !(char >= '0' && char <= '9') && char != '-' {
 			return false
 		}
 	}
