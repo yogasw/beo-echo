@@ -19,10 +19,7 @@ require (
 	gorm.io/gorm v1.26.1
 )
 
-require (
-	cloud.google.com/go/compute/metadata v0.3.0 // indirect
-	github.com/stretchr/objx v0.5.2 // indirect
-)
+require cloud.google.com/go/compute/metadata v0.3.0 // indirect
 
 require (
 	github.com/andybalholm/brotli v1.1.1

@@ -161,6 +161,9 @@ func SetupRouter() *gin.Engine {
 		apiGroup.PATCH("/users/profile", userHandler.UpdateProfile)
 		apiGroup.POST("/users/change-password", userHandler.UpdatePassword)
 
+		// Project search routes (accessible to all authenticated users)
+		apiGroup.POST("/projects/check-alias", project.CheckAliasAvailabilityHandler)
+
 		// Admin/Owner only user management
 		ownerGroup.GET("/users", userHandler.GetAllUsers)
 		ownerGroup.DELETE("/users/:user_id", userHandler.DeleteUser)
