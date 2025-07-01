@@ -541,7 +541,7 @@
 						/>
 					</div>
 					<p class="text-xs theme-text-muted mt-1">
-						Only lowercase letters, numbers, and hyphens allowed. Spaces converted to hyphens.
+						Only lowercase letters, numbers, and hyphens allowed.
 					</p>
 				</div>
 

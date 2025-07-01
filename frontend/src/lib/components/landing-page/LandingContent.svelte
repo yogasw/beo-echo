@@ -368,7 +368,7 @@
 									{:else if projectName.trim()}
 										<span class="text-gray-500 dark:text-gray-400">
 											<i class="fas fa-info-circle mr-1"></i>
-											Only lowercase letters, numbers, and hyphens allowed. Spaces converted to hyphens.
+											Only lowercase letters, numbers, and hyphens allowed.
 										</span>
 										<br />
 										<span class="text-gray-600 dark:text-gray-300">
