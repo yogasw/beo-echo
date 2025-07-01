@@ -31,7 +31,7 @@ func (r *projectSearchRepository) CheckAliasAvailability(ctx context.Context, al
 
 // SearchProjectsByNameInUserWorkspaces searches for projects by name in workspaces the user has joined
 func (r *projectSearchRepository) SearchProjectsByNameInUserWorkspaces(ctx context.Context, userID, searchQuery string) ([]services.ProjectSearchResult, error) {
-	var results []services.ProjectSearchResult
+	results := make([]services.ProjectSearchResult, 0) // Initialize as empty slice, not nil
 	
 	query := `
 		SELECT 

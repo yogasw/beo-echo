@@ -2,6 +2,7 @@ package project
 
 import (
 	"net/http"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 	"github.com/rs/zerolog/log"
@@ -13,7 +14,7 @@ import (
 
 // CheckAliasAvailabilityRequest represents the request body for alias availability check
 type CheckAliasAvailabilityRequest struct {
-	Query string `json:"query" binding:"required"`
+	Query string `json:"query"`
 }
 
 // CheckAliasAvailabilityHandler checks if a project alias is available and searches for similar projects
@@ -62,13 +63,13 @@ func CheckAliasAvailabilityHandler(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"success": false,
 			"message": "Invalid request format",
-			"error":   err.Error(),
 		})
 		return
 	}
 
-	// Validate query length
-	if len(request.Query) < 1 {
+	// Validate query length (trim whitespace)
+	trimmedQuery := strings.TrimSpace(request.Query)
+	if len(trimmedQuery) < 1 {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"success": false,
 			"message": "Query must be at least 1 character long",
@@ -81,9 +82,9 @@ func CheckAliasAvailabilityHandler(c *gin.Context) {
 	projectSearchService := services.NewProjectSearchService(projectSearchRepo)
 
 	// Check alias availability and search for similar projects
-	result, err := projectSearchService.CheckAliasAndSearchProjects(c.Request.Context(), userIDStr, request.Query)
+	result, err := projectSearchService.CheckAliasAndSearchProjects(c.Request.Context(), userIDStr, trimmedQuery)
 	if err != nil {
-		log.Error().Err(err).Str("user_id", userIDStr).Str("query", request.Query).Msg("Failed to check alias availability")
+		log.Error().Err(err).Str("user_id", userIDStr).Str("query", trimmedQuery).Msg("Failed to check alias availability")
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"success": false,
 			"message": "Failed to check alias availability",
