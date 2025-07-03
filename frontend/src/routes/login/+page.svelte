@@ -10,7 +10,10 @@
 	import { publicConfig, loadPublicConfig } from '$lib/stores/publicConfig';
 
 	// Check if we're in landing mode (build time environment variable)
-	const LANDING_MODE = import.meta.env.VITE_LANDING_MODE === 'true';
+	let LANDING_MODE = import.meta.env.VITE_LANDING_MODE === 'true';
+	if (browser) {
+		LANDING_MODE = false; // Ensure this is false in browser context
+	}
 
 	let email = '';
 	let password = '';
@@ -23,13 +26,13 @@
 	async function loadConfig() {
 		try {
 			configLoading = true;
-			
+
 			// If in landing mode, skip API calls and use defaults
 			if (LANDING_MODE) {
 				configLoading = false;
 				return;
 			}
-			
+
 			await loadPublicConfig();
 		} catch (err) {
 			console.error('Failed to load public config:', err);
@@ -44,10 +47,10 @@
 			configLoading = false;
 			return;
 		}
-		
+
 		// Load public configuration first
 		await loadConfig();
-		
+
 		if ($isAuthenticated) {
 			goto('/home', { replaceState: true });
 			// window.location.reload();
@@ -100,7 +103,7 @@
 			const success = params.get('success');
 			const user = params.get('user');
 			const sso = params.get('sso');
-			
+
 			// Preserve any returnUrl or other important params
 			const returnUrl = params.get('returnUrl');
 			const preservedParams = new URLSearchParams();
@@ -115,7 +118,7 @@
 				// Store the token and additional info
 				localStorage.setItem('sso_provider', sso || '');
 				auth.setToken(token);
-				
+
 				// If we have a returnUrl, go there, otherwise go to home
 				if (returnUrl) {
 					goto(returnUrl, { replaceState: true });
@@ -126,10 +129,10 @@
 			}
 
 			// Clean up sensitive params but preserve others
-			const cleanUrl = preservedParams.toString() 
+			const cleanUrl = preservedParams.toString()
 				? `/login?${preservedParams.toString()}`
 				: '/login';
-			
+
 			if (oauthError || success) {
 				window.history.replaceState({}, '', cleanUrl);
 			}
@@ -152,10 +155,10 @@
 			params.delete('success');
 			params.delete('user');
 			params.delete('sso');
-			
+
 			const queryString = params.toString() ? `?${params.toString()}` : '';
 			const redirectUri = `${currentURL}${queryString}`;
-			
+
 			console.log('Redirecting to Google OAuth with redirect URI:', redirectUri);
 			window.location.href = `${BASE_URL_API}/oauth/google/login?redirect_uri=${encodeURIComponent(redirectUri)}`;
 		} catch (err: any) {
@@ -171,17 +174,13 @@
 </svelte:head>
 
 <div class="min-h-screen flex flex-col theme-bg-tertiary">
-	<!-- Header - always show in landing mode or when landing enabled -->
-	{#if LANDING_MODE || (!configLoading && $publicConfig?.landing_enabled)}
-		<LandingPageHeader 
-			showUserMenu={false}
-			on:back={() => goto('/')}
-		/>
+	<!-- Header - only show if landing page is enabled and config is loaded -->
+	{#if !configLoading && ($publicConfig?.landing_enabled || LANDING_MODE)}
+		<LandingPageHeader showUserMenu={false} on:back={() => goto('/')} />
 	{/if}
 
 	<!-- Main Content -->
 	<div class="flex-1 flex items-center justify-center relative">
-
 		<div class="w-full max-w-md p-8">
 			<div class="text-center mb-8">
 				<h1 class="text-4xl font-bold theme-text-primary mb-2">Beo Echo</h1>
@@ -259,12 +258,7 @@
 						</div>
 					{/if}
 
-					<Button
-						type="submit"
-						disabled={loading || !email || !password}
-						loading={loading}
-						fullWidth
-					>
+					<Button type="submit" disabled={loading || !email || !password} {loading} fullWidth>
 						Sign In
 					</Button>
 				</form>
@@ -286,7 +280,7 @@
 					variant="outline"
 					on:click={handleGoogleLogin}
 					disabled={loading}
-					loading={loading}
+					{loading}
 					fullWidth
 				>
 					<img src="/images/providers/google.svg" alt="Google" class="w-5 h-5" />
@@ -296,8 +290,8 @@
 		</div>
 	</div>
 
-	<!-- Footer - always show in landing mode or when landing enabled -->
-	{#if LANDING_MODE || (!configLoading && $publicConfig?.landing_enabled)}
+	<!-- Footer - only show if landing page is enabled and config is loaded -->
+	{#if !configLoading && ($publicConfig?.landing_enabled || LANDING_MODE)}
 		<LandingPageFooter />
 	{/if}
 </div>

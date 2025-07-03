@@ -22,7 +22,7 @@
 				<ul class="space-y-2 text-sm">
 					<li>
 						<a 
-							href="#features" 
+							href="/#features" 
 							class="text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition-colors" 
 							title="View features" 
 							aria-label="View features"
@@ -32,7 +32,7 @@
 					</li>
 					<li>
 						<a 
-							href="#modes" 
+							href="/#modes" 
 							class="text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition-colors" 
 							title="View operating modes" 
 							aria-label="View operating modes"
@@ -42,7 +42,7 @@
 					</li>
 					<li>
 						<a 
-							href="#pricing" 
+							href="/#pricing" 
 							class="text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition-colors" 
 							title="View pricing plans" 
 							aria-label="View pricing plans"

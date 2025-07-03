@@ -8,9 +8,13 @@
 	import ErrorDisplay from '$lib/components/common/ErrorDisplay.svelte';
 	import { publicConfig, loadPublicConfig } from '$lib/stores/publicConfig';
 	import { toast } from '$lib/stores/toast';
+	import { browser } from '$app/environment';
 
 	// Check if we're in landing mode (build time environment variable)
-	const LANDING_MODE = import.meta.env.VITE_LANDING_MODE === 'true';
+	let LANDING_MODE = import.meta.env.VITE_LANDING_MODE === 'true';
+	if (browser) {
+		LANDING_MODE = false; // Ensure this is false in browser context
+	}
 
 	// State management
 	let isLoading = !LANDING_MODE; // Don't show loading if in landing mode
@@ -22,16 +26,16 @@
 		try {
 			isLoading = true;
 			error = null;
-			
+
 			// If in landing mode, always show landing page
 			if (LANDING_MODE) {
 				showLandingPage = true;
 				return;
 			}
-			
+
 			// Load config using store (will only hit API once)
 			const config = await loadPublicConfig();
-			
+
 			// Handle redirection based on configuration and authentication
 			if (config?.landing_enabled) {
 				showLandingPage = true;
@@ -56,16 +60,16 @@
 
 	onMount(async () => {
 		console.log('onMount: page - loading public configuration');
-		
+
 		// If in landing mode, skip API calls and show landing immediately
 		if (LANDING_MODE) {
 			isLoading = false;
 			return;
 		}
-		
+
 		// Load public configuration first
 		await loadConfig();
-		
+
 		// Handle first open behavior
 		if ($isFirstOpenPage) {
 			isFirstOpenPage.set(false);
@@ -89,12 +93,7 @@
 	{:else if error}
 		<!-- Show error with retry option -->
 		<div class="min-h-screen flex items-center justify-center theme-bg-primary">
-			<ErrorDisplay 
-				message={error.message} 
-				type="error" 
-				retryable={true}
-				onRetry={loadConfig}
-			/>
+			<ErrorDisplay message={error.message} type="error" retryable={true} onRetry={loadConfig} />
 		</div>
 	{:else if showLandingPage}
 		<!-- Show landing page if enabled -->

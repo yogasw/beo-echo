@@ -41,7 +41,7 @@
 						<!-- Clickable Logo -->
 						<a
 							href="/"
-							class="flex items-center hover:opacity-80 transition-opacity"
+							class="flex items-center hover:opacity-80 transition-opacity no-underline hover:no-underline"
 							title="Go to home page"
 							aria-label="Go to Beo Echo home page"
 						>
