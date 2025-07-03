@@ -125,7 +125,7 @@
 						>
 							<i class="fas fa-tachometer-alt mr-2"></i>
 							<span class="hidden sm:inline">Dashboard</span>
-							<span class="sm:hidden">Go</span>
+							<span class="sm:hidden">Dashboard</span>
 						</button>
 					</div>
 				{:else}
