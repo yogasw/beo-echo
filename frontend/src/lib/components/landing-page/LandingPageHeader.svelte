@@ -9,10 +9,6 @@
 	// Props
 	export let showUserMenu = true; // Show user menu when authenticated
 
-	async function handleLogin() {
-		await goto('/login');
-	}
-
 	async function handleLogout() {
 		await auth.logout();
 		dispatch('logout');
@@ -41,7 +37,7 @@
 						<!-- Clickable Logo -->
 						<a
 							href="/"
-							class="flex items-center hover:opacity-80 transition-opacity"
+							class="flex items-center hover:opacity-80 transition-opacity no-underline hover:no-underline"
 							title="Go to home page"
 							aria-label="Go to Beo Echo home page"
 						>
@@ -116,23 +112,23 @@
 					{:else}
 						<!-- Login/Signup Buttons for non-authenticated users -->
 						<div class="flex items-center space-x-2">
-							<button
-								on:click={handleLogin}
+							<a
+								href="/login"
 								class="px-4 py-2 text-sm font-medium text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-all duration-200"
 								title="Sign in to your account"
 								aria-label="Sign in to your account"
 							>
 								Sign in
-							</button>
-							<button
-								on:click={handleLogin}
+							</a>
+							<a
+								href="/login"
 								class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center"
 								title="Get started with Beo Echo"
 								aria-label="Get started with Beo Echo"
 							>
 								<i class="fas fa-rocket mr-2"></i>
 								Get Started
-							</button>
+							</a>
 						</div>
 					{/if}
 
