@@ -32,7 +32,7 @@
 
 	async function fetchConfigs(workspaceId: string) {
 		try {
-			const projectsData = await getProjects(workspaceId);
+			const projectsData = await getProjects();
 			projects.set(projectsData);
 		} catch (err) {
 			console.error('Failed to fetch projects:', err);
