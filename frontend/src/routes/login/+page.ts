@@ -1,5 +1,5 @@
 // This file ensures the page loads correctly with query parameters in a static build
-const LANDING_MODE = process.env.VITE_LANDING_MODE === 'true';
+const LANDING_MODE = import.meta.env.VITE_LANDING_MODE === 'true';
 
 export const prerender = true;
 export const ssr = LANDING_MODE; // Enable SSR for landing mode
