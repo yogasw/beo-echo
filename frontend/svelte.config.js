@@ -2,6 +2,10 @@ import adapter from '@sveltejs/adapter-static';
 
 import { vitePreprocess } from '@sveltejs/vite-plugin-svelte';
 
+// Check build modes
+const isDesktopMode = process.env.VITE_DESKTOP_MODE === 'true';
+const isLandingMode = process.env.VITE_LANDING_MODE === 'true';
+
 /** @type {import('@sveltejs/kit').Config} */
 const config = {
 	// Consult https://svelte.dev/docs/kit/integrations
@@ -19,16 +23,22 @@ const config = {
 		adapter: adapter({
 			// default options are shown. On some platforms
 			// these options are set automatically — see below
-			pages: process.env.VITE_DESKTOP_MODE ? '../desktop/frontend' : 'build',
-			assets: process.env.VITE_DESKTOP_MODE ? '../desktop/frontend' : 'build',
-			fallback: 'index.html', // Add fallback for SPA behavior
+			pages: isDesktopMode ? '../desktop/frontend' : 'build',
+			assets: isDesktopMode ? '../desktop/frontend' : 'build',
+			fallback: isLandingMode ? null : 'index.html', // No fallback for SSG landing, fallback for SPA
 			precompress: false,
 			strict: false
-		})
+		}),
+		
+		// Configure prerendering for landing page SSG
+		prerender: {
+			entries: isLandingMode ? ['/', '/login', '*'] : ['/'], // Always prerender root and login in landing mode
+			handleHttpError: 'warn',
+			handleMissingId: 'warn',
+			handleEntryGeneratorMismatch: 'warn'
+		}
 	}
 	
 };
 
 export default config;
-
-
