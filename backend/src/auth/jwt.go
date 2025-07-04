@@ -20,15 +20,15 @@ type JWTClaims struct {
 	jwt.RegisteredClaims
 }
 
-// GenerateToken creates a new JWT token for the given user with 15 minutes expiry
+// GenerateToken creates a new JWT access token for the given user with 1 day expiry
 func GenerateToken(user *database.User) (string, error) {
 	// Create the claims
 	claims := JWTClaims{
 		UserID: user.ID,
 		Name:   user.Name,
 		RegisteredClaims: jwt.RegisteredClaims{
-			// Token expires in 15 minutes
-			ExpiresAt: jwt.NewNumericDate(time.Now().Add(15 * time.Minute)),
+			// Token expires in 1 day
+			ExpiresAt: jwt.NewNumericDate(time.Now().Add(24 * time.Hour)),
 			IssuedAt:  jwt.NewNumericDate(time.Now()),
 			NotBefore: jwt.NewNumericDate(time.Now()),
 		},
