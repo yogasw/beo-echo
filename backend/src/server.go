@@ -72,7 +72,7 @@ func SetupRouter() *gin.Engine {
 		AllowMethods:     []string{"GET", "POST", "PUT", "PATCH", "DELETE", "HEAD", "OPTIONS"},
 		AllowHeaders:     []string{"Origin", "Content-Length", "Content-Type", "Authorization", "X-Requested-With", "Accept"},
 		ExposeHeaders:    []string{"Content-Range", "X-Content-Range"},
-		AllowCredentials: true,
+		AllowCredentials: false, // No need for credentials since we use localStorage
 		// MaxAge:           12 * time.Hour,
 	}))
 

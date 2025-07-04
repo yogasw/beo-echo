@@ -34,6 +34,11 @@ type RegisterRequest struct {
 	Password string `json:"password" binding:"required,min=6"`
 }
 
+// RefreshRequest represents the refresh token request
+type RefreshRequest struct {
+	RefreshToken string `json:"refresh_token" binding:"required"`
+}
+
 // LoginHandler handles user authentication and returns a JWT token
 func LoginHandler(c *gin.Context) {
 	var request LoginRequest
@@ -93,22 +98,12 @@ func LoginHandler(c *gin.Context) {
 		return
 	}
 
-	// Set refresh token in HTTP-only cookie (30 days)
-	c.SetCookie(
-		"refresh_token", // name
-		refreshToken,    // value
-		30*24*60*60,     // maxAge (30 days in seconds)
-		"/",             // path
-		"",              // domain (empty = same domain)
-		true,            // secure (true for HTTPS)
-		true,            // httpOnly
-	)
-
-	// Return the access token and user info
+	// Return the access token, refresh token, and user info
 	c.JSON(http.StatusOK, gin.H{
-		"success": true,
-		"message": "Login successful",
-		"token":   token,
+		"success":       true,
+		"message":       "Login successful",
+		"token":         token,
+		"refresh_token": refreshToken,
 		"user": gin.H{
 			"id":        user.ID,
 			"email":     user.Email,
@@ -121,21 +116,18 @@ func LoginHandler(c *gin.Context) {
 
 // RefreshTokenHandler handles refresh token requests and returns a new access token
 func RefreshTokenHandler(c *gin.Context) {
-	// Get refresh token from cookie
-	refreshToken, err := c.Cookie("refresh_token")
-	if err != nil {
-		c.JSON(http.StatusUnauthorized, gin.H{
+	var request RefreshRequest
+	if err := c.ShouldBindJSON(&request); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
 			"success": false,
-			"message": "No refresh token found",
+			"message": "Invalid request: " + err.Error(),
 		})
 		return
 	}
 
 	// Validate refresh token and get user
-	user, err := userService.ValidateRefreshToken(c.Request.Context(), refreshToken)
+	user, err := userService.ValidateRefreshToken(c.Request.Context(), request.RefreshToken)
 	if err != nil {
-		// Clear invalid refresh token cookie
-		c.SetCookie("refresh_token", "", -1, "/", "", true, true)
 		c.JSON(http.StatusUnauthorized, gin.H{
 			"success": false,
 			"message": "Invalid or expired refresh token",
@@ -143,7 +135,7 @@ func RefreshTokenHandler(c *gin.Context) {
 		return
 	}
 
-	// Generate new access token (15 minutes)
+	// Generate new access token (24 hours)
 	newToken, err := auth.GenerateToken(user)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
@@ -153,37 +145,22 @@ func RefreshTokenHandler(c *gin.Context) {
 		return
 	}
 
-	// Check if refresh token should be rotated (every 7 days)
-	shouldRotate := auth.ShouldRotateRefreshToken(refreshToken)
-
-	if shouldRotate {
-		// Generate new refresh token for rotation (only after 7 days)
-		newRefreshToken, err := userService.SaveRefreshToken(c.Request.Context(), user.ID)
-		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{
-				"success": false,
-				"message": "Failed to generate new refresh token: " + err.Error(),
-			})
-			return
-		}
-
-		// Update refresh token cookie with new token
-		c.SetCookie(
-			"refresh_token",
-			newRefreshToken,
-			30*24*60*60, // 30 days
-			"/",
-			"",
-			true, // secure
-			true, // httpOnly
-		)
+	// Always generate new refresh token and invalidate old one
+	newRefreshToken, err := userService.SaveRefreshToken(c.Request.Context(), user.ID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"success": false,
+			"message": "Failed to generate new refresh token: " + err.Error(),
+		})
+		return
 	}
 
-	// Return new access token
+	// Return new access token and new refresh token
 	c.JSON(http.StatusOK, gin.H{
-		"success": true,
-		"message": "Token refreshed successfully",
-		"token":   newToken,
+		"success":       true,
+		"message":       "Token refreshed successfully",
+		"token":         newToken,
+		"refresh_token": newRefreshToken,
 		"user": gin.H{
 			"id":        user.ID,
 			"name":      user.Name,
@@ -210,9 +187,6 @@ func LogoutHandler(c *gin.Context) {
 		// Log error but don't fail the logout
 		c.Header("X-Warning", "Failed to clear refresh token from database")
 	}
-
-	// Clear refresh token cookie
-	c.SetCookie("refresh_token", "", -1, "/", "", true, true)
 
 	c.JSON(http.StatusOK, gin.H{
 		"success": true,
