@@ -44,7 +44,6 @@ func JWTGetUserIdMiddleware() gin.HandlerFunc {
 
 		// Set user info in the context for handlers to use
 		c.Set("userID", claims.UserID)
-		c.Set("email", claims.Email)
 		c.Set("name", claims.Name)
 		c.Set("isAuthenticated", true)
 

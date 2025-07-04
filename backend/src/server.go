@@ -72,7 +72,7 @@ func SetupRouter() *gin.Engine {
 		AllowMethods:     []string{"GET", "POST", "PUT", "PATCH", "DELETE", "HEAD", "OPTIONS"},
 		AllowHeaders:     []string{"Origin", "Content-Length", "Content-Type", "Authorization", "X-Requested-With", "Accept"},
 		ExposeHeaders:    []string{"Content-Range", "X-Content-Range"},
-		AllowCredentials: true,
+		AllowCredentials: false, // No need for credentials since we use localStorage
 		// MaxAge:           12 * time.Hour,
 	}))
 
@@ -130,6 +130,8 @@ func SetupRouter() *gin.Engine {
 
 	// Authentication routes
 	router.POST("/api/auth/login", authHandler.LoginHandler)
+	router.POST("/api/auth/refresh", authHandler.RefreshTokenHandler)
+	router.POST("/api/auth/logout", middlewares.JWTAuthMiddleware(), authHandler.LogoutHandler)
 
 	// Public OAuth routes
 	router.GET("/api/oauth/google/login", googleOAuthHandler.InitiateLogin)

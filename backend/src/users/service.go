@@ -1,6 +1,7 @@
 package users
 
 import (
+	"beo-echo/backend/src/auth"
 	"beo-echo/backend/src/database"
 	systemConfig "beo-echo/backend/src/systemConfigs"
 	"context"
@@ -17,6 +18,11 @@ type UserRepository interface {
 	UpdateUserFields(ctx context.Context, userID string, updates map[string]interface{}) error
 	DeleteUser(ctx context.Context, userID string) error
 	VerifyPassword(ctx context.Context, userID string, password string) (bool, error)
+
+	// Refresh Token Management
+	UpdateRefreshToken(ctx context.Context, userID string, hashedToken string) error
+	GetUserByRefreshToken(ctx context.Context, hashedToken string) (*database.User, error)
+	ClearRefreshToken(ctx context.Context, userID string) error
 
 	// Workspace-User Relationship
 	GetWorkspaceUsers(ctx context.Context, workspaceID string) ([]database.User, error)
@@ -215,4 +221,60 @@ func (s *UserService) UpdateUserWorkspaceRole(ctx context.Context, workspaceID s
 	}
 
 	return s.repo.UpdateUserWorkspaceRole(ctx, workspaceID, userID, role)
+}
+
+// SaveRefreshToken generates and saves a refresh token for the user
+func (s *UserService) SaveRefreshToken(ctx context.Context, userID string) (string, error) {
+	// Get user to validate they exist
+	user, err := s.repo.GetUserByID(ctx, userID)
+	if err != nil {
+		return "", err
+	}
+
+	// Generate refresh token
+	refreshToken, err := auth.GenerateRefreshToken(user)
+	if err != nil {
+		return "", err
+	}
+
+	// Hash the token for storage
+	hashedToken := auth.HashRefreshToken(refreshToken)
+
+	// Save hashed token to database (JWT expiry is handled by token validation)
+	err = s.repo.UpdateRefreshToken(ctx, userID, hashedToken)
+	if err != nil {
+		return "", err
+	}
+
+	return refreshToken, nil
+}
+
+// ValidateRefreshToken validates a refresh token and returns the user
+func (s *UserService) ValidateRefreshToken(ctx context.Context, refreshToken string) (*database.User, error) {
+	// First validate the JWT structure
+	claims, err := auth.ValidateRefreshToken(refreshToken)
+	if err != nil {
+		return nil, err
+	}
+
+	// Hash the token to match database storage
+	hashedToken := auth.HashRefreshToken(refreshToken)
+
+	// Find user by hashed token and check expiry
+	user, err := s.repo.GetUserByRefreshToken(ctx, hashedToken)
+	if err != nil {
+		return nil, err
+	}
+
+	// Additional validation - ensure token belongs to the same user
+	if user.ID != claims.UserID {
+		return nil, errors.New("token user mismatch")
+	}
+
+	return user, nil
+}
+
+// ClearRefreshToken removes the refresh token for a user (logout)
+func (s *UserService) ClearRefreshToken(ctx context.Context, userID string) error {
+	return s.repo.ClearRefreshToken(ctx, userID)
 }
