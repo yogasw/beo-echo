@@ -100,6 +100,7 @@
 			const oauthError = params.get('error');
 			const errorMessage = params.get('message');
 			const token = params.get('token');
+			const refreshToken = params.get('refresh_token');
 			const success = params.get('success');
 			const user = params.get('user');
 			const sso = params.get('sso');
@@ -114,10 +115,10 @@
 			if (oauthError) {
 				console.log('OAuth error detected:', oauthError, errorMessage);
 				error = errorMessage || 'Authentication failed. Please contact an administrator.';
-			} else if (success && token && user) {
+			} else if (success && token && user && refreshToken) {
 				// Store the token and additional info
 				localStorage.setItem('sso_provider', sso || '');
-				auth.setToken(token);
+				auth.setToken(token, refreshToken);
 
 				// If we have a returnUrl, go there, otherwise go to home
 				if (returnUrl) {
