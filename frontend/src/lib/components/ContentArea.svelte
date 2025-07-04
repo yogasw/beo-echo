@@ -10,6 +10,7 @@
 	import { activeTab } from '$lib/stores/activeTab';
 	import * as ThemeUtils from '$lib/utils/themeUtils';
 	import { isLoadingContentArea } from '$lib/stores/loadingContentArea';
+	import BeoEchoLoader from './common/BeoEchoLoader.svelte';
 	export let activeContentTab = 'Status & Body';
 	let error = '';
 </script>
@@ -40,7 +41,11 @@
 		</div>
 	{:else if $isLoadingContentArea}
 		<div class="flex items-center justify-center h-full min-h-[300px]">
-			<div class="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-blue-500"></div>
+			<BeoEchoLoader 
+				message="Loading project..." 
+				size="md"
+				animated={true}
+			/>
 		</div>
 	{:else if error}
 		<div class="text-red-500 text-center p-4 bg-red-100/10 rounded-md border border-red-500/20">
