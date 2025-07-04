@@ -47,7 +47,7 @@
 {#if loading}
   <div class="flex items-center justify-center h-full min-h-[300px]">
 		<BeoEchoLoader 
-				size="md"
+				size="lg"
 				animated={true}
 			/>  </div>
 {:else if error}
