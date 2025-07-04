@@ -12,6 +12,7 @@ import (
 	auth "beo-echo/backend/src/auth"
 	"beo-echo/backend/src/database"
 	systemConfig "beo-echo/backend/src/systemConfigs"
+	"beo-echo/backend/src/users"
 
 	"beo-echo/backend/src/workspaces"
 
@@ -30,13 +31,14 @@ type GoogleOAuthConfig struct {
 
 // GoogleOAuthService handles business logic for Google OAuth operations
 type GoogleOAuthService struct {
-	db         *gorm.DB
-	workspaces *workspaces.WorkspaceService // Reference to WorkspaceService for workspace operations
+	db          *gorm.DB
+	workspaces  *workspaces.WorkspaceService // Reference to WorkspaceService for workspace operations
+	userService *users.UserService
 }
 
 // NewGoogleOAuthService creates a new GoogleOAuthService instance
-func NewGoogleOAuthService(db *gorm.DB, workspaces *workspaces.WorkspaceService) *GoogleOAuthService {
-	return &GoogleOAuthService{db: db, workspaces: workspaces}
+func NewGoogleOAuthService(db *gorm.DB, workspaces *workspaces.WorkspaceService, userService *users.UserService) *GoogleOAuthService {
+	return &GoogleOAuthService{db: db, workspaces: workspaces, userService: userService}
 }
 
 // SaveGoogleConfig saves Google OAuth configuration
@@ -151,28 +153,28 @@ type GoogleUserInfo struct {
 }
 
 // HandleOAuthCallback processes the OAuth callback flow
-func (s *GoogleOAuthService) HandleOAuthCallback(ctx context.Context, code string, baseURL string) (*database.User, string, error) {
+func (s *GoogleOAuthService) HandleOAuthCallback(ctx context.Context, code string, baseURL string) (*database.User, string, string, error) {
 	// 1. Exchange code for tokens
 	tokens, err := s.exchangeCodeForTokens(code, baseURL)
 	if err != nil {
-		return nil, "", fmt.Errorf("failed to exchange code for tokens: %w", err)
+		return nil, "", "", fmt.Errorf("failed to exchange code for tokens: %w", err)
 	}
 
 	// 2. Get user info
 	userInfo, err := s.fetchGoogleUserInfo(tokens.AccessToken)
 	if err != nil {
-		return nil, "", fmt.Errorf("failed to get user info: %w", err)
+		return nil, "", "", fmt.Errorf("failed to get user info: %w", err)
 	}
 
 	// 3. Validate domain
 	if err := s.validateUserDomain(userInfo.Email); err != nil {
-		return nil, "", err
+		return nil, "", "", err
 	}
 
 	// 4. Create/update user and identity with auto-register check
 	user, isNewUser, err := s.handleUserCreation(userInfo, tokens.AccessToken)
 	if err != nil {
-		return nil, "", fmt.Errorf("failed to handle user creation: %w", err)
+		return nil, "", "", fmt.Errorf("failed to handle user creation: %w", err)
 	}
 
 	// 5. Process auto-invite based on email domain
@@ -186,17 +188,23 @@ func (s *GoogleOAuthService) HandleOAuthCallback(ctx context.Context, code strin
 		}
 
 		if err := s.workspaces.AutoCreateWorkspaceOnRegister(ctx, user.ID, user.Name); err != nil {
-			return nil, "", fmt.Errorf("failed to auto create workspace: %w", err)
+			return nil, "", "", fmt.Errorf("failed to auto create workspace: %w", err)
 		}
 	}
 
 	// 6. Generate JWT token
 	token, err := auth.GenerateToken(user)
 	if err != nil {
-		return nil, "", fmt.Errorf("failed to generate JWT token: %w", err)
+		return nil, "", "", fmt.Errorf("failed to generate JWT token: %w", err)
 	}
 
-	return user, token, nil
+	// Always generate new refresh token and invalidate old one
+	newRefreshToken, err := s.userService.SaveRefreshToken(ctx, user.ID)
+	if err != nil {
+		return nil, "", "", fmt.Errorf("failed to save refresh token: %w", err)
+	}
+
+	return user, token, newRefreshToken, nil
 }
 
 // GetLoginURL generates the Google OAuth login URL

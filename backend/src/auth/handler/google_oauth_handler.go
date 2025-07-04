@@ -246,7 +246,7 @@ func (h *GoogleOAuthHandler) HandleCallback(c *gin.Context) {
 
 	baseURL := fmt.Sprintf("%s://%s", scheme, c.Request.Host)
 
-	user, token, err := h.service.HandleOAuthCallback(ctx, code, baseURL)
+	user, token, refreshToken, err := h.service.HandleOAuthCallback(ctx, code, baseURL)
 	if err != nil {
 		var errorURL string
 
@@ -278,9 +278,10 @@ func (h *GoogleOAuthHandler) HandleCallback(c *gin.Context) {
 	}
 
 	// Send token in URL for frontend to handle with SSO flag
-	successURL := fmt.Sprintf("%s?success=true&token=%s&user=%s&sso=google",
+	successURL := fmt.Sprintf("%s?success=true&token=%s&refresh_token=%s&user=%s&sso=google",
 		frontendRedirectURI,
 		url.QueryEscape(token),
+		url.QueryEscape(refreshToken),
 		url.QueryEscape(user.Email))
 	c.Redirect(http.StatusTemporaryRedirect, successURL)
 }

@@ -13,6 +13,7 @@ interface AuthState {
   isLoading: boolean;
   error: string | null;
   is_owner: boolean;
+  refreshToken: string | null;
 }
 
 // Initial state
@@ -22,7 +23,8 @@ const initialState: AuthState = {
   isAuthenticated: false,
   isLoading: false,
   error: null,
-  is_owner: false
+  is_owner: false,
+  refreshToken: browser ? localStorage.getItem('refresh_token') : null
 };
 
 // Create the store
@@ -288,16 +290,18 @@ export const auth = {
   },
 
   // update token from sso
-  setToken: (token: string): void => {
+  setToken: (token: string, refreshToken: string): void => {
     authStore.update(state => ({
       ...state,
       token: token,
+      refreshToken: refreshToken,
       isAuthenticated: true
     }));
 
     // Save token to local storage
     if (browser) {
       localStorage.setItem('auth_token', token);
+      localStorage.setItem('refresh_token', refreshToken);
     }
   }
 };
