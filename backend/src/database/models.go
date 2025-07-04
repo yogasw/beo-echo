@@ -221,6 +221,7 @@ type User struct {
 	IsActive             bool            `gorm:"default:true" json:"is_active"`                                   // Whether this user account is active
 	MaxWorkspaces        *int            `gorm:"default:null" json:"max_workspaces"`                              // User-specific workspace limit (overrides system default if set)
 	MaxProjectsWorkspace *int            `gorm:"default:null" json:"max_projects_workspace"`                      // User-specific project limit (overrides system default if set)
+	RefreshToken         *string         `gorm:"type:string" json:"-"`                                            // Refresh token (hashed) - only one session per user
 	Identities           []UserIdentity  `gorm:"foreignKey:UserID;constraint:OnDelete:CASCADE" json:"identities"` // Linked SSO accounts
 	Workspaces           []UserWorkspace `gorm:"foreignKey:UserID;constraint:OnDelete:CASCADE" json:"workspaces"` // Memberships in workspaces
 	CreatedAt            time.Time       `gorm:"autoCreateTime" json:"created_at"`

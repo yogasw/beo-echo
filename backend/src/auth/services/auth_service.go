@@ -10,6 +10,9 @@ import (
 // UserRepository defines the data access interface needed for authentication
 type UserRepository interface {
 	GetUserByEmail(ctx context.Context, email string) (*database.User, error)
+	UpdateRefreshToken(ctx context.Context, userID string, hashedToken string) error
+	GetUserByRefreshToken(ctx context.Context, hashedToken string) (*database.User, error)
+	ClearRefreshToken(ctx context.Context, userID string) error
 }
 
 // AuthService provides authentication related services
@@ -40,4 +43,9 @@ func (s *AuthService) GetUserByEmailDirect(email string) (*database.User, error)
 		return nil, result.Error
 	}
 	return &user, nil
+}
+
+// GetUserRepository returns the user repository interface
+func (s *AuthService) GetUserRepository() UserRepository {
+	return s.repo
 }
