@@ -43,7 +43,7 @@
 		<div class="flex items-center justify-center h-full min-h-[300px]">
 			<BeoEchoLoader 
 				message="Loading project..." 
-				size="md"
+				size="lg"
 				animated={true}
 			/>
 		</div>
