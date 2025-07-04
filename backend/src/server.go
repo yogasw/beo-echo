@@ -130,6 +130,8 @@ func SetupRouter() *gin.Engine {
 
 	// Authentication routes
 	router.POST("/api/auth/login", authHandler.LoginHandler)
+	router.POST("/api/auth/refresh", authHandler.RefreshTokenHandler)
+	router.POST("/api/auth/logout", middlewares.JWTAuthMiddleware(), authHandler.LogoutHandler)
 
 	// Public OAuth routes
 	router.GET("/api/oauth/google/login", googleOAuthHandler.InitiateLogin)

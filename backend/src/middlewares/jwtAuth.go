@@ -55,7 +55,6 @@ func JWTAuthMiddleware() gin.HandlerFunc {
 
 		// Set user info in the context for handlers to use
 		c.Set("userID", claims.UserID)
-		c.Set("email", claims.Email)
 		c.Set("name", claims.Name)
 
 		// Get user from database to check if they're an owner
