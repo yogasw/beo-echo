@@ -139,3 +139,25 @@ func (r *userRepository) UpdateUserWorkspaceRole(ctx context.Context, workspaceI
 		Where("workspace_id = ? AND user_id = ?", workspaceID, userID).
 		Update("role", role).Error
 }
+
+// UpdateRefreshToken updates the user's refresh token
+func (r *userRepository) UpdateRefreshToken(ctx context.Context, userID string, hashedToken string) error {
+	return r.db.Model(&database.User{}).
+		Where("id = ?", userID).
+		Update("refresh_token", hashedToken).Error
+}
+
+// GetUserByRefreshToken retrieves a user by their refresh token
+// JWT expiry validation is handled by the JWT validation process
+func (r *userRepository) GetUserByRefreshToken(ctx context.Context, hashedToken string) (*database.User, error) {
+	var user database.User
+	err := r.db.Where("refresh_token = ?", hashedToken).First(&user).Error
+	return &user, err
+}
+
+// ClearRefreshToken removes the refresh token from a user
+func (r *userRepository) ClearRefreshToken(ctx context.Context, userID string) error {
+	return r.db.Model(&database.User{}).
+		Where("id = ?", userID).
+		Update("refresh_token", nil).Error
+}

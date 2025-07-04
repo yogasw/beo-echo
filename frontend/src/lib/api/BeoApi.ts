@@ -134,23 +134,118 @@ apiClient.interceptors.request.use(
 );
 
 let isRedirectingToLogin = false;
-// Add response interceptor for handling auth errors
+let isRefreshing = false;
+let refreshPromise: Promise<string> | null = null;
+let failedQueue: Array<{
+	resolve: (value: any) => void;
+	reject: (reason?: any) => void;
+}> = [];
+
+const processQueue = (error: any, token: string | null = null) => {
+	failedQueue.forEach(prom => {
+		if (error) {
+			prom.reject(error);
+		} else {
+			prom.resolve(token);
+		}
+	});
+	
+	failedQueue = [];
+};
+
+// Add response interceptor for handling auth errors with automatic token refresh
 apiClient.interceptors.response.use(
 	response => response,
-	error => {
-		console.log('route', error.response?.config.url);
-		if (error.response?.status === 401) {
-			console.error('Authentication failed');
-			// Use auth store logout to properly clear token and state
-			auth.logout();
-			// Prevent multiple redirects
-			if (!isRedirectingToLogin) {
-				isRedirectingToLogin = true;
-				setTimeout(() => {
-					isRedirectingToLogin = false;
-				}, 2000);
+	async error => {
+		const originalRequest = error.config;
+		
+		// Only handle 401 errors for non-auth endpoints
+		if (error.response?.status === 401 && !originalRequest._retry) {
+			// Skip refresh token endpoint to avoid infinite loop
+			if (originalRequest.url?.includes('/auth/refresh')) {
+				console.log('Refresh token endpoint failed, logging out');
+				auth.logout();
+				return Promise.reject(error);
+			}
+
+			// Mark this request as retried to avoid infinite loops
+			originalRequest._retry = true;
+
+			if (isRefreshing) {
+				// If we're already refreshing, queue this request
+				console.log('Queueing request while refreshing token:', originalRequest.url);
+				return new Promise((resolve, reject) => {
+					failedQueue.push({ 
+						resolve: (token: string) => {
+							if (token) {
+								originalRequest.headers['Authorization'] = 'Bearer ' + token;
+								resolve(apiClient(originalRequest));
+							} else {
+								reject(new Error('Token refresh failed'));
+							}
+						}, 
+						reject 
+					});
+				});
+			}
+
+			console.log('Starting token refresh due to 401 error for:', originalRequest.url);
+			isRefreshing = true;
+
+			// If there's already a refresh in progress, wait for it
+			if (refreshPromise) {
+				try {
+					const newToken = await refreshPromise;
+					originalRequest.headers['Authorization'] = 'Bearer ' + newToken;
+					return apiClient(originalRequest);
+				} catch (refreshError) {
+					return Promise.reject(refreshError);
+				}
+			}
+
+			// Start new refresh process
+			refreshPromise = auth.refreshToken();
+
+			try {
+				// Attempt to refresh token
+				const newToken = await refreshPromise;
+				console.log('Token refreshed successfully');
+				
+				// Update authorization header for the original request
+				if (originalRequest.headers) {
+					originalRequest.headers['Authorization'] = 'Bearer ' + newToken;
+				}
+				
+				// Process any queued requests with the new token
+				processQueue(null, newToken);
+				
+				// Retry the original request
+				return apiClient(originalRequest);
+			} catch (refreshError) {
+				console.error('Token refresh failed:', refreshError);
+				
+				// Refresh failed, reject all queued requests
+				processQueue(refreshError, null);
+				
+				// Logout user
+				auth.logout();
+				
+				// Prevent multiple redirects
+				if (!isRedirectingToLogin) {
+					isRedirectingToLogin = true;
+					setTimeout(() => {
+						isRedirectingToLogin = false;
+					}, 2000);
+				}
+				
+				return Promise.reject(refreshError);
+			} finally {
+				isRefreshing = false;
+				refreshPromise = null;
 			}
 		}
+
+		// For non-401 errors or already retried requests, reject normally
 		return Promise.reject(error);
 	}
 );

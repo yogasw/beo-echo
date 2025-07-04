@@ -68,7 +68,7 @@ export const auth = {
             id: payload.user_id,
             email: payload.email,
             name: payload.name,
-            isOwner: false // Will be updated from API
+            is_owner: false // Will be updated from API
           };
 
           // Update with basic info first
@@ -138,9 +138,12 @@ export const auth = {
         throw new Error(data.message || 'Failed to login');
       }
 
-      // Save token to local storage
+      // Save tokens to local storage
       if (browser && data.token) {
         localStorage.setItem('auth_token', data.token);
+      }
+      if (browser && data.refresh_token) {
+        localStorage.setItem('refresh_token', data.refresh_token);
       }
 
       // Update store with user data
@@ -169,11 +172,75 @@ export const auth = {
     }
   },
 
+  // Refresh token
+  refreshToken: async () => {
+    const refreshToken = browser ? localStorage.getItem('refresh_token') : null;
+    
+    console.log('Attempting to refresh token...');
+    
+    if (!refreshToken) {
+      console.error('No refresh token available in localStorage');
+      throw new Error('No refresh token available');
+    }
+
+    try {
+      console.log('Sending refresh token request...');
+      const response = await fetch(`${BASE_URL_API}/auth/refresh`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ refresh_token: refreshToken })
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        console.error('Refresh token request failed:', response.status, data);
+        // If refresh fails, clear tokens and redirect to login
+        if (browser) {
+          localStorage.removeItem('auth_token');
+          localStorage.removeItem('refresh_token');
+        }
+        throw new Error(data.message || 'Failed to refresh token');
+      }
+
+      console.log('Token refresh successful, updating tokens...');
+
+      // Save new tokens
+      if (browser && data.token) {
+        localStorage.setItem('auth_token', data.token);
+      }
+      if (browser && data.refresh_token) {
+        localStorage.setItem('refresh_token', data.refresh_token);
+      }
+
+      // Update store with new token
+      authStore.update(state => ({
+        ...state,
+        token: data.token,
+        error: null
+      }));
+
+      console.log('Token refresh completed successfully');
+      return data.token;
+    } catch (error: any) {
+      console.error('Token refresh failed:', error);
+      // Clear auth state on refresh failure
+      if (browser) {
+        localStorage.removeItem('auth_token');
+        localStorage.removeItem('refresh_token');
+      }
+      throw error;
+    }
+  },
+
   // Logout
   logout: () => {
-    // Remove token from local storage
+    // Remove tokens from local storage
     if (browser) {
       localStorage.removeItem('auth_token');
+      localStorage.removeItem('refresh_token');
     }
 
     // Reset auth store

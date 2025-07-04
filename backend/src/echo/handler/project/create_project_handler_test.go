@@ -277,7 +277,7 @@ func TestCreateProjectHandler(t *testing.T) {
 		require.NoError(t, err)
 
 		assert.True(t, response["error"].(bool))
-		assert.Contains(t, response["message"].(string), "alphanumeric characters, dashes and underscores")
+		assert.Contains(t, response["message"].(string), "lowercase letters, numbers, and hyphens")
 	})
 
 	t.Run("Create Project With Duplicate Alias", func(t *testing.T) {
