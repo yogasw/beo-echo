@@ -16,7 +16,15 @@
 </script>
 
 <div class={ThemeUtils.themeBgPrimary('content-area')}>
-	{#if $activeTab === 'workspace-settings'}
+	{#if $isLoadingContentArea}
+		<div class="flex items-center justify-center h-full min-h-[300px]">
+			<BeoEchoLoader 
+				message="Loading project..." 
+				size="lg"
+				animated={true}
+			/>
+		</div>
+	{:else if $activeTab === 'workspace-settings'}
 		<!-- Always render workspace settings tab regardless of project selection -->
 		<div class="tab-content">
 			<WorkspaceSettingsTab />
@@ -38,14 +46,6 @@
 			<p class="theme-text-secondary">
 				Please select a configuration from the list to view its details.
 			</p>
-		</div>
-	{:else if $isLoadingContentArea}
-		<div class="flex items-center justify-center h-full min-h-[300px]">
-			<BeoEchoLoader 
-				message="Loading project..." 
-				size="lg"
-				animated={true}
-			/>
 		</div>
 	{:else if error}
 		<div class="text-red-500 text-center p-4 bg-red-100/10 rounded-md border border-red-500/20">
