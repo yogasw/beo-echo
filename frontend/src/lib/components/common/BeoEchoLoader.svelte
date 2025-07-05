@@ -2,14 +2,29 @@
 	/**
 	 * Beautiful Beo Echo loading component inspired by the favicon design
 	 * Supports light/dark themes with smooth animations
+	 * Features smart loading with delay to prevent jarring flash for quick operations
 	 * 
 	 * @prop {string} message - Loading message to display
 	 * @prop {boolean} animated - Whether to show animations (default: true)
 	 * @prop {string} size - Size variant: 'sm', 'md', 'lg' (default: 'md')
+	 * @prop {number} delay - Delay before showing loader in ms (default: 500)
+	 * @prop {number} minShowTime - Minimum time to show loader once displayed (default: 300)
+	 * @prop {boolean} isLoading - External loading state (optional)
 	 */
 	export let message: string = 'Loading...';
 	export let animated: boolean = true;
 	export let size: 'sm' | 'md' | 'lg' = 'md';
+	export let delay: number = 500;
+	export let minShowTime: number = 300;
+	export let isLoading: boolean = true;
+
+	import { onDestroy } from 'svelte';
+
+	// Smart loading state management
+	let showLoader = false;
+	let loadingStartTime: number | null = null;
+	let showTimeout: ReturnType<typeof setTimeout> | null = null;
+	let hideTimeout: ReturnType<typeof setTimeout> | null = null;
 
 	// Size configurations
 	const sizeConfig = {
@@ -31,8 +46,81 @@
 	};
 
 	$: config = sizeConfig[size];
+
+	// Watch for loading state changes with smart delay
+	$: handleLoadingChange(isLoading);
+
+	function handleLoadingChange(loading: boolean) {
+		if (loading) {
+			startSmartLoading();
+		} else {
+			stopSmartLoading();
+		}
+	}
+
+	function startSmartLoading() {
+		// Clear any existing timeouts
+		clearTimeouts();
+		
+		loadingStartTime = Date.now();
+		showLoader = false;
+
+		// Set timeout to show loader after delay
+		showTimeout = setTimeout(() => {
+			if (isLoading) { // Only show if still loading
+				showLoader = true;
+			}
+		}, delay);
+	}
+
+	function stopSmartLoading() {
+		// Clear show timeout if loading finished before delay
+		if (showTimeout) {
+			clearTimeout(showTimeout);
+			showTimeout = null;
+		}
+
+		if (!showLoader) {
+			// Loader was never shown, just stop immediately
+			return;
+		}
+
+		// Calculate how long the loader has been visible
+		const now = Date.now();
+		const totalLoadingTime = loadingStartTime ? now - loadingStartTime : 0;
+		const loaderVisibleTime = Math.max(0, totalLoadingTime - delay);
+		const remainingMinTime = Math.max(0, minShowTime - loaderVisibleTime);
+
+		if (remainingMinTime > 0) {
+			// Keep showing loader for remaining minimum time
+			hideTimeout = setTimeout(() => {
+				showLoader = false;
+				loadingStartTime = null;
+			}, remainingMinTime);
+		} else {
+			// Can hide immediately
+			showLoader = false;
+			loadingStartTime = null;
+		}
+	}
+
+	function clearTimeouts() {
+		if (showTimeout) {
+			clearTimeout(showTimeout);
+			showTimeout = null;
+		}
+		if (hideTimeout) {
+			clearTimeout(hideTimeout);
+			hideTimeout = null;
+		}
+	}
+
+	onDestroy(() => {
+		clearTimeouts();
+	});
 </script>
 
+{#if showLoader}
 <div class="flex flex-col items-center justify-center space-y-6">
 	<!-- Animated Beo Echo Logo -->
 	<div class="relative {config.container}">
@@ -99,6 +187,7 @@
 		{/if}
 	</div>
 </div>
+{/if}
 
 <style>
 	/* Custom animations for the Beo Echo loader */
