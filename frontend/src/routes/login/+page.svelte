@@ -9,17 +9,29 @@
 	import LandingPageFooter from '$lib/components/landing-page/LandingPageFooter.svelte';
 	import { publicConfig, loadPublicConfig } from '$lib/stores/publicConfig';
 
+	// Check if we're in landing mode (build time environment variable)
+	let LANDING_MODE = import.meta.env.VITE_LANDING_MODE === 'true';
+	if (browser) {
+		LANDING_MODE = false; // Ensure this is false in browser context
+	}
+
 	let email = '';
 	let password = '';
 	let error = '';
 	let loading = false;
 	let showPassword = false;
-	let configLoading = false; // Don't show loading if in landing mode
+	let configLoading = !LANDING_MODE; // Don't show loading if in landing mode
 
 	// Load public configuration
 	async function loadConfig() {
 		try {
 			configLoading = true;
+
+			// If in landing mode, skip API calls and use defaults
+			if (LANDING_MODE) {
+				configLoading = false;
+				return;
+			}
 
 			await loadPublicConfig();
 		} catch (err) {
@@ -30,6 +42,11 @@
 	}
 
 	onMount(async () => {
+		// If in landing mode, skip API calls and show form immediately
+		if (LANDING_MODE) {
+			configLoading = false;
+			return;
+		}
 
 		// Load public configuration first
 		await loadConfig();
@@ -159,7 +176,7 @@
 
 <div class="min-h-screen flex flex-col theme-bg-tertiary">
 	<!-- Header - only show if landing page is enabled and config is loaded -->
-	{#if !configLoading && ($publicConfig?.landing_enabled)}
+	{#if !configLoading && ($publicConfig?.landing_enabled || LANDING_MODE)}
 		<LandingPageHeader showUserMenu={false} on:back={() => goto('/')} />
 	{/if}
 
@@ -275,7 +292,7 @@
 	</div>
 
 	<!-- Footer - only show if landing page is enabled and config is loaded -->
-	{#if !configLoading && ($publicConfig?.landing_enabled)}
+	{#if !configLoading && ($publicConfig?.landing_enabled || LANDING_MODE)}
 		<LandingPageFooter />
 	{/if}
 </div>
