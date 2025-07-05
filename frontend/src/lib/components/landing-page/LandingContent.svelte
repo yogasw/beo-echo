@@ -200,6 +200,28 @@
 		}
 	}
 
+	function scrollToComponentById(id: string) {
+		const element = document.getElementById(id);
+		if (element) {
+			// Smooth scroll to element
+			element.scrollIntoView({
+				behavior: 'smooth',
+				block: 'center',
+				inline: 'nearest'
+			});
+
+			// Add focus animation after scrolling
+			setTimeout(() => {
+				element.classList.add('animate-focus-highlight');
+
+				// Remove animation class after animation completes
+				setTimeout(() => {
+					element.classList.remove('animate-focus-highlight');
+				}, 2000);
+			}, 800); // Wait for scroll to complete
+		}
+	}
+
 	// Debounced search function
 	function handleSearchInput(event: Event) {
 		// Get the input element and current value
@@ -324,7 +346,7 @@
 				<div class="flex flex-col sm:flex-row gap-3 justify-center items-center mb-8">
 					<button
 						on:click={() => {
-							document.getElementById('quick-deploy')?.scrollIntoView({ behavior: 'smooth' });
+							scrollToComponentById("docker-command");
 						}}
 						class="bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 dark:from-blue-600 dark:to-purple-700 dark:hover:from-blue-700 dark:hover:to-purple-800 text-white py-3 px-6 rounded-lg text-base font-medium transition-all duration-300 shadow-lg hover:shadow-xl transform hover:-translate-y-1 flex items-center"
 						title="Deploy instantly with Docker - One command to run!"
@@ -726,6 +748,7 @@
 
 			<!-- Docker Command -->
 			<div
+				id="docker-command"
 				class="bg-gray-800 dark:bg-gray-900 rounded-lg p-6 mb-8 text-left overflow-x-auto border border-gray-700 dark:border-gray-600"
 			>
 				<div class="flex items-center justify-between mb-3">
@@ -903,7 +926,7 @@
 						aria-label="Deploy Beo Echo with Docker"
 						on:click={() => {
 							// Scroll to deploy section
-							document.getElementById('quick-deploy')?.scrollIntoView({ behavior: 'smooth' });
+							scrollToComponentById("docker-command");
 						}}
 					>
 						<i class="fab fa-docker mr-2"></i>
