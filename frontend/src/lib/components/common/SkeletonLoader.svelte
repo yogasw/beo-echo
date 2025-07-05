@@ -1,7 +1,8 @@
 <script lang="ts">
   /**
    * A reusable skeleton loader component for displaying loading states
-   * when fetching data from APIs.
+   * when fetching data from APIs. Features smart loading with delay to 
+   * prevent jarring flash for quick operations.
    * 
    * @component
    * 
@@ -10,12 +11,26 @@
    * @prop {string} height - Custom height for the skeleton
    * @prop {string} width - Custom width for the skeleton
    * @prop {string} className - Additional CSS classes to apply to the skeleton
+   * @prop {number} delay - Delay before showing skeleton in ms (default: 400)
+   * @prop {number} minShowTime - Minimum time to show skeleton once displayed (default: 300)
+   * @prop {boolean} isLoading - External loading state (default: true)
    */
   export let type: 'card' | 'list' | 'table' | 'text' | 'custom' = 'card';
   export let count: number = 3;
   export let height: string = '';
   export let width: string = '';
   export let className: string = '';
+  export let delay: number = 400;
+  export let minShowTime: number = 300;
+  export let isLoading: boolean = true;
+
+  import { onDestroy } from 'svelte';
+
+  // Smart loading state management
+  let showSkeleton = false;
+  let loadingStartTime: number | null = null;
+  let showTimeout: ReturnType<typeof setTimeout> | null = null;
+  let hideTimeout: ReturnType<typeof setTimeout> | null = null;
 
   // Determine skeleton dimensions based on type
   let styleString = '';
@@ -32,10 +47,83 @@
     return 'animate-pulse';
   };
 
+  // Watch for loading state changes with smart delay
+  $: handleLoadingChange(isLoading);
+
+  function handleLoadingChange(loading: boolean) {
+    if (loading) {
+      startSmartLoading();
+    } else {
+      stopSmartLoading();
+    }
+  }
+
+  function startSmartLoading() {
+    // Clear any existing timeouts
+    clearTimeouts();
+    
+    loadingStartTime = Date.now();
+    showSkeleton = false;
+
+    // Set timeout to show skeleton after delay
+    showTimeout = setTimeout(() => {
+      if (isLoading) { // Only show if still loading
+        showSkeleton = true;
+      }
+    }, delay);
+  }
+
+  function stopSmartLoading() {
+    // Clear show timeout if loading finished before delay
+    if (showTimeout) {
+      clearTimeout(showTimeout);
+      showTimeout = null;
+    }
+
+    if (!showSkeleton) {
+      // Skeleton was never shown, just stop immediately
+      return;
+    }
+
+    // Calculate how long the skeleton has been visible
+    const now = Date.now();
+    const totalLoadingTime = loadingStartTime ? now - loadingStartTime : 0;
+    const skeletonVisibleTime = Math.max(0, totalLoadingTime - delay);
+    const remainingMinTime = Math.max(0, minShowTime - skeletonVisibleTime);
+
+    if (remainingMinTime > 0) {
+      // Keep showing skeleton for remaining minimum time
+      hideTimeout = setTimeout(() => {
+        showSkeleton = false;
+        loadingStartTime = null;
+      }, remainingMinTime);
+    } else {
+      // Can hide immediately
+      showSkeleton = false;
+      loadingStartTime = null;
+    }
+  }
+
+  function clearTimeouts() {
+    if (showTimeout) {
+      clearTimeout(showTimeout);
+      showTimeout = null;
+    }
+    if (hideTimeout) {
+      clearTimeout(hideTimeout);
+      hideTimeout = null;
+    }
+  }
+
+  onDestroy(() => {
+    clearTimeouts();
+  });
+
   // This makes TypeScript recognize the component has a default export
   // export default;
 </script>
 
+{#if showSkeleton}
 {#if type === 'card'}
   <div class="theme-bg-secondary rounded-md shadow {getAnimation()} {className}" style={styleString || 'height: 200px;'}>
     <div class="h-40 rounded-t-md bg-gray-300 dark:bg-gray-600"></div>
@@ -88,4 +176,5 @@
 {:else}
   <!-- Custom skeleton - just a simple animated placeholder -->
   <div class="rounded-md bg-gray-300 dark:bg-gray-700 {getAnimation()} {className}" style={styleString || 'height: 100px;'}></div>
+{/if}
 {/if}
