@@ -9,7 +9,7 @@
 	import { onMount } from 'svelte';
 	import { checkAliasAndSearchProjects, type ProjectSearchResult } from '$lib/api/BeoApi';
 	import { sanitizeAlias } from '$lib/utils/aliasUtils';
-	
+
 	let projectName = '';
 	let isLoading = false;
 	let searchResults: ProjectSearchResult[] = [];
@@ -20,8 +20,11 @@
 	let showWorkspaceModal = false; // Track workspace selection modal
 
 	// Computed property for URL format display
-	$: urlFormatDisplay = getUrlFormatDisplay(projectName, $publicConfig?.mock_url_format || 'subdomain');
-	$: mockDomain =  $publicConfig?.mock_url_format.replaceAll("/alias", "") || "boe-echo.xyz";
+	$: urlFormatDisplay = getUrlFormatDisplay(
+		projectName,
+		$publicConfig?.mock_url_format || 'subdomain'
+	);
+	$: mockDomain = $publicConfig?.mock_url_format.replaceAll('/alias', '') || 'boe-echo.xyz';
 
 	// Features data for the landing page
 	const features = [
@@ -106,14 +109,14 @@
 	// Function to generate URL format display based on configuration
 	function getUrlFormatDisplay(alias: string, format: string): string {
 		const cleanAlias = alias.trim() || 'alias';
-		
+
 		// Backend sends the exact format, e.g.:
 		// - "alias.localhost:3600" for subdomain mode
 		// - "localhost:3600/alias" for path mode
 		if (format && format.includes('alias')) {
 			return format.replace('alias', cleanAlias);
 		}
-		
+
 		// Fallback if format is just "subdomain" or "path" (for backward compatibility)
 		if (format === 'subdomain') {
 			return `${cleanAlias}.localhost:3600`;
@@ -121,8 +124,6 @@
 			return `localhost:3600/${cleanAlias}`;
 		}
 	}
-
-
 
 	async function createProject() {
 		if (!projectName.trim()) {
@@ -147,15 +148,89 @@
 		await goto('/login');
 	}
 
+	// Smooth scroll with focus animation
+	function scrollToCreateMockServer() {
+		const element = document.getElementById('create-mock-server');
+		if (element) {
+			// Smooth scroll to element
+			element.scrollIntoView({
+				behavior: 'smooth',
+				block: 'center',
+				inline: 'nearest'
+			});
+
+			// Add focus animation after scrolling
+			setTimeout(() => {
+				element.classList.add('animate-focus-highlight');
+				// Focus the input field if authenticated
+				if (authenticated) {
+					const input = element.querySelector('input[type="text"]') as HTMLInputElement;
+					if (input) {
+						input.focus();
+					}
+				}
+
+				// Remove animation class after animation completes
+				setTimeout(() => {
+					element.classList.remove('animate-focus-highlight');
+				}, 2000);
+			}, 800); // Wait for scroll to complete
+		}
+	}
+
+	function scrollToRecentProjects() {
+		const element = document.getElementById('recent-projects-section');
+		if (element) {
+			// Smooth scroll to element
+			element.scrollIntoView({
+				behavior: 'smooth',
+				block: 'center',
+				inline: 'nearest'
+			});
+
+			// Add focus animation after scrolling
+			setTimeout(() => {
+				element.classList.add('animate-focus-highlight');
+
+				// Remove animation class after animation completes
+				setTimeout(() => {
+					element.classList.remove('animate-focus-highlight');
+				}, 2000);
+			}, 800); // Wait for scroll to complete
+		}
+	}
+
+	function scrollToComponentById(id: string) {
+		const element = document.getElementById(id);
+		if (element) {
+			// Smooth scroll to element
+			element.scrollIntoView({
+				behavior: 'smooth',
+				block: 'center',
+				inline: 'nearest'
+			});
+
+			// Add focus animation after scrolling
+			setTimeout(() => {
+				element.classList.add('animate-focus-highlight');
+
+				// Remove animation class after animation completes
+				setTimeout(() => {
+					element.classList.remove('animate-focus-highlight');
+				}, 2000);
+			}, 800); // Wait for scroll to complete
+		}
+	}
+
 	// Debounced search function
 	function handleSearchInput(event: Event) {
 		// Get the input element and current value
 		const input = event.target as HTMLInputElement;
 		const rawValue = input.value;
-		
+
 		// Sanitize the input
 		const sanitizedValue = sanitizeAlias(rawValue);
-		
+
 		// Update the input value if sanitization changed it
 		if (sanitizedValue !== rawValue) {
 			projectName = sanitizedValue;
@@ -219,7 +294,7 @@
 	function handleProjectSelect(project: ProjectSearchResult) {
 		// Navigate to project management page like recent projects
 		goto(`/home/workspace/${project.workspace_id}/projects/${project.id}`);
-		
+
 		// Clear search
 		projectName = '';
 		showSearchResults = false;
@@ -248,9 +323,10 @@
 
 <!-- Main Content -->
 <main class="flex-1">
-
 	<!-- Hero Section -->
-	<section class="bg-gradient-to-b from-blue-50 to-white dark:from-gray-800 dark:to-gray-900 py-12 pt-24">
+	<section
+		class="bg-gradient-to-b from-blue-50 to-white dark:from-gray-800 dark:to-gray-900 py-12 pt-24"
+	>
 		<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
 			<div class="text-center">
 				<h1 class="text-3xl md:text-5xl font-bold text-gray-900 dark:text-white mb-4">
@@ -270,16 +346,16 @@
 				<div class="flex flex-col sm:flex-row gap-3 justify-center items-center mb-8">
 					<button
 						on:click={() => {
-							document.getElementById('quick-deploy')?.scrollIntoView({ behavior: 'smooth' });
+							scrollToComponentById("docker-command");
 						}}
 						class="bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 dark:from-blue-600 dark:to-purple-700 dark:hover:from-blue-700 dark:hover:to-purple-800 text-white py-3 px-6 rounded-lg text-base font-medium transition-all duration-300 shadow-lg hover:shadow-xl transform hover:-translate-y-1 flex items-center"
 						title="Deploy instantly with Docker - One command to run!"
 						aria-label="Deploy instantly with Docker"
 					>
 						<i class="fab fa-docker mr-2 text-lg"></i>
-						🚀  Deploy in Seconds
+						🚀 Deploy in Seconds
 					</button>
-					
+
 					{#if !authenticated}
 						<button
 							on:click={handleLogin}
@@ -297,137 +373,174 @@
 				<div class="max-w-6xl mx-auto">
 					<div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
 						<!-- Create New Mock Server -->
-						{#if authenticated}
-							<div class="bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm rounded-xl shadow-xl border border-gray-200 dark:border-gray-700 p-6">
-								<h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-									<i class="fas fa-rocket text-indigo-600 dark:text-indigo-400 mr-2"></i>
-									Create Your Next Mock Server
-								</h3>
+						<div id="create-mock-server">
+							{#if authenticated}
+								<div
+									class="bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm rounded-xl shadow-xl border border-gray-200 dark:border-gray-700 p-6 transition-all duration-500 focus-within:ring-4 focus-within:ring-indigo-500/30 focus-within:scale-105"
+								>
+									<h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+										<i class="fas fa-rocket text-indigo-600 dark:text-indigo-400 mr-2"></i>
+										Create Your Next Mock Server
+									</h3>
 
-								<div class="search-container relative">
-									<div class="flex flex-col sm:flex-row gap-3 mb-4">
-										{#if $publicConfig?.mock_url_format === 'subdomain'}
-											<!-- Subdomain format: project.domain -->
-											<div class="flex-1 flex focus-within:ring-2 focus-within:ring-indigo-500 rounded-lg">											<input
-												bind:value={projectName}
-												on:input={handleSearchInput}
-												type="text"
-												placeholder="your-project-alias"
-												class="flex-1 px-3 py-2.5 rounded-l-lg border border-r-0 border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none transition-colors text-sm"
-												title="Enter a alias for your mock server project"
-												aria-label="Project alias input"
-											/>
-												<div class="flex items-center px-3 py-2.5 rounded-r-lg border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-600 text-gray-500 dark:text-gray-400 text-sm font-medium">
-													.{mockDomain}
+									<div class="search-container relative">
+										<div class="flex flex-col sm:flex-row gap-3 mb-4">
+											{#if $publicConfig?.mock_url_format === 'subdomain'}
+												<!-- Subdomain format: project.domain -->
+												<div
+													class="flex-1 flex focus-within:ring-2 focus-within:ring-indigo-500 rounded-lg"
+												>
+													<input
+														bind:value={projectName}
+														on:input={handleSearchInput}
+														type="text"
+														placeholder="your-project-alias"
+														class="flex-1 px-3 py-2.5 rounded-l-lg border border-r-0 border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none transition-colors text-sm"
+														title="Enter a alias for your mock server project"
+														aria-label="Project alias input"
+													/>
+													<div
+														class="flex items-center px-3 py-2.5 rounded-r-lg border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-600 text-gray-500 dark:text-gray-400 text-sm font-medium"
+													>
+														.{mockDomain}
+													</div>
 												</div>
-											</div>
-										{:else}
-											<!-- Path format: domain/project -->
-											<div class="flex-1 flex focus-within:ring-2 focus-within:ring-indigo-500 rounded-lg">
-												<div class="flex items-center px-3 py-2.5 rounded-l-lg border border-r-0 border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-600 text-gray-500 dark:text-gray-400 text-sm font-medium">
-													{mockDomain}/
-												</div>											<input
-												bind:value={projectName}
-												on:input={handleSearchInput}
-												type="text"
-												placeholder="your-project-alias"
-												class="flex-1 px-3 py-2.5 rounded-r-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none transition-colors text-sm"
-												title="Enter a alias for your mock server project"
-												aria-label="Project alias input"
-											/>
+											{:else}
+												<!-- Path format: domain/project -->
+												<div
+													class="flex-1 flex focus-within:ring-2 focus-within:ring-indigo-500 rounded-lg"
+												>
+													<div
+														class="flex items-center px-3 py-2.5 rounded-l-lg border border-r-0 border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-600 text-gray-500 dark:text-gray-400 text-sm font-medium"
+													>
+														{mockDomain}/
+													</div>
+													<input
+														bind:value={projectName}
+														on:input={handleSearchInput}
+														type="text"
+														placeholder="your-project-alias"
+														class="flex-1 px-3 py-2.5 rounded-r-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none transition-colors text-sm"
+														title="Enter a alias for your mock server project"
+														aria-label="Project alias input"
+													/>
+												</div>
+											{/if}
+										</div>
+
+										<!-- Search Results Component -->
+										<ProjectSearchResults
+											{searchResults}
+											showResults={showSearchResults}
+											onProjectSelect={handleProjectSelect}
+										/>
+
+										<!-- Search Loading Indicator -->
+										{#if isSearching}
+											<div class="absolute right-3 top-[58px] text-gray-400">
+												<i class="fas fa-spinner fa-spin text-sm"></i>
 											</div>
 										{/if}
 									</div>
 
-									<!-- Search Results Component -->
-									<ProjectSearchResults 
-										{searchResults}
-										showResults={showSearchResults}
-										onProjectSelect={handleProjectSelect}
-									/>
+									<p class="text-xs text-gray-600 dark:text-gray-400 mb-4">
+										{#if showSearchResults && searchResults.length > 0}
+											<span class="text-orange-600 dark:text-orange-400">
+												<i class="fas fa-info-circle mr-1"></i>
+												Found existing projects. Click to open or continue typing to create new.
+											</span>
+										{:else if projectName.trim() && !aliasAvailable}
+											<span class="text-red-600 dark:text-red-400">
+												<i class="fas fa-times-circle mr-1"></i>
+												Alias "{projectName}" is already used by another project
+											</span>
+										{:else if projectName.trim()}
+											<span class="text-gray-500 dark:text-gray-400">
+												<i class="fas fa-info-circle mr-1"></i>
+												Only lowercase letters, numbers, and hyphens allowed.
+											</span>
+											<br />
+											<span class="text-gray-600 dark:text-gray-300">
+												{#if $publicConfig?.mock_url_format === 'subdomain'}
+													Your mock server will be available at: <span
+														class="font-mono text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20 px-2 py-1 rounded"
+														>{urlFormatDisplay}</span
+													>
+												{:else}
+													Your mock server will be available at: <span
+														class="font-mono text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20 px-2 py-1 rounded"
+														>{urlFormatDisplay}</span
+													>
+												{/if}
+											</span>
+										{:else if $publicConfig?.mock_url_format === 'subdomain'}
+											Your mock server will be available at: <span
+												class="font-mono text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20 px-2 py-1 rounded"
+												>{urlFormatDisplay}</span
+											>
+										{:else}
+											Your mock server will be available at: <span
+												class="font-mono text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20 px-2 py-1 rounded"
+												>{urlFormatDisplay}</span
+											>
+										{/if}
+									</p>
 
-									<!-- Search Loading Indicator -->
-									{#if isSearching}
-										<div class="absolute right-3 top-[58px] text-gray-400">
-											<i class="fas fa-spinner fa-spin text-sm"></i>
-										</div>
-									{/if}
+									<button
+										on:click={createProject}
+										disabled={!aliasAvailable && !!projectName.trim()}
+										class="w-full bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 disabled:from-gray-400 disabled:to-gray-500 disabled:cursor-not-allowed text-white py-2.5 px-4 rounded-lg font-medium transition-all duration-200 flex items-center justify-center shadow-lg hover:shadow-xl text-sm"
+										title={!aliasAvailable && !!projectName.trim()
+											? 'Alias is not available'
+											: 'Create new mock server project'}
+										aria-label={!aliasAvailable && !!projectName.trim()
+											? 'Alias is not available'
+											: 'Create new mock server project'}
+									>
+										{#if !aliasAvailable && !!projectName.trim()}
+											<i class="fas fa-exclamation-triangle mr-2"></i>
+											Alias Not Available
+										{:else}
+											<i class="fas fa-plus-circle mr-2"></i>
+											Create Mock Server
+										{/if}
+									</button>
 								</div>
-
-								<p class="text-xs text-gray-600 dark:text-gray-400 mb-4">
-									{#if showSearchResults && searchResults.length > 0}
-										<span class="text-orange-600 dark:text-orange-400">
-											<i class="fas fa-info-circle mr-1"></i>
-											Found existing projects. Click to open or continue typing to create new.
-										</span>
-									{:else if projectName.trim() && !aliasAvailable}
-										<span class="text-red-600 dark:text-red-400">
-											<i class="fas fa-times-circle mr-1"></i>
-											Alias "{projectName}" is already used by another project
-										</span>
-									{:else if projectName.trim()}
-										<span class="text-gray-500 dark:text-gray-400">
-											<i class="fas fa-info-circle mr-1"></i>
-											Only lowercase letters, numbers, and hyphens allowed.
-										</span>
-										<br />
-										<span class="text-gray-600 dark:text-gray-300">
-											{#if $publicConfig?.mock_url_format === 'subdomain'}
-												Your mock server will be available at: <span class="font-mono text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20 px-2 py-1 rounded">{urlFormatDisplay}</span>
-											{:else}
-												Your mock server will be available at: <span class="font-mono text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20 px-2 py-1 rounded">{urlFormatDisplay}</span>
-											{/if}
-										</span>
-									{:else if $publicConfig?.mock_url_format === 'subdomain'}
-										Your mock server will be available at: <span class="font-mono text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20 px-2 py-1 rounded">{urlFormatDisplay}</span>
-									{:else}
-										Your mock server will be available at: <span class="font-mono text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20 px-2 py-1 rounded">{urlFormatDisplay}</span>
-									{/if}
-								</p>
-
-								<button
-									on:click={createProject}
-									disabled={(!aliasAvailable && !!projectName.trim())}
-									class="w-full bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 disabled:from-gray-400 disabled:to-gray-500 disabled:cursor-not-allowed text-white py-2.5 px-4 rounded-lg font-medium transition-all duration-200 flex items-center justify-center shadow-lg hover:shadow-xl text-sm"
-									title={(!aliasAvailable && !!projectName.trim()) ? "Alias is not available" : "Create new mock server project"}
-									aria-label={(!aliasAvailable && !!projectName.trim()) ? "Alias is not available" : "Create new mock server project"}
+							{:else}
+								<div
+									class="bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm rounded-xl shadow-xl border border-gray-200 dark:border-gray-700 p-6 text-center"
 								>
-									{#if !aliasAvailable && !!projectName.trim()}
-										<i class="fas fa-exclamation-triangle mr-2"></i>
-										Alias Not Available
-									{:else}
-										<i class="fas fa-plus-circle mr-2"></i>
-										Create Mock Server
-									{/if}
-								</button>
-							</div>
-						{:else}
-							<div class="bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm rounded-xl shadow-xl border border-gray-200 dark:border-gray-700 p-6 text-center">
-								<h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-3">
-									<i class="fas fa-user-circle text-indigo-600 dark:text-indigo-400 mr-2"></i>
-									Get Started
-								</h3>
-								<p class="text-sm text-gray-600 dark:text-gray-400 mb-4">
-									Login to create and manage your mock servers
-								</p>
-								<button
-									on:click={handleLogin}
-									class="w-full bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white py-2.5 px-4 rounded-lg font-medium transition-all duration-200 flex items-center justify-center shadow-lg hover:shadow-xl text-sm"
-									title="Login to create cloud projects"
-									aria-label="Login to create cloud projects"
-								>
-									<i class="fas fa-sign-in-alt mr-2"></i>
-									Login to Continue
-								</button>
-								<p class="text-xs text-gray-500 dark:text-gray-400 mt-3">
-									Free to use • No credit card required
-								</p>
-							</div>
-						{/if}
+									<h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-3">
+										<i class="fas fa-user-circle text-indigo-600 dark:text-indigo-400 mr-2"></i>
+										Get Started
+									</h3>
+									<p class="text-sm text-gray-600 dark:text-gray-400 mb-4">
+										Login to create and manage your mock servers
+									</p>
+									<button
+										on:click={handleLogin}
+										class="w-full bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white py-2.5 px-4 rounded-lg font-medium transition-all duration-200 flex items-center justify-center shadow-lg hover:shadow-xl text-sm"
+										title="Login to create cloud projects"
+										aria-label="Login to create cloud projects"
+									>
+										<i class="fas fa-sign-in-alt mr-2"></i>
+										Login to Continue
+									</button>
+									<p class="text-xs text-gray-500 dark:text-gray-400 mt-3">
+										Free to use • No credit card required
+									</p>
+								</div>
+							{/if}
+						</div>
 
 						<!-- Recent Projects Section -->
-						<div class="bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm rounded-xl shadow-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
-							<div class="p-4 border-b border-gray-200 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-750/50">
+						<div
+							id="recent-projects-section"
+							class="bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm rounded-xl shadow-xl border border-gray-200 dark:border-gray-700 overflow-hidden transition-all duration-500 focus-within:ring-4 focus-within:ring-indigo-500/30 focus-within:scale-105"
+						>
+							<div
+								class="p-4 border-b border-gray-200 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-750/50"
+							>
 								<h3 class="text-lg font-semibold text-gray-900 dark:text-white flex items-center">
 									<i class="fas fa-history text-indigo-600 dark:text-indigo-400 mr-2"></i>
 									Recent Projects
@@ -436,10 +549,10 @@
 									Quick access to your recently used mock servers
 								</p>
 							</div>
-							
+
 							<div class="p-1">
-								<RecentProjects 
-									showTitle={false} 
+								<RecentProjects
+									showTitle={false}
 									maxItems={5}
 									onProjectSelect={(project) => {
 										// Handle project selection
@@ -541,6 +654,7 @@
 						Mock external APIs and services in your tests for faster, more reliable test suites.
 					</p>
 					<button
+						on:click={scrollToCreateMockServer}
 						class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
 						title="Create a mock API server"
 						aria-label="Create a mock API server"
@@ -561,6 +675,7 @@
 						structure.
 					</p>
 					<button
+						on:click={scrollToCreateMockServer}
 						class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
 						title="Create a mock API server"
 						aria-label="Create a mock API server"
@@ -581,6 +696,7 @@
 						teammates.
 					</p>
 					<button
+						on:click={scrollToRecentProjects}
 						class="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
 						title="View HTTP request details"
 						aria-label="View HTTP request details"
@@ -601,6 +717,7 @@
 						scenarios.
 					</p>
 					<button
+						on:click={scrollToCreateMockServer}
 						class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
 						title="Create a partial mock server"
 						aria-label="Create a partial mock server"
@@ -614,7 +731,10 @@
 	</section>
 
 	<!-- Quick Deploy Section -->
-	<section id="quick-deploy" class="py-16 bg-gradient-to-r from-blue-500 to-indigo-600 dark:from-blue-700 dark:to-purple-800">
+	<section
+		id="quick-deploy"
+		class="py-16 bg-gradient-to-r from-blue-500 to-indigo-600 dark:from-blue-700 dark:to-purple-800"
+	>
 		<div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
 			<div class="mb-8">
 				<h2 class="text-3xl font-bold text-white mb-4">
@@ -627,7 +747,10 @@
 			</div>
 
 			<!-- Docker Command -->
-			<div class="bg-gray-800 dark:bg-gray-900 rounded-lg p-6 mb-8 text-left overflow-x-auto border border-gray-700 dark:border-gray-600">
+			<div
+				id="docker-command"
+				class="bg-gray-800 dark:bg-gray-900 rounded-lg p-6 mb-8 text-left overflow-x-auto border border-gray-700 dark:border-gray-600"
+			>
 				<div class="flex items-center justify-between mb-3">
 					<span class="text-green-400 dark:text-green-300 text-sm font-mono">Terminal</span>
 					<button
@@ -635,7 +758,9 @@
 						title="Copy Docker command to clipboard"
 						aria-label="Copy Docker command to clipboard"
 						on:click={() => {
-							navigator.clipboard.writeText('docker run -d --platform linux/amd64 -p 8080:80 -v $(pwd)/beo-echo-config:/app/configs/ ghcr.io/yogasw/beo-echo:latest');
+							navigator.clipboard.writeText(
+								'docker run -d --platform linux/amd64 -p 8080:80 -v $(pwd)/beo-echo-config:/app/configs/ ghcr.io/yogasw/beo-echo:latest'
+							);
 							toast.success('Docker command copied to clipboard!');
 						}}
 					>
@@ -644,16 +769,21 @@
 					</button>
 				</div>
 				<code class="text-green-400 dark:text-green-300 font-mono text-sm block leading-relaxed">
-					<span class="text-gray-400 dark:text-gray-500">$</span> docker run -d --platform linux/amd64 -p 8080:80 \<br>
-					<span class="ml-4">-v $(pwd)/beo-echo-config:/app/configs/ \</span><br>
+					<span class="text-gray-400 dark:text-gray-500">$</span> docker run -d --platform
+					linux/amd64 -p 8080:80 \<br />
+					<span class="ml-4">-v $(pwd)/beo-echo-config:/app/configs/ \</span><br />
 					<span class="ml-4">ghcr.io/yogasw/beo-echo:latest</span>
 				</code>
 			</div>
 
 			<!-- Quick Steps -->
 			<div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-				<div class="bg-white/15 dark:bg-white/10 backdrop-blur-sm rounded-lg p-6 border border-white/20 dark:border-white/10">
-					<div class="w-12 h-12 bg-white/25 dark:bg-white/20 rounded-full flex items-center justify-center mx-auto mb-4">
+				<div
+					class="bg-white/15 dark:bg-white/10 backdrop-blur-sm rounded-lg p-6 border border-white/20 dark:border-white/10"
+				>
+					<div
+						class="w-12 h-12 bg-white/25 dark:bg-white/20 rounded-full flex items-center justify-center mx-auto mb-4"
+					>
 						<span class="text-2xl font-bold text-white">1</span>
 					</div>
 					<h3 class="text-lg font-semibold text-white mb-2">Run Command</h3>
@@ -662,29 +792,44 @@
 					</p>
 				</div>
 
-				<div class="bg-white/15 dark:bg-white/10 backdrop-blur-sm rounded-lg p-6 border border-white/20 dark:border-white/10">
-					<div class="w-12 h-12 bg-white/25 dark:bg-white/20 rounded-full flex items-center justify-center mx-auto mb-4">
+				<div
+					class="bg-white/15 dark:bg-white/10 backdrop-blur-sm rounded-lg p-6 border border-white/20 dark:border-white/10"
+				>
+					<div
+						class="w-12 h-12 bg-white/25 dark:bg-white/20 rounded-full flex items-center justify-center mx-auto mb-4"
+					>
 						<span class="text-2xl font-bold text-white">2</span>
 					</div>
 					<h3 class="text-lg font-semibold text-white mb-2">Open Browser</h3>
 					<p class="text-blue-50 dark:text-blue-100 text-sm">
-						Access at <span class="font-mono bg-white/25 dark:bg-white/20 px-1 rounded">localhost:8080</span>
+						Access at <span class="font-mono bg-white/25 dark:bg-white/20 px-1 rounded"
+							>localhost:8080</span
+						>
 					</p>
 				</div>
 
-				<div class="bg-white/15 dark:bg-white/10 backdrop-blur-sm rounded-lg p-6 border border-white/20 dark:border-white/10">
-					<div class="w-12 h-12 bg-white/25 dark:bg-white/20 rounded-full flex items-center justify-center mx-auto mb-4">
+				<div
+					class="bg-white/15 dark:bg-white/10 backdrop-blur-sm rounded-lg p-6 border border-white/20 dark:border-white/10"
+				>
+					<div
+						class="w-12 h-12 bg-white/25 dark:bg-white/20 rounded-full flex items-center justify-center mx-auto mb-4"
+					>
 						<span class="text-2xl font-bold text-white">3</span>
 					</div>
 					<h3 class="text-lg font-semibold text-white mb-2">Login & Start</h3>
 					<p class="text-blue-50 dark:text-blue-100 text-sm">
-						Use <span class="font-mono bg-white/25 dark:bg-white/20 px-1 rounded">admin@admin.com</span> / <span class="font-mono bg-white/25 dark:bg-white/20 px-1 rounded">admin</span>
+						Use <span class="font-mono bg-white/25 dark:bg-white/20 px-1 rounded"
+							>admin@admin.com</span
+						>
+						/ <span class="font-mono bg-white/25 dark:bg-white/20 px-1 rounded">admin</span>
 					</p>
 				</div>
 			</div>
 
 			<!-- Additional Info -->
-			<div class="bg-white/15 dark:bg-white/10 backdrop-blur-sm rounded-lg p-6 text-left border border-white/20 dark:border-white/10">
+			<div
+				class="bg-white/15 dark:bg-white/10 backdrop-blur-sm rounded-lg p-6 text-left border border-white/20 dark:border-white/10"
+			>
 				<div class="grid grid-cols-1 md:grid-cols-2 gap-6">
 					<div>
 						<h4 class="text-white font-semibold mb-3 flex items-center">
@@ -693,7 +838,11 @@
 						</h4>
 						<ul class="text-blue-50 dark:text-blue-100 text-sm space-y-1">
 							<li>• Default: SQLite (auto-created)</li>
-							<li>• PostgreSQL: Set <span class="font-mono bg-white/25 dark:bg-white/20 px-1 rounded">DATABASE_URL</span></li>
+							<li>
+								• PostgreSQL: Set <span class="font-mono bg-white/25 dark:bg-white/20 px-1 rounded"
+									>DATABASE_URL</span
+								>
+							</li>
 						</ul>
 					</div>
 					<div>
@@ -702,7 +851,11 @@
 							Configuration
 						</h4>
 						<ul class="text-blue-50 dark:text-blue-100 text-sm space-y-1">
-							<li>• Config stored in <span class="font-mono bg-white/25 dark:bg-white/20 px-1 rounded">./beo-echo-config/</span></li>
+							<li>
+								• Config stored in <span class="font-mono bg-white/25 dark:bg-white/20 px-1 rounded"
+									>./beo-echo-config/</span
+								>
+							</li>
 							<li>• Persistent data across container restarts</li>
 						</ul>
 					</div>
@@ -773,7 +926,7 @@
 						aria-label="Deploy Beo Echo with Docker"
 						on:click={() => {
 							// Scroll to deploy section
-							document.getElementById('quick-deploy')?.scrollIntoView({ behavior: 'smooth' });
+							scrollToComponentById("docker-command");
 						}}
 					>
 						<i class="fab fa-docker mr-2"></i>
@@ -814,6 +967,7 @@
 						class="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 px-6 rounded-lg font-medium transition-colors"
 						title="Get started with Cloud edition"
 						aria-label="Get started with Cloud edition"
+						on:click={scrollToCreateMockServer}
 					>
 						<i class="fas fa-rocket mr-2"></i>
 						Get Started
@@ -878,9 +1032,81 @@
 </main>
 
 <!-- Workspace Selection Modal -->
-<WorkspaceSelectionModal 
+<WorkspaceSelectionModal
 	isOpen={showWorkspaceModal}
 	{projectName}
 	projectAlias={projectName}
 	onClose={handleWorkspaceModalClose}
 />
+
+<style>
+	@keyframes focusHighlight {
+		0% {
+			box-shadow: 0 0 0 0 rgba(79, 70, 229, 0.7);
+			transform: scale(1);
+		}
+		25% {
+			box-shadow: 0 0 0 15px rgba(79, 70, 229, 0.4);
+			transform: scale(1.03);
+		}
+		50% {
+			box-shadow: 0 0 0 25px rgba(79, 70, 229, 0.2);
+			transform: scale(1.05);
+		}
+		75% {
+			box-shadow: 0 0 0 15px rgba(79, 70, 229, 0.1);
+			transform: scale(1.03);
+		}
+		100% {
+			box-shadow: 0 0 0 0 rgba(79, 70, 229, 0);
+			transform: scale(1);
+		}
+	}
+
+	@keyframes focusHighlightDark {
+		0% {
+			box-shadow: 0 0 0 0 rgba(129, 140, 248, 0.7);
+			transform: scale(1);
+		}
+		25% {
+			box-shadow: 0 0 0 15px rgba(129, 140, 248, 0.4);
+			transform: scale(1.03);
+		}
+		50% {
+			box-shadow: 0 0 0 25px rgba(129, 140, 248, 0.2);
+			transform: scale(1.05);
+		}
+		75% {
+			box-shadow: 0 0 0 15px rgba(129, 140, 248, 0.1);
+			transform: scale(1.03);
+		}
+		100% {
+			box-shadow: 0 0 0 0 rgba(129, 140, 248, 0);
+			transform: scale(1);
+		}
+	}
+
+	:global(.animate-focus-highlight) {
+		animation: focusHighlight 2s ease-out;
+	}
+
+	:global(.dark .animate-focus-highlight) {
+		animation: focusHighlightDark 2s ease-out;
+	}
+
+	/* Enhanced hover effects for interactive elements */
+	:global(#create-mock-server:hover),
+	:global(#recent-projects-section:hover) {
+		transform: translateY(-2px);
+		box-shadow:
+			0 20px 25px -5px rgba(0, 0, 0, 0.1),
+			0 10px 10px -5px rgba(0, 0, 0, 0.04);
+	}
+
+	:global(.dark #create-mock-server:hover),
+	:global(.dark #recent-projects-section:hover) {
+		box-shadow:
+			0 20px 25px -5px rgba(0, 0, 0, 0.3),
+			0 10px 10px -5px rgba(0, 0, 0, 0.2);
+	}
+</style>

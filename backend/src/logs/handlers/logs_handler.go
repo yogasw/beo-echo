@@ -115,7 +115,16 @@ func StreamLogsHandler(c *gin.Context) {
 		_, err := c.Writer.Write([]byte(pingEvent))
 		if err == nil {
 			if flusher, ok := c.Writer.(http.Flusher); ok && flusher != nil {
-				flusher.Flush()
+				// Use defer/recover to prevent crashes from flusher panics
+				func() {
+					defer func() {
+						if r := recover(); r != nil {
+							// Flusher panicked, likely due to closed connection
+							return
+						}
+					}()
+					flusher.Flush()
+				}()
 			}
 		}
 	}
@@ -153,9 +162,18 @@ func StreamLogsHandler(c *gin.Context) {
 					if c.Writer != nil {
 						_, err := c.Writer.Write([]byte(pingEvent))
 						if err == nil {
-							// Only flush if Write was successful
+							// Only flush if Write was successful and flusher is valid
 							if flusher, ok := c.Writer.(http.Flusher); ok && flusher != nil {
-								flusher.Flush()
+								// Use defer/recover to prevent crashes from flusher panics
+								func() {
+									defer func() {
+										if r := recover(); r != nil {
+											// Flusher panicked, likely due to closed connection
+											return
+										}
+									}()
+									flusher.Flush()
+								}()
 							}
 						}
 					}
@@ -193,9 +211,18 @@ func StreamLogsHandler(c *gin.Context) {
 			if c.Writer != nil {
 				_, err := c.Writer.Write([]byte(sseData))
 				if err == nil {
-					// Only flush if Write was successful
+					// Only flush if Write was successful and flusher is valid
 					if flusher, ok := c.Writer.(http.Flusher); ok && flusher != nil {
-						flusher.Flush()
+						// Use defer/recover to prevent crashes from flusher panics
+						func() {
+							defer func() {
+								if r := recover(); r != nil {
+									// Flusher panicked, likely due to closed connection
+									return
+								}
+							}()
+							flusher.Flush()
+						}()
 					}
 				}
 			}

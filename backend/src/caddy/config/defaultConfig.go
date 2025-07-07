@@ -31,7 +31,7 @@ const CADDY_DEFAULT_CONFIG = `{
 	# Handle frontend routes - serve the SvelteKit static files
 	handle @frontend {
 		root * /app/frontend
-		try_files {path} /index.html
+		try_files {path} {path}.html /index.html
 		file_server
 	}
 
