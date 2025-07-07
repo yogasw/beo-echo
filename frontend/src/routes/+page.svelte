@@ -4,7 +4,7 @@
 	import { goto } from '$app/navigation';
 	import { isFirstOpenPage } from '$lib/stores/isFirstOpen';
 	import LandingPage from '$lib/components/landing-page/LandingPage.svelte';
-	import SkeletonLoader from '$lib/components/common/SkeletonLoader.svelte';
+	import BeoEchoLoader from '$lib/components/common/BeoEchoLoader.svelte';
 	import ErrorDisplay from '$lib/components/common/ErrorDisplay.svelte';
 	import { publicConfig, loadPublicConfig } from '$lib/stores/publicConfig';
 	import { toast } from '$lib/stores/toast';
@@ -83,12 +83,13 @@
 {:else}
 	<!-- Dynamic content for non-landing mode -->
 	{#if isLoading}
-		<!-- Show loading skeleton while fetching configuration -->
+		<!-- Show beautiful Beo Echo loader while fetching configuration -->
 		<div class="min-h-screen flex items-center justify-center theme-bg-primary">
-			<div class="text-center">
-				<SkeletonLoader type="card" count={1} />
-				<p class="mt-4 theme-text-secondary">Loading configuration...</p>
-			</div>
+			<BeoEchoLoader 
+				message="Loading configuration..." 
+				size="lg"
+				animated={true}
+			/>
 		</div>
 	{:else if error}
 		<!-- Show error with retry option -->

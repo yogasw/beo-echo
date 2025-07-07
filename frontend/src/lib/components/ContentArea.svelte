@@ -10,12 +10,24 @@
 	import { activeTab } from '$lib/stores/activeTab';
 	import * as ThemeUtils from '$lib/utils/themeUtils';
 	import { isLoadingContentArea } from '$lib/stores/loadingContentArea';
+	import BeoEchoLoader from './common/BeoEchoLoader.svelte';
 	export let activeContentTab = 'Status & Body';
 	let error = '';
 </script>
 
 <div class={ThemeUtils.themeBgPrimary('content-area')}>
-	{#if $activeTab === 'workspace-settings'}
+	{#if $isLoadingContentArea}
+	<div class="flex items-center justify-center h-full min-h-[300px]">
+		<BeoEchoLoader 
+			message="Loading project..." 
+			size="lg"
+			animated={true}
+			isLoading={$isLoadingContentArea}
+			delay={500}
+			minShowTime={300}
+		/>
+	</div>
+	{:else if $activeTab === 'workspace-settings'}
 		<!-- Always render workspace settings tab regardless of project selection -->
 		<div class="tab-content">
 			<WorkspaceSettingsTab />
@@ -37,10 +49,6 @@
 			<p class="theme-text-secondary">
 				Please select a configuration from the list to view its details.
 			</p>
-		</div>
-	{:else if $isLoadingContentArea}
-		<div class="flex items-center justify-center h-full min-h-[300px]">
-			<div class="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-blue-500"></div>
 		</div>
 	{:else if error}
 		<div class="text-red-500 text-center p-4 bg-red-100/10 rounded-md border border-red-500/20">

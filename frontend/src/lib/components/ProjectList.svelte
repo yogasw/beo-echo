@@ -158,17 +158,17 @@
 		} catch (error) {
 			console.log('scrollIntoView failed, falling back to manual calculation:', error);
 		}
-		
+
 		// Method 2: Fallback to manual calculation
 		const containerHeight = scrollContainer.clientHeight;
 		const elementHeight = projectElement.offsetHeight;
 		const elementTop = projectElement.offsetTop;
-		
+
 		// Calculate the scroll position to center the element
-		const elementCenter = elementTop + (elementHeight / 2);
+		const elementCenter = elementTop + elementHeight / 2;
 		const containerCenter = containerHeight / 2;
 		const targetScrollTop = elementCenter - containerCenter;
-		
+
 		// Ensure we don't scroll beyond boundaries
 		const maxScrollTop = scrollContainer.scrollHeight - containerHeight;
 		const finalScrollTop = Math.max(0, Math.min(targetScrollTop, maxScrollTop));
@@ -193,7 +193,7 @@
 	// Function to handle external project selection (from recent projects)
 	export async function selectAndScrollToProject(projectId: string) {
 		// Find the project in the current list
-		const project = $projects.find(p => p.id === projectId);
+		const project = $projects.find((p) => p.id === projectId);
 		if (project) {
 			// First select the project
 			await handleConfigClick(project);
@@ -222,19 +222,30 @@
 	// Debug: Log when element bindings change
 	$: if (filteredConfigurations.length > 0) {
 		setTimeout(() => {
-			console.log('Project elements bound:', Object.keys(projectElements).length, 'out of', filteredConfigurations.length);
+			console.log(
+				'Project elements bound:',
+				Object.keys(projectElements).length,
+				'out of',
+				filteredConfigurations.length
+			);
 		}, 100);
 	}
 
 	async function handleConfigClick(project: Project) {
+		let isRouteTab = $activeTab === 'routes';
+		console.log('activeTab', $activeTab);
+		if (!isRouteTab) {
+			activeTab.set('routes');
+		}
+		
+		isLoadingContentArea.set(true);
+
 		console.log('1. ConfigurationList - Clicked config:', project);
 		let isResetLogs = project.id != $selectedProject?.id;
 		if (isResetLogs) {
 			logStatus.reset();
 			initializeLogsStream(project.id, 100, isResetLogs);
 		}
-
-		isLoadingContentArea.set(true);
 
 		try {
 			const fullConfig = await getProjectDetail(project.id);
@@ -261,9 +272,9 @@
 				status: project.status || 'stopped',
 				workspaceId: $currentWorkspace?.id || '',
 				workspaceName: workspacesName,
-				lastUsed:""
+				lastUsed: ''
 			};
-			
+
 			addProjectToRecent(recentProjects);
 
 			console.log('Config data loaded:', fullConfig);

@@ -2,6 +2,7 @@
 	import ContentArea from '$lib/components/ContentArea.svelte';
 	import { onMount } from 'svelte';
 	import { getProjects } from '$lib/api/BeoApi';
+	import BeoEchoLoader from '$lib/components/common/BeoEchoLoader.svelte';
 
 	interface Route {
     path: string;
@@ -45,8 +46,10 @@
 
 {#if loading}
   <div class="flex items-center justify-center h-full min-h-[300px]">
-    <div class="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-blue-500"></div>
-  </div>
+		<BeoEchoLoader 
+				size="lg"
+				animated={true}
+			/>  </div>
 {:else if error}
   <div class="text-red-500 text-center p-4">{error}</div>
 {:else}
