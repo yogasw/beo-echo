@@ -270,10 +270,8 @@
 							</button>
 							
 							<!-- Tooltip - positioned below the icon -->
-							<div class="absolute z-50 hidden group-hover:block bg-gray-800 text-white text-xs rounded-md p-3 right-0 top-full mt-2 w-80 shadow-xl border border-gray-700">
+							<div class="absolute z-50 hidden group-hover:block bg-gray-800 text-white text-xs rounded-md p-3 right-0 top-1 mt-2 w-80 shadow-xl border border-gray-700">
 								<!-- Triangle pointer pointing up -->
-								<div class="absolute bottom-full right-4 w-0 h-0 border-l-[6px] border-l-transparent border-r-[6px] border-r-transparent border-b-[6px] border-b-gray-800"></div>
-								
 								<div class="space-y-2">
 									<div class="flex items-center">
 										<i class="fas fa-code text-amber-400 mr-2"></i>
