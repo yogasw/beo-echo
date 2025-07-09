@@ -270,22 +270,22 @@
 							</button>
 							
 							<!-- Tooltip - positioned below the icon -->
-							<div class="absolute z-50 hidden group-hover:block bg-gray-800 text-white text-xs rounded-md p-3 right-0 top-1 mt-2 w-80 shadow-xl border border-gray-700">
+							<div class="absolute z-50 hidden group-hover:block {ThemeUtils.themeBgPrimary()} {ThemeUtils.themeTextPrimary()} text-xs rounded-md p-3 right-0 top-1 mt-2 w-80 shadow-xl border {ThemeUtils.themeBorder()}">
 								<!-- Triangle pointer pointing up -->
 								<div class="space-y-2">
 									<div class="flex items-center">
 										<i class="fas fa-code text-amber-400 mr-2"></i>
 										<span class="font-semibold">Regex Pattern Support</span>
 									</div>
-									<div class="text-gray-300 text-xs leading-relaxed">
+									<div class="{ThemeUtils.themeTextSecondary()} text-xs leading-relaxed">
 										This path field supports regex patterns for dynamic routing:
 									</div>
-									<div class="bg-gray-900/50 rounded p-2 font-mono text-xs text-green-300">
+									<div class="{ThemeUtils.themeBgSecondary()} rounded p-2 font-mono text-xs text-green-400">
 										<div>/users/[0-9]+</div>
 										<div>/api/.*\.json$</div>
 										<div>/posts/([a-z]+)</div>
 									</div>
-									<div class="text-gray-400 text-xs">
+									<div class="{ThemeUtils.themeTextMuted()} text-xs">
 										Use regex to match multiple endpoint variations with a single rule.
 									</div>
 								</div>
