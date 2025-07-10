@@ -1,5 +1,5 @@
 <script lang="ts">
-	import {onDestroy, onMount } from 'svelte';
+	import { onDestroy, onMount } from 'svelte';
 	import type { Project, RequestLog } from '$lib/api/BeoApi';
 	import { addBookmark, deleteBookmark } from '$lib/api/BeoApi';
 	import { fade } from 'svelte/transition';
@@ -9,7 +9,7 @@
 	import SearchNoResults from './logs/SearchNoResults.svelte';
 	import * as ThemeUtils from '$lib/utils/themeUtils';
 	import { logs, logsConnectionStatus } from '$lib/stores/logs';
-	import {reconnectLogStream, refreshLogs } from '$lib/services/logsService';
+	import { refreshLogs } from '$lib/services/logsService';
 	import { activeTab } from '$lib/stores/activeTab';
 	import { createDefaultTab, addTabToStorage } from '$lib/utils/replayEditorStorage';
 	import { selectedWorkspace } from '$lib/stores/workspace';
@@ -42,21 +42,21 @@
 
 	// Function to switch between request and response tabs
 	let lastActiveTab: 'request' | 'response' = 'request'; // Store the last active tab
-	
+
 	function switchTab(logId: string, tab: 'request' | 'response') {
 		activeTabs[logId] = tab;
 		lastActiveTab = tab; // Remember this tab as the last used one
 		activeTabs = activeTabs; // Force Svelte reactivity update
 	}
-	
+
 	// Listen for the clearSearch event
 	onMount(() => {
 		const handleClearSearch = () => {
 			searchTerm = '';
 		};
-		
+
 		document.addEventListener('clearSearch', handleClearSearch);
-		
+
 		return () => {
 			document.removeEventListener('clearSearch', handleClearSearch);
 		};
@@ -120,7 +120,7 @@
 	$: filteredLogs = searchTerm
 		? $logs.filter((log) => matchesAllSearchTerms(log, searchTerms))
 		: $logs;
-	
+
 	// Update auto-scroll setting in store when changed
 	$: {
 		// When autoScroll changes from the UI, update the store
@@ -155,7 +155,7 @@
 		isCreateMockModalOpen = true;
 		console.log('Opening mock creation modal for log:', log.id);
 	}
-	
+
 	// Function to bookmark a log
 	async function bookmarkLog(log: RequestLog) {
 		try {
@@ -163,19 +163,19 @@
 				// If already bookmarked, remove the bookmark
 				await deleteBookmark(selectedProject.id, log.id);
 				log.bookmark = false;
-				
+
 				copyNotification = { show: true, message: 'Bookmark removed successfully!' };
 			} else {
 				// Otherwise add a bookmark
 				await addBookmark(selectedProject.id, log);
 				// The log object is updated by the API function to set bookmark=true
-				
+
 				copyNotification = { show: true, message: 'Log bookmarked successfully!' };
 			}
-			
+
 			// Force Svelte reactivity to update the UI
-			logs.update(logs => [...logs]);
-			
+			logs.update((logs) => [...logs]);
+
 			setTimeout(() => {
 				copyNotification = { show: false, message: '' };
 			}, 2000);
@@ -202,7 +202,7 @@
 			// Get current workspace and project context
 			const workspace = $selectedWorkspace;
 			const project = $currentProject;
-			
+
 			if (!workspace || !project) {
 				toast.error('Unable to create new replay: No workspace or project selected');
 				return;
@@ -212,18 +212,18 @@
 			const method = log.method.toUpperCase();
 			const headers = log.request_headers || '{}';
 			const body = log.request_body || '';
-			
+
 			// Parse URL and extract params
 			let baseUrl = `${project.url}${log.path}`;
-			let params: Array<{ key: string; value: string; description: string; enabled: boolean; }> = [];
-			
+			let params: Array<{ key: string; value: string; description: string; enabled: boolean }> = [];
+
 			// Extract query params if they exist
 			if (log.query_params) {
 				try {
 					// Parse query params from query_params field
 					const queryString = log.query_params;
 					const urlParams = new URLSearchParams(queryString);
-					
+
 					params = Array.from(urlParams.entries()).map(([key, value]) => ({
 						key,
 						value,
@@ -250,21 +250,21 @@
 
 			// Create new replay tab with request data
 			const newTab = createDefaultTab();
-			
+
 			// Update tab with the request data
 			newTab.name = `New ${method} ${log.path}`;
 			newTab.method = method;
 			newTab.url = baseUrl; // Base URL without query params
 			newTab.isUnsaved = true;
-			
+
 			// Update tab content with parsed data
 			if (newTab.content) {
 				newTab.content.method = method;
 				newTab.content.url = baseUrl;
-				
+
 				// Set params from query string
 				newTab.content.params = params;
-				
+
 				// Convert headers to Header array format
 				newTab.content.headers = Object.entries(parsedHeaders).map(([key, value]) => ({
 					key,
@@ -272,19 +272,19 @@
 					description: '',
 					enabled: true
 				}));
-				
+
 				// Set body content
 				newTab.content.body = {
 					type: 'raw',
 					content: body
 				};
-				
+
 				// Set minimal auth config
 				newTab.content.auth = {
 					type: 'none',
 					config: {}
 				};
-				
+
 				// Set scripts to empty
 				newTab.content.scripts = {
 					preRequestScript: '',
@@ -323,11 +323,7 @@
 		</div>
 	{/if}
 
-	<LogsHeader 
-		{selectedProject} 
-		logsConnectionStatus={$logsConnectionStatus} 
-		bind:searchTerm={searchTerm} 
-	/>
+	<LogsHeader {selectedProject} logsConnectionStatus={$logsConnectionStatus} bind:searchTerm />
 
 	{#if $logsConnectionStatus.isLoading}
 		<div class="flex justify-center py-8">
@@ -336,16 +332,19 @@
 	{:else if $logsConnectionStatus.error}
 		<div class="bg-red-100 dark:bg-red-800 p-4 rounded mb-4 text-center">
 			<p class="text-red-700 dark:text-white">{$logsConnectionStatus.error}</p>
-			<button on:click={() => refreshLogs()} class={ThemeUtils.primaryButton('mt-2 py-1 px-4 text-sm')}>
+			<button
+				on:click={() => refreshLogs()}
+				class={ThemeUtils.primaryButton('mt-2 py-1 px-4 text-sm')}
+			>
 				Retry
 			</button>
 		</div>
 	{:else if filteredLogs.length === 0 && searchTerm}
 		<SearchNoResults {searchTerm} />
 	{:else}
-		<LogsList 
+		<LogsList
 			{selectedProject}
-			filteredLogs={filteredLogs}
+			{filteredLogs}
 			{expandedLogs}
 			{activeTabs}
 			logsConnectionStatus={$logsConnectionStatus}

@@ -2,6 +2,7 @@ package services
 
 import (
 	"encoding/json"
+	"errors"
 	"sync"
 	"time"
 
@@ -113,6 +114,16 @@ func (s *LogService) NotifySubscribers(log database.RequestLog) {
 			}
 		}
 	}
+}
+
+// ClearLogs deletes all logs that are not bookmarked for a project
+func (s *LogService) ClearLogs(projectID string) (int64, error) {
+	if projectID == "" {
+		return 0, errors.New("project ID is required")
+	}
+
+	// Delete all logs that are not bookmarked for the specified project
+	return s.Repo.ClearNonBookmarkedLogs(projectID)
 }
 
 // FormatSSEEvent formats a log as a Server-Sent Event message

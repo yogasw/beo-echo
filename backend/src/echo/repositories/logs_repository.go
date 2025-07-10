@@ -62,3 +62,20 @@ func (r *LogRepository) GetLatestLogs(limit int, projectID string) ([]database.R
 
 	return logs, nil
 }
+
+// ClearNonBookmarkedLogs deletes all logs that are not bookmarked for a project
+func (r *LogRepository) ClearNonBookmarkedLogs(projectID string) (int64, error) {
+	if projectID == "" {
+		return 0, nil
+	}
+
+	// Delete all logs that are not bookmarked for the specified project
+	result := r.DB.Where("project_id = ? AND (bookmark = ? OR bookmark IS NULL)", 
+		projectID, false).Delete(&database.RequestLog{})
+	
+	if result.Error != nil {
+		return 0, result.Error
+	}
+	
+	return result.RowsAffected, nil
+}

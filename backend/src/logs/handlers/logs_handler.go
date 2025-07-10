@@ -238,3 +238,40 @@ func StreamLogsHandler(c *gin.Context) {
 		}
 	}
 }
+
+// ClearLogsHandler handles deleting all non-bookmarked logs for a project
+func ClearLogsHandler(c *gin.Context) {
+	EnsureLogService()
+	if logService == nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error":   true,
+			"message": "Log service is not available",
+		})
+		return
+	}
+
+	projectID := c.Param("projectId")
+	if projectID == "" {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error":   true,
+			"message": "Project ID is required",
+		})
+		return
+	}
+
+	// Clear non-bookmarked logs
+	rowsDeleted, err := logService.ClearLogs(projectID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error":   true,
+			"message": "Error clearing logs: " + err.Error(),
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"success":     true,
+		"message":     "Logs cleared successfully",
+		"rowsDeleted": rowsDeleted,
+	})
+}

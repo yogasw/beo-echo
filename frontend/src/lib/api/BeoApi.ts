@@ -789,3 +789,19 @@ export const getPublicConfig = async (): Promise<PublicConfigResponse> => {
 	const response = await apiClient.get('/config/public');
 	return response.data.data;
 };
+
+/**
+ * Clears all non-bookmarked logs for a project
+ * @param projectId The project ID
+ * @returns Number of logs cleared
+ */
+export const clearProjectLogsApi = async (projectId: string): Promise<number> => {
+	const workspaceId = getCurrentWorkspaceId();
+	const response = await apiClient.delete(`/workspaces/${workspaceId}/projects/${projectId}/logs/clear`);
+
+	if (!response.data.success) {
+		throw new Error(response.data.message || 'Failed to clear logs');
+	}
+
+	return response.data.rowsDeleted || 0;
+};

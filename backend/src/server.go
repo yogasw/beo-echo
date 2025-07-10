@@ -250,6 +250,7 @@ func SetupRouter() *gin.Engine {
 				// Request Logs management
 				projectRoutes.GET("/logs", handlerLogs.GetLogsHandler)
 				projectRoutes.GET("/logs/stream", handlerLogs.StreamLogsHandler)
+				projectRoutes.DELETE("/logs/clear", handlerLogs.ClearLogsHandler)
 
 				// Bookmark Logs management
 				projectRoutes.GET("/logs/bookmark", handlerLogs.GetBookmarksHandler)
