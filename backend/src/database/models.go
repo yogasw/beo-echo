@@ -118,14 +118,15 @@ func (me *MockEndpoint) BeforeCreate(tx *gorm.DB) error {
 type MockResponse struct {
 	ID         string     `gorm:"type:string;primaryKey" json:"id"`
 	EndpointID string     `gorm:"type:string" json:"endpoint_id"`
-	StatusCode int        `json:"status_code"`                 // HTTP status code
-	Body       string     `gorm:"type:text" json:"body"`       // Response body, stored as JSON
-	Headers    string     `gorm:"type:text" json:"headers"`    // Headers stored as JSON
-	Priority   int        `json:"priority"`                    // Priority if ResponseMode = static
-	DelayMS    int        `json:"delay_ms"`                    // Delay before response (milliseconds)
-	Stream     bool       `json:"stream"`                      // True if response is stream (e.g. SSE, chunked)
-	Note       string     `gorm:"type:text" json:"note"`       // Optional note for the response
-	Enabled    bool       `json:"enabled" gorm:"default:true"` // Whether enabled or not
+	StatusCode int        `json:"status_code"`                      // HTTP status code
+	Body       string     `gorm:"type:text" json:"body"`            // Response body, stored as JSON
+	Headers    string     `gorm:"type:text" json:"headers"`         // Headers stored as JSON
+	Priority   int        `json:"priority"`                         // Priority if ResponseMode = static
+	DelayMS    int        `json:"delay_ms"`                         // Delay before response (milliseconds)
+	Stream     bool       `json:"stream"`                           // True if response is stream (e.g. SSE, chunked)
+	Note       string     `gorm:"type:text" json:"note"`            // Optional note for the response
+	Enabled    bool       `json:"enabled" gorm:"default:true"`      // Whether enabled or not
+	IsFallback bool       `json:"is_fallback" gorm:"default:false"` // Whether this is a fallback response
 	Rules      []MockRule `gorm:"foreignKey:ResponseID;constraint:OnDelete:CASCADE" json:"rules"`
 	CreatedAt  time.Time  `gorm:"autoCreateTime" json:"created_at"`
 	UpdatedAt  time.Time  `gorm:"autoUpdateTime" json:"updated_at"`

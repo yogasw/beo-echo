@@ -99,12 +99,16 @@ func (s *MockService) handleMockMode(ctx context.Context, project *database.Proj
 
 	// Select response based on ResponseMode
 	response := selectResponseWithEndpoint(endpoint.ID, responses, endpoint.ResponseMode, req)
+	if response == nil {
+		// No valid response found based on rules
+		return createDefaultJSONResponse(systemConfig.DEFAULT_RESPONSE_NO_RESPONSE_CONFIGURED), nil, database.ModeMock, false
+	}
 
 	// Apply delays (response-level delay overrides endpoint-level delay, which overrides project-level delay)
-	s.applyDelay(project, endpoint, &response)
+	s.applyDelay(project, endpoint, response)
 
 	// Create and return HTTP response with match indicator
-	resp, err := createMockResponse(response)
+	resp, err := createMockResponse(*response)
 	return resp, err, database.ModeMock, true
 }
 
@@ -129,12 +133,15 @@ func (s *MockService) handleProxyMode(ctx context.Context, project *database.Pro
 		if err == nil && len(responses) > 0 {
 			// Select response based on ResponseMode
 			response := selectResponseWithEndpoint(endpoint.ID, responses, endpoint.ResponseMode, req)
-
+			if response == nil {
+				// No valid response found based on rules
+				return createDefaultJSONResponse(systemConfig.DEFAULT_RESPONSE_NO_RESPONSE_CONFIGURED), true, nil
+			}
 			// Apply delay with proper priority: Response > Endpoint > Project
-			s.applyDelay(project, endpoint, &response)
+			s.applyDelay(project, endpoint, response)
 
 			// Create and return HTTP response from mock
-			resp, err := createMockResponse(response)
+			resp, err := createMockResponse(*response)
 			if err == nil {
 				// Add header to indicate response was mocked
 				resp.Header.Set("beo-echo-response-type", "mock")
@@ -268,12 +275,30 @@ func executeProxyRequest(ctx context.Context, targetURLString, method, pathStr, 
 // Helper functions
 
 // selectResponseWithEndpoint selects a response based on mode and rules with endpoint ID for round-robin
-func selectResponseWithEndpoint(endpointID string, responses []database.MockResponse, mode string, req *http.Request) database.MockResponse {
+func selectResponseWithEndpoint(endpointID string, responses []database.MockResponse, mode string, req *http.Request) *database.MockResponse {
 	// Filter responses by rules first
 	validResponses := filterResponsesByRules(responses, req)
+	var fallbackResponses *database.MockResponse
 	if len(validResponses) == 0 {
 		// If no responses match rules, fallback to all responses
-		validResponses = responses
+		// search fallback responses
+		for _, resp := range responses {
+
+			if len(resp.Rules) == 0 {
+				validResponses = append(validResponses, resp)
+				continue
+			}
+
+			if resp.IsFallback {
+				fallbackResponses = &resp
+			}
+		}
+	}
+
+	if len(validResponses) == 0 && fallbackResponses == nil {
+		return nil
+	} else if len(validResponses) == 0 && fallbackResponses != nil {
+		return fallbackResponses
 	}
 
 	// Sort by priority (higher is more important)
@@ -283,16 +308,17 @@ func selectResponseWithEndpoint(endpointID string, responses []database.MockResp
 	switch strings.ToLower(mode) {
 	case "static":
 		// Return highest priority
-		return validResponses[0]
+		return &validResponses[0]
 	case "random":
 		// Return random response
-		return validResponses[rand.Intn(len(validResponses))]
+		return &validResponses[rand.Intn(len(validResponses))]
 	case "round_robin":
 		// Use the actual endpoint ID for round-robin selection
-		return getNextRoundRobinResponse(endpointID, validResponses)
+		response := getNextRoundRobinResponse(endpointID, validResponses)
+		return &response
 	default:
 		// Default to random
-		return validResponses[rand.Intn(len(validResponses))]
+		return &validResponses[rand.Intn(len(validResponses))]
 	}
 }
 
