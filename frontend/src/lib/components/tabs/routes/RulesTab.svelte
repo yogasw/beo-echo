@@ -28,6 +28,7 @@
 	
 	// Track previous rules to detect changes
 	let previousRulesJSON = JSON.stringify(rules);
+	let previousResponseId = responseId;
 
 	// Update local rules when original rules change
 	$: {
@@ -45,6 +46,18 @@
 			localRules = rules.map(rule => ({ ...rule }));
 			hasChanges = false;
 			previousRulesJSON = rulesJSON;
+		}
+	}
+
+	// Watch for responseId changes and reload rules
+	$: {
+		if (responseId !== previousResponseId) {
+			previousResponseId = responseId;
+			// Reset editing state when response changes
+			isEditing = false;
+			hasChanges = false;
+			// Reload rules for new response
+			loadRules();
 		}
 	}
 
@@ -127,27 +140,40 @@
 
 	// Handle field changes
 	function handleTypeChange(index: number, newType: string) {
+		if (localRules[index].type === newType) return; // Prevent unnecessary updates
+		
 		localRules[index].type = newType;
+		// Clear the key field when type changes to "body" since body rules don't need a key
+		if (newType === 'body') {
+			localRules[index].key = '';
+		}
 		hasChanges = true;
-		localRules = [...localRules]; // Trigger reactivity
+		// Use more efficient update instead of spreading the entire array
+		localRules = localRules.slice();
 	}
 	
 	function handleKeyChange(index: number, newKey: string) {
+		if (localRules[index].key === newKey) return; // Prevent unnecessary updates
+		
 		localRules[index].key = newKey;
 		hasChanges = true;
-		localRules = [...localRules]; // Trigger reactivity
+		localRules = localRules.slice();
 	}
 	
 	function handleOperatorChange(index: number, newOperator: string) {
+		if (localRules[index].operator === newOperator) return; // Prevent unnecessary updates
+		
 		localRules[index].operator = newOperator;
 		hasChanges = true;
-		localRules = [...localRules]; // Trigger reactivity
+		localRules = localRules.slice();
 	}
 	
 	function handleValueChange(index: number, newValue: string) {
+		if (localRules[index].value === newValue) return; // Prevent unnecessary updates
+		
 		localRules[index].value = newValue;
 		hasChanges = true;
-		localRules = [...localRules]; // Trigger reactivity
+		localRules = localRules.slice();
 	}
 	
 	// Remove a rule in edit mode
@@ -172,8 +198,15 @@
 	// Save all changes to rules
 	async function saveChanges() {
 		try {
-			// Remove empty rules
-			const filteredRules = localRules.filter(rule => rule.key.trim() !== '');
+			// Remove empty rules (but keep body rules which don't need keys)
+			const filteredRules = localRules.filter(rule => {
+				// Keep body rules even with empty keys
+				if (rule.type === 'body') {
+					return rule.value.trim() !== '';
+				}
+				// For header/query rules, both key and value must be present
+				return rule.key.trim() !== '' && rule.value.trim() !== '';
+			});
 			
 			// Handle updates for existing rules
 			const updatePromises = filteredRules
@@ -336,10 +369,14 @@
 							{#each localRules as rule, index}
 								<tr class="{index % 2 === 0 ? 'bg-white dark:bg-gray-800' : 'bg-gray-50/50 dark:bg-gray-750'}">
 									<td class="px-4 py-2 align-top">
-										<span class="inline-flex px-2 py-1 text-xs font-medium rounded-full {rule.type === 'header' ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300' : rule.type === 'query' ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300' : 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300'}">{rule.type}</span>
+										<span class="inline-flex px-2 py-1 text-xs font-medium rounded-full {rule.type === 'header' ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300' : rule.type === 'query' ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300' : rule.type === 'body' ? 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300' : 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300'}">{rule.type}</span>
 									</td>
 									<td class="px-4 py-2 align-top">
-										<span class="font-medium text-blue-600 dark:text-blue-400 text-xs">{rule.key}</span>
+										{#if rule.type === 'body'}
+											<span class="text-xs {ThemeUtils.themeTextMuted()} italic">Not required</span>
+										{:else}
+											<span class="font-medium text-blue-600 dark:text-blue-400 text-xs">{rule.key}</span>
+										{/if}
 									</td>
 									<td class="px-4 py-2 align-top">
 										<span class="text-xs {ThemeUtils.themeTextSecondary()}">{rule.operator}</span>
@@ -349,7 +386,7 @@
 									</td>
 									<td class="px-4 py-2 align-top">
 										<button 
-											on:click={() => removeRule(rule.id, index)} 
+											on:click={() => removeRule(rule?.id, index)} 
 											class="h-6 w-6 flex items-center justify-center text-red-500 hover:bg-red-100 dark:hover:bg-red-900/30 dark:text-red-400 dark:hover:text-red-300 rounded-full"
 											title="Delete rule"
 											aria-label="Delete rule"
@@ -401,10 +438,11 @@
 								<tr class="{i % 2 === 0 ? 'bg-white dark:bg-gray-800' : 'bg-gray-50/50 dark:bg-gray-750'}">
 									<td class="px-4 py-2 align-top">
 										<select 
-											bind:value={rule.type}
-											on:input={() => handleTypeChange(i, rule.type)}
+											value={rule.type}
+											on:change={(e) => handleTypeChange(i, (e.target as HTMLSelectElement).value)}
 											class="block w-full py-1 px-2 text-xs rounded bg-white dark:bg-gray-700 border {ThemeUtils.themeBorder()} {ThemeUtils.themeTextPrimary()} focus:ring-1 focus:ring-blue-500/50 focus:border-blue-500"
 											aria-label="Rule type"
+											title="Select rule type"
 										>
 											<option value="header">Header</option>
 											<option value="query">Query</option>
@@ -414,20 +452,23 @@
 									<td class="px-4 py-2 align-top">
 										<input 
 											type="text"
-											bind:value={rule.key}
-											on:input={() => handleKeyChange(i, rule.key)}
-											placeholder="Key name"
-											class="block w-full py-1 px-2 text-xs rounded bg-white dark:bg-gray-700 border {ThemeUtils.themeBorder()} {ThemeUtils.themeTextPrimary()} focus:ring-1 focus:ring-blue-500/50 focus:border-blue-500"
+											value={rule.key}
+											on:input={(e) => handleKeyChange(i, (e.target as HTMLInputElement).value)}
+											placeholder={rule.type === 'body' ? 'Not required for body rules' : 'Key name'}
+											disabled={rule.type === 'body'}
+											class="block w-full py-1 px-2 text-xs rounded bg-white dark:bg-gray-700 border {ThemeUtils.themeBorder()} {ThemeUtils.themeTextPrimary()} focus:ring-1 focus:ring-blue-500/50 focus:border-blue-500 {rule.type === 'body' ? 'opacity-50 cursor-not-allowed' : ''}"
 											aria-label="Rule key"
+											title={rule.type === 'body' ? 'Key is not required for body rules' : 'Enter the key name'}
 											bind:this={keyInputs[i]}
 										/>
 									</td>
 									<td class="px-4 py-2 align-top">
 										<select 
-											bind:value={rule.operator}
-											on:input={() => handleOperatorChange(i, rule.operator)}
+											value={rule.operator}
+											on:change={(e) => handleOperatorChange(i, (e.target as HTMLSelectElement).value)}
 											class="block w-full py-1 px-2 text-xs rounded bg-white dark:bg-gray-700 border {ThemeUtils.themeBorder()} {ThemeUtils.themeTextPrimary()} focus:ring-1 focus:ring-blue-500/50 focus:border-blue-500"
 											aria-label="Rule operator"
+											title="Select rule operator"
 										>
 											<option value="equals">equals</option>
 											<option value="contains">contains</option>
@@ -439,8 +480,8 @@
 											<div class="flex-1">
 												<input 
 													type="text"
-													bind:value={rule.value}
-													on:input={() => handleValueChange(i, rule.value)}
+													value={rule.value}
+													on:input={(e) => handleValueChange(i, (e.target as HTMLInputElement).value)}
 													placeholder="Value to match"
 													class="block w-full py-1 px-2 text-xs rounded bg-white dark:bg-gray-700 border {ThemeUtils.themeBorder()} {ThemeUtils.themeTextPrimary()} focus:ring-1 focus:ring-blue-500/50 focus:border-blue-500"
 													aria-label="Rule value"
