@@ -87,15 +87,6 @@
 				</button>
 
 				<button
-					on:click={() => {/* TODO: Add download functionality */}}
-					class="group bg-white/80 hover:bg-white dark:bg-gray-800/80 dark:hover:bg-gray-700/80 border border-gray-200/80 dark:border-gray-700/80 hover:border-gray-300 dark:hover:border-gray-600 p-2.5 rounded-lg transition-all duration-200 flex items-center justify-center shadow-sm hover:shadow-md"
-					aria-label="Download logs as file"
-					title="Download logs as file"
-				>
-					<i class="fas fa-download text-gray-600 dark:text-gray-300 group-hover:text-green-600 dark:group-hover:text-green-400 transition-colors duration-200 text-sm"></i>
-				</button>
-
-				<button
 					on:click={clearProjectLogs}
 					class="group bg-white/80 hover:bg-red-50 dark:bg-gray-800/80 dark:hover:bg-red-900/20 border border-gray-200/80 dark:border-gray-700/80 hover:border-red-200 dark:hover:border-red-800/50 p-2.5 rounded-lg transition-all duration-200 flex items-center justify-center shadow-sm hover:shadow-md"
 					aria-label="Clear all non-bookmarked logs"
