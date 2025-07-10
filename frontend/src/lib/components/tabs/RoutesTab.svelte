@@ -246,7 +246,7 @@
 					</div>
 					<input
 						type="text"
-						class="w-full rounded-md {ThemeUtils.themeBgSecondary()} pl-10 pr-10 py-2 {ThemeUtils.themeTextPrimary()} border {ThemeUtils.themeBorder()} focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+						class="w-full rounded-md {ThemeUtils.themeBgSecondary()} pl-10 pr-16 py-2 {ThemeUtils.themeTextPrimary()} border {ThemeUtils.themeBorder()} focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
 						value={selectedEndpoint?.path}
 						placeholder="/api/resource/id"
 						on:blur={(e) => {
@@ -257,8 +257,42 @@
 						}}
 					/>
 
-					<!-- Enhanced Open in New Tab Button -->
-					<div class="absolute inset-y-0 right-0 flex items-center pr-3">
+					<!-- Right side buttons container -->
+					<div class="absolute inset-y-0 right-0 flex items-center pr-3 space-x-1">
+						<!-- Regex Pattern Info Icon -->
+						<div class="relative group">
+							<button
+								class="p-1 rounded-md hover:bg-amber-500/10 text-amber-500 transition-colors cursor-help"
+								type="button"
+								aria-label="Information about regex pattern support"
+							>
+								<i class="fas fa-info-circle text-sm"></i>
+							</button>
+							
+							<!-- Tooltip - positioned below the icon -->
+							<div class="absolute z-50 hidden group-hover:block {ThemeUtils.themeBgPrimary()} {ThemeUtils.themeTextPrimary()} text-xs rounded-md p-3 right-0 top-1 mt-2 w-80 shadow-xl border {ThemeUtils.themeBorder()}">
+								<!-- Triangle pointer pointing up -->
+								<div class="space-y-2">
+									<div class="flex items-center">
+										<i class="fas fa-code text-amber-400 mr-2"></i>
+										<span class="font-semibold">Regex Pattern Support</span>
+									</div>
+									<div class="{ThemeUtils.themeTextSecondary()} text-xs leading-relaxed">
+										This path field supports regex patterns for dynamic routing:
+									</div>
+									<div class="{ThemeUtils.themeBgSecondary()} rounded p-2 font-mono text-xs text-green-400">
+										<div>/users/[0-9]+</div>
+										<div>/api/.*\.json$</div>
+										<div>/posts/([a-z]+)</div>
+									</div>
+									<div class="{ThemeUtils.themeTextMuted()} text-xs">
+										Use regex to match multiple endpoint variations with a single rule.
+									</div>
+								</div>
+							</div>
+						</div>
+
+						<!-- Enhanced Open in New Tab Button -->
 						<button
 							class="p-1.5 rounded-md hover:bg-blue-500/10 {ThemeUtils.themeTextMuted()} hover:text-blue-500 transition-colors disabled:opacity-50 disabled:hover:bg-transparent"
 							disabled={!selectedEndpoint || selectedEndpoint?.method !== 'GET'}
