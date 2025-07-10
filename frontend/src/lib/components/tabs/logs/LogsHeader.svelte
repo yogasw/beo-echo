@@ -7,9 +7,6 @@
 	export let logsConnectionStatus: any;
 	export let searchTerm: string = '';
 
-	async function handleClearLogs() {
-		const rowsDeleted = await clearProjectLogs();
-	}
 </script>
 
 {#if !logsConnectionStatus.isConnected && logsConnectionStatus.reconnectAttempts > 0}
@@ -86,7 +83,7 @@
 				</button>
 
 				<button
-					on:click={handleClearLogs}
+					on:click={clearProjectLogs}
 					aria-label="Clear all non-bookmarked logs"
 					title="Clear all non-bookmarked logs (bookmarked logs will be preserved)"
 				>
