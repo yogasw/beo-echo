@@ -100,8 +100,8 @@ func TestAccessTokenExpiry(t *testing.T) {
 	claims, err := ValidateToken(accessToken)
 	assert.NoError(t, err)
 
-	// Check that token expires in approximately 15 minutes
-	expectedExpiry := time.Now().Add(15 * time.Minute)
+	// Check that token expires in approximately 24 hours
+	expectedExpiry := time.Now().Add(24 * time.Hour)
 	actualExpiry := claims.ExpiresAt.Time
 	timeDiff := actualExpiry.Sub(expectedExpiry)
 

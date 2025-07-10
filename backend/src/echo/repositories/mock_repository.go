@@ -3,6 +3,7 @@ package repositories
 import (
 	"encoding/json"
 	"fmt"
+	"regexp"
 	"strings"
 
 	"beo-echo/backend/src/database"
@@ -74,18 +75,19 @@ func (r *MockRepository) GetProxyTarget(proxyTargetID string) (*database.ProxyTa
 // Helper functions
 
 // findBestPathMatch finds the best matching endpoint from a list of endpoints
-// considering path parameters (e.g., /users/:id)
+// Supporting various path patterns:
+// 1. Exact match: /users/123
+// 2. Path parameters: /users/:id
+// 3. Wildcard: /api/v2/customer_rooms/*/broadcast_history
+// 4. Regex: /api/v\d+/users/\d+
 func findBestPathMatch(endpoints []database.MockEndpoint, requestPath string) *database.MockEndpoint {
-	requestParts := strings.Split(strings.Trim(requestPath, "/"), "/")
-
 	var bestMatch *database.MockEndpoint
 	bestScore := -1
 
 	for i := range endpoints {
 		endpoint := &endpoints[i]
-		endpointParts := strings.Split(strings.Trim(endpoint.Path, "/"), "/")
-
-		if score := calculatePathMatchScore(endpointParts, requestParts); score > bestScore {
+		
+		if score := calculatePathMatchScore(endpoint.Path, requestPath); score > bestScore {
 			bestScore = score
 			bestMatch = endpoint
 		}
@@ -100,32 +102,105 @@ func findBestPathMatch(endpoints []database.MockEndpoint, requestPath string) *d
 }
 
 // calculatePathMatchScore calculates how well an endpoint path matches a request path
-// Higher score means better match
-func calculatePathMatchScore(endpointParts, requestParts []string) int {
+// Higher score means better match. Supports different pattern types:
+// - Exact match (highest score: 100)
+// - Path parameters with : (score: 80)
+// - Wildcard patterns with * (score: 60)
+// - Regex patterns (score: 40)
+func calculatePathMatchScore(endpointPath, requestPath string) int {
+	// Clean paths
+	endpointPath = strings.Trim(endpointPath, "/")
+	requestPath = strings.Trim(requestPath, "/")
+	
+	// Exact match gets highest priority
+	if endpointPath == requestPath {
+		return 100
+	}
+	
+	// Check for regex pattern (contains regex metacharacters)
+	if isRegexPattern(endpointPath) {
+		if matchesRegex(endpointPath, requestPath) {
+			return 40
+		}
+		return -1
+	}
+	
+	// Check for wildcard or path parameter patterns
+	return calculateSegmentMatchScore(endpointPath, requestPath)
+}
+
+// isRegexPattern checks if a path contains regex metacharacters
+func isRegexPattern(path string) bool {
+	// Common regex metacharacters that indicate it's a regex pattern
+	regexChars := []string{"\\d", "\\w", "\\s", "[", "]", "(", ")", "+", "?", "^", "$", "\\", "|"}
+	for _, char := range regexChars {
+		if strings.Contains(path, char) {
+			return true
+		}
+	}
+	return false
+}
+
+// matchesRegex tests if request path matches the regex pattern
+func matchesRegex(pattern, requestPath string) bool {
+	// Compile and test regex
+	regex, err := regexp.Compile("^" + pattern + "$")
+	if err != nil {
+		return false
+	}
+	return regex.MatchString(requestPath)
+}
+
+// calculateSegmentMatchScore handles path parameters and wildcard matching
+func calculateSegmentMatchScore(endpointPath, requestPath string) int {
+	endpointParts := strings.Split(endpointPath, "/")
+	requestParts := strings.Split(requestPath, "/")
+	
 	// If lengths don't match, this can't be a match
 	if len(endpointParts) != len(requestParts) {
 		return -1
 	}
-
+	
 	score := 0
+	wildcardCount := 0
+	paramCount := 0
+	
 	for i := 0; i < len(endpointParts); i++ {
-		// Exact match of path part
-		if endpointParts[i] == requestParts[i] {
+		endpointPart := endpointParts[i]
+		requestPart := requestParts[i]
+		
+		// Exact match of path part (highest score)
+		if endpointPart == requestPart {
 			score += 10
 			continue
 		}
-
+		
 		// Path parameter (starts with :)
-		if strings.HasPrefix(endpointParts[i], ":") {
-			score += 5
+		if strings.HasPrefix(endpointPart, ":") {
+			score += 8
+			paramCount++
 			continue
 		}
-
+		
+		// Wildcard match (*)
+		if endpointPart == "*" {
+			score += 6
+			wildcardCount++
+			continue
+		}
+		
 		// Not a match
 		return -1
 	}
-
-	return score
+	
+	// Calculate final score based on match type
+	if wildcardCount > 0 {
+		return 60 + score // Wildcard patterns
+	} else if paramCount > 0 {
+		return 80 + score // Path parameter patterns
+	}
+	
+	return score // Should not reach here for valid matches
 }
 
 // ParseHeaders converts a JSON string to a map of headers
