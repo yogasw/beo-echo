@@ -15,6 +15,7 @@
 	import { selectedWorkspace } from '$lib/stores/workspace';
 	import { selectedProject as currentProject } from '$lib/stores/selectedConfig';
 	import { toast } from '$lib/stores/toast';
+	import BeoEchoLoader from '../common/BeoEchoLoader.svelte';
 
 	export let selectedProject: Project;
 
@@ -327,7 +328,7 @@
 
 	{#if $logsConnectionStatus.isLoading}
 		<div class="flex justify-center py-8">
-			<div class="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+			<BeoEchoLoader/>
 		</div>
 	{:else if $logsConnectionStatus.error}
 		<div class="bg-red-100 dark:bg-red-800 p-4 rounded mb-4 text-center">
