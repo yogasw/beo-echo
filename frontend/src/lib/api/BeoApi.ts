@@ -103,6 +103,7 @@ export type Response = {
 	stream: boolean;
 	enabled: boolean;
 	note: string;
+	is_fallback: boolean;
 	rules: Rule[] | null;
 	created_at: Date;
 	updated_at: Date;
@@ -348,15 +349,6 @@ export const addResponse = async (projectId: string, endpointId: string, statusC
 	return response.data.data;
 };
 
-export const uploadConfig = async (formData: FormData): Promise<any> => {
-	const response = await apiClient.post('/upload', formData, {
-		headers: {
-			'Content-Type': 'multipart/form-data'
-		}
-	});
-	return response.data.data;
-};
-
 export const getProjectDetail = async (projectId: string): Promise<Project> => {
 	let workspaceId = getCurrentWorkspaceId();
 	const response = await apiClient.get(`/workspaces/${workspaceId}/projects/${projectId}`);
@@ -458,9 +450,10 @@ export const updateResponse = async (projectId: string, endpointId: string, resp
 	body?: string;
 	headers?: string;
 	priority?: number;
-	delayMS?: number;
+	delay_ms?: number;
 	stream?: boolean;
 	enabled?: boolean;
+	is_fallback?: boolean;
 }): Promise<Response> => {
 	let workspaceId = getCurrentWorkspaceId();
 	const response = await apiClient.put(`/workspaces/${workspaceId}/projects/${projectId}/endpoints/${endpointId}/responses/${responseId}`, data);
@@ -788,4 +781,20 @@ export const checkAliasAndSearchProjects = async (query: string): Promise<AliasA
 export const getPublicConfig = async (): Promise<PublicConfigResponse> => {
 	const response = await apiClient.get('/config/public');
 	return response.data.data;
+};
+
+/**
+ * Clears all non-bookmarked logs for a project
+ * @param projectId The project ID
+ * @returns Number of logs cleared
+ */
+export const clearProjectLogsApi = async (projectId: string): Promise<number> => {
+	const workspaceId = getCurrentWorkspaceId();
+	const response = await apiClient.delete(`/workspaces/${workspaceId}/projects/${projectId}/logs/clear`);
+
+	if (!response.data.success) {
+		throw new Error(response.data.message || 'Failed to clear logs');
+	}
+
+	return response.data.rowsDeleted || 0;
 };

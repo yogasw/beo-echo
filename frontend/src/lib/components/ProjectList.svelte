@@ -2,7 +2,6 @@
 	import { createEventDispatcher, onMount } from 'svelte';
 	import {
 		getProjects,
-		uploadConfig,
 		addProject,
 		updateProjectStatus,
 		type Project,
@@ -40,8 +39,6 @@
 		project.name.toLowerCase().includes(searchTerm.toLowerCase())
 	);
 
-	let uploading = false;
-	let fileInput: HTMLInputElement | null = null;
 
 	// For Add Project modal
 	let showAddProjectModal = false;
@@ -285,30 +282,6 @@
 		}
 	}
 
-	async function handleUploadConfig(event: Event) {
-		const files = (event.target as HTMLInputElement).files;
-		if (!files || files.length === 0) return;
-		const file = files[0];
-		const formData = new FormData();
-		formData.append('config', file);
-		uploading = true;
-		try {
-			await uploadConfig(formData);
-			// Refresh config list
-			projects.set(await getProjects());
-			toast.success('Config uploaded successfully');
-		} catch (err) {
-			toast.error('Failed to upload config');
-		} finally {
-			uploading = false;
-			if (fileInput) fileInput.value = '';
-		}
-	}
-
-	function triggerFileInput() {
-		if (fileInput) fileInput.click();
-	}
-
 	function openAddProjectModal() {
 		showAddProjectModal = true;
 		resetAliasTracking();
@@ -481,23 +454,6 @@
 			class={ThemeUtils.inputField('py-2')}
 		/>
 	</div>
-	<button
-		class={ThemeUtils.primaryButton('mb-2 w-full justify-center')}
-		on:click={triggerFileInput}
-		disabled={uploading}
-		title="Upload configuration file"
-		aria-label="Upload configuration file"
-	>
-		<i class="fas fa-upload mr-2"></i>
-		{uploading ? 'Uploading...' : 'Upload Config'}
-	</button>
-	<input
-		type="file"
-		accept=".json"
-		class="hidden"
-		bind:this={fileInput}
-		on:change={handleUploadConfig}
-	/>
 
 	<button
 		class={ThemeUtils.primaryButton('mb-4 w-full justify-center bg-green-600 hover:bg-green-700')}
