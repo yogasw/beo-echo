@@ -349,15 +349,6 @@ export const addResponse = async (projectId: string, endpointId: string, statusC
 	return response.data.data;
 };
 
-export const uploadConfig = async (formData: FormData): Promise<any> => {
-	const response = await apiClient.post('/upload', formData, {
-		headers: {
-			'Content-Type': 'multipart/form-data'
-		}
-	});
-	return response.data.data;
-};
-
 export const getProjectDetail = async (projectId: string): Promise<Project> => {
 	let workspaceId = getCurrentWorkspaceId();
 	const response = await apiClient.get(`/workspaces/${workspaceId}/projects/${projectId}`);
