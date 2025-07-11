@@ -90,6 +90,7 @@ func UpdateResponseHandler(c *gin.Context) {
 		Stream     *bool   `json:"stream"`
 		Enabled    *bool   `json:"enabled"`
 		Note       *string `json:"note"`
+		IsFallback *bool   `json:"is_fallback"`
 	}
 
 	if err := c.ShouldBindJSON(&updateData); err != nil {
@@ -142,8 +143,13 @@ func UpdateResponseHandler(c *gin.Context) {
 	if updateData.Enabled != nil {
 		existingResponse.Enabled = *updateData.Enabled
 	}
+
 	if updateData.Note != nil {
 		existingResponse.Note = *updateData.Note
+	}
+
+	if updateData.IsFallback != nil {
+		existingResponse.IsFallback = *updateData.IsFallback
 	}
 
 	// Save updates
@@ -154,6 +160,22 @@ func UpdateResponseHandler(c *gin.Context) {
 			"message": "Failed to update response: " + result.Error.Error(),
 		})
 		return
+	}
+	// when updating a fallback response, ensure no other fallback exists
+	if updateData.IsFallback != nil {
+		if *updateData.IsFallback {
+			// Find and disable any other fallback responses for this endpoint
+			if err := database.GetDB().Model(&database.MockResponse{}).
+				Where("endpoint_id = ? AND is_fallback = ? AND id != ?", existingResponse.EndpointID, true, existingResponse.ID).
+				Update("is_fallback", false).Error; err != nil {
+				c.JSON(http.StatusInternalServerError, gin.H{
+					"error":   true,
+					"message": "Failed to update other fallback responses: " + err.Error(),
+				})
+				return
+			}
+		}
+
 	}
 
 	// Reload response with rules
