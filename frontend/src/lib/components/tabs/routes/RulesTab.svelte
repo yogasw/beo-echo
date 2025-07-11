@@ -472,7 +472,6 @@
 										>
 											<option value="equals">equals</option>
 											<option value="contains">contains</option>
-											<option value="regex">regex</option>
 										</select>
 									</td>
 									<td class="px-4 py-2 align-top">

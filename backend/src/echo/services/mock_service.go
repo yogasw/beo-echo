@@ -425,10 +425,6 @@ func matchRuleValue(operator, actual, expected string) bool {
 		return actual == expected
 	case "contains":
 		return strings.Contains(actual, expected)
-	case "regex":
-		// TODO: Implement regex matching
-		// For simplicity, fallback to contains for now
-		return strings.Contains(actual, expected)
 	default:
 		return actual == expected // Default to equals
 	}

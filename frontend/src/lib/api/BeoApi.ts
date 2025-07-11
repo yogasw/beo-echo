@@ -103,6 +103,7 @@ export type Response = {
 	stream: boolean;
 	enabled: boolean;
 	note: string;
+	is_fallback: boolean;
 	rules: Rule[] | null;
 	created_at: Date;
 	updated_at: Date;
@@ -458,9 +459,10 @@ export const updateResponse = async (projectId: string, endpointId: string, resp
 	body?: string;
 	headers?: string;
 	priority?: number;
-	delayMS?: number;
+	delay_ms?: number;
 	stream?: boolean;
 	enabled?: boolean;
+	is_fallback?: boolean;
 }): Promise<Response> => {
 	let workspaceId = getCurrentWorkspaceId();
 	const response = await apiClient.put(`/workspaces/${workspaceId}/projects/${projectId}/endpoints/${endpointId}/responses/${responseId}`, data);
