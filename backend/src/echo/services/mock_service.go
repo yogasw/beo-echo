@@ -133,19 +133,17 @@ func (s *MockService) handleProxyMode(ctx context.Context, project *database.Pro
 		if err == nil && len(responses) > 0 {
 			// Select response based on ResponseMode
 			response := selectResponseWithEndpoint(endpoint.ID, responses, endpoint.ResponseMode, req)
-			if response == nil {
-				// No valid response found based on rules
-				return createDefaultJSONResponse(systemConfig.DEFAULT_RESPONSE_NO_RESPONSE_CONFIGURED), true, nil
-			}
-			// Apply delay with proper priority: Response > Endpoint > Project
-			s.applyDelay(project, endpoint, response)
+			if response != nil {
+				// Apply delay with proper priority: Response > Endpoint > Project
+				s.applyDelay(project, endpoint, response)
 
-			// Create and return HTTP response from mock
-			resp, err := createMockResponse(*response)
-			if err == nil {
-				// Add header to indicate response was mocked
-				resp.Header.Set("beo-echo-response-type", "mock")
-				return resp, true, nil // True because it was handled by a mock endpoint
+				// Create and return HTTP response from mock
+				resp, err := createMockResponse(*response)
+				if err == nil {
+					// Add header to indicate response was mocked
+					resp.Header.Set("beo-echo-response-type", "mock")
+					return resp, true, nil // True because it was handled by a mock endpoint
+				}
 			}
 		}
 	}
