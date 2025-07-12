@@ -338,9 +338,9 @@ func StartServer() error {
 
 	log.Printf("=================================================")
 	log.Printf("🚀 BeoEcho server is starting up!")
-	log.Printf("🔗 Server URL: http://%s", serverAddr)
-	log.Printf("📄 API endpoint: http://%s/api", serverAddr)
-	log.Printf("🔍 Health check: http://%s/api/health", serverAddr)
+	// log.Printf("🔗 Server URL: http://%s", serverAddr)
+	// log.Printf("📄 API endpoint: http://%s/api", serverAddr)
+	// log.Printf("🔍 Health check: http://%s/api/health", serverAddr)
 	log.Printf("=================================================")
 
 	// This will block until the server is stopped
