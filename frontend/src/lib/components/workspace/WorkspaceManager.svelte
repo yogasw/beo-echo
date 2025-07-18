@@ -80,8 +80,8 @@
 	<button 
 		on:click={toggleModal} 
 		class="flex flex-col items-center max-w-20"
-		title={$currentWorkspace?.name || 'Select Workspace'}
-		aria-label={`Current workspace: ${$currentWorkspace?.name || 'None selected'}`}
+		title="List Workspaces"
+		aria-label="List Workspaces"
 	>
 		<div
 			class="w-12 aspect-square theme-bg-secondary theme-text-primary p-3 rounded-full border-2 border-green-500 flex items-center justify-center"
@@ -89,7 +89,7 @@
 			<i class="fas fa-building"></i>
 		</div>
 		<span class="text-xs mt-1 theme-text-primary truncate w-full text-center">
-			{$currentWorkspace?.name || 'Select'}
+			Workspaces
 		</span>
 	</button>
 
