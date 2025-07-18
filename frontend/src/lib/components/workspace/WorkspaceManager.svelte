@@ -33,7 +33,7 @@
 			newWorkspaceName = '';
 			modalOpen = false;
 		} catch (err: any) {
-			toast.error(err)
+			toast.error(err);
 		} finally {
 			loading = false;
 		}
@@ -77,20 +77,18 @@
 <!-- Workspace Manager Component -->
 <div class="relative {className}">
 	<!-- Company/Workspace Button -->
-	<button 
-		on:click={toggleModal} 
+	<button
+		on:click={toggleModal}
 		class="flex flex-col items-center max-w-20"
-		title={$currentWorkspace?.name || 'Select Workspace'}
-		aria-label={`Current workspace: ${$currentWorkspace?.name || 'None selected'}`}
+		title="List Workspaces"
+		aria-label="List Workspaces"
 	>
 		<div
 			class="w-12 aspect-square theme-bg-secondary theme-text-primary p-3 rounded-full border-2 border-green-500 flex items-center justify-center"
 		>
 			<i class="fas fa-building"></i>
 		</div>
-		<span class="text-xs mt-1 theme-text-primary truncate w-full text-center">
-			{$currentWorkspace?.name || 'Select'}
-		</span>
+		<span class="text-xs mt-1 theme-text-primary truncate w-full text-center"> Workspaces </span>
 	</button>
 
 	<!-- Workspace Modal -->
@@ -122,7 +120,10 @@
 									<div class="flex items-center gap-2">
 										<span class="theme-text-primary truncate flex-1">{workspace.name}</span>
 										{#if workspace.id === $currentWorkspace?.id}
-											<i class="fas fa-check text-blue-500 text-xs flex-shrink-0"></i>
+											<span
+												class="ml-1 px-2 py-0.5 bg-blue-600 text-white text-[10px] rounded-full font-bold"
+												aria-label="Current workspace">Current</span
+											>
 										{/if}
 									</div>
 									{#if workspace.role}
