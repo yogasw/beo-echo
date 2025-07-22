@@ -43,7 +43,7 @@ func SetDesktopMode(isDesktop bool) {
 var (
 	IS_DEBUG        = getEnvOrDefault("IS_DEBUG", "false")
 	SERVER_PORT     = getEnvOrDefault("SERVER_PORT", "3600")
-	SERVER_HOSTNAME = getEnvOrDefault("SERVER_HOSTNAME", "0.0.0.0")
+	SERVER_HOSTNAME = getEnvOrDefault("SERVER_HOSTNAME", "127.0.0.1")
 	CORS_ORIGIN     = getEnvOrDefault("CORS_ORIGIN", "*")
 )
 

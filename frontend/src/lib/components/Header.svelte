@@ -1,7 +1,5 @@
 <script lang="ts">
 	import { activeTab } from '$lib/stores/activeTab';
-	import { selectedProject } from '$lib/stores/selectedConfig';
-	import { toast } from '$lib/stores/toast';
 	import { theme, toggleTheme } from '$lib/stores/theme';
 	import { logStatus } from '$lib/stores/logStatus';
 	import SaveButton from './SaveButton.svelte';
@@ -56,13 +54,6 @@
 	function openSettings() {
 		$activeTab = 'settings';
 		profileMenuOpen = false;
-	}
-
-	async function handleDownload() {
-		if (!$selectedProject) {
-			toast.error('Please select a configuration first');
-			return;
-		}
 	}
 </script>
 
@@ -161,17 +152,6 @@
 			<i class="fas fa-cogs"></i>
 		</div>
 		<span class="text-xs mt-1 theme-text-primary">Configuration</span>
-	</button>
-
-	<button class="relative group mr-4 flex flex-col items-center" on:click={handleDownload}
-		title="Download configuration as JSON"
-		aria-label="Download configuration as JSON">
-		<div
-			class="w-12 aspect-square theme-bg-secondary theme-text-primary p-3 rounded-full border-2 border-blue-500 flex items-center justify-center"
-		>
-			<i class="fas fa-download"></i>
-		</div>
-		<span class="text-xs mt-1 theme-text-primary">Download JSON</span>
 	</button>
 
 	<!-- Theme Toggle Button -->

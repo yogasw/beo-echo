@@ -1,4 +1,4 @@
-import { createLogStream, getLogs, type RequestLog } from '$lib/api/BeoApi';
+import { createLogStream, getLogs, clearProjectLogsApi, type RequestLog } from '$lib/api/BeoApi';
 import { currentWorkspace } from '$lib/stores/workspace';
 import {
     logs,
@@ -12,7 +12,8 @@ import {
     setError,
     setTotalLogs,
     clearLogs,
-    addBatchLogs
+    addBatchLogs,
+    setProjectId
 } from '$lib/stores/logs';
 import { get } from 'svelte/store';
 
@@ -50,6 +51,7 @@ async function loadInitialLogs(projectId: string, pageSize: number = 100) {
     }
 
     try {
+        setProjectId(projectId)
         setLoading(true);
         const result = await getLogs(1, pageSize, projectId);
         let currentLogs = get(logs);
@@ -195,5 +197,28 @@ export function refreshLogs() {
     // Also try to reconnect if disconnected
     if (!get(logsConnectionStatus).isConnected) {
         setupLogStream(projectId);
+    }
+}
+
+/**
+ * Clear all non-bookmarked logs for the current project
+ * @returns Promise that resolves to the number of logs cleared
+ */
+export async function clearProjectLogs(): Promise<number> {
+    const { projectId } = get(logsConnectionStatus);
+    if (!projectId) {
+        console.error('Cannot clear logs: No project ID available');
+        throw new Error('No project ID available');
+    }
+
+    try {
+        clearLogs()
+        const rowsDeleted = await clearProjectLogsApi(projectId);
+        refreshLogs();
+
+        return rowsDeleted;
+    } catch (err) {
+        console.error('Failed to clear logs:', err);
+        throw err;
     }
 }

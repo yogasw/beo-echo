@@ -3,7 +3,7 @@ import { getCurrentWorkspaceId } from '$lib/utils/localStorage';
 
 // Rule type definition matching the backend MockRule model
 export type Rule = {
-  id?: string;
+  id: string;
   responseId: string;
   type: string;       // "header", "query", "body"
   key: string;        // The key to match against

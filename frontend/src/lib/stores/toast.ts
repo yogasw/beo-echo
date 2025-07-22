@@ -13,7 +13,7 @@ const createToastStore = () => {
 
   return {
     subscribe,
-    show: (message: string, type: ToastType = 'info', duration: number = 4000) => {
+    show: (message: string, type: ToastType = 'info', duration: number = 5000) => {
       set({ message, type, duration });
     },
     success: (message: string, duration?: number) => {
