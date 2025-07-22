@@ -1,16 +1,23 @@
 <script lang="ts">
 	import type { Endpoint, Response } from '$lib/api/BeoApi';
-	import { addResponse, deleteResponse, duplicateResponse, updateResponse, reorderResponses } from '$lib/api/BeoApi';
+	import {
+		addResponse,
+		deleteResponse,
+		duplicateResponse,
+		updateResponse,
+		reorderResponses
+	} from '$lib/api/BeoApi';
 	import { updateEndpoint } from '$lib/stores/saveButton';
 	import { toast } from '$lib/stores/toast';
 	import * as ThemeUtils from '$lib/utils/themeUtils';
+	import { onMount } from 'svelte';
 
 	let selectedValue: string = '';
 	export let selectedEndpoint: Endpoint | null;
 	export let selectedResponse: Response | null;
 
 	let flaggedResponseId: string | null = null;
-	
+
 	// Drag and drop state
 	let draggedIndex: number | null = null;
 	let dragOverIndex: number | null = null;
@@ -97,9 +104,24 @@
 		}
 	};
 
-	// Toggle flag for a response
-	function toggleFlag(responseId: string) {
-		flaggedResponseId = responseId === flaggedResponseId ? null : responseId;
+	// Toggle fallback for a response
+	async function toggleFallback(response: Response) {
+		if (!selectedEndpoint || !response) {
+			toast.error('No endpoint or response selected');
+			return;
+		}
+		const updatedResponse = await updateResponse(
+			selectedEndpoint.project_id,
+			response.endpoint_id,
+			response.id,
+			{ is_fallback: !response.is_fallback }
+		);
+		if (!updatedResponse) {
+			toast.error('Failed to update response');
+			return;
+		}
+
+		flaggedResponseId = response.id === flaggedResponseId ? null : response.id;
 	}
 
 	// Handle response mode change
@@ -177,7 +199,7 @@
 
 			// Auto-select the newly duplicated response
 			selectResponse(selectedEndpoint.responses.length - 1, duplicatedResponse);
-			
+
 			toast.success('Response duplicated successfully');
 		} catch (error) {
 			console.error('Failed to duplicate response:', error);
@@ -221,12 +243,12 @@
 	// Drag and drop handlers
 	function handleDragStart(event: DragEvent, index: number): void {
 		if (!event.dataTransfer) return;
-		
+
 		draggedIndex = index;
 		isDragging = true;
 		event.dataTransfer.effectAllowed = 'move';
 		event.dataTransfer.setData('text/html', ''); // Required for Firefox
-		
+
 		// Add visual feedback
 		if (event.target instanceof HTMLElement) {
 			event.target.style.opacity = '0.5';
@@ -245,9 +267,9 @@
 	function handleDragOver(event: DragEvent, index: number): void {
 		event.preventDefault();
 		if (draggedIndex === null || draggedIndex === index) return;
-		
+
 		dragOverIndex = index;
-		
+
 		if (event.dataTransfer) {
 			event.dataTransfer.dropEffect = 'move';
 		}
@@ -259,45 +281,47 @@
 
 	async function handleDrop(event: DragEvent, dropIndex: number): Promise<void> {
 		event.preventDefault();
-		
+
 		if (draggedIndex === null || draggedIndex === dropIndex || !selectedEndpoint?.responses) {
 			return;
 		}
 
 		try {
 			// Sort responses by priority first to get the correct order (higher priority first)
-			const sortedResponses = [...selectedEndpoint.responses].sort((a, b) => b.priority - a.priority);
+			const sortedResponses = [...selectedEndpoint.responses].sort(
+				(a, b) => b.priority - a.priority
+			);
 			const draggedResponse = sortedResponses[draggedIndex];
-			
+
 			// Remove from old position
 			sortedResponses.splice(draggedIndex, 1);
-			
+
 			// Insert at new position
 			sortedResponses.splice(dropIndex, 0, draggedResponse);
-			
+
 			// Create order array with response IDs
-			const responseOrder = sortedResponses.map(r => r.id);
-			
+			const responseOrder = sortedResponses.map((r) => r.id);
+
 			// Call API to update order
 			const updatedResponses = await reorderResponses(
 				selectedEndpoint.project_id,
 				selectedEndpoint.id,
 				responseOrder
 			);
-			
+
 			// Update local state
 			selectedEndpoint.responses = updatedResponses;
-			
+
 			// If the selected response was moved, keep it selected
 			if (selectedResponse && draggedResponse.id === selectedResponse.id) {
 				// Find the new index in the updated responses (higher priority first)
 				const newSortedResponses = updatedResponses.sort((a, b) => b.priority - a.priority);
-				const newIndex = newSortedResponses.findIndex(r => r.id === draggedResponse.id);
+				const newIndex = newSortedResponses.findIndex((r) => r.id === draggedResponse.id);
 				if (newIndex !== -1) {
 					selectedResponse = newSortedResponses[newIndex];
 				}
 			}
-			
+
 			toast.success('Response order updated successfully');
 		} catch (error) {
 			console.error('Failed to reorder responses:', error);
@@ -308,27 +332,15 @@
 			isDragging = false;
 		}
 	}
-</script>
 
-<style>
-	.drag-ghost {
-		opacity: 0.5;
-	}
-	
-	.drag-over {
-		border-top: 2px solid #3b82f6;
-		background-color: rgba(59, 130, 246, 0.1);
-	}
-	
-	.cursor-grab {
-		cursor: grab;
-	}
-	
-	.cursor-grab:active,
-	.cursor-grabbing {
-		cursor: grabbing;
-	}
-</style>
+	onMount(()=>{
+		selectedEndpoint?.responses?.forEach(e=>{
+			if (e.is_fallback){
+				flaggedResponseId = e.id
+			}
+		})
+	})
+</script>
 
 <div
 	class="flex items-center justify-between {ThemeUtils.themeBgPrimary()} {ThemeUtils.themeTextSecondary()} py-2"
@@ -363,8 +375,10 @@
 				<ul class="text-sm">
 					{#if selectedEndpoint?.responses && selectedEndpoint.responses.length > 0}
 						{#each selectedEndpoint.responses.sort((a, b) => b.priority - a.priority) as response, index}
-							<li 
-								class="flex items-center group transition-all duration-200 {dragOverIndex === index ? 'drag-over' : ''} {isDragging && draggedIndex === index ? 'drag-ghost' : ''}"
+							<li
+								class="flex items-center group transition-all duration-200 {dragOverIndex === index
+									? 'drag-over'
+									: ''} {isDragging && draggedIndex === index ? 'drag-ghost' : ''}"
 								draggable="true"
 								on:dragstart={(event) => handleDragStart(event, index)}
 								on:dragend={handleDragEnd}
@@ -373,22 +387,28 @@
 								on:drop={(event) => handleDrop(event, index)}
 							>
 								<!-- Drag handle -->
-								<div class="flex items-center px-2 py-2 cursor-grab active:cursor-grabbing transition-opacity duration-200 hover:bg-gray-100 dark:hover:bg-gray-600 rounded" 
-								     title="Drag to reorder"
-								     aria-label="Drag to reorder response">
-									<i class="fas fa-grip-vertical text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 text-xs"></i>
+								<div
+									class="flex items-center px-2 py-2 cursor-grab active:cursor-grabbing transition-opacity duration-200 hover:bg-gray-100 dark:hover:bg-gray-600 rounded"
+									title="Drag to reorder"
+									aria-label="Drag to reorder response"
+								>
+									<i
+										class="fas fa-grip-vertical text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 text-xs"
+									></i>
 								</div>
-								
+
 								<button
 									type="button"
-									class="flex-1 text-left px-2 py-2 {ThemeUtils.themeHover()} cursor-pointer {!response.enabled ? 'opacity-50' : ''} transition-colors duration-200"
+									class="flex-1 text-left px-2 py-2 {ThemeUtils.themeHover()} cursor-pointer {!response.enabled
+										? 'opacity-50'
+										: ''} transition-colors duration-200"
 									on:click={() => {
 										selectResponse(index, response);
 									}}
 									title="Select this response"
 									aria-label="Select this response"
 								>
-									<span class="{!response.enabled ? 'line-through' : ''}">
+									<span class={!response.enabled ? 'line-through' : ''}>
 										Response {index + 1} ({response.status_code}) {truncateText(
 											sanitizeText(response?.note)
 										)}
@@ -401,10 +421,10 @@
 								<div class="flex items-center space-x-1 mr-2 transition-opacity duration-200">
 									<button
 										class="p-1 rounded hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors duration-200"
-										title="Flag response"
-										aria-label="Flag this response"
+										title="Fallback this response"
+										aria-label="Fallback this response"
 										on:click|stopPropagation={() => {
-											toggleFlag(response.id);
+											toggleFallback(response);
 										}}
 									>
 										<i
@@ -415,14 +435,16 @@
 									</button>
 									<button
 										class="p-1 rounded hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors duration-200"
-										title="{response.enabled ? 'Disable response' : 'Enable response'}"
-										aria-label="{response.enabled ? 'Disable this response' : 'Enable this response'}"
+										title={response.enabled ? 'Disable response' : 'Enable response'}
+										aria-label={response.enabled ? 'Disable this response' : 'Enable this response'}
 										on:click|stopPropagation={() => {
 											handleToggleResponseEnabled(response);
 										}}
 									>
 										<i
-											class="fas {response.enabled ? 'fa-eye text-green-600 dark:text-green-400' : 'fa-eye-slash text-gray-500 dark:text-gray-400'} hover:text-green-500"
+											class="fas {response.enabled
+												? 'fa-eye text-green-600 dark:text-green-400'
+												: 'fa-eye-slash text-gray-500 dark:text-gray-400'} hover:text-green-500"
 										></i>
 									</button>
 									<button
@@ -433,7 +455,9 @@
 											handleDuplicateResponse(response);
 										}}
 									>
-										<i class="fas fa-copy text-blue-500 dark:text-blue-400 hover:text-blue-600 dark:hover:text-blue-300"></i>
+										<i
+											class="fas fa-copy text-blue-500 dark:text-blue-400 hover:text-blue-600 dark:hover:text-blue-300"
+										></i>
 									</button>
 									<button
 										class="p-1 rounded hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors duration-200"
@@ -443,7 +467,9 @@
 											handleDeleteResponse(response);
 										}}
 									>
-										<i class="fas fa-trash text-red-500 dark:text-red-400 hover:text-red-600 dark:hover:text-red-300"></i>
+										<i
+											class="fas fa-trash text-red-500 dark:text-red-400 hover:text-red-600 dark:hover:text-red-300"
+										></i>
 									</button>
 								</div>
 							</li>
@@ -495,3 +521,23 @@
 		</button>
 	</div>
 </div>
+
+<style>
+	.drag-ghost {
+		opacity: 0.5;
+	}
+
+	.drag-over {
+		border-top: 2px solid #3b82f6;
+		background-color: rgba(59, 130, 246, 0.1);
+	}
+
+	.cursor-grab {
+		cursor: grab;
+	}
+
+	.cursor-grab:active,
+	.cursor-grabbing {
+		cursor: grabbing;
+	}
+</style>

@@ -15,6 +15,8 @@ echo "Starting Caddy server..."
 caddy run --config /app/configs/caddy/Caddyfile &
 CADDY_PID=$!
 
+echo "Server URL: http://0.0.0.0:80"
+
 # Handle shutdown signals
 trap 'kill $BACKEND_PID $CADDY_PID; exit 0' SIGTERM SIGINT
 
