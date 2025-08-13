@@ -7,6 +7,7 @@
 	export let log: RequestLog;
 	export let copyToClipboard: (text: string, label: string) => Promise<void>;
 	export let parseJson: (jsonString: string) => any;
+	let hideHeader: boolean = false;
 </script>
 
 <div>
@@ -22,13 +23,14 @@
 					showDescription={true}
 					className="inline-block"
 				/>
-				
 			</div>
 			<div>
 				<span class="theme-text-muted">Execution Mode:</span>
-				<span class="{log.execution_mode === 'proxy' || log.execution_mode === 'forwarder' 
-					? 'text-purple-600 dark:text-purple-400' 
-					: 'theme-text-primary'} font-mono">
+				<span
+					class="{log.execution_mode === 'proxy' || log.execution_mode === 'forwarder'
+						? 'text-purple-600 dark:text-purple-400'
+						: 'theme-text-primary'} font-mono"
+				>
 					{#if log.execution_mode === 'proxy'}
 						Proxy (Forwarded Request)
 					{:else if log.execution_mode === 'forwarder'}
@@ -49,35 +51,27 @@
 				<button
 					class={ThemeUtils.utilityButton()}
 					on:click|stopPropagation={() =>
-						copyToClipboard(
-							JSON.stringify(parseJson(log.response_headers), null, 2),
-							'Headers'
-						)}
+						copyToClipboard(JSON.stringify(parseJson(log.response_headers), null, 2), 'Headers')}
 					aria-label="Copy response headers to clipboard"
 					title="Copy response headers to clipboard"
 				>
 					<i class="fas fa-copy mr-1"></i> Copy
 				</button>
+
 				<button
 					class={ThemeUtils.utilityButton()}
-					on:click|stopPropagation={() =>
-						copyToClipboard(
-							JSON.stringify(parseJson(log.response_headers)),
-							'Headers (minified)'
-						)}
-					aria-label="Copy minified response headers to clipboard"
-					title="Copy minified response headers to clipboard"
+					on:click|stopPropagation={() => (hideHeader = !hideHeader)}
+					aria-label={hideHeader ? 'Show response headers' : 'Hide response headers'}
+					title={hideHeader ? 'Show response headers' : 'Hide response headers'}
 				>
-					<i class="fas fa-compress-alt mr-1"></i> Minify
+					<i class="fas {hideHeader ? 'fa-eye' : 'fa-eye-slash'} mr-1"></i>
+					{hideHeader ? 'Show' : 'Hide'}
 				</button>
 			</div>
 		</div>
-		
-		<HeadersTab 
-			headers={log.response_headers} 
-			editable={false} 
-			title="Response Headers" 
-		/>
+		{#if !hideHeader}
+			<HeadersTab headers={log.response_headers} editable={false} title="Response Headers" />
+		{/if}
 	</div>
 
 	<!-- Response body -->
@@ -88,26 +82,11 @@
 				<button
 					class={ThemeUtils.utilityButton()}
 					on:click|stopPropagation={() =>
-						copyToClipboard(
-							JSON.stringify(parseJson(log.response_body), null, 2),
-							'Body'
-						)}
+						copyToClipboard(JSON.stringify(parseJson(log.response_body), null, 2), 'Body')}
 					aria-label="Copy response body to clipboard"
 					title="Copy response body to clipboard"
 				>
 					<i class="fas fa-copy mr-1"></i> Copy
-				</button>
-				<button
-					class={ThemeUtils.utilityButton()}
-					on:click|stopPropagation={() =>
-						copyToClipboard(
-							JSON.stringify(parseJson(log.response_body)),
-							'Body (minified)'
-						)}
-					aria-label="Copy minified response body to clipboard"
-					title="Copy minified response body to clipboard"
-				>
-					<i class="fas fa-compress-alt mr-1"></i> Minify
 				</button>
 			</div>
 		</div>
@@ -118,9 +97,7 @@
 				class="bg-red-100/30 dark:bg-red-900/30 border border-red-300 dark:border-red-700 p-3 rounded-md"
 			>
 				<div class="flex items-center">
-					<i
-						class="fas fa-exclamation-triangle text-yellow-500 dark:text-yellow-400 mr-2"
-					></i>
+					<i class="fas fa-exclamation-triangle text-yellow-500 dark:text-yellow-400 mr-2"></i>
 					<span class="text-sm theme-text-primary">
 						{parseJson(log.response_body)?.message || 'Error'}
 					</span>
