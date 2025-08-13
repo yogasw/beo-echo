@@ -7,6 +7,7 @@
 	export let log: RequestLog;
 	export let copyToClipboard: (text: string, label: string) => Promise<void>;
 	export let parseJson: (jsonString: string) => any;
+	let hideHeader: boolean;
 </script>
 
 <div>
@@ -20,10 +21,7 @@
 			</div>
 			<div>
 				<span class="theme-text-muted">Method:</span>
-				<HttpMethodBadge
-					method={log.method}
-					size="sm"
-				/>
+				<HttpMethodBadge method={log.method} size="sm" />
 			</div>
 		</div>
 	</div>
@@ -36,10 +34,7 @@
 				<button
 					class={ThemeUtils.utilityButton()}
 					on:click|stopPropagation={() =>
-						copyToClipboard(
-							JSON.stringify(parseJson(log.request_headers), null, 2),
-							'Headers'
-						)}
+						copyToClipboard(JSON.stringify(parseJson(log.request_headers), null, 2), 'Headers')}
 					aria-label="Copy request headers to clipboard"
 					title="Copy request headers to clipboard"
 				>
@@ -47,24 +42,19 @@
 				</button>
 				<button
 					class={ThemeUtils.utilityButton()}
-					on:click|stopPropagation={() =>
-						copyToClipboard(
-							JSON.stringify(parseJson(log.request_headers)),
-							'Headers (minified)'
-						)}
-					aria-label="Copy minified request headers to clipboard"
-					title="Copy minified request headers to clipboard"
+					on:click|stopPropagation={() => (hideHeader = !hideHeader)}
+					aria-label={hideHeader ? "Show request headers" : "Hide request headers"}
+					title={hideHeader ? "Show request headers" : "Hide request headers"}
 				>
-					<i class="fas fa-compress-alt mr-1"></i> Minify
+					<i class="fas {hideHeader ? 'fa-eye' : 'fa-eye-slash'} mr-1"></i> 
+					{hideHeader ? 'Show' : 'Hide'}
 				</button>
 			</div>
 		</div>
-		
-		<HeadersEditor 
-			headers={log.request_headers} 
-			editable={false} 
-			title="Request Headers" 
-		/>
+
+		{#if !hideHeader}
+			<HeadersEditor headers={log.request_headers} editable={false} title="Request Headers" />
+		{/if}
 	</div>
 
 	<!-- Request body if exists -->
@@ -76,26 +66,11 @@
 					<button
 						class={ThemeUtils.utilityButton()}
 						on:click|stopPropagation={() =>
-							copyToClipboard(
-								JSON.stringify(parseJson(log.request_body), null, 2),
-								'Body'
-							)}
+							copyToClipboard(JSON.stringify(parseJson(log.request_body), null, 2), 'Body')}
 						aria-label="Copy request body to clipboard"
 						title="Copy request body to clipboard"
 					>
 						<i class="fas fa-copy mr-1"></i> Copy
-					</button>
-					<button
-						class={ThemeUtils.utilityButton()}
-						on:click|stopPropagation={() =>
-							copyToClipboard(
-								JSON.stringify(parseJson(log.request_body)),
-								'Body (minified)'
-							)}
-						aria-label="Copy minified request body to clipboard"
-						title="Copy minified request body to clipboard"
-					>
-						<i class="fas fa-compress-alt mr-1"></i> Minify
 					</button>
 				</div>
 			</div>
@@ -115,8 +90,7 @@
 				<h3 class="text-sm font-semibold theme-text-secondary">Query Parameters</h3>
 				<button
 					class={ThemeUtils.utilityButton()}
-					on:click|stopPropagation={() =>
-						copyToClipboard(log.query_params, 'Query parameters')}
+					on:click|stopPropagation={() => copyToClipboard(log.query_params, 'Query parameters')}
 					aria-label="Copy query parameters to clipboard"
 					title="Copy query parameters to clipboard"
 				>
