@@ -84,7 +84,7 @@ func (s *RuleService) CreateRule(rule *database.MockRule) (*database.MockRule, e
 		return nil, fmt.Errorf("rule type is required")
 	}
 
-	if rule.Key == "" {
+	if rule.Key == "" && rule.Type != "body" {
 		return nil, fmt.Errorf("rule key is required")
 	}
 
