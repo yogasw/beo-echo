@@ -105,6 +105,7 @@ export type Response = {
 	note: string;
 	is_fallback: boolean;
 	rules: Rule[] | null;
+	rules_logic: 'and' | 'or';
 	created_at: Date;
 	updated_at: Date;
 }
@@ -454,6 +455,7 @@ export const updateResponse = async (projectId: string, endpointId: string, resp
 	stream?: boolean;
 	enabled?: boolean;
 	is_fallback?: boolean;
+	rules_logic?: 'and' | 'or';
 }): Promise<Response> => {
 	let workspaceId = getCurrentWorkspaceId();
 	const response = await apiClient.put(`/workspaces/${workspaceId}/projects/${projectId}/endpoints/${endpointId}/responses/${responseId}`, data);
