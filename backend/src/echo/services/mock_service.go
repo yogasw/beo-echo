@@ -355,7 +355,7 @@ func matchesRules(response database.MockResponse, req *http.Request) bool {
 	}
 
 	// Default to OR logic if not specified or invalid
-	ruleLogic := strings.ToLower(response.RuleLogic)
+	ruleLogic := strings.ToLower(response.RulesLogic)
 	if ruleLogic != "and" && ruleLogic != "or" {
 		ruleLogic = "or"
 	}

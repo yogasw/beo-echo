@@ -433,6 +433,7 @@
 										rules={selectedResponse?.rules || []}
 										endpointId={selectedEndpoint?.id || ''}
 										responseId={selectedResponse?.id || ''}
+										rulesOperator={selectedResponse?.rules_logic || 'or'}
 									/>
 								{:else if activeContentTab === 'Notes'}
 									<NotesTab

@@ -91,6 +91,7 @@ func UpdateResponseHandler(c *gin.Context) {
 		Enabled    *bool   `json:"enabled"`
 		Note       *string `json:"note"`
 		IsFallback *bool   `json:"is_fallback"`
+		RulesLogic *string `json:"rules_logic"`
 	}
 
 	if err := c.ShouldBindJSON(&updateData); err != nil {
@@ -150,6 +151,10 @@ func UpdateResponseHandler(c *gin.Context) {
 
 	if updateData.IsFallback != nil {
 		existingResponse.IsFallback = *updateData.IsFallback
+	}
+
+	if updateData.RulesLogic != nil {
+		existingResponse.RulesLogic = *updateData.RulesLogic
 	}
 
 	// Save updates
