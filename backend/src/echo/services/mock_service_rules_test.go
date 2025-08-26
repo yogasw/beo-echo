@@ -20,8 +20,8 @@ func TestMatchesRules_ANDLogic(t *testing.T) {
 		{
 			name: "no rules should always match",
 			response: database.MockResponse{
-				RuleLogic: "and",
-				Rules:     []database.MockRule{},
+				RulesLogic: "and",
+				Rules:      []database.MockRule{},
 			},
 			req:      createTestRequest("GET", "/test", map[string]string{}, map[string]string{}),
 			expected: true,
@@ -29,7 +29,7 @@ func TestMatchesRules_ANDLogic(t *testing.T) {
 		{
 			name: "single header rule matches",
 			response: database.MockResponse{
-				RuleLogic: "and",
+				RulesLogic: "and",
 				Rules: []database.MockRule{
 					{Type: "header", Key: "Authorization", Operator: "equals", Value: "Bearer token123"},
 				},
@@ -40,7 +40,7 @@ func TestMatchesRules_ANDLogic(t *testing.T) {
 		{
 			name: "single header rule does not match",
 			response: database.MockResponse{
-				RuleLogic: "and",
+				RulesLogic: "and",
 				Rules: []database.MockRule{
 					{Type: "header", Key: "Authorization", Operator: "equals", Value: "Bearer token123"},
 				},
@@ -51,7 +51,7 @@ func TestMatchesRules_ANDLogic(t *testing.T) {
 		{
 			name: "multiple rules all match (AND logic)",
 			response: database.MockResponse{
-				RuleLogic: "and",
+				RulesLogic: "and",
 				Rules: []database.MockRule{
 					{Type: "header", Key: "Authorization", Operator: "equals", Value: "Bearer token123"},
 					{Type: "query", Key: "user_id", Operator: "equals", Value: "123"},
@@ -63,7 +63,7 @@ func TestMatchesRules_ANDLogic(t *testing.T) {
 		{
 			name: "multiple rules one fails (AND logic)",
 			response: database.MockResponse{
-				RuleLogic: "and",
+				RulesLogic: "and",
 				Rules: []database.MockRule{
 					{Type: "header", Key: "Authorization", Operator: "equals", Value: "Bearer token123"},
 					{Type: "query", Key: "user_id", Operator: "equals", Value: "123"},
@@ -92,8 +92,8 @@ func TestMatchesRules_ORLogic(t *testing.T) {
 		{
 			name: "no rules should always match (OR logic)",
 			response: database.MockResponse{
-				RuleLogic: "or",
-				Rules:     []database.MockRule{},
+				RulesLogic: "or",
+				Rules:      []database.MockRule{},
 			},
 			req:      createTestRequest("GET", "/test", map[string]string{}, map[string]string{}),
 			expected: true,
@@ -101,7 +101,7 @@ func TestMatchesRules_ORLogic(t *testing.T) {
 		{
 			name: "single rule matches (OR logic)",
 			response: database.MockResponse{
-				RuleLogic: "or",
+				RulesLogic: "or",
 				Rules: []database.MockRule{
 					{Type: "header", Key: "Authorization", Operator: "equals", Value: "Bearer token123"},
 				},
@@ -112,7 +112,7 @@ func TestMatchesRules_ORLogic(t *testing.T) {
 		{
 			name: "multiple rules one matches (OR logic)",
 			response: database.MockResponse{
-				RuleLogic: "or",
+				RulesLogic: "or",
 				Rules: []database.MockRule{
 					{Type: "header", Key: "Authorization", Operator: "equals", Value: "Bearer token123"},
 					{Type: "query", Key: "user_id", Operator: "equals", Value: "123"},
@@ -124,7 +124,7 @@ func TestMatchesRules_ORLogic(t *testing.T) {
 		{
 			name: "multiple rules all fail (OR logic)",
 			response: database.MockResponse{
-				RuleLogic: "or",
+				RulesLogic: "or",
 				Rules: []database.MockRule{
 					{Type: "header", Key: "Authorization", Operator: "equals", Value: "Bearer token123"},
 					{Type: "query", Key: "user_id", Operator: "equals", Value: "123"},
@@ -136,7 +136,7 @@ func TestMatchesRules_ORLogic(t *testing.T) {
 		{
 			name: "multiple rules all match (OR logic)",
 			response: database.MockResponse{
-				RuleLogic: "or",
+				RulesLogic: "or",
 				Rules: []database.MockRule{
 					{Type: "header", Key: "Authorization", Operator: "equals", Value: "Bearer token123"},
 					{Type: "query", Key: "user_id", Operator: "equals", Value: "123"},
@@ -165,7 +165,7 @@ func TestMatchesRules_DefaultLogic(t *testing.T) {
 		{
 			name: "empty rule_logic defaults to OR - one rule matches",
 			response: database.MockResponse{
-				RuleLogic: "",
+				RulesLogic: "",
 				Rules: []database.MockRule{
 					{Type: "header", Key: "Authorization", Operator: "equals", Value: "Bearer token123"},
 					{Type: "query", Key: "user_id", Operator: "equals", Value: "123"},
@@ -177,7 +177,7 @@ func TestMatchesRules_DefaultLogic(t *testing.T) {
 		{
 			name: "invalid rule_logic defaults to OR - one rule matches",
 			response: database.MockResponse{
-				RuleLogic: "invalid",
+				RulesLogic: "invalid",
 				Rules: []database.MockRule{
 					{Type: "header", Key: "Authorization", Operator: "equals", Value: "Bearer token123"},
 					{Type: "query", Key: "user_id", Operator: "equals", Value: "123"},
@@ -189,7 +189,7 @@ func TestMatchesRules_DefaultLogic(t *testing.T) {
 		{
 			name: "empty rule_logic defaults to OR - no rules match",
 			response: database.MockResponse{
-				RuleLogic: "",
+				RulesLogic: "",
 				Rules: []database.MockRule{
 					{Type: "header", Key: "Authorization", Operator: "equals", Value: "Bearer token123"},
 					{Type: "query", Key: "user_id", Operator: "equals", Value: "123"},
