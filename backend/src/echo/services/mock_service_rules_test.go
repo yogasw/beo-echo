@@ -163,7 +163,7 @@ func TestMatchesRules_DefaultLogic(t *testing.T) {
 		expected bool
 	}{
 		{
-			name: "empty rule_logic defaults to AND",
+			name: "empty rule_logic defaults to OR - one rule matches",
 			response: database.MockResponse{
 				RuleLogic: "",
 				Rules: []database.MockRule{
@@ -172,10 +172,10 @@ func TestMatchesRules_DefaultLogic(t *testing.T) {
 				},
 			},
 			req:      createTestRequest("GET", "/test?user_id=456", map[string]string{"Authorization": "Bearer token123"}, map[string]string{"user_id": "456"}),
-			expected: false, // Should fail because AND logic is default and query doesn't match
+			expected: true, // Should pass because OR logic is default and header matches
 		},
 		{
-			name: "invalid rule_logic defaults to AND",
+			name: "invalid rule_logic defaults to OR - one rule matches",
 			response: database.MockResponse{
 				RuleLogic: "invalid",
 				Rules: []database.MockRule{
@@ -184,7 +184,19 @@ func TestMatchesRules_DefaultLogic(t *testing.T) {
 				},
 			},
 			req:      createTestRequest("GET", "/test?user_id=456", map[string]string{"Authorization": "Bearer token123"}, map[string]string{"user_id": "456"}),
-			expected: false, // Should fail because AND logic is default and query doesn't match
+			expected: true, // Should pass because OR logic is default and header matches
+		},
+		{
+			name: "empty rule_logic defaults to OR - no rules match",
+			response: database.MockResponse{
+				RuleLogic: "",
+				Rules: []database.MockRule{
+					{Type: "header", Key: "Authorization", Operator: "equals", Value: "Bearer token123"},
+					{Type: "query", Key: "user_id", Operator: "equals", Value: "123"},
+				},
+			},
+			req:      createTestRequest("GET", "/test?user_id=456", map[string]string{"Authorization": "Bearer wrong"}, map[string]string{"user_id": "456"}),
+			expected: false, // Should fail because no rules match in OR logic
 		},
 	}
 

@@ -348,16 +348,16 @@ func sortByPriority(responses []database.MockResponse) {
 	}
 }
 
-// matchesRules checks if a response matches all rules against the request
+// matchesRules checks if a response matches rules against the request based on rule logic (AND/OR)
 func matchesRules(response database.MockResponse, req *http.Request) bool {
 	if len(response.Rules) == 0 {
 		return true // No rules means always match
 	}
 
-	// Default to AND logic if not specified or invalid
+	// Default to OR logic if not specified or invalid
 	ruleLogic := strings.ToLower(response.RuleLogic)
 	if ruleLogic != "and" && ruleLogic != "or" {
-		ruleLogic = "and"
+		ruleLogic = "or"
 	}
 
 	var result bool
