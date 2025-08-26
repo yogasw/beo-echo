@@ -354,25 +354,45 @@ func matchesRules(response database.MockResponse, req *http.Request) bool {
 		return true // No rules means always match
 	}
 
+	// Default to AND logic if not specified or invalid
+	ruleLogic := strings.ToLower(response.RuleLogic)
+	if ruleLogic != "and" && ruleLogic != "or" {
+		ruleLogic = "and"
+	}
+
+	var result bool
+	allMatch := true
+
 	for _, rule := range response.Rules {
 		switch rule.Type {
 		case "header":
-			if !matchHeaderRule(rule, req) {
-				return false
+			if matchHeaderRule(rule, req) {
+				result = true
+			} else {
+				allMatch = false
 			}
 		case "query":
-			if !matchQueryRule(rule, req) {
-				return false
+			if matchQueryRule(rule, req) {
+				result = true
+			} else {
+				allMatch = false
 			}
 		case "body":
-			if !matchBodyRule(rule, req) {
-				return false
+			if matchBodyRule(rule, req) {
+				result = true
+			} else {
+				allMatch = false
 			}
 		}
-		// Path rules are handled earlier during endpoint matching
 	}
 
-	return true
+	if ruleLogic == "and" {
+		if !allMatch {
+			return false
+		}
+	}
+
+	return result
 }
 
 // matchHeaderRule checks if a header rule matches
