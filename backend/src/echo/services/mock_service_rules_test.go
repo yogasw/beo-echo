@@ -17,49 +17,49 @@ func TestMatchesRules_ANDLogic(t *testing.T) {
 		req      *http.Request
 		expected bool
 	}{
-		// {
-		// 	name: "no rules should always match",
-		// 	response: database.MockResponse{
-		// 		RuleLogic: "and",
-		// 		Rules:     []database.MockRule{},
-		// 	},
-		// 	req:      createTestRequest("GET", "/test", map[string]string{}, map[string]string{}),
-		// 	expected: true,
-		// },
-		// {
-		// 	name: "single header rule matches",
-		// 	response: database.MockResponse{
-		// 		RuleLogic: "and",
-		// 		Rules: []database.MockRule{
-		// 			{Type: "header", Key: "Authorization", Operator: "equals", Value: "Bearer token123"},
-		// 		},
-		// 	},
-		// 	req:      createTestRequest("GET", "/test", map[string]string{"Authorization": "Bearer token123"}, map[string]string{}),
-		// 	expected: true,
-		// },
-		// {
-		// 	name: "single header rule does not match",
-		// 	response: database.MockResponse{
-		// 		RuleLogic: "and",
-		// 		Rules: []database.MockRule{
-		// 			{Type: "header", Key: "Authorization", Operator: "equals", Value: "Bearer token123"},
-		// 		},
-		// 	},
-		// 	req:      createTestRequest("GET", "/test", map[string]string{"Authorization": "Bearer wrong"}, map[string]string{}),
-		// 	expected: false,
-		// },
-		// {
-		// 	name: "multiple rules all match (AND logic)",
-		// 	response: database.MockResponse{
-		// 		RuleLogic: "and",
-		// 		Rules: []database.MockRule{
-		// 			{Type: "header", Key: "Authorization", Operator: "equals", Value: "Bearer token123"},
-		// 			{Type: "query", Key: "user_id", Operator: "equals", Value: "123"},
-		// 		},
-		// 	},
-		// 	req:      createTestRequest("GET", "/test?user_id=123", map[string]string{"Authorization": "Bearer token123"}, map[string]string{"user_id": "123"}),
-		// 	expected: true,
-		// },
+		{
+			name: "no rules should always match",
+			response: database.MockResponse{
+				RuleLogic: "and",
+				Rules:     []database.MockRule{},
+			},
+			req:      createTestRequest("GET", "/test", map[string]string{}, map[string]string{}),
+			expected: true,
+		},
+		{
+			name: "single header rule matches",
+			response: database.MockResponse{
+				RuleLogic: "and",
+				Rules: []database.MockRule{
+					{Type: "header", Key: "Authorization", Operator: "equals", Value: "Bearer token123"},
+				},
+			},
+			req:      createTestRequest("GET", "/test", map[string]string{"Authorization": "Bearer token123"}, map[string]string{}),
+			expected: true,
+		},
+		{
+			name: "single header rule does not match",
+			response: database.MockResponse{
+				RuleLogic: "and",
+				Rules: []database.MockRule{
+					{Type: "header", Key: "Authorization", Operator: "equals", Value: "Bearer token123"},
+				},
+			},
+			req:      createTestRequest("GET", "/test", map[string]string{"Authorization": "Bearer wrong"}, map[string]string{}),
+			expected: false,
+		},
+		{
+			name: "multiple rules all match (AND logic)",
+			response: database.MockResponse{
+				RuleLogic: "and",
+				Rules: []database.MockRule{
+					{Type: "header", Key: "Authorization", Operator: "equals", Value: "Bearer token123"},
+					{Type: "query", Key: "user_id", Operator: "equals", Value: "123"},
+				},
+			},
+			req:      createTestRequest("GET", "/test?user_id=123", map[string]string{"Authorization": "Bearer token123"}, map[string]string{"user_id": "123"}),
+			expected: true,
+		},
 		{
 			name: "multiple rules one fails (AND logic)",
 			response: database.MockResponse{
