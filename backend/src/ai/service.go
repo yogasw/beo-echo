@@ -53,13 +53,28 @@ func (s *AIService) Generate(ctx context.Context, req GenerateRequest) (*Generat
 	}
 
 	// Build the prompt
-	prompt := req.Template
+	userMessage := req.Message
 	if req.Context != "" {
-		prompt = fmt.Sprintf("%s\n\nAdditional Context:\n%s", req.Template, req.Context)
+		userMessage = fmt.Sprintf("%s\n\nCurrent editor content:\n```\n%s\n```", req.Message, req.Context)
 	}
 
 	// Detect API type based on provider config
 	isGemini := provider == "gemini"
+
+	// Build system prompt
+	systemPrompt := `You are an AI assistant for a mock API service editor. Your role is to:
+
+1. **Generate mock data** when users request it - Return ONLY valid JSON, no explanations
+2. **Answer questions** about their API responses or mock data - Respond conversationally in user's language
+3. **Provide help** and suggestions when asked
+
+Examples:
+- User: "generate user data" → Return: {"id": 1, "name": "John Doe", "email": "john@example.com"}
+- User: "good morning" → Return: Good morning! How can I help you today?
+- User: "what is this?" → Explain the current content conversationally
+- User: "10 cities in indonesia" → Return: ["Jakarta", "Surabaya", "Bandung", "Medan", "Semarang", "Palembang", "Makassar", "Denpasar", "Yogyakarta", "Balikpapan"]
+
+Remember: When generating data, return ONLY the JSON. No markdown, no code blocks, no explanations.`
 
 	var reqBody []byte
 	if isGemini {
@@ -71,7 +86,7 @@ func (s *AIService) Generate(ctx context.Context, req GenerateRequest) (*Generat
 				{
 					Parts: []GeminiPart{
 						{
-							Text: fmt.Sprintf("You are a helpful assistant that generates mock API response data. Generate realistic and valid JSON data based on this request:\n\n%s", prompt),
+							Text: fmt.Sprintf("%s\n\nUser: %s", systemPrompt, userMessage),
 						},
 					},
 				},
@@ -85,11 +100,11 @@ func (s *AIService) Generate(ctx context.Context, req GenerateRequest) (*Generat
 			Messages: []OpenAIMessage{
 				{
 					Role:    "system",
-					Content: "You are a helpful assistant that generates mock API response data based on templates. Generate realistic and valid JSON data.",
+					Content: systemPrompt,
 				},
 				{
 					Role:    "user",
-					Content: prompt,
+					Content: userMessage,
 				},
 			},
 		}
@@ -168,9 +183,19 @@ func (s *AIService) Generate(ctx context.Context, req GenerateRequest) (*Generat
 		tokenUsed = openAIResp.Usage.TotalTokens
 	}
 
+	// Check if the AI response is valid JSON
+	canApply := isValidJSON(content)
+
 	return &GenerateResponse{
 		Content:   content,
 		Model:     model,
 		TokenUsed: tokenUsed,
+		CanApply:  canApply,
 	}, nil
+}
+
+// isValidJSON checks if content is valid JSON
+func isValidJSON(content string) bool {
+	var js json.RawMessage
+	return json.Unmarshal([]byte(content), &js) == nil
 }

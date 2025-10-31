@@ -1,14 +1,16 @@
 import apiClient from './apiClient';
 
 export interface GenerateRequest {
-	template: string;
+	message: string;
 	context?: string;
+	content_type?: string;
 }
 
 export interface GenerateResponse {
 	content: string;
 	model: string;
 	token_used: number;
+	can_apply: boolean;
 }
 
 /**

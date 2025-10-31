@@ -2,8 +2,9 @@ package ai
 
 // GenerateRequest represents the request payload for AI generation
 type GenerateRequest struct {
-	Template string `json:"template" binding:"required"` // Template/prompt for generation
-	Context  string `json:"context"`                     // Additional context for generation
+	Message     string `json:"message" binding:"required"` // message/prompt for generation
+	Context     string `json:"context"`                    // Additional context for generation
+	ContentType string `json:"content_type"`               // Type of content to generate (e.g., "json", "markdown")
 }
 
 // GenerateResponse represents the response from AI generation
@@ -11,6 +12,7 @@ type GenerateResponse struct {
 	Content   string `json:"content"`    // Generated content
 	Model     string `json:"model"`      // Model used for generation
 	TokenUsed int    `json:"token_used"` // Tokens used for generation
+	CanApply  bool   `json:"can_apply"`  // Whether content can be applied to editor (valid JSON)
 }
 
 // OpenAIRequest represents the request to OpenAI API

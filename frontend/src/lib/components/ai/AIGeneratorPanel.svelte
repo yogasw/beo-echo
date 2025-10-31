@@ -7,6 +7,7 @@
 	export let initialContent: string = '';
 	export let onSave: (content: string) => void = () => {};
 	export let onClose: () => void = () => {};
+	export let contentType: string = '';
 
 	interface ChatMessage {
 		role: 'user' | 'ai';
@@ -93,37 +94,51 @@
 			isGenerating = true;
 
 			const response = await generateContent({
-				template: message,
-				context: currentContent || undefined
+				message: message,
+				context: currentContent || undefined,
+				content_type: contentType || undefined
 			});
 
 			let aiContent = response.content;
 
-			// Try to format as JSON
-			try {
-				const parsed = JSON.parse(aiContent);
-				aiContent = JSON.stringify(parsed, null, 2);
-			} catch (e) {
-				// Not JSON, keep as is
+			// Try to format as JSON if it's applicable
+			if (response.can_apply) {
+				try {
+					const parsed = JSON.parse(aiContent);
+					aiContent = JSON.stringify(parsed, null, 2);
+				} catch (e) {
+					// Not JSON, keep as is
+				}
 			}
 
 			// Update current content
 			currentContent = aiContent;
 
-			// Auto-apply to editor
-			onSave(aiContent);
+			// Auto-apply to editor only if can_apply is true
+			if (response.can_apply) {
+				onSave(aiContent);
+				toast.success('AI response applied to editor');
 
-			// Add AI response
-			chatMessages = [
-				...chatMessages,
-				{
-					role: 'ai',
-					content: `Generated and applied to editor!\n\nUsed model: ${response.model} (${response.token_used} tokens)`,
-					timestamp: new Date()
-				}
-			];
-
-			toast.success('AI response applied to editor');
+				// Add AI response
+				chatMessages = [
+					...chatMessages,
+					{
+						role: 'ai',
+						content: 'Generated and applied to editor!',
+						timestamp: new Date()
+					}
+				];
+			} else {
+				// Just show the AI response without applying
+				chatMessages = [
+					...chatMessages,
+					{
+						role: 'ai',
+						content: aiContent,
+						timestamp: new Date()
+					}
+				];
+			}
 		} catch (error: any) {
 			const errorMsg = error?.response?.data?.error || error?.message || 'Unknown error';
 

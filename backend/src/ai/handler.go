@@ -31,7 +31,7 @@ func (h *AIHandler) GenerateHandler(c *gin.Context) {
 	}
 
 	log.Info().
-		Str("template", req.Template).
+		Str("message", req.Message).
 		Msg("handling AI generate request")
 
 	resp, err := h.service.Generate(c.Request.Context(), req)

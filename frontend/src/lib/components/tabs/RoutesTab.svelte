@@ -421,6 +421,7 @@
 												);
 											}
 										}}
+										headers={selectedResponse?.headers || ''}
 									/>
 								{:else if activeContentTab === 'Headers'}
 									<HeadersEditor

@@ -1,18 +1,30 @@
 <script lang="ts">
 	import MonacoEditor from '$lib/components/MonacoEditor.svelte';
 	import AIGeneratorButton from '$lib/components/ai/AIGeneratorButton.svelte';
-	import { updateResponse } from '$lib/stores/saveButton';
 	import { toast } from '$lib/stores/toast';
 	import * as ThemeUtils from '$lib/utils/themeUtils';
-	import { theme } from '$lib/stores/theme';
 
 	export let responseBody: string;
+	export let headers: string;
 	export let statusCode: number;
 	export let onStatusCodeChange: (val: number) => void;
 	export let onSaveButtonClick: (body: string) => void;
 
 	let editorRef: InstanceType<typeof MonacoEditor>;
 	let isFullScreen = false;
+	let contentType = '';
+
+	//on mount, get content type from headers
+	$: {
+		const contentTypeHeader = headers
+			.split('\n')
+			.find((header) => header.toLowerCase().startsWith('content-type:'));
+		if (contentTypeHeader) {
+			contentType = contentTypeHeader.split(':')[1].trim();
+		} else {
+			contentType = '';
+		}
+	}
 
 	function formatContent() {
 		editorRef?.format?.();
@@ -68,6 +80,7 @@
 				initialContent={responseBody}
 				buttonText="AI Chat"
 				size="sm"
+				contentType={contentType}
 				onGenerated={handleAIGenerated}
 			/>
 			<button

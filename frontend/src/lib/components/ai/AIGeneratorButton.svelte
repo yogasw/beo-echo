@@ -7,6 +7,7 @@
 	export let iconClass: string = 'fas fa-magic';
 	export let size: 'sm' | 'md' | 'lg' = 'md';
 	export let onGenerated: (content: string) => void = () => {};
+	export let contentType: string = '';
 
 	let isPanelOpen = false;
 
@@ -46,4 +47,5 @@
 	initialContent={initialContent}
 	onSave={handleSave}
 	onClose={handleClose}
+	contentType={contentType}
 />
