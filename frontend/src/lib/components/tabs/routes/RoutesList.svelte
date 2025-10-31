@@ -202,20 +202,7 @@
 				title="Expand panel"
 				aria-label="Expand panel"
 			>
-				<!-- Option 1: Double chevron -->
-				<!-- <i class="fas fa-chevrons-right text-lg"></i> -->
-
-				<!-- Option 2: Angle double -->
 				<i class="fas fa-angle-double-right text-sm"></i>
-
-				<!-- Option 3: Arrow -->
-				<!-- <i class="fas fa-arrow-right text-lg"></i> -->
-
-				<!-- Option 4: Indent/Outdent -->
-				<!-- <i class="fas fa-indent text-lg"></i> -->
-
-				<!-- Option 5: Expand arrows alt -->
-				<!-- <i class="fas fa-expand-alt text-lg"></i> -->
 			</button>
 		</div>
 	{:else}
@@ -236,20 +223,7 @@
 					title="Collapse panel"
 					aria-label="Collapse panel"
 				>
-					<!-- Option 1: Double chevron -->
-					<!-- <i class="fas fa-chevrons-left text-lg"></i> -->
-
-					<!-- Option 2: Angle double -->
 					<i class="fas fa-angle-double-left text-sm"></i>
-
-					<!-- Option 3: Arrow -->
-					<!-- <i class="fas fa-arrow-left text-lg"></i> -->
-
-					<!-- Option 4: Indent/Outdent -->
-					<!-- <i class="fas fa-outdent text-lg"></i> -->
-
-					<!-- Option 5: Compress arrows alt -->
-					<!-- <i class="fas fa-compress-alt text-lg"></i> -->
 				</button>
 			</div>
 		<div class="relative mb-6">
