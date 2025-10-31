@@ -1,17 +1,29 @@
 <script lang="ts">
 	import MonacoEditor from '$lib/components/MonacoEditor.svelte';
-	import { updateResponse } from '$lib/stores/saveButton';
+	import AIGeneratorButton from '$lib/components/ai/AIGeneratorButton.svelte';
 	import { toast } from '$lib/stores/toast';
 	import * as ThemeUtils from '$lib/utils/themeUtils';
-	import { theme } from '$lib/stores/theme';
 
 	export let responseBody: string;
+	export let headers: string;
 	export let statusCode: number;
 	export let onStatusCodeChange: (val: number) => void;
 	export let onSaveButtonClick: (body: string) => void;
 
 	let editorRef: InstanceType<typeof MonacoEditor>;
 	let isFullScreen = false;
+	let contentType = '';
+
+	//on mount, get content type from headers
+	$: {
+		
+		try {
+			const headersObj = JSON.parse(headers);
+			contentType = headersObj['Content-Type'] || headersObj['content-type'] || '';
+		} catch (e) {
+			contentType = '';
+		}
+	}
 
 	function formatContent() {
 		editorRef?.format?.();
@@ -39,6 +51,11 @@
 			toggleFullScreen();
 		}
 	}
+
+	function handleAIGenerated(content: string) {
+		responseBody = content;
+		toast.success('AI generated content applied to editor');
+	}
 </script>
 
 <div class="h-full flex flex-col space-y-2 w-full">
@@ -58,6 +75,13 @@
 
 	<div class="relative flex-grow w-full">
 		<div class="absolute top-2 right-2 z-10 flex space-x-2">
+			<AIGeneratorButton
+				initialContent={responseBody}
+				buttonText="AI Chat"
+				size="sm"
+				contentType={contentType}
+				onGenerated={handleAIGenerated}
+			/>
 			<button
 				on:click={formatContent}
 				class="bg-green-600 text-white text-xs px-2 py-1 rounded hover:bg-green-700"
