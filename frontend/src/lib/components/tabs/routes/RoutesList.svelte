@@ -17,6 +17,12 @@
 	export let handleRouteStatusChange: (route: Endpoint) => void;
 	export let handleAddEndpoint: (endpoint: Endpoint) => void;
 	export let panelWidth: number = 33; // Panel width as percentage (33% = w-1/3) - will be initialized in onMount
+
+	// Collapse/Expand state
+	let isPanelCollapsed = false;
+	let savedPanelWidth = 33; // Store the width before collapsing
+	const collapsedWidth = 4; // Width when collapsed (just enough for the toggle button)
+
 	let defaultRequestLog: RequestLog = {
 		id: '',
 		project_id: $selectedProject?.id || '',
@@ -145,16 +151,38 @@
 		document.removeEventListener('mouseup', stopResize);
 		document.body.style.cursor = '';
 		document.body.style.userSelect = '';
-		
+
 		// Save panel width to localStorage when resize is complete
+		setRoutesPanelWidth(panelWidth);
+	}
+
+	function togglePanelCollapse() {
+		if (isPanelCollapsed) {
+			// Expand: restore to saved width
+			panelWidth = savedPanelWidth;
+			isPanelCollapsed = false;
+		} else {
+			// Collapse: save current width and set to minimal
+			savedPanelWidth = panelWidth;
+			panelWidth = collapsedWidth;
+			isPanelCollapsed = true;
+		}
+		// Save the panel width to localStorage
 		setRoutesPanelWidth(panelWidth);
 	}
 
 	onMount(() => {
 		document.addEventListener('click', handleClickOutside);
-		
+
 		// Initialize panel width from localStorage
 		panelWidth = getRoutesPanelWidth();
+
+		// Check if panel was collapsed (width is at or near collapsed width)
+		if (panelWidth <= collapsedWidth + 1) {
+			isPanelCollapsed = true;
+		} else {
+			savedPanelWidth = panelWidth;
+		}
 	});
 
 	onDestroy(() => {
@@ -164,17 +192,40 @@
 </script>
 
 <!-- Routes Section -->
-<div class="flex flex-col theme-bg-primary relative border-r border-theme" style="width: {panelWidth}%;">
-	<div class="pr-2 flex flex-col h-full">
-		<div class={ThemeUtils.headerSection('rounded mb-4')}>
-			<div class="bg-blue-600/10 dark:bg-blue-600/10 p-2 rounded-lg mr-3">
-				<i class="fas fa-route text-blue-500 text-xl"></i>
-			</div>
-			<div>
-				<h2 class="text-xl font-bold theme-text-primary">{activeConfigName}</h2>
-				<p class="text-sm theme-text-muted">API Endpoint Management</p>
-			</div>
+<div class="flex flex-col theme-bg-primary relative border-r border-theme panel-transition ml-2 mr-2" style="width: {panelWidth}%;">
+	{#if isPanelCollapsed}
+		<!-- Collapsed state: Show only expand button -->
+		<div class="flex flex-col items-center justify-start pt-4 h-full">
+			<button
+				on:click={togglePanelCollapse}
+				class="theme-text-primary hover:text-blue-500 px-2 py-1 rounded hover:bg-blue-500/10 transition-all duration-200 border border-gray-700/50 hover:border-blue-500/50"
+				title="Expand panel"
+				aria-label="Expand panel"
+			>
+				<i class="fas fa-angle-double-right text-sm"></i>
+			</button>
 		</div>
+	{:else}
+		<!-- Expanded state: Show full content -->
+		<div class="pr-2 flex flex-col h-full">
+			<div class={ThemeUtils.headerSection('rounded mb-4')}>
+				<div class="bg-blue-600/10 dark:bg-blue-600/10 p-2 rounded-lg mr-3">
+					<i class="fas fa-route text-blue-500 text-xl"></i>
+				</div>
+				<div class="flex-1">
+					<h2 class="text-xl font-bold theme-text-primary">{activeConfigName}</h2>
+					<p class="text-sm theme-text-muted">API Endpoint Management</p>
+				</div>
+				<!-- Collapse button -->
+				<button
+					on:click={togglePanelCollapse}
+					class="theme-text-primary hover:text-blue-500 px-2 py-1 rounded hover:bg-blue-500/10 transition-all duration-200 border border-gray-700/50 hover:border-blue-500/50 ml-2"
+					title="Collapse panel"
+					aria-label="Collapse panel"
+				>
+					<i class="fas fa-angle-double-left text-sm"></i>
+				</button>
+			</div>
 		<div class="relative mb-6">
 			<div class="absolute inset-y-0 start-0 flex items-center ps-3 pointer-events-none">
 				<i class="fas fa-search theme-text-muted"></i>
@@ -284,19 +335,26 @@
 				{/each}
 			</div>
 		</div>
-	</div>
-	
-	<!-- Resizable handle -->
-	<div 
-		class="absolute top-0 right-0 bottom-0 w-1 cursor-col-resize hover:bg-blue-500 transition-colors duration-200 group"
-		on:mousedown={startResize}
-		title="Drag to resize panel"
-	>
-		<div class="w-full h-full bg-transparent group-hover:bg-blue-500/30"></div>
-	</div>
+		</div>
+	{/if}
+
+	<!-- Resizable handle (only show when expanded) -->
+	{#if !isPanelCollapsed}
+		<div
+			class="absolute top-0 right-0 bottom-0 w-1 cursor-col-resize hover:bg-blue-500 transition-colors duration-200 group"
+			on:mousedown={startResize}
+			title="Drag to resize panel"
+		>
+			<div class="w-full h-full bg-transparent group-hover:bg-blue-500/30"></div>
+		</div>
+	{/if}
 </div>
 
 <style>
+.panel-transition {
+	transition: width 0.3s ease-in-out;
+}
+
 .flash-delete {
 	animation: flashRed 0.3s;
 	background-color: rgb(var(--tw-color-red-200, 254 202 202)) !important;
