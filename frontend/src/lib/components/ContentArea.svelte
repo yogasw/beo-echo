@@ -74,7 +74,7 @@
 		display: flex;
 		flex-direction: column;
 		height: 100%;
-		padding: 0 1rem 1rem 1rem;
+		/* padding: 0 1rem 1rem 1rem; */
 		transition:
 			background-color 0.3s ease,
 			color 0.3s ease;
