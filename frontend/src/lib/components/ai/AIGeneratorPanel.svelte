@@ -93,10 +93,22 @@
 		try {
 			isGenerating = true;
 
+			// Detect content type from user message
+			const lowerMessage = message.toLowerCase();
+			let detectedContentType = 'application/json'; // default
+
+			if (lowerMessage.includes('xml')) {
+				detectedContentType = 'application/xml';
+			} else if (lowerMessage.includes('csv')) {
+				detectedContentType = 'text/csv';
+			} else if (contentType) {
+				detectedContentType = contentType;
+			}
+
 			const response = await generateContent({
 				message: message,
 				context: currentContent || undefined,
-				content_type: contentType || undefined
+				content_type: detectedContentType
 			});
 
 			let aiContent = response.content;

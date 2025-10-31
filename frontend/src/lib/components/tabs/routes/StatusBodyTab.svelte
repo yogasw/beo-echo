@@ -16,12 +16,11 @@
 
 	//on mount, get content type from headers
 	$: {
-		const contentTypeHeader = headers
-			.split('\n')
-			.find((header) => header.toLowerCase().startsWith('content-type:'));
-		if (contentTypeHeader) {
-			contentType = contentTypeHeader.split(':')[1].trim();
-		} else {
+		
+		try {
+			const headersObj = JSON.parse(headers);
+			contentType = headersObj['Content-Type'] || headersObj['content-type'] || '';
+		} catch (e) {
 			contentType = '';
 		}
 	}

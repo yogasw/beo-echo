@@ -59,13 +59,20 @@ func (s *AIService) Generate(ctx context.Context, req GenerateRequest) (*Generat
 		userMessage = fmt.Sprintf("%s\n\nCurrent editor content:\n```\n%s\n```", req.Message, req.Context)
 	}
 
+	contentType := req.ContentType
+	if contentType == "" {
+		contentType = "application/json"
+	}
+
 	// Detect API type based on provider config
 	isGemini := provider == "gemini"
+
+	responseFormatPrompt := "return ONLY the raw response body in the requested format data in http response" + contentType + " with no markdown, code blocks, explanations, or wrapping."
 
 	// Build system prompt
 	systemPrompt := `You are an AI assistant for a mock API service editor. Your role is to:
 
-1. **Generate mock data** when users request it - Return ONLY valid JSON, no explanations
+1. **Generate mock data** when users request it - ` + responseFormatPrompt + `
 2. **Answer questions** about their API responses or mock data - Respond conversationally in user's language
 3. **Provide help** and suggestions when asked
 
@@ -200,16 +207,15 @@ Remember: When generating data, return ONLY the JSON. No markdown, no code block
 	}, nil
 }
 
-// extractAndValidate checks if content is valid JSON or contains code blocks
+// extractAndValidate checks if content is valid data format or contains code blocks
 // Returns the extracted data and whether it can be applied
 func extractAndValidate(content string) (string, bool) {
-	// First, try direct JSON validation
-	var js json.RawMessage
-	if err := json.Unmarshal([]byte(content), &js); err == nil {
+	// First, try direct validation for various formats
+	if isValidDataFormat(content) {
 		return content, true
 	}
 
-	// If not valid JSON, check if content contains code block markers
+	// If not valid, check if content contains code block markers
 	// Extract content from ```...```
 	if strings.Contains(content, "```") {
 		extracted := extractFromCodeBlock(content)
@@ -219,6 +225,22 @@ func extractAndValidate(content string) (string, bool) {
 	}
 
 	return "", false
+}
+
+// isValidDataFormat checks if content is valid JSON, XML, or CSV
+func isValidDataFormat(content string) bool {
+	trimmed := strings.TrimSpace(content)
+	if trimmed == "" {
+		return false
+	}
+
+	// Check for JSON
+	var js json.RawMessage
+	if err := json.Unmarshal([]byte(trimmed), &js); err == nil {
+		return true
+	}
+
+	return false
 }
 
 // extractFromCodeBlock extracts content from markdown code block
