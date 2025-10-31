@@ -1,5 +1,6 @@
 <script lang="ts">
 	import MonacoEditor from '$lib/components/MonacoEditor.svelte';
+	import AIGeneratorButton from '$lib/components/ai/AIGeneratorButton.svelte';
 	import { updateResponse } from '$lib/stores/saveButton';
 	import { toast } from '$lib/stores/toast';
 	import * as ThemeUtils from '$lib/utils/themeUtils';
@@ -39,6 +40,11 @@
 			toggleFullScreen();
 		}
 	}
+
+	function handleAIGenerated(content: string) {
+		responseBody = content;
+		toast.success('AI generated content applied to editor');
+	}
 </script>
 
 <div class="h-full flex flex-col space-y-2 w-full">
@@ -58,6 +64,12 @@
 
 	<div class="relative flex-grow w-full">
 		<div class="absolute top-2 right-2 z-10 flex space-x-2">
+			<AIGeneratorButton
+				initialContent={responseBody}
+				buttonText="AI Chat"
+				size="sm"
+				onGenerated={handleAIGenerated}
+			/>
 			<button
 				on:click={formatContent}
 				class="bg-green-600 text-white text-xs px-2 py-1 rounded hover:bg-green-700"

@@ -21,6 +21,12 @@ const (
 
 	JWT_SECRET = "JWT_SECRET" // JWT secret for signing tokens
 
+	// AI Configuration
+	AI_PROVIDER     = "AI_PROVIDER"     // AI provider (gemini, openai, custom)
+	AI_API_KEY      = "AI_API_KEY"      // API key for AI service
+	AI_API_ENDPOINT = "AI_API_ENDPOINT" // API endpoint for AI service
+	AI_MODEL        = "AI_MODEL"        // AI model to use for generation
+
 	// Default Response Configuration
 	DEFAULT_RESPONSE_PROJECT_NOT_FOUND      = "This is a default response from Beo Echo mock service." // Default response when project is not found
 	DEFAULT_RESPONSE_ENDPOINT_NOT_FOUND     = "This is a default response from Beo Echo mock service." // Default response when endpoint is not found
@@ -106,6 +112,33 @@ var DefaultConfigSettings = map[SystemConfigKey]ConfigSetting{
 		HideValue:   true,
 	},
 
+	// AI Configuration
+	AI_PROVIDER: {
+		Type:        TypeString,
+		Value:       "gemini",
+		Description: "AI provider type: gemini, openai, or custom",
+		Category:    "AI",
+	},
+	AI_API_KEY: {
+		Type:        TypeString,
+		Value:       "",
+		Description: "API key for AI service (Gemini, OpenAI, Claude, etc.)",
+		Category:    "AI",
+		HideValue:   true,
+	},
+	AI_API_ENDPOINT: {
+		Type:        TypeString,
+		Value:       "https://generativelanguage.googleapis.com/v1beta",
+		Description: "API endpoint for AI service (Gemini free tier default)",
+		Category:    "AI",
+	},
+	AI_MODEL: {
+		Type:        TypeString,
+		Value:       "gemini-pro",
+		Description: "AI model to use for generation (gemini-pro is free)",
+		Category:    "AI",
+	},
+
 	// Landing Page Configuration
 	LANDING_PAGE_ENABLED: {
 		Type:        TypeBoolean,
@@ -141,10 +174,10 @@ const (
 
 // ConfigSetting represents a single configuration setting with metadata
 type ConfigSetting struct {
-	Key         SystemConfigKey // Unique key for the configuration
-	Type        ConfigType      // Data type of the configuration
-	Value       string          // Default value
-	Description string          // Human-readable description
-	HideValue   bool            // Whether to hide value in UI (for sensitive data)
-	Category    string          // Category for grouping related settings
+	Key         SystemConfigKey `json:"key"`         // Unique key for the configuration
+	Type        ConfigType      `json:"type"`        // Data type of the configuration
+	Value       string          `json:"value"`       // Default value
+	Description string          `json:"description"` // Human-readable description
+	HideValue   bool            `json:"hide_value"`  // Whether to hide value in UI (for sensitive data)
+	Category    string          `json:"category"`    // Category for grouping related settings
 }

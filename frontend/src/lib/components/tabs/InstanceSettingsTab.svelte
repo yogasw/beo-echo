@@ -11,6 +11,7 @@
 	import FeatureConfigSection from '$lib/components/instance/FeatureConfigSection.svelte';
 	import FeatureDebug from '$lib/components/instance/FeatureDebug.svelte';
 	import AdvanceSystemConfig from '$lib/components/instance/AdvanceSystemConfig.svelte';
+	import AISettings from '$lib/components/instance/AISettings.svelte';
 
 	// State for each section's visibility
 	let sectionsVisible = {
@@ -19,6 +20,7 @@
 		security: false,
 		domain: false,
 		sso: false,
+		ai: false,
 		features: false,
 		advanceConfig: false,
 		general: true // General open by default
@@ -137,6 +139,32 @@
 			{#if sectionsVisible.sso}
 				<div transition:fade={{ duration: 150 }} class="border-t theme-border">
 					<SsoIntegration visible={true} />
+				</div>
+			{/if}
+		</div>
+
+		<!-- AI Configuration -->
+		<div class={ThemeUtils.card('overflow-hidden')}>
+			<div
+				class="flex justify-between items-center p-3 hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer bg-gray-100 dark:bg-gray-750"
+				on:click={() => (sectionsVisible.ai = !sectionsVisible.ai)}
+				on:keydown={(e) => e.key === 'Enter' && (sectionsVisible.ai = !sectionsVisible.ai)}
+				tabindex="0"
+				role="button"
+			>
+				<div class="flex items-center">
+					<div class="bg-gradient-to-r from-purple-500/20 to-pink-500/20 p-1.5 rounded mr-2">
+						<i class="fas fa-magic text-purple-400"></i>
+					</div>
+					<h3 class="font-medium theme-text-primary">AI Configuration</h3>
+				</div>
+				<i class="fas {sectionsVisible.ai ? 'fa-chevron-up' : 'fa-chevron-down'} theme-text-muted"
+				></i>
+			</div>
+
+			{#if sectionsVisible.ai}
+				<div transition:fade={{ duration: 150 }} class="border-t theme-border">
+					<AISettings />
 				</div>
 			{/if}
 		</div>
