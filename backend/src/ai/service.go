@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"strings"
 	"time"
 
 	systemConfig "beo-echo/backend/src/systemConfigs"
@@ -156,6 +157,7 @@ Remember: When generating data, return ONLY the JSON. No markdown, no code block
 	// Parse response based on API type
 	var content string
 	var tokenUsed int
+	var data string
 
 	if isGemini {
 		var geminiResp GeminiResponse
@@ -183,19 +185,68 @@ Remember: When generating data, return ONLY the JSON. No markdown, no code block
 		tokenUsed = openAIResp.Usage.TotalTokens
 	}
 
-	// Check if the AI response is valid JSON
-	canApply := isValidJSON(content)
+	// Extract data and check if can apply
+	extractedData, canApply := extractAndValidate(content)
+	if canApply {
+		data = extractedData
+	}
 
 	return &GenerateResponse{
 		Content:   content,
 		Model:     model,
 		TokenUsed: tokenUsed,
 		CanApply:  canApply,
+		Data:      data,
 	}, nil
 }
 
-// isValidJSON checks if content is valid JSON
-func isValidJSON(content string) bool {
+// extractAndValidate checks if content is valid JSON or contains code blocks
+// Returns the extracted data and whether it can be applied
+func extractAndValidate(content string) (string, bool) {
+	// First, try direct JSON validation
 	var js json.RawMessage
-	return json.Unmarshal([]byte(content), &js) == nil
+	if err := json.Unmarshal([]byte(content), &js); err == nil {
+		return content, true
+	}
+
+	// If not valid JSON, check if content contains code block markers
+	// Extract content from ```...```
+	if strings.Contains(content, "```") {
+		extracted := extractFromCodeBlock(content)
+		if extracted != "" {
+			return extracted, true
+		}
+	}
+
+	return "", false
+}
+
+// extractFromCodeBlock extracts content from markdown code block
+// Removes ``` markers and language identifier (e.g., ```json)
+func extractFromCodeBlock(content string) string {
+	lines := strings.Split(content, "\n")
+	var result []string
+	inBlock := false
+
+	for _, line := range lines {
+		trimmed := strings.TrimSpace(line)
+
+		// Start of code block
+		if strings.HasPrefix(trimmed, "```") {
+			if !inBlock {
+				inBlock = true
+				continue // Skip the opening ``` line
+			} else {
+				// End of code block
+				break
+			}
+		}
+
+		// Collect lines inside the block
+		if inBlock {
+			result = append(result, line)
+		}
+	}
+
+	return strings.TrimSpace(strings.Join(result, "\n"))
 }

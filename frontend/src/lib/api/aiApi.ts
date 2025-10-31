@@ -11,6 +11,7 @@ export interface GenerateResponse {
 	model: string;
 	token_used: number;
 	can_apply: boolean;
+	data: string;
 }
 
 /**

@@ -13,6 +13,7 @@ type GenerateResponse struct {
 	Model     string `json:"model"`      // Model used for generation
 	TokenUsed int    `json:"token_used"` // Tokens used for generation
 	CanApply  bool   `json:"can_apply"`  // Whether content can be applied to editor (valid JSON)
+	Data      string `json:"data"`       // Generated data (e.g., JSON string or other formats)
 }
 
 // OpenAIRequest represents the request to OpenAI API

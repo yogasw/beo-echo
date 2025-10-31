@@ -100,12 +100,13 @@
 			});
 
 			let aiContent = response.content;
+			let aiData = response.data;
 
 			// Try to format as JSON if it's applicable
 			if (response.can_apply) {
 				try {
-					const parsed = JSON.parse(aiContent);
-					aiContent = JSON.stringify(parsed, null, 2);
+					const parsed = JSON.parse(aiData);
+					aiData = JSON.stringify(parsed, null, 2);
 				} catch (e) {
 					// Not JSON, keep as is
 				}
@@ -116,12 +117,17 @@
 
 			// Auto-apply to editor only if can_apply is true
 			if (response.can_apply) {
-				onSave(aiContent);
+				onSave(aiData);
 				toast.success('AI response applied to editor');
 
 				// Add AI response
 				chatMessages = [
 					...chatMessages,
+					{
+						role: 'ai',
+						content: aiContent,
+						timestamp: new Date()
+					},
 					{
 						role: 'ai',
 						content: 'Generated and applied to editor!',
