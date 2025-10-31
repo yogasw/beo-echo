@@ -31,6 +31,11 @@
 	export let searchTerm = '';
 	export let panelWidth: number = getProjectPanelWidth(); // Panel width in rem units (w-72 = 18rem)
 
+	// Collapse/Expand state
+	let isPanelCollapsed = false;
+	let savedPanelWidth = 18; // Store the width before collapsing
+	const collapsedWidth = 4; // Width when collapsed (just enough for the toggle button)
+
 	const dispatch = createEventDispatcher<{
 		selectedProject: Project;
 	}>();
@@ -90,6 +95,21 @@
 		document.body.style.userSelect = '';
 
 		// Save panel width to localStorage when resize is complete
+		setProjectPanelWidth(panelWidth);
+	}
+
+	function togglePanelCollapse() {
+		if (isPanelCollapsed) {
+			// Expand: restore to saved width
+			panelWidth = savedPanelWidth;
+			isPanelCollapsed = false;
+		} else {
+			// Collapse: save current width and set to minimal
+			savedPanelWidth = panelWidth;
+			panelWidth = collapsedWidth;
+			isPanelCollapsed = true;
+		}
+		// Save the panel width to localStorage
 		setProjectPanelWidth(panelWidth);
 	}
 
@@ -366,53 +386,85 @@
 			toast.error('Failed to load projects');
 		}
 	}
+
+	onMount(() => {
+		// Check if panel was collapsed (width is at or near collapsed width)
+		if (panelWidth <= collapsedWidth + 1) {
+			isPanelCollapsed = true;
+		} else {
+			savedPanelWidth = panelWidth;
+		}
+	});
 </script>
 
 <div
-	class="theme-bg-primary p-4 flex flex-col h-full border-r theme-border relative"
+	class="theme-bg-primary p-4 flex flex-col h-full border-r theme-border relative panel-transition"
 	style="width: {panelWidth}rem;"
 >
-	<!-- Brand Section - Clean & Responsive -->
-	<div class="mb-4 mt-2">
-		<!-- Main Brand Header -->
-		<div
-			class="flex items-center justify-between mb-4 p-4 rounded-xl bg-gradient-to-r from-blue-600/10 to-purple-600/10 border border-blue-500/20 dark:border-blue-400/20"
-		>
-			<div class="flex items-center">
-				<div
-					class="w-14 h-14 mr-4 flex items-center justify-center rounded-xl bg-gradient-to-br from-blue-500 to-purple-600 p-3 shadow-lg"
-				>
-					<img
-						src="/favicon.svg"
-						alt="Beo Echo Logo"
-						class="w-full h-full object-contain filter brightness-110"
-						title="Beo Echo - API Mocking Service"
-						aria-label="Beo Echo API Mocking Service logo"
-					/>
-				</div>
-				{#if panelWidth >= 12}
-					<div class="flex flex-col">
-						<h1
-							class="font-bold theme-text-primary leading-tight tracking-tight bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent {panelWidth >=
-							16
-								? 'text-2xl'
-								: 'text-lg'}"
-						>
-							Beo Echo
-						</h1>
-						{#if panelWidth >= 16}
-							<span class="text-sm theme-text-secondary font-medium opacity-80">
-								API Mocking Service
-							</span>
-						{:else}
-							<span class="text-xs theme-text-secondary font-medium opacity-70">
-								API Mocking Service
-							</span>
-						{/if}
-					</div>
-				{/if}
-			</div>
+	{#if isPanelCollapsed}
+		<!-- Collapsed state: Show only expand button -->
+		<div class="flex flex-col items-center justify-start pt-4 h-full">
+			<button
+				on:click={togglePanelCollapse}
+				class="theme-text-primary hover:text-blue-500 px-2 py-1 rounded hover:bg-blue-500/10 transition-all duration-200 border border-gray-700/50 hover:border-blue-500/50"
+				title="Expand panel"
+				aria-label="Expand panel"
+			>
+				<i class="fas fa-angle-double-right text-sm"></i>
+			</button>
 		</div>
+	{:else}
+		<!-- Expanded state: Show full content -->
+		<!-- Brand Section - Clean & Responsive -->
+		<div class="mb-4 mt-2">
+			<!-- Main Brand Header -->
+			<div
+				class="flex items-center justify-between mb-4 p-4 rounded-xl bg-gradient-to-r from-blue-600/10 to-purple-600/10 border border-blue-500/20 dark:border-blue-400/20"
+			>
+				<div class="flex items-center flex-1">
+					<div
+						class="w-14 h-14 mr-4 flex items-center justify-center rounded-xl bg-gradient-to-br from-blue-500 to-purple-600 p-3 shadow-lg"
+					>
+						<img
+							src="/favicon.svg"
+							alt="Beo Echo Logo"
+							class="w-full h-full object-contain filter brightness-110"
+							title="Beo Echo - API Mocking Service"
+							aria-label="Beo Echo API Mocking Service logo"
+						/>
+					</div>
+					{#if panelWidth >= 12}
+						<div class="flex flex-col flex-1">
+							<h1
+								class="font-bold theme-text-primary leading-tight tracking-tight bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent {panelWidth >=
+								16
+									? 'text-2xl'
+									: 'text-lg'}"
+							>
+								Beo Echo
+							</h1>
+							{#if panelWidth >= 16}
+								<span class="text-sm theme-text-secondary font-medium opacity-80">
+									API Mocking Service
+								</span>
+							{:else}
+								<span class="text-xs theme-text-secondary font-medium opacity-70">
+									API Mocking Service
+								</span>
+							{/if}
+						</div>
+					{/if}
+				</div>
+				<!-- Collapse button -->
+				<button
+					on:click={togglePanelCollapse}
+					class="theme-text-primary hover:text-blue-500 px-2 py-1 rounded hover:bg-blue-500/10 transition-all duration-200 border border-gray-700/50 hover:border-blue-500/50 ml-2"
+					title="Collapse panel"
+					aria-label="Collapse panel"
+				>
+					<i class="fas fa-angle-double-left text-sm"></i>
+				</button>
+			</div>
 
 		<!-- Version and Links -->
 		<div class="flex items-center justify-between px-2">
@@ -613,19 +665,26 @@
 			{/each}
 		</div>
 	</div>
+	{/if}
 
-	<!-- Resizable handle -->
-	<button
-		class="absolute top-0 right-0 bottom-0 w-1 cursor-col-resize hover:bg-blue-500 transition-colors duration-200 group bg-transparent border-none"
-		on:mousedown={startResize}
-		title="Drag to resize panel"
-		aria-label="Resize panel"
-	>
-		<div class="w-full h-full bg-transparent group-hover:bg-blue-500/30"></div>
-	</button>
+	<!-- Resizable handle (only show when expanded) -->
+	{#if !isPanelCollapsed}
+		<button
+			class="absolute top-0 right-0 bottom-0 w-1 cursor-col-resize hover:bg-blue-500 transition-colors duration-200 group bg-transparent border-none"
+			on:mousedown={startResize}
+			title="Drag to resize panel"
+			aria-label="Resize panel"
+		>
+			<div class="w-full h-full bg-transparent group-hover:bg-blue-500/30"></div>
+		</button>
+	{/if}
 </div>
 
 <style>
+	.panel-transition {
+		transition: width 0.3s ease-in-out;
+	}
+
 	/* Hide scrollbar for Chrome, Safari and Opera */
 	.hide-scrollbar::-webkit-scrollbar {
 		display: none;
