@@ -158,10 +158,14 @@ func UpdateSystemConfigHandler(c *gin.Context) {
 
 	// disable update hide value from api
 	if defaultConfig.HideValue {
-		c.JSON(http.StatusForbidden, gin.H{
-			"success": false,
-			"message": "You do not have permission to update this configuration",
-		})
+		isOwner, exists := c.Get("isOwner")
+		if !exists || isOwner != true {
+			c.JSON(http.StatusForbidden, gin.H{
+				"success": false,
+				"message": "Only system owners can update this configuration",
+			})
+			return
+		}
 		return
 	}
 
