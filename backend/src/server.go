@@ -31,6 +31,7 @@ import (
 	"beo-echo/backend/src/workspaces"
 
 	// New imports for auth and workspace management
+	aiModule "beo-echo/backend/src/ai"
 	authHandler "beo-echo/backend/src/auth/handler"
 	handlerLogs "beo-echo/backend/src/logs/handlers"
 	replayHandler "beo-echo/backend/src/replay/handlers"
@@ -128,6 +129,10 @@ func SetupRouter() *gin.Engine {
 	replayService := replayServices.NewReplayService(replayRepo)
 	replayHandler := replayHandler.NewReplayHandler(replayService)
 
+	// Initialize AI service and handler
+	aiService := aiModule.NewAIService()
+	aiHandler := aiModule.NewAIHandler(aiService)
+
 	// Authentication routes
 	router.POST("/api/auth/login", authHandler.LoginHandler)
 	router.POST("/api/auth/refresh", authHandler.RefreshTokenHandler)
@@ -162,6 +167,9 @@ func SetupRouter() *gin.Engine {
 		apiGroup.GET("/auth/me", userHandler.GetCurrentUser)
 		apiGroup.PATCH("/users/profile", userHandler.UpdateProfile)
 		apiGroup.POST("/users/change-password", userHandler.UpdatePassword)
+
+		// AI generation routes (accessible to all authenticated users)
+		apiGroup.POST("/ai/generate", aiHandler.GenerateHandler)
 
 		// Project search routes (accessible to all authenticated users)
 		apiGroup.POST("/projects/check-alias", project.CheckAliasAvailabilityHandler)

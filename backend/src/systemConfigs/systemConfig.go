@@ -228,20 +228,21 @@ func GetAllConfigSettings() ([]ConfigSetting, error) {
 // GetConfigSetting retrieves a specific configuration setting with metadata
 func GetConfigSetting(key string) (*ConfigSetting, error) {
 	keyName := SystemConfigKey(key)
-	for _, setting := range DefaultConfigSettings {
-		if setting.Key == keyName {
-			// Create a copy to avoid modifying the default
-			result := setting
 
-			// Check if there's a database override
-			var dbConfig database.SystemConfig
-			if err := database.DB.Where("key = ?", keyName).First(&dbConfig).Error; err == nil {
-				// Update with database values
-				result.Value = dbConfig.Value
-				result.Description = dbConfig.Description
-				result.HideValue = dbConfig.HideValue
-			}
+	defaultValue, exists := DefaultConfigSettings[SystemConfigKey(key)]
+	if exists {
+		// Create a copy to avoid modifying the default
+		result := defaultValue
 
+		// Check if there's a database override
+		var dbConfig database.SystemConfig
+		if err := database.DB.Where("key = ?", keyName).First(&dbConfig).Error; err == nil {
+			// Update with database values
+			result.Value = dbConfig.Value
+			result.Description = dbConfig.Description
+			result.HideValue = dbConfig.HideValue
+			return &result, nil
+		} else {
 			return &result, nil
 		}
 	}
