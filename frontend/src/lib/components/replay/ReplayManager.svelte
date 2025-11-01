@@ -621,6 +621,14 @@
 		// Set minimum width threshold (slightly above collapsed to prevent accidental collapse while dragging)
 		const minDragWidth = 15; // Minimum width when dragging (15%)
 
+		// If currently collapsed and user is dragging to expand
+		if (isPanelCollapsed && deltaX > 0) {
+			// Auto-expand to minDragWidth
+			panelWidth = minDragWidth;
+			isPanelCollapsed = false;
+			return;
+		}
+
 		// Constrain between minDragWidth and 70%
 		panelWidth = Math.min(Math.max(newWidth, minDragWidth), 70);
 

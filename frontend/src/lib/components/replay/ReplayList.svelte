@@ -100,22 +100,22 @@
 <div
 	class="flex flex-col h-full theme-bg-primary theme-border border rounded-lg shadow-md overflow-hidden"
 >
-	<!-- Header Bar -->
-	<div class="flex items-center justify-between p-3 theme-bg-secondary theme-border border-b">
-		{#if isPanelCollapsed}
-			<!-- Collapsed state: Show only expand button centered -->
-			<div class="flex items-center justify-center w-full">
-				<button
-					on:click={handleToggleCollapse}
-					class="theme-text-primary hover:text-blue-500 px-2 py-1 rounded hover:bg-blue-500/10 transition-all duration-200 border border-gray-700/50 hover:border-blue-500/50"
-					title="Expand panel"
-					aria-label="Expand panel"
-				>
-					<i class="fas fa-angle-double-right text-sm"></i>
-				</button>
-			</div>
-		{:else}
-			<!-- Expanded state: Show all controls -->
+	{#if isPanelCollapsed}
+		<!-- Collapsed state: Show expand button centered vertically -->
+		<div class="flex flex-col items-center justify-center h-full">
+			<button
+				on:click={handleToggleCollapse}
+				class="theme-text-primary hover:text-blue-500 px-2 py-2 rounded hover:bg-blue-500/10 transition-all duration-200 border border-gray-700/50 hover:border-blue-500/50"
+				title="Expand panel"
+				aria-label="Expand panel"
+			>
+				<i class="fas fa-angle-double-right text-lg"></i>
+			</button>
+		</div>
+	{:else}
+		<!-- Expanded state: Show full content -->
+		<!-- Header Bar -->
+		<div class="flex items-center justify-between p-3 theme-bg-secondary theme-border border-b">
 			<!-- Search Section -->
 			<div class="flex items-center space-x-3 flex-1">
 				<!-- Search Input -->
@@ -177,21 +177,19 @@
 					{/if}
 				</div>
 
-				<!-- Collapse button -->
-				<button
-					on:click={handleToggleCollapse}
-					class="theme-text-primary hover:text-blue-500 px-2 py-1 rounded hover:bg-blue-500/10 transition-all duration-200 border border-gray-700/50 hover:border-blue-500/50 ml-2"
-					title="Collapse panel"
-					aria-label="Collapse panel"
-				>
-					<i class="fas fa-angle-double-left text-sm"></i>
-				</button>
-			</div>
-		{/if}
+			<!-- Collapse button -->
+			<button
+				on:click={handleToggleCollapse}
+				class="theme-text-primary hover:text-blue-500 px-2 py-1 rounded hover:bg-blue-500/10 transition-all duration-200 border border-gray-700/50 hover:border-blue-500/50 ml-2"
+				title="Collapse panel"
+				aria-label="Collapse panel"
+			>
+				<i class="fas fa-angle-double-left text-sm"></i>
+			</button>
+		</div>
 	</div>
 
 	<!-- Content Area -->
-	{#if !isPanelCollapsed}
 		<div class="flex-1 overflow-auto">
 			{#if $filteredReplays.length === 0}
 			<div class="flex items-center justify-center h-full">
@@ -272,6 +270,6 @@
 				{/each}
 			</div>
 		{/if}
-		</div>
+	</div>
 	{/if}
 </div>
