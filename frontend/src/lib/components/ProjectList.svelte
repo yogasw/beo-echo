@@ -35,6 +35,7 @@
 	let isPanelCollapsed = false;
 	let savedPanelWidth = 18; // Store the width before collapsing
 	const collapsedWidth = 4; // Width when collapsed (just enough for the toggle button)
+	let isAnimating = false; // Flag to enable animation only for toggle button
 
 	const dispatch = createEventDispatcher<{
 		selectedProject: Project;
@@ -83,8 +84,28 @@
 		const containerWidth = window.innerWidth;
 		const newWidthRem = startWidth + (deltaX / containerWidth) * 100; // Convert to rem-like units
 
-		// Constrain between 12rem and 30rem (minimum 192px, maximum 480px)
-		panelWidth = Math.min(Math.max(newWidthRem, 12), 30);
+		// Set minimum width threshold
+		const minDragWidth = 12; // Minimum width when dragging (12rem)
+
+		// If currently collapsed and user is dragging to expand
+		if (isPanelCollapsed && deltaX > 0) {
+			// Auto-expand to minDragWidth
+			panelWidth = minDragWidth;
+			isPanelCollapsed = false;
+			return;
+		}
+
+		// Constrain between minDragWidth and 30rem
+		panelWidth = Math.min(Math.max(newWidthRem, minDragWidth), 30);
+
+		// Auto-collapse if dragged close to minimum
+		if (panelWidth <= minDragWidth + 1) {
+			// Snap to collapsed width
+			panelWidth = collapsedWidth;
+			isPanelCollapsed = true;
+		} else {
+			isPanelCollapsed = false;
+		}
 	}
 
 	function stopResize() {
@@ -99,6 +120,9 @@
 	}
 
 	function togglePanelCollapse() {
+		// Enable animation for toggle button clicks
+		isAnimating = true;
+
 		if (isPanelCollapsed) {
 			// Expand: restore to saved width
 			panelWidth = savedPanelWidth;
@@ -109,8 +133,14 @@
 			panelWidth = collapsedWidth;
 			isPanelCollapsed = true;
 		}
+
 		// Save the panel width to localStorage
 		setProjectPanelWidth(panelWidth);
+
+		// Disable animation after transition completes
+		setTimeout(() => {
+			isAnimating = false;
+		}, 300);
 	}
 
 	// Update project alias when project name changes and user hasn't manually edited the alias
@@ -398,7 +428,7 @@
 </script>
 
 <div
-	class="theme-bg-primary p-4 flex flex-col h-full border-r theme-border relative panel-transition"
+	class="theme-bg-primary p-4 flex flex-col h-full border-r theme-border relative {isAnimating ? 'panel-transition' : ''}"
 	style="width: {panelWidth}rem;"
 >
 	{#if isPanelCollapsed}
@@ -406,7 +436,7 @@
 		<div class="flex flex-col items-center justify-start pt-4 h-full">
 			<button
 				on:click={togglePanelCollapse}
-				class="theme-text-primary hover:text-blue-500 px-2 py-1 rounded hover:bg-blue-500/10 transition-all duration-200 border border-gray-700/50 hover:border-blue-500/50"
+				class="theme-text-primary hover:text-blue-500 px-2 py-2 rounded hover:bg-blue-500/10 transition-all duration-200 border border-gray-700/50 hover:border-blue-500/50"
 				title="Expand panel"
 				aria-label="Expand panel"
 			>
