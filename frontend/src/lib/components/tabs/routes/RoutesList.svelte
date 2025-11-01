@@ -22,6 +22,7 @@
 	let isPanelCollapsed = false;
 	let savedPanelWidth = 33; // Store the width before collapsing
 	const collapsedWidth = 4; // Width when collapsed (just enough for the toggle button)
+	let isAnimating = false; // Flag to enable animation only for toggle button
 
 	let defaultRequestLog: RequestLog = {
 		id: '',
@@ -136,13 +137,33 @@
 
 	function handleResize(event: MouseEvent) {
 		if (!isResizing) return;
-		
+
 		const deltaX = event.clientX - startX;
 		const containerWidth = window.innerWidth;
 		const newWidth = startWidth + (deltaX / containerWidth) * 100;
-		
-		// Constrain between 20% and 60%
-		panelWidth = Math.min(Math.max(newWidth, 20), 60);
+
+		// Set minimum width threshold (slightly above collapsed to prevent accidental collapse while dragging)
+		const minDragWidth = 15; // Minimum width when dragging (15%)
+
+		// If currently collapsed and user is dragging to expand
+		if (isPanelCollapsed && deltaX > 0) {
+			// Auto-expand to minDragWidth
+			panelWidth = minDragWidth;
+			isPanelCollapsed = false;
+			return;
+		}
+
+		// Constrain between minDragWidth and 60%
+		panelWidth = Math.min(Math.max(newWidth, minDragWidth), 60);
+
+		// Auto-collapse if dragged close to minimum
+		if (panelWidth <= minDragWidth + 2) {
+			// Snap to collapsed width
+			panelWidth = collapsedWidth;
+			isPanelCollapsed = true;
+		} else {
+			isPanelCollapsed = false;
+		}
 	}
 
 	function stopResize() {
@@ -157,6 +178,9 @@
 	}
 
 	function togglePanelCollapse() {
+		// Enable animation for toggle button clicks
+		isAnimating = true;
+
 		if (isPanelCollapsed) {
 			// Expand: restore to saved width
 			panelWidth = savedPanelWidth;
@@ -167,8 +191,14 @@
 			panelWidth = collapsedWidth;
 			isPanelCollapsed = true;
 		}
+
 		// Save the panel width to localStorage
 		setRoutesPanelWidth(panelWidth);
+
+		// Disable animation after transition completes
+		setTimeout(() => {
+			isAnimating = false;
+		}, 300);
 	}
 
 	onMount(() => {
@@ -192,7 +222,7 @@
 </script>
 
 <!-- Routes Section -->
-<div class="flex flex-col theme-bg-primary relative border-r border-theme panel-transition ml-2 mr-2" style="width: {panelWidth}%;">
+<div class="flex flex-col theme-bg-primary relative border-r border-theme ml-2 mr-2 {isAnimating ? 'panel-transition' : ''}" style="width: {panelWidth}%;">
 	{#if isPanelCollapsed}
 		<!-- Collapsed state: Show only expand button -->
 		<div class="flex flex-col items-center justify-start pt-4 h-full">
@@ -338,16 +368,14 @@
 		</div>
 	{/if}
 
-	<!-- Resizable handle (only show when expanded) -->
-	{#if !isPanelCollapsed}
-		<div
-			class="absolute top-0 right-0 bottom-0 w-1 cursor-col-resize hover:bg-blue-500 transition-colors duration-200 group"
-			on:mousedown={startResize}
-			title="Drag to resize panel"
-		>
-			<div class="w-full h-full bg-transparent group-hover:bg-blue-500/30"></div>
-		</div>
-	{/if}
+	<!-- Resizable handle (always visible) -->
+	<div
+		class="absolute top-0 right-0 bottom-0 w-1 cursor-col-resize hover:bg-blue-500 transition-colors duration-200 group"
+		on:mousedown={startResize}
+		title="Drag to resize panel"
+	>
+		<div class="w-full h-full bg-transparent group-hover:bg-blue-500/30"></div>
+	</div>
 </div>
 
 <style>
