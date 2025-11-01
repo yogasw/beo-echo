@@ -8,12 +8,18 @@
 	import type { Replay } from '$lib/types/Replay';
 	import HttpMethodBadge from '$lib/components/common/HttpMethodBadge.svelte';
 
+	export let isPanelCollapsed = false;
+
 	const dispatch = createEventDispatcher();
 
 	let sortOrder: 'asc' | 'desc' = 'asc';
 	let showAddDropdown = false;
 	let searchTerm = '';
 	let openMenuId: string | null = null;
+
+	function handleToggleCollapse() {
+		dispatch('toggleCollapse', { animate: true });
+	}
 
 	// Sort replays
 	$: sortedReplays = $filteredReplays.sort((a, b) => {
@@ -91,77 +97,103 @@
 	}
 </script>
 
-<div 
+<div
 	class="flex flex-col h-full theme-bg-primary theme-border border rounded-lg shadow-md overflow-hidden"
 >
 	<!-- Header Bar -->
 	<div class="flex items-center justify-between p-3 theme-bg-secondary theme-border border-b">
-		<!-- Search Section -->
-		<div class="flex items-center space-x-3">
-			<!-- Search Input -->
-			<div class="relative">
-				<div class="absolute inset-y-0 start-0 flex items-center ps-3 pointer-events-none">
-					<i class="fas fa-search theme-text-muted text-sm"></i>
-				</div>
-				<input
-					type="text"
-					bind:value={searchTerm}
-					placeholder="Search replays..."
-					class="block w-full p-2 ps-10 text-sm rounded-lg theme-bg-primary theme-border border theme-text-primary focus:ring-blue-500 focus:border-blue-500 placeholder-gray-400 dark:placeholder-gray-400"
-				/>
-			</div>
-		</div>
-
-		<!-- Action Buttons -->
-		<div class="flex items-center space-x-2">
-			<button
-				on:click={toggleSort}
-				class="p-2 theme-text-secondary hover:theme-text-primary transition-colors"
-				title="Toggle sort order"
-				aria-label="Toggle sort order"
-			>
-				<i class="fas fa-sort text-sm"></i>
-			</button>
-			
-			<div class="add-dropdown-container relative">
+		{#if isPanelCollapsed}
+			<!-- Collapsed state: Show only expand button centered -->
+			<div class="flex items-center justify-center w-full">
 				<button
-					on:click={handleAdd}
-					title="Add new replay"
-					aria-label="Add new replay"
-					class="flex items-center space-x-1 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-md text-sm transition-colors"
+					on:click={handleToggleCollapse}
+					class="theme-text-primary hover:text-blue-500 px-2 py-1 rounded hover:bg-blue-500/10 transition-all duration-200 border border-gray-700/50 hover:border-blue-500/50"
+					title="Expand panel"
+					aria-label="Expand panel"
 				>
-					<i class="fas fa-plus text-xs"></i>
-					<i class="fas fa-chevron-down text-xs {showAddDropdown ? 'rotate-180' : ''} transition-transform"></i>
+					<i class="fas fa-angle-double-right text-sm"></i>
+				</button>
+			</div>
+		{:else}
+			<!-- Expanded state: Show all controls -->
+			<!-- Search Section -->
+			<div class="flex items-center space-x-3 flex-1">
+				<!-- Search Input -->
+				<div class="relative flex-1">
+					<div class="absolute inset-y-0 start-0 flex items-center ps-3 pointer-events-none">
+						<i class="fas fa-search theme-text-muted text-sm"></i>
+					</div>
+					<input
+						type="text"
+						bind:value={searchTerm}
+						placeholder="Search replays..."
+						class="block w-full p-2 ps-10 text-sm rounded-lg theme-bg-primary theme-border border theme-text-primary focus:ring-blue-500 focus:border-blue-500 placeholder-gray-400 dark:placeholder-gray-400"
+					/>
+				</div>
+			</div>
+
+			<!-- Action Buttons -->
+			<div class="flex items-center space-x-2">
+				<button
+					on:click={toggleSort}
+					class="p-2 theme-text-secondary hover:theme-text-primary transition-colors"
+					title="Toggle sort order"
+					aria-label="Toggle sort order"
+				>
+					<i class="fas fa-sort text-sm"></i>
 				</button>
 
-				<!-- Add Options Dropdown -->
-				{#if showAddDropdown}
-					<div class="absolute top-full right-0 mt-1 w-48 theme-bg-primary theme-border border rounded-md shadow-lg z-20">
-						<div class="py-1">
-							<button
-								on:click={handleAddHttp}
-								class="w-full text-left px-4 py-2 text-sm theme-text-primary hover:theme-bg-secondary transition-colors flex items-center space-x-2"
-							>
-								<i class="fas fa-globe text-blue-400"></i>
-								<span>HTTP Replay</span>
-							</button>
-							<button
-								on:click={handleAddFolder}
-								class="w-full text-left px-4 py-2 text-sm theme-text-primary hover:theme-bg-secondary transition-colors flex items-center space-x-2"
-							>
-								<i class="fas fa-folder text-yellow-400"></i>
-								<span>Folder</span>
-							</button>
+				<div class="add-dropdown-container relative">
+					<button
+						on:click={handleAdd}
+						title="Add new replay"
+						aria-label="Add new replay"
+						class="flex items-center space-x-1 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-md text-sm transition-colors"
+					>
+						<i class="fas fa-plus text-xs"></i>
+						<i class="fas fa-chevron-down text-xs {showAddDropdown ? 'rotate-180' : ''} transition-transform"></i>
+					</button>
+
+					<!-- Add Options Dropdown -->
+					{#if showAddDropdown}
+						<div class="absolute top-full right-0 mt-1 w-48 theme-bg-primary theme-border border rounded-md shadow-lg z-20">
+							<div class="py-1">
+								<button
+									on:click={handleAddHttp}
+									class="w-full text-left px-4 py-2 text-sm theme-text-primary hover:theme-bg-secondary transition-colors flex items-center space-x-2"
+								>
+									<i class="fas fa-globe text-blue-400"></i>
+									<span>HTTP Replay</span>
+								</button>
+								<button
+									on:click={handleAddFolder}
+									class="w-full text-left px-4 py-2 text-sm theme-text-primary hover:theme-bg-secondary transition-colors flex items-center space-x-2"
+								>
+									<i class="fas fa-folder text-yellow-400"></i>
+									<span>Folder</span>
+								</button>
+							</div>
 						</div>
-					</div>
-				{/if}
+					{/if}
+				</div>
+
+				<!-- Collapse button -->
+				<button
+					on:click={handleToggleCollapse}
+					class="theme-text-primary hover:text-blue-500 px-2 py-1 rounded hover:bg-blue-500/10 transition-all duration-200 border border-gray-700/50 hover:border-blue-500/50 ml-2"
+					title="Collapse panel"
+					aria-label="Collapse panel"
+				>
+					<i class="fas fa-angle-double-left text-sm"></i>
+				</button>
 			</div>
-		</div>
+		{/if}
 	</div>
 
 	<!-- Content Area -->
-	<div class="flex-1 overflow-auto">
-		{#if $filteredReplays.length === 0}
+	{#if !isPanelCollapsed}
+		<div class="flex-1 overflow-auto">
+			{#if $filteredReplays.length === 0}
 			<div class="flex items-center justify-center h-full">
 				<div class="text-center theme-text-muted">
 					{#if $replays.length === 0}
@@ -240,5 +272,6 @@
 				{/each}
 			</div>
 		{/if}
-	</div>
+		</div>
+	{/if}
 </div>
