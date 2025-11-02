@@ -35,6 +35,12 @@
 	let startX = 0;
 	let startWidth = 0;
 
+	// Collapse/Expand state
+	let isPanelCollapsed = false;
+	let savedPanelWidth = 33; // Store the width before collapsing
+	const collapsedWidth = 4; // Width when collapsed (just enough for the toggle button)
+	let isAnimating = false; // Flag to enable animation only for toggle button
+
 	// State for ReplayEditor - will be loaded from localStorage
 	let editorTabs: Tab[] = [];
 	let editorActiveTabId = '';
@@ -515,10 +521,17 @@
 
 	onMount(async () => {
 		console.log('🚀 ReplayManager mounted');
-		
+
 		// Load panel width
 		panelWidth = getReplayPanelWidth();
-		
+
+		// Check if panel was collapsed (width is at or near collapsed width)
+		if (panelWidth <= collapsedWidth + 1) {
+			isPanelCollapsed = true;
+		} else {
+			savedPanelWidth = panelWidth;
+		}
+
 		// Load editor state from localStorage FIRST
 		loadEditorState();
 		
@@ -605,8 +618,28 @@
 		const containerWidth = (event.target as HTMLElement)?.closest('.flex-1.flex.p-4.h-full')?.clientWidth || window.innerWidth;
 		const newWidth = startWidth + (deltaX / containerWidth) * 100;
 
-		// Constrain between 20% and 60% (adjust as needed)
-		panelWidth = Math.min(Math.max(newWidth, 15), 70);
+		// Set minimum width threshold (slightly above collapsed to prevent accidental collapse while dragging)
+		const minDragWidth = 15; // Minimum width when dragging (15%)
+
+		// If currently collapsed and user is dragging to expand
+		if (isPanelCollapsed && deltaX > 0) {
+			// Auto-expand to minDragWidth
+			panelWidth = minDragWidth;
+			isPanelCollapsed = false;
+			return;
+		}
+
+		// Constrain between minDragWidth and 70%
+		panelWidth = Math.min(Math.max(newWidth, minDragWidth), 70);
+
+		// Auto-collapse if dragged close to minimum
+		if (panelWidth <= minDragWidth + 2) {
+			// Snap to collapsed width
+			panelWidth = collapsedWidth;
+			isPanelCollapsed = true;
+		} else {
+			isPanelCollapsed = false;
+		}
 	}
 
 	function stopResize() {
@@ -618,14 +651,38 @@
 
 		setReplayPanelWidth(panelWidth);
 	}
+
+	function togglePanelCollapse(event?: CustomEvent) {
+		// Enable animation for toggle button clicks
+		isAnimating = true;
+
+		if (isPanelCollapsed) {
+			// Expand: restore to saved width
+			panelWidth = savedPanelWidth;
+			isPanelCollapsed = false;
+		} else {
+			// Collapse: save current width and set to minimal
+			savedPanelWidth = panelWidth;
+			panelWidth = collapsedWidth;
+			isPanelCollapsed = true;
+		}
+
+		// Save the panel width to localStorage
+		setReplayPanelWidth(panelWidth);
+
+		// Disable animation after transition completes
+		setTimeout(() => {
+			isAnimating = false;
+		}, 300);
+	}
 </script>
 
 <div class="flex flex-col h-full bg-gray-50 dark:bg-gray-900">
 	<!-- Main Content Area -->
 	<div class="flex-1 flex p-4 h-full overflow-hidden bg-gray-50 dark:bg-gray-900"> 
 		<!-- Left: Replay List (Resizable) -->
-		<div 
-			class="flex flex-col h-full space-y-4 relative mr-4"  
+		<div
+			class="flex flex-col h-full space-y-4 relative mr-4 {isAnimating ? 'panel-transition' : ''}"
 			style="width: {panelWidth}%;"
 		>
 			<div class="flex-1 min-h-0 overflow-y-auto pr-1 hide-scrollbar"> 
@@ -646,11 +703,13 @@
 					</div>
 				{:else}
 					<ReplayList
+						{isPanelCollapsed}
 						on:add={handleCreateNew}
 						on:edit={handleEditReplay}
 						on:execute={handleExecuteReplay}
 						on:logs={handleViewLogs}
 						on:refresh={loadReplays}
+						on:toggleCollapse={togglePanelCollapse}
 					/>
 					
 					<!-- Debug Panel -->
@@ -738,3 +797,9 @@
 		</div>
 	</div>
 </div>
+
+<style>
+	.panel-transition {
+		transition: width 0.3s ease-in-out;
+	}
+</style>
