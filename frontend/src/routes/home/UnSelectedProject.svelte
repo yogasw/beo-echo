@@ -3,141 +3,184 @@
 	import RecentProjects from '$lib/components/common/RecentProjects.svelte';
 	import { projects } from '$lib/stores/configurations';
 	import type { RecentProject } from '$lib/stores/recentProjects';
+	import workspaceStore from '$lib/stores/workspace';
 
 	// Handle project selection from recent projects
 	function handleProjectSelect(project: RecentProject) {
         goto(`/home/workspace/${project.workspaceId}/projects/${project.id}`);
 	}
+
+	// Stats computation
+	let stats = $derived({
+		totalProjects: $projects.length,
+		totalWorkspaces: $workspaceStore.workspaces.length,
+		mockMode: $projects.filter((p) => p.mode === 'mock').length,
+		proxyMode: $projects.filter((p) => p.mode === 'proxy').length,
+		forwarderMode: $projects.filter((p) => p.mode === 'forwarder').length,
+		disabled: $projects.filter((p) => p.mode === 'disabled').length
+	});
 </script>
 
-<div class="h-full overflow-y-auto p-4 md:p-6 bg-gray-50 dark:bg-gray-900">
-	<div class="max-w-5xl mx-auto space-y-6">
-		<!-- Welcome Header - Compact -->
-		<div class="text-center py-4">
-			<h1 class="text-2xl font-bold text-gray-900 dark:text-white mb-2">
+<div class="h-full overflow-y-auto p-3 md:p-4 bg-gray-50 dark:bg-gray-900">
+	<div class="max-w-6xl mx-auto space-y-3">
+		<!-- Welcome Header - Modern Compact -->
+		<div class="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-3">
+			<h1 class="text-lg font-bold text-gray-900 dark:text-white mb-2">
 				Welcome to Beo Echo
 			</h1>
-			<p class="text-sm text-gray-600 dark:text-gray-400">
-				Powerful API mocking service for rapid development
-			</p>
+
+			<!-- Features - Compact Modern -->
+			<div class="grid grid-cols-4 gap-3">
+				<!-- AI Assistant -->
+				<div class="text-center">
+					<div class="text-2xl mb-1">✨</div>
+					<div class="text-xs font-semibold text-gray-900 dark:text-white">AI Assistant</div>
+					<div class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">Generate mocks</div>
+				</div>
+
+				<!-- Lightning Fast -->
+				<div class="text-center">
+					<div class="text-2xl mb-1">⚡</div>
+					<div class="text-xs font-semibold text-gray-900 dark:text-white">Lightning Fast</div>
+					<div class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">Deploy instantly</div>
+				</div>
+
+				<!-- Multiple Modes -->
+				<div class="text-center">
+					<div class="text-2xl mb-1">⚙️</div>
+					<div class="text-xs font-semibold text-gray-900 dark:text-white">Multiple Modes</div>
+					<div class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">Mock & Proxy</div>
+				</div>
+
+				<!-- Collaborate -->
+				<div class="text-center">
+					<div class="text-2xl mb-1">👥</div>
+					<div class="text-xs font-semibold text-gray-900 dark:text-white">Collaborate</div>
+					<div class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">Team sharing</div>
+				</div>
+			</div>
 		</div>
 
-		<!-- Feature Highlights - Compact Design -->
-		<div class="grid grid-cols-2 md:grid-cols-4 gap-3">
-			<!-- AI Assistant - Featured -->
-			<div
-				class="relative overflow-hidden bg-gradient-to-br from-purple-500 via-pink-500 to-rose-500 rounded-lg p-4 text-white shadow hover:shadow-md transition-all group"
-			>
-				<div class="absolute top-0 right-0 w-20 h-20 bg-white/10 rounded-full -mr-10 -mt-10"></div>
-				<div class="relative z-10">
-					<div class="flex items-center justify-between mb-2">
-						<div class="w-8 h-8 bg-white/20 backdrop-blur-sm rounded-lg flex items-center justify-center">
-							<i class="fas fa-magic text-sm" aria-hidden="true"></i>
-						</div>
-						<span class="px-1.5 py-0.5 bg-white/20 backdrop-blur-sm rounded text-xs">✨</span>
+		<!-- Stats Overview - Compact -->
+		{#if stats.totalProjects > 0}
+			<div class="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-3">
+				<div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+					<div class="flex items-center gap-2">
+						<i class="fas fa-chart-pie text-indigo-600 dark:text-indigo-400 text-sm" aria-hidden="true"></i>
+						<h2 class="text-sm font-semibold text-gray-900 dark:text-white">Overview</h2>
 					</div>
-					<h3 class="text-sm font-bold mb-1">AI Assistant</h3>
-					<p class="text-xs text-white/90 leading-relaxed">
-						Generate mock responses with AI
-					</p>
-				</div>
-			</div>
 
-			<!-- Fast Setup -->
-			<div
-				class="bg-white dark:bg-gray-800 rounded-lg p-4 border border-gray-200 dark:border-gray-700 hover:shadow-md transition-all"
-			>
-				<div class="w-8 h-8 bg-blue-100 dark:bg-blue-900 rounded-lg flex items-center justify-center mb-2">
-					<i class="fas fa-bolt text-blue-600 dark:text-blue-400 text-sm" aria-hidden="true"></i>
-				</div>
-				<h3 class="text-sm font-bold text-gray-900 dark:text-white mb-1">Lightning Fast</h3>
-				<p class="text-xs text-gray-600 dark:text-gray-400">
-					Deploy mocks in seconds
-				</p>
-			</div>
-
-			<!-- Flexible Modes -->
-			<div
-				class="bg-white dark:bg-gray-800 rounded-lg p-4 border border-gray-200 dark:border-gray-700 hover:shadow-md transition-all"
-			>
-				<div class="w-8 h-8 bg-green-100 dark:bg-green-900 rounded-lg flex items-center justify-center mb-2">
-					<i class="fas fa-sliders-h text-green-600 dark:text-green-400 text-sm" aria-hidden="true"></i>
-				</div>
-				<h3 class="text-sm font-bold text-gray-900 dark:text-white mb-1">Multiple Modes</h3>
-				<p class="text-xs text-gray-600 dark:text-gray-400">
-					Mock, Proxy & Forward
-				</p>
-			</div>
-
-			<!-- Team Collaboration -->
-			<div
-				class="bg-white dark:bg-gray-800 rounded-lg p-4 border border-gray-200 dark:border-gray-700 hover:shadow-md transition-all"
-			>
-				<div class="w-8 h-8 bg-purple-100 dark:bg-purple-900 rounded-lg flex items-center justify-center mb-2">
-					<i class="fas fa-users text-purple-600 dark:text-purple-400 text-sm" aria-hidden="true"></i>
-				</div>
-				<h3 class="text-sm font-bold text-gray-900 dark:text-white mb-1">Collaborate</h3>
-				<p class="text-xs text-gray-600 dark:text-gray-400">
-					Share with your team
-				</p>
-			</div>
-		</div>
-
-		<!-- Divider -->
-		<div class="relative">
-			<div class="absolute inset-0 flex items-center">
-				<div class="w-full border-t border-gray-200 dark:border-gray-700"></div>
-			</div>
-			<div class="relative flex justify-center">
-				<span class="px-3 bg-gray-50 dark:bg-gray-900 text-sm text-gray-500 dark:text-gray-400">
-					Your Projects
-				</span>
-			</div>
-		</div>
-
-		<!-- Recent Projects Section -->
-		<div>
-			<RecentProjects onProjectSelect={handleProjectSelect} />
-		</div>
-
-		<!-- Quick Start - Compact -->
-		{#if $projects.length === 0}
-			<div
-				class="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 rounded-lg p-6 border border-blue-200 dark:border-blue-800"
-			>
-				<div class="flex items-start gap-4">
-					<div class="flex-shrink-0">
+					<div class="flex flex-wrap items-center gap-4">
+						<!-- Total Projects -->
 						<div
-							class="w-12 h-12 bg-blue-600 rounded-lg flex items-center justify-center"
+							class="flex items-center gap-1.5 cursor-help"
+							title="Total number of mock API projects"
 						>
-							<i class="fas fa-rocket text-white text-xl" aria-hidden="true"></i>
+							<i class="fas fa-cube text-blue-500 text-xs" aria-hidden="true"></i>
+							<span class="text-lg font-bold text-gray-900 dark:text-white">{stats.totalProjects}</span>
+							<span class="text-xs text-gray-600 dark:text-gray-400">Projects</span>
 						</div>
-					</div>
-					<div class="flex-1">
-						<h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-2">
-							Ready to get started?
-						</h3>
-						<p class="text-sm text-gray-600 dark:text-gray-400 mb-3">
-							Create your first project from the sidebar, define your endpoints, and start testing
-							your APIs instantly.
-						</p>
-						<button
-							class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2"
-							onclick={() => {
-								const addButton = document.querySelector(
-									'button[aria-label="Add new project"]'
-								) as HTMLButtonElement;
-								addButton?.click();
-							}}
-							title="Create your first project"
-							aria-label="Create your first project"
+
+						<!-- Divider -->
+						<div class="h-4 w-px bg-gray-200 dark:bg-gray-700"></div>
+
+						<!-- Total Workspaces -->
+						<div
+							class="flex items-center gap-1.5 cursor-help"
+							title="Number of workspaces you belong to"
 						>
-							<i class="fas fa-plus" aria-hidden="true"></i>
-							Create First Project
-						</button>
+							<i class="fas fa-users text-purple-500 text-xs" aria-hidden="true"></i>
+							<span class="text-lg font-bold text-gray-900 dark:text-white">{stats.totalWorkspaces}</span>
+							<span class="text-xs text-gray-600 dark:text-gray-400">Workspaces</span>
+						</div>
+
+						<!-- Divider -->
+						<div class="h-4 w-px bg-gray-200 dark:bg-gray-700"></div>
+
+						<!-- Modes Summary -->
+						<div class="flex items-center gap-3">
+							<div
+								class="flex items-center gap-1 cursor-help"
+								title="Mock Mode: Serves predefined mock responses"
+							>
+								<i class="fas fa-database text-indigo-500 text-xs" aria-hidden="true"></i>
+								<span class="text-sm font-semibold text-gray-900 dark:text-white">{stats.mockMode}</span>
+								<span class="text-xs text-gray-500 dark:text-gray-400 hidden sm:inline">Mock</span>
+							</div>
+							<div
+								class="flex items-center gap-1 cursor-help"
+								title="Proxy Mode: Uses mocks when available, forwards otherwise"
+							>
+								<i class="fas fa-sync text-green-500 text-xs" aria-hidden="true"></i>
+								<span class="text-sm font-semibold text-gray-900 dark:text-white">{stats.proxyMode}</span>
+								<span class="text-xs text-gray-500 dark:text-gray-400 hidden sm:inline">Proxy</span>
+							</div>
+							<div
+								class="flex items-center gap-1 cursor-help"
+								title="Forwarder Mode: Always forwards all requests to target"
+							>
+								<i class="fas fa-arrow-right text-orange-500 text-xs" aria-hidden="true"></i>
+								<span class="text-sm font-semibold text-gray-900 dark:text-white">{stats.forwarderMode}</span>
+								<span class="text-xs text-gray-500 dark:text-gray-400 hidden sm:inline">Forward</span>
+							</div>
+							<div
+								class="flex items-center gap-1 cursor-help"
+								title="Disabled: Projects that are currently inactive"
+							>
+								<i class="fas fa-ban text-gray-400 text-xs" aria-hidden="true"></i>
+								<span class="text-sm font-semibold text-gray-900 dark:text-white">{stats.disabled}</span>
+								<span class="text-xs text-gray-500 dark:text-gray-400 hidden sm:inline">Disabled</span>
+							</div>
+						</div>
 					</div>
 				</div>
 			</div>
 		{/if}
+
+        <!-- Quick Start - Only for New Users -->
+		{#if $projects.length === 0}
+			<div
+				class="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 rounded-lg p-4 border border-blue-200 dark:border-blue-800"
+			>
+				<div class="flex items-center gap-3">
+					<div class="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center flex-shrink-0">
+						<i class="fas fa-rocket text-white" aria-hidden="true"></i>
+					</div>
+					<div class="flex-1">
+						<h3 class="text-sm font-semibold text-gray-900 dark:text-white mb-1">
+							Ready to get started?
+						</h3>
+						<p class="text-xs text-gray-600 dark:text-gray-400">
+							Create your first project from the sidebar to get started
+						</p>
+					</div>
+					<button
+						class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded-lg text-xs font-medium transition-colors flex items-center gap-1.5"
+						onclick={() => {
+							const addButton = document.querySelector(
+								'button[aria-label="Add new project"]'
+							) as HTMLButtonElement;
+							addButton?.click();
+						}}
+						title="Create your first project"
+						aria-label="Create your first project"
+					>
+						<i class="fas fa-plus text-xs" aria-hidden="true"></i>
+						Create Project
+					</button>
+				</div>
+			</div>
+		{/if}
+        
+		<!-- Recent Projects Section - Main Focus -->
+		<div class="flex-1">
+			<div class="mb-2 px-1">
+				<h2 class="text-sm font-semibold text-gray-700 dark:text-gray-300 flex items-center gap-2">
+					<i class="fas fa-history text-indigo-500" aria-hidden="true"></i>
+					Recent Projects
+				</h2>
+			</div>
+			<RecentProjects onProjectSelect={handleProjectSelect} />
+		</div>
 	</div>
 </div>
