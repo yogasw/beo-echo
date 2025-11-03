@@ -143,6 +143,13 @@
 		}, 300);
 	}
 
+	// Handle logo click - go to home and unselect project
+	function handleLogoClick() {
+		selectedProject.set(null);
+		// Reset logs when going to home
+		logStatus.reset();
+	}
+
 	// Update project alias when project name changes and user hasn't manually edited the alias
 	$: if (projectName && !userEditedAlias) {
 		projectAlias = sanitizeAlias(projectName);
@@ -284,7 +291,7 @@
 		if (!isRouteTab) {
 			activeTab.set('routes');
 		}
-		
+
 		isLoadingContentArea.set(true);
 
 		console.log('1. ConfigurationList - Clicked config:', project);
@@ -435,7 +442,7 @@
 		<!-- Collapsed state: Show only expand button -->
 		<div class="flex flex-col items-center justify-start pt-4 h-full">
 			<button
-				on:click={togglePanelCollapse}
+				onclick={togglePanelCollapse}
 				class="theme-text-primary hover:text-blue-500 px-2 py-2 rounded hover:bg-blue-500/10 transition-all duration-200 border border-gray-700/50 hover:border-blue-500/50"
 				title="Expand panel"
 				aria-label="Expand panel"
@@ -451,20 +458,23 @@
 			<div
 				class="flex items-center justify-between mb-4 p-4 rounded-xl bg-gradient-to-r from-blue-600/10 to-purple-600/10 border border-blue-500/20 dark:border-blue-400/20"
 			>
-				<div class="flex items-center flex-1">
+				<button
+					onclick={handleLogoClick}
+					class="flex items-center flex-1 hover:opacity-80 transition-opacity cursor-pointer border-none bg-transparent p-0"
+					title="Go to home page"
+					aria-label="Go to home page and unselect current project"
+				>
 					<div
-						class="w-14 h-14 mr-4 flex items-center justify-center rounded-xl bg-gradient-to-br from-blue-500 to-purple-600 p-3 shadow-lg"
+						class="w-14 h-14 mr-4 flex items-center justify-center rounded-xl bg-gradient-to-br from-blue-500 to-purple-600 p-3 shadow-lg hover:shadow-xl transition-shadow"
 					>
 						<img
 							src="/favicon.svg"
 							alt="Beo Echo Logo"
 							class="w-full h-full object-contain filter brightness-110"
-							title="Beo Echo - API Mocking Service"
-							aria-label="Beo Echo API Mocking Service logo"
 						/>
 					</div>
 					{#if panelWidth >= 12}
-						<div class="flex flex-col flex-1">
+						<div class="flex flex-col flex-1 text-left">
 							<h1
 								class="font-bold theme-text-primary leading-tight tracking-tight bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent {panelWidth >=
 								16
@@ -484,10 +494,10 @@
 							{/if}
 						</div>
 					{/if}
-				</div>
+				</button>
 				<!-- Collapse button -->
 				<button
-					on:click={togglePanelCollapse}
+					onclick={togglePanelCollapse}
 					class="theme-text-primary hover:text-blue-500 px-2 py-1 rounded hover:bg-blue-500/10 transition-all duration-200 border border-gray-700/50 hover:border-blue-500/50 ml-2"
 					title="Collapse panel"
 					aria-label="Collapse panel"
@@ -496,212 +506,212 @@
 				</button>
 			</div>
 
-		<!-- Version and Links -->
-		<div class="flex items-center justify-between px-2">
-			<span
-				class="inline-flex items-center px-3 py-1.5 rounded-full text-xs font-semibold bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-sm"
-			>
-				{#if panelWidth >= 16}
-					<i class="fas fa-tag mr-1.5 text-xs"></i>
-				{/if}
-				{getVersionWithPrefix('v')}
-			</span>
-
-			<!-- Action Links -->
-			<div class="flex items-center space-x-2">
-				<a
-					href="https://github.com/yogasw/beo-echo"
-					target="_blank"
-					rel="noopener noreferrer"
-					class="group flex items-center justify-center w-8 h-8 rounded-lg theme-bg-secondary hover:bg-gray-600 dark:hover:bg-gray-500 transition-all duration-200 transform hover:scale-105"
-					style="text-decoration: none !important;"
-					title="View on GitHub"
-					aria-label="View Beo Echo project on GitHub"
+			<!-- Version and Links -->
+			<div class="flex items-center justify-between px-2">
+				<span
+					class="inline-flex items-center px-3 py-1.5 rounded-full text-xs font-semibold bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-sm"
 				>
-					<i
-						class="fab fa-github text-sm theme-text-secondary group-hover:text-white transition-colors"
-					></i>
-				</a>
+					{#if panelWidth >= 16}
+						<i class="fas fa-tag mr-1.5 text-xs"></i>
+					{/if}
+					{getVersionWithPrefix('v')}
+				</span>
+
+				<!-- Action Links -->
+				<div class="flex items-center space-x-2">
+					<a
+						href="https://github.com/yogasw/beo-echo"
+						target="_blank"
+						rel="noopener noreferrer"
+						class="group flex items-center justify-center w-8 h-8 rounded-lg theme-bg-secondary hover:bg-gray-600 dark:hover:bg-gray-500 transition-all duration-200 transform hover:scale-105"
+						style="text-decoration: none !important;"
+						title="View on GitHub"
+						aria-label="View Beo Echo project on GitHub"
+					>
+						<i
+							class="fab fa-github text-sm theme-text-secondary group-hover:text-white transition-colors"
+						></i>
+					</a>
+				</div>
 			</div>
 		</div>
-	</div>
-	<div class="relative mb-4">
-		<div class="absolute inset-y-0 start-0 flex items-center ps-3 pointer-events-none">
-			<i class="fas fa-search text-gray-400"></i>
+		<div class="relative mb-4">
+			<div class="absolute inset-y-0 start-0 flex items-center ps-3 pointer-events-none">
+				<i class="fas fa-search text-gray-400"></i>
+			</div>
+			<input
+				type="text"
+				bind:value={searchTerm}
+				placeholder="Search Configuration"
+				class={ThemeUtils.inputField('py-2')}
+			/>
 		</div>
-		<input
-			type="text"
-			bind:value={searchTerm}
-			placeholder="Search Configuration"
-			class={ThemeUtils.inputField('py-2')}
-		/>
-	</div>
 
-	<button
-		class={ThemeUtils.primaryButton('mb-4 w-full justify-center bg-green-600 hover:bg-green-700')}
-		on:click={openAddProjectModal}
-		title="Add new project"
-		aria-label="Add new project"
-	>
-		<i class="fas fa-plus mr-2"></i> Add Project
-	</button>
+		<button
+			class={ThemeUtils.primaryButton('mb-4 w-full justify-center bg-green-600 hover:bg-green-700')}
+			onclick={openAddProjectModal}
+			title="Add new project"
+			aria-label="Add new project"
+		>
+			<i class="fas fa-plus mr-2"></i> Add Project
+		</button>
 
-	<!-- Add Project Modal -->
-	{#if showAddProjectModal}
-		<div class="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center">
-			<div class={ThemeUtils.card('p-6 max-w-md w-full mx-4')}>
-				<h2 class={ThemeUtils.headerSection('text-xl font-bold mb-4 rounded-md')}>
-					Add New Project
-				</h2>
+		<!-- Add Project Modal -->
+		{#if showAddProjectModal}
+			<div class="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center">
+				<div class={ThemeUtils.card('p-6 max-w-md w-full mx-4')}>
+					<h2 class={ThemeUtils.headerSection('text-xl font-bold mb-4 rounded-md')}>
+						Add New Project
+					</h2>
 
-				<div class="mb-4">
-					<label for="projectName" class="block text-sm font-medium theme-text-secondary mb-1"
-						>Project Name</label
-					>
-					<div class="relative">
-						<div class="absolute inset-y-0 start-0 flex items-center ps-3 pointer-events-none">
-							<i class="fas fa-tag text-gray-400"></i>
+					<div class="mb-4">
+						<label for="projectName" class="block text-sm font-medium theme-text-secondary mb-1"
+							>Project Name</label
+						>
+						<div class="relative">
+							<div class="absolute inset-y-0 start-0 flex items-center ps-3 pointer-events-none">
+								<i class="fas fa-tag text-gray-400"></i>
+							</div>
+							<input
+								id="projectName"
+								type="text"
+								class={ThemeUtils.inputField('')}
+								bind:value={projectName}
+								placeholder="Enter project name"
+							/>
 						</div>
-						<input
-							id="projectName"
-							type="text"
-							class={ThemeUtils.inputField('')}
-							bind:value={projectName}
-							placeholder="Enter project name"
-						/>
+					</div>
+
+					<div class="mb-4">
+						<label for="projectAlias" class="block text-sm font-medium theme-text-secondary mb-1"
+							>Project Alias</label
+						>
+						<div class="relative">
+							<div class="absolute inset-y-0 start-0 flex items-center ps-3 pointer-events-none">
+								<i class="fas fa-link text-gray-400"></i>
+							</div>
+							<input
+								id="projectAlias"
+								type="text"
+								class={ThemeUtils.inputField('')}
+								bind:value={projectAlias}
+								placeholder="Enter project alias"
+								oninput={handleAliasInput}
+							/>
+						</div>
+						<p class="text-xs theme-text-muted mt-1">
+							Only lowercase letters, numbers, and hyphens allowed.
+						</p>
+					</div>
+
+					<div class="mb-6">
+						<p class="block text-sm font-medium theme-text-secondary mb-1">URL Preview</p>
+						<div
+							class={ThemeUtils.themeBgTertiary(
+								'px-3 py-2 rounded theme-border border font-mono text-sm break-all theme-text-secondary'
+							)}
+						>
+							http://BASE_URL/{projectAlias || '[alias]'}
+						</div>
+					</div>
+					<div class="flex justify-end space-x-2">
+						<button
+							class={ThemeUtils.secondaryButton('px-4 py-2 rounded transition-colors')}
+							onclick={closeAddProjectModal}
+							disabled={isAddingProject}
+							title="Cancel"
+							aria-label="Cancel"
+						>
+							<i class="fas fa-times mr-2"></i> Cancel
+						</button>
+						<button
+							class={isAddingProject || !projectName.trim() || !projectAlias.trim()
+								? ThemeUtils.secondaryButton('px-4 py-2 cursor-not-allowed opacity-70')
+								: ThemeUtils.primaryButton('px-4 py-2')}
+							onclick={handleAddProject}
+							disabled={isAddingProject || !projectName.trim() || !projectAlias.trim()}
+							title={isAddingProject ? 'Creating project...' : 'Create project'}
+							aria-label={isAddingProject ? 'Creating project...' : 'Create project'}
+						>
+							{#if isAddingProject}
+								<i class="fas fa-spinner fa-spin mr-2"></i>
+							{:else}
+								<i class="fas fa-save mr-2"></i>
+							{/if}
+							{isAddingProject ? 'Creating...' : 'Create Project'}
+						</button>
 					</div>
 				</div>
+			</div>
+		{/if}
 
-				<div class="mb-4">
-					<label for="projectAlias" class="block text-sm font-medium theme-text-secondary mb-1"
-						>Project Alias</label
-					>
-					<div class="relative">
-						<div class="absolute inset-y-0 start-0 flex items-center ps-3 pointer-events-none">
-							<i class="fas fa-link text-gray-400"></i>
-						</div>
-						<input
-							id="projectAlias"
-							type="text"
-							class={ThemeUtils.inputField('')}
-							bind:value={projectAlias}
-							placeholder="Enter project alias"
-							on:input={handleAliasInput}
-						/>
-					</div>
-					<p class="text-xs theme-text-muted mt-1">
-						Only lowercase letters, numbers, and hyphens allowed.
-					</p>
-				</div>
-
-				<div class="mb-6">
-					<p class="block text-sm font-medium theme-text-secondary mb-1">URL Preview</p>
+		<!-- Configuration List -->
+		<div class="flex-1 min-h-0 overflow-auto hide-scrollbar" bind:this={scrollContainer}>
+			<div class="space-y-4">
+				{#each filteredConfigurations as project}
 					<div
-						class={ThemeUtils.themeBgTertiary(
-							'px-3 py-2 rounded theme-border border font-mono text-sm break-all theme-text-secondary'
-						)}
-					>
-						http://BASE_URL/{projectAlias || '[alias]'}
-					</div>
-				</div>
-				<div class="flex justify-end space-x-2">
-					<button
-						class={ThemeUtils.secondaryButton('px-4 py-2 rounded transition-colors')}
-						on:click={closeAddProjectModal}
-						disabled={isAddingProject}
-						title="Cancel"
-						aria-label="Cancel"
-					>
-						<i class="fas fa-times mr-2"></i> Cancel
-					</button>
-					<button
-						class={isAddingProject || !projectName.trim() || !projectAlias.trim()
-							? ThemeUtils.secondaryButton('px-4 py-2 cursor-not-allowed opacity-70')
-							: ThemeUtils.primaryButton('px-4 py-2')}
-						on:click={handleAddProject}
-						disabled={isAddingProject || !projectName.trim() || !projectAlias.trim()}
-						title={isAddingProject ? 'Creating project...' : 'Create project'}
-						aria-label={isAddingProject ? 'Creating project...' : 'Create project'}
-					>
-						{#if isAddingProject}
-							<i class="fas fa-spinner fa-spin mr-2"></i>
-						{:else}
-							<i class="fas fa-save mr-2"></i>
-						{/if}
-						{isAddingProject ? 'Creating...' : 'Create Project'}
-					</button>
-				</div>
-			</div>
-		</div>
-	{/if}
-
-	<!-- Configuration List -->
-	<div class="flex-1 min-h-0 overflow-auto hide-scrollbar" bind:this={scrollContainer}>
-		<div class="space-y-4">
-			{#each filteredConfigurations as project}
-				<div
-					bind:this={projectElements[project.id]}
-					id="project-{project.id}"
-					role="button"
-					tabindex="0"
-					class={ThemeUtils.themeBgSecondary(`p-4 rounded cursor-pointer transition-colors 
+						bind:this={projectElements[project.id]}
+						id="project-{project.id}"
+						role="button"
+						tabindex="0"
+						class={ThemeUtils.themeBgSecondary(`p-4 rounded cursor-pointer transition-colors 
 					${$selectedProject?.id === project.id ? 'border-2 border-blue-500' : 'theme-border border'}
 					${$selectedProject?.id !== project.id ? ThemeUtils.themeHover('') : ''}`)}
-					on:click={() => handleConfigClick(project)}
-					on:keydown={(e) => e.key === 'Enter' && handleConfigClick(project)}
-				>
-					<div class="flex justify-between items-start mb-2">
-						<h2 class="text-sm font-bold flex items-center theme-text-primary">
-							{#if $selectedProject?.id === project.id}
-								<i class="fas fa-edit text-blue-500 mr-2"></i>
-							{/if}
-							<span class="truncate" title={project.name}>
-								{project.name.length > 15 ? project.name.slice(0, 15) + '…' : project.name}
-							</span>
-						</h2>
-						<div class="flex items-center space-x-2">
-							<span class={ThemeUtils.badge('info', 'text-xs px-2 py-0.5 uppercase')}>
-								{project.mode}
-							</span>
+						onclick={() => handleConfigClick(project)}
+						onkeydown={(e) => e.key === 'Enter' && handleConfigClick(project)}
+					>
+						<div class="flex justify-between items-start mb-2">
+							<h2 class="text-sm font-bold flex items-center theme-text-primary">
+								{#if $selectedProject?.id === project.id}
+									<i class="fas fa-edit text-blue-500 mr-2"></i>
+								{/if}
+								<span class="truncate" title={project.name}>
+									{project.name.length > 15 ? project.name.slice(0, 15) + '…' : project.name}
+								</span>
+							</h2>
+							<div class="flex items-center space-x-2">
+								<span class={ThemeUtils.badge('info', 'text-xs px-2 py-0.5 uppercase')}>
+									{project.mode}
+								</span>
+							</div>
+						</div>
+
+						<div class="mt-2 space-y-1.5">
+							<div class="flex items-center text-xs">
+								<i class="fas fa-link text-blue-400 mr-1.5 w-4"></i>
+								<a
+									href={project.url}
+									class="text-blue-400 hover:underline truncate"
+									target="_blank"
+									title={project.url}
+								>
+									{project.url}
+								</a>
+							</div>
+
+							<div class="flex items-center text-xs">
+								<i class="fas fa-tag theme-text-muted mr-1.5 w-4"></i>
+								<span class="theme-text-secondary truncate" title={project.alias || 'No alias'}>
+									{project.alias || '—'}
+								</span>
+							</div>
+
+							<!-- Status indicator with live animation -->
+							<div class="flex items-center text-xs">
+								<ProjectStatusBadge status={project.status || 'stopped'} size="small" />
+							</div>
 						</div>
 					</div>
-
-					<div class="mt-2 space-y-1.5">
-						<div class="flex items-center text-xs">
-							<i class="fas fa-link text-blue-400 mr-1.5 w-4"></i>
-							<a
-								href={project.url}
-								class="text-blue-400 hover:underline truncate"
-								target="_blank"
-								title={project.url}
-							>
-								{project.url}
-							</a>
-						</div>
-
-						<div class="flex items-center text-xs">
-							<i class="fas fa-tag theme-text-muted mr-1.5 w-4"></i>
-							<span class="theme-text-secondary truncate" title={project.alias || 'No alias'}>
-								{project.alias || '—'}
-							</span>
-						</div>
-
-						<!-- Status indicator with live animation -->
-						<div class="flex items-center text-xs">
-							<ProjectStatusBadge status={project.status || 'stopped'} size="small" />
-						</div>
-					</div>
-				</div>
-			{/each}
+				{/each}
+			</div>
 		</div>
-	</div>
 	{/if}
 
 	<!-- Resizable handle (only show when expanded) -->
 	{#if !isPanelCollapsed}
 		<button
 			class="absolute top-0 right-0 bottom-0 w-1 cursor-col-resize hover:bg-blue-500 transition-colors duration-200 group bg-transparent border-none"
-			on:mousedown={startResize}
+			onmousedown={startResize}
 			title="Drag to resize panel"
 			aria-label="Resize panel"
 		>

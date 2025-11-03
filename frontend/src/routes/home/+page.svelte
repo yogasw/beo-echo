@@ -3,40 +3,32 @@
 	import { onMount } from 'svelte';
 	import { getProjects } from '$lib/api/BeoApi';
 	import BeoEchoLoader from '$lib/components/common/BeoEchoLoader.svelte';
+	import { selectedProject } from '$lib/stores/selectedConfig';
+	import { projects } from '$lib/stores/configurations';
+	import UnSelectedProject from './UnSelectedProject.svelte';
 
-	interface Route {
-    path: string;
-    method: string;
-    status: 'enabled' | 'disabled';
-  }
+	let loading = $state(true);
+	let error = $state('');
 
-  let routes: Route[] = [
-    { path: "/api/v1/resource/long/path/example", method: "GET", status: "enabled" },
-    { path: "/api/v1/resource/another/long/path", method: "POST", status: "disabled" },
-    { path: "/api/v1/example/long/path", method: "PUT", status: "enabled" }
-  ];
+	onMount(async () => {
+		console.log('onMount: home');
+		loading = true;
+		try {
+			await getProjects();
+		} catch (err) {
+			error = 'Failed to fetch data';
+		} finally {
+			loading = false;
+		}
+	});
 
-  let configurations = [];
-  let mockStatus = [];
-  let loading = true;
-  let error = '';
-
-  let activeContentTab = 'Status & Body';
-
-  // Get state from parent layout
-  export let activeTab = 'routes';
-
-  onMount(async () => {
-    console.log("onMount: home");
-    loading = true;
-    try {
-      configurations = await getProjects();
-    } catch (err) {
-      error = 'Failed to fetch data';
-    } finally {
-      loading = false;
-    }
-  });
+	// Quick stats derived from projects
+	let stats = $derived({
+		total: $projects.length,
+		running: $projects.filter((p) => p.status === 'running').length,
+		mock: $projects.filter((p) => p.mode === 'mock').length,
+		proxy: $projects.filter((p) => p.mode === 'proxy').length
+	});
 </script>
 
 <svelte:head>
@@ -45,15 +37,15 @@
 </svelte:head>
 
 {#if loading}
-  <div class="flex items-center justify-center h-full min-h-[300px]">
-		<BeoEchoLoader 
-				size="lg"
-				animated={true}
-			/>  </div>
+	<div class="flex items-center justify-center h-full min-h-[300px]">
+		<BeoEchoLoader size="lg" animated={true} />
+	</div>
 {:else if error}
-  <div class="text-red-500 text-center p-4">{error}</div>
+	<div class="text-red-500 text-center p-4">{error}</div>
+{:else if !$selectedProject}
+	<!-- Home Page - Only shown when no project is selected -->
+	 <UnSelectedProject />
 {:else}
-  <ContentArea
-    {activeContentTab}
-  />
+	<!-- Show ContentArea when a project is selected -->
+	<ContentArea />
 {/if}
