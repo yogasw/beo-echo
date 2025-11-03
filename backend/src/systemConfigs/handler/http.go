@@ -166,7 +166,6 @@ func UpdateSystemConfigHandler(c *gin.Context) {
 			})
 			return
 		}
-		return
 	}
 
 	// Ensure value is not empty
