@@ -5,11 +5,19 @@
 	import SaveButton from './SaveButton.svelte';
 	import WorkspaceManager from './workspace/WorkspaceManager.svelte';
 	import { currentUser } from '$lib/stores/auth';
+	import { selectedProject } from '$lib/stores/selectedConfig';
+	import Tooltip from './common/Tooltip.svelte';
 
 	export let handleLogout: () => void;
 
 	// Local state for profile menu toggle
 	let profileMenuOpen = false;
+
+	// Tooltip hover states
+	let routesHover = false;
+	let logsHover = false;
+	let replayHover = false;
+	let configHover = false;
 
 	function handleTabClick(tab: string) {
 		$activeTab = tab;
@@ -58,101 +66,155 @@
 </script>
 
 <div class="theme-bg-primary flex items-center p-4">
-	<button
-		class="relative group mr-4 flex flex-col items-center"
-		on:click={() => handleTabClick('routes')}
-		title="Switch to Routes tab"
-		aria-label="Switch to Routes tab"
-	>
-		<div
-			class="w-12 aspect-square theme-text-primary p-3 rounded-full border-2 border-blue-500 flex items-center justify-center"
-			class:bg-blue-500={$activeTab === 'routes'}
-			class:theme-bg-secondary={$activeTab !== 'routes'}
+	<div class="relative mr-4">
+		<button
+			class="group flex flex-col items-center"
+			class:opacity-50={!$selectedProject}
+			class:cursor-not-allowed={!$selectedProject}
+			on:click={() => $selectedProject && handleTabClick('routes')}
+			on:mouseenter={() => routesHover = true}
+			on:mouseleave={() => routesHover = false}
+			disabled={!$selectedProject}
+			aria-label={!$selectedProject ? "Please select project" : "Switch to Routes tab"}
 		>
-			<i class="fas fa-route"></i>
-		</div>
-		<span class="text-xs mt-1 theme-text-primary">Routes</span>
-	</button>
-	<button
-		class="relative group mr-4 flex flex-col items-center"
-		on:click={() => {
-			handleTabClick('logs');
-			logStatus.resetUnread();
-		}}
-		title="Switch to Logs tab"
-		aria-label="Switch to Logs tab"
-	>
-		<div
-			class="w-12 aspect-square theme-text-primary p-3 rounded-full border-2 border-yellow-500 flex items-center justify-center relative"
-			class:bg-blue-500={$activeTab === 'logs'}
-			class:theme-bg-secondary={$activeTab !== 'logs'}
+			<div
+				class="w-12 aspect-square theme-text-primary p-3 rounded-full border-2 flex items-center justify-center"
+				class:border-blue-500={$selectedProject}
+				class:border-gray-400={!$selectedProject}
+				class:bg-blue-500={$activeTab === 'routes' && $selectedProject}
+				class:theme-bg-secondary={$activeTab !== 'routes' || !$selectedProject}
+			>
+				<i class="fas fa-route"></i>
+			</div>
+			<span class="text-xs mt-1 theme-text-primary">Routes</span>
+		</button>
+		<Tooltip
+			text={!$selectedProject ? "Select a project to access Routes" : ""}
+			show={routesHover && !$selectedProject}
+			position="bottom"
+		/>
+	</div>
+	<div class="relative mr-4">
+		<button
+			class="group flex flex-col items-center"
+			class:opacity-50={!$selectedProject}
+			class:cursor-not-allowed={!$selectedProject}
+			on:click={() => {
+				if ($selectedProject) {
+					handleTabClick('logs');
+					logStatus.resetUnread();
+				}
+			}}
+			on:mouseenter={() => logsHover = true}
+			on:mouseleave={() => logsHover = false}
+			disabled={!$selectedProject}
+			aria-label={!$selectedProject ? "Please select project" : "Switch to Logs tab"}
 		>
-			<i class="fas fa-file-alt"></i>
+			<div
+				class="w-12 aspect-square theme-text-primary p-3 rounded-full border-2 flex items-center justify-center relative"
+				class:border-yellow-500={$selectedProject}
+				class:border-gray-400={!$selectedProject}
+				class:bg-blue-500={$activeTab === 'logs' && $selectedProject}
+				class:theme-bg-secondary={$activeTab !== 'logs' || !$selectedProject}
+			>
+				<i class="fas fa-file-alt"></i>
 
-			<!-- Live connection indicator -->
-			{#if $logStatus.isConnected}
-				<span class="absolute -top-1 -right-1 flex">
-					<span
-						class="animate-ping absolute inline-flex h-3 w-3 rounded-full bg-green-400 opacity-75"
-					></span>
-					<span class="relative inline-flex rounded-full h-3 w-3 bg-green-500"></span>
-				</span>
-			{:else}
-				<!-- Offline Or loading indicator -->
-				{#if $logsConnectionStatus.isConnected === false}
+				<!-- Live connection indicator -->
+				{#if $selectedProject && $logStatus.isConnected}
 					<span class="absolute -top-1 -right-1 flex">
-						<span class="animate-ping absolute inline-flex h-3 w-3 rounded-full bg-red-400 opacity-75"></span>
-						<span class="relative inline-flex rounded-full h-3 w-3 bg-red-500"></span>
-					</span>
-				{:else}
-					<span class="absolute -top-1 -right-1 flex">
-						<span class="animate-ping absolute inline-flex h-3 w-3 rounded-full bg-green-400 opacity-75"></span>
+						<span
+							class="animate-ping absolute inline-flex h-3 w-3 rounded-full bg-green-400 opacity-75"
+						></span>
 						<span class="relative inline-flex rounded-full h-3 w-3 bg-green-500"></span>
 					</span>
+				{:else if $selectedProject}
+					<!-- Offline Or loading indicator -->
+					{#if $logsConnectionStatus.isConnected === false}
+						<span class="absolute -top-1 -right-1 flex">
+							<span class="animate-ping absolute inline-flex h-3 w-3 rounded-full bg-red-400 opacity-75"></span>
+							<span class="relative inline-flex rounded-full h-3 w-3 bg-red-500"></span>
+						</span>
+					{:else}
+						<span class="absolute -top-1 -right-1 flex">
+							<span class="animate-ping absolute inline-flex h-3 w-3 rounded-full bg-green-400 opacity-75"></span>
+							<span class="relative inline-flex rounded-full h-3 w-3 bg-green-500"></span>
+						</span>
+					{/if}
 				{/if}
-			{/if}
 
-			<!-- Unread logs counter -->
-			{#if $logStatus.unreadCount > 0 && $activeTab !== 'logs'}
-				<span
-					class="absolute -bottom-1 -right-1 inline-flex items-center justify-center px-2 py-0.5 text-xs font-bold leading-none text-white bg-red-600 rounded-full"
-				>
-					{$logStatus.unreadCount > 99 ? '99+' : $logStatus.unreadCount}
-				</span>
-			{/if}
-		</div>
-		<span class="text-xs mt-1 theme-text-primary">Logs</span>
-	</button>
-	<button
-		class="relative group mr-4 flex flex-col items-center"
-		on:click={() => handleTabClick('replay')}
-		title="Switch to Replay tab"
-		aria-label="Switch to Replay tab"
-	>
-		<div
-			class="w-12 aspect-square theme-text-primary p-3 rounded-full border-2 border-green-500 flex items-center justify-center"
-			class:bg-blue-500={$activeTab === 'replay'}
-			class:theme-bg-secondary={$activeTab !== 'replay'}
+				<!-- Unread logs counter -->
+				{#if $selectedProject && $logStatus.unreadCount > 0 && $activeTab !== 'logs'}
+					<span
+						class="absolute -bottom-1 -right-1 inline-flex items-center justify-center px-2 py-0.5 text-xs font-bold leading-none text-white bg-red-600 rounded-full"
+					>
+						{$logStatus.unreadCount > 99 ? '99+' : $logStatus.unreadCount}
+					</span>
+				{/if}
+			</div>
+			<span class="text-xs mt-1 theme-text-primary">Logs</span>
+		</button>
+		<Tooltip
+			text={!$selectedProject ? "Select a project to view Logs" : ""}
+			show={logsHover && !$selectedProject}
+			position="bottom"
+		/>
+	</div>
+	<div class="relative mr-4">
+		<button
+			class="group flex flex-col items-center"
+			class:opacity-50={!$selectedProject}
+			class:cursor-not-allowed={!$selectedProject}
+			on:click={() => $selectedProject && handleTabClick('replay')}
+			on:mouseenter={() => replayHover = true}
+			on:mouseleave={() => replayHover = false}
+			disabled={!$selectedProject}
+			aria-label={!$selectedProject ? "Please select project" : "Switch to Replay tab"}
 		>
-			<i class="fas fa-play-circle"></i>
-		</div>
-		<span class="text-xs mt-1 theme-text-primary">Replay</span>
-	</button>
-	<button
-		class="relative group mr-auto flex flex-col items-center"
-		on:click={() => handleTabClick('configuration')}
-		title="Switch to Configuration tab"
-		aria-label="Switch to Configuration tab"
-	>
-		<div
-			class="w-12 aspect-square theme-text-primary p-3 rounded-full border-2 border-purple-500 flex items-center justify-center"
-			class:bg-blue-500={$activeTab === 'configuration'}
-			class:theme-bg-secondary={$activeTab !== 'configuration'}
+			<div
+				class="w-12 aspect-square theme-text-primary p-3 rounded-full border-2 flex items-center justify-center"
+				class:border-green-500={$selectedProject}
+				class:border-gray-400={!$selectedProject}
+				class:bg-blue-500={$activeTab === 'replay' && $selectedProject}
+				class:theme-bg-secondary={$activeTab !== 'replay' || !$selectedProject}
+			>
+				<i class="fas fa-play-circle"></i>
+			</div>
+			<span class="text-xs mt-1 theme-text-primary">Replay</span>
+		</button>
+		<Tooltip
+			text={!$selectedProject ? "Select a project to manage Replays" : ""}
+			show={replayHover && !$selectedProject}
+			position="bottom"
+		/>
+	</div>
+	<div class="relative mr-auto">
+		<button
+			class="group flex flex-col items-center"
+			class:opacity-50={!$selectedProject}
+			class:cursor-not-allowed={!$selectedProject}
+			on:click={() => $selectedProject && handleTabClick('configuration')}
+			on:mouseenter={() => configHover = true}
+			on:mouseleave={() => configHover = false}
+			disabled={!$selectedProject}
+			aria-label={!$selectedProject ? "Please select project" : "Switch to Configuration tab"}
 		>
-			<i class="fas fa-cogs"></i>
-		</div>
-		<span class="text-xs mt-1 theme-text-primary">Configuration</span>
-	</button>
+			<div
+				class="w-12 aspect-square theme-text-primary p-3 rounded-full border-2 flex items-center justify-center"
+				class:border-purple-500={$selectedProject}
+				class:border-gray-400={!$selectedProject}
+				class:bg-blue-500={$activeTab === 'configuration' && $selectedProject}
+				class:theme-bg-secondary={$activeTab !== 'configuration' || !$selectedProject}
+			>
+				<i class="fas fa-cogs"></i>
+			</div>
+			<span class="text-xs mt-1 theme-text-primary">Configuration</span>
+		</button>
+		<Tooltip
+			text={!$selectedProject ? "Select a project to edit Configuration" : ""}
+			show={configHover && !$selectedProject}
+			position="bottom"
+		/>
+	</div>
 
 	<!-- Theme Toggle Button -->
 	<button class="relative group mr-4 flex flex-col items-center" on:click={toggleTheme}
