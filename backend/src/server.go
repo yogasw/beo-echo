@@ -31,6 +31,7 @@ import (
 	"beo-echo/backend/src/workspaces"
 
 	// New imports for auth and workspace management
+	actionsModule "beo-echo/backend/src/actions"
 	aiModule "beo-echo/backend/src/ai"
 	authHandler "beo-echo/backend/src/auth/handler"
 	handlerLogs "beo-echo/backend/src/logs/handlers"
@@ -133,6 +134,11 @@ func SetupRouter() *gin.Engine {
 	aiService := aiModule.NewAIService()
 	aiHandler := aiModule.NewAIHandler(aiService)
 
+	// Initialize action service and handler
+	actionRepo := repositories.NewActionRepository(database.DB)
+	actionService := actionsModule.NewActionService(actionRepo)
+	actionHandler := actionsModule.NewActionHandler(actionService)
+
 	// Authentication routes
 	router.POST("/api/auth/login", authHandler.LoginHandler)
 	router.POST("/api/auth/refresh", authHandler.RefreshTokenHandler)
@@ -146,6 +152,8 @@ func SetupRouter() *gin.Engine {
 	apiGroup := router.Group("/api")
 	apiGroup.Use(middlewares.JWTAuthMiddleware())
 	{
+		// Action types endpoint (not project-specific)
+		apiGroup.GET("/action-types", actionHandler.GetActionTypes)
 		// Owner-only system configuration routes
 		ownerGroup := apiGroup.Group("")
 		ownerGroup.Use(middlewares.OwnerOnlyMiddleware())
@@ -273,6 +281,14 @@ func SetupRouter() *gin.Engine {
 				projectRoutes.POST("/replays/execute", replayHandler.ExecuteReplayHandler)
 				projectRoutes.DELETE("/replays/:replayId", replayHandler.DeleteReplayHandler)
 				projectRoutes.GET("/replays/:replayId/logs", replayHandler.GetReplayLogsHandler)
+
+				// Action management
+				projectRoutes.GET("/actions", actionHandler.GetProjectActions)
+				projectRoutes.POST("/actions", actionHandler.CreateAction)
+				projectRoutes.GET("/actions/:id", actionHandler.GetAction)
+				projectRoutes.PUT("/actions/:id", actionHandler.UpdateAction)
+				projectRoutes.DELETE("/actions/:id", actionHandler.DeleteAction)
+				projectRoutes.POST("/actions/:id/toggle", actionHandler.ToggleAction)
 
 			}
 		}

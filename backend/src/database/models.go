@@ -380,3 +380,74 @@ func (uw *ReplayFolder) BeforeCreate(tx *gorm.DB) error {
 	}
 	return nil
 }
+
+// ActionType defines the type of action to be executed
+type ActionType string
+
+const (
+	ActionTypeReplaceText ActionType = "replace_text" // Find and replace text in request/response
+	// Future action types can be added here:
+	// ActionTypeWebhook     ActionType = "webhook"      // Call external webhook
+	// ActionTypeScript      ActionType = "script"       // Execute custom script
+	// ActionTypeDelay       ActionType = "delay"        // Add delay
+)
+
+// ExecutionPoint defines when the action should be executed
+type ExecutionPoint string
+
+const (
+	ExecutionPointBeforeRequest ExecutionPoint = "before_request" // Execute before forwarding request to proxy
+	ExecutionPointAfterRequest  ExecutionPoint = "after_request"  // Execute after receiving response (default)
+)
+
+// Action represents a custom action that can modify requests or responses
+// Similar to webhook.site actions, allows transforming data at different points in the request lifecycle
+type Action struct {
+	ID             string         `gorm:"type:string;primaryKey" json:"id"`
+	ProjectID      string         `gorm:"type:string;index;not null" json:"project_id"` // Foreign key to the associated project
+	Name           string         `gorm:"type:string;not null" json:"name"`             // Display name for the action
+	Type           ActionType     `gorm:"type:string;not null" json:"type"`             // Type of action (replace_text, webhook, etc.)
+	ExecutionPoint ExecutionPoint `gorm:"type:string;not null;default:'after_request'" json:"execution_point"` // When to execute (before_request/after_request)
+	Enabled        bool           `gorm:"default:true" json:"enabled"`                  // Whether this action is active
+	Priority       int            `gorm:"default:0" json:"priority"`                    // Execution order (lower number = higher priority, 0 = highest)
+	Config         string         `gorm:"type:text" json:"config"`                      // Action-specific configuration as JSON string
+	Filters        []ActionFilter `gorm:"foreignKey:ActionID;constraint:OnDelete:CASCADE" json:"filters"` // Optional filters to control when action runs
+	CreatedAt      time.Time      `gorm:"autoCreateTime" json:"created_at"`
+	UpdatedAt      time.Time      `gorm:"autoUpdateTime" json:"updated_at"`
+
+	// Association to the Project
+	Project Project `gorm:"foreignKey:ProjectID;constraint:OnDelete:CASCADE" json:"-"`
+}
+
+// BeforeCreate hook generates UUID before inserting into database
+func (a *Action) BeforeCreate(tx *gorm.DB) error {
+	if a.ID == "" {
+		a.ID = uuid.New().String()
+	}
+	return nil
+}
+
+// ActionFilter represents filter rules for controlling when an action runs
+// If no filters are defined, the action runs for all requests
+// Multiple filters are evaluated with OR logic (if any filter matches, action runs)
+type ActionFilter struct {
+	ID       string `gorm:"type:string;primaryKey" json:"id"`
+	ActionID string `gorm:"type:string;index;not null" json:"action_id"` // Foreign key to the associated action
+	Type     string `gorm:"type:string;not null" json:"type"`            // Filter type: "method", "path", "header", "query", "status_code"
+	Key      string `gorm:"type:string" json:"key"`                      // Key for header/query filters (e.g., "Content-Type", "user_id")
+	Operator string `gorm:"type:string;not null" json:"operator"`        // Comparison operator: "equals", "contains", "regex", "starts_with", "ends_with"
+	Value    string `gorm:"type:string" json:"value"`                    // Value to compare against
+	CreatedAt time.Time `gorm:"autoCreateTime" json:"created_at"`
+	UpdatedAt time.Time `gorm:"autoUpdateTime" json:"updated_at"`
+
+	// Association to the Action
+	Action Action `gorm:"foreignKey:ActionID;constraint:OnDelete:CASCADE" json:"-"`
+}
+
+// BeforeCreate hook generates UUID before inserting into database
+func (af *ActionFilter) BeforeCreate(tx *gorm.DB) error {
+	if af.ID == "" {
+		af.ID = uuid.New().String()
+	}
+	return nil
+}

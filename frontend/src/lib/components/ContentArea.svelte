@@ -2,6 +2,7 @@
 	import RoutesTab from './tabs/RoutesTab.svelte';
 	import LogsTab from './tabs/LogsTab.svelte';
 	import ReplayTab from './tabs/ReplayTab.svelte';
+	import ActionsTab from './tabs/ActionsTab.svelte';
 	import ConfigurationTab from './tabs/ConfigurationTab.svelte';
 	import WorkspaceSettingsTab from './tabs/WorkspaceSettingsTab.svelte';
 	import InstanceSettingsTab from './tabs/InstanceSettingsTab.svelte';
@@ -62,6 +63,8 @@
 				<LogsTab selectedProject={$selectedProject} />
 			{:else if $activeTab === 'replay'}
 				<ReplayTab selectedProject={$selectedProject} />
+			{:else if $activeTab === 'actions'}
+				<ActionsTab selectedProject={$selectedProject} />
 			{:else if $activeTab === 'configuration'}
 				<ConfigurationTab selectedProject={$selectedProject} />
 			{/if}
