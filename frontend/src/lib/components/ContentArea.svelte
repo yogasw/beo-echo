@@ -64,7 +64,7 @@
 			{:else if $activeTab === 'replay'}
 				<ReplayTab selectedProject={$selectedProject} />
 			{:else if $activeTab === 'actions'}
-				<ActionsTab selectedProject={$selectedProject} />
+				<ActionsTab />
 			{:else if $activeTab === 'configuration'}
 				<ConfigurationTab selectedProject={$selectedProject} />
 			{/if}

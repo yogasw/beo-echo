@@ -5,6 +5,8 @@
 	import { selectedWorkspace } from '$lib/stores/workspace';
 	import { toast } from '$lib/stores/toast';
 	import type { Action, ActionTypeInfo } from '$lib/types/Action';
+	import * as ThemeUtils from '$lib/utils/themeUtils';
+
 	import ActionItem from './ActionItem.svelte';
 	import ActionWizard from './ActionWizard.svelte';
 	import SkeletonLoader from '$lib/components/common/SkeletonLoader.svelte';
@@ -115,12 +117,9 @@
 		try {
 			for (let i = 0; i < reorderedActions.length; i++) {
 				const action = reorderedActions[i];
-				await actionsApi.updateAction(
-					$selectedWorkspace.id,
-					$selectedProject.id,
-					action.id,
-					{ priority: i }
-				);
+				await actionsApi.updateAction($selectedWorkspace.id, $selectedProject.id, action.id, {
+					priority: i
+				});
 			}
 			toast.success('Actions reordered successfully');
 		} catch (err: any) {
@@ -149,29 +148,25 @@
 
 {#if showEditor}
 	<!-- Full-page Wizard View -->
-	<ActionWizard
-		action={editingAction}
-		onCancel={handleEditorCancel}
-		onSave={handleEditorSave}
-	/>
+	<ActionWizard action={editingAction} onCancel={handleEditorCancel} onSave={handleEditorSave} />
 {:else}
 	<!-- List View -->
-	<div class="h-full flex flex-col theme-bg-primary">
+	<div class="w-full theme-bg-primary p-4 relative">
 		<!-- Header -->
-		<div class="p-6 theme-bg-secondary border-b theme-border">
-			<div class="flex justify-between items-start mb-4">
-				<div class="flex items-start">
-					<div class="bg-amber-600/10 dark:bg-amber-600/10 p-2 rounded-lg mr-3">
-						<i class="fas fa-bolt text-amber-500 text-xl"></i>
+		<div class="mb-6">
+			<div class="flex justify-between items-center mb-4">
+				<div class="flex items-center">
+					<div class="bg-blue-600/10 dark:bg-blue-600/10 p-2 rounded-lg mr-3">
+						<i class="fas fa-cogs text-blue-500 text-xl"></i>
 					</div>
 					<div>
 						<h2 class="text-xl font-bold theme-text-primary">Actions</h2>
-						<p class="text-sm theme-text-muted mt-1">
-							Transform requests and responses with custom actions
-						</p>
+						<p class="text-sm theme-text-muted">Automate request and response modifications</p>
 					</div>
 				</div>
-				<button
+
+				<div class="flex items-center space-x-3">
+					<button
 					class="bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded-md text-sm flex items-center shadow-sm hover:shadow-md transition-all duration-200"
 					on:click={handleCreateAction}
 					disabled={!$selectedProject}
@@ -181,19 +176,8 @@
 					<i class="fas fa-plus mr-2"></i>
 					New Action
 				</button>
-			</div>
-
-			<!-- Info banner -->
-			{#if actions.length > 0}
-				<div class="mt-4 bg-blue-50/50 dark:bg-blue-900/10 border border-blue-200/50 dark:border-blue-800/30 rounded-lg p-3 flex items-start">
-					<i class="fas fa-info-circle text-blue-500 dark:text-blue-400 mr-3 mt-0.5"></i>
-					<div class="text-sm theme-text-secondary">
-						<span class="font-medium theme-text-primary">{actions.length}</span>
-						{actions.length === 1 ? 'action' : 'actions'} configured.
-						Actions run in priority order (lower number = higher priority).
-					</div>
 				</div>
-			{/if}
+			</div>
 		</div>
 
 		<!-- Content -->
@@ -201,18 +185,14 @@
 			{#if isLoading}
 				<SkeletonLoader type="card" count={3} />
 			{:else if error}
-				<ErrorDisplay
-					message={error}
-					type="error"
-					retryable={true}
-					onRetry={loadActions}
-				/>
+				<ErrorDisplay message={error} type="error" retryable={true} onRetry={loadActions} />
 			{:else if actions.length === 0}
 				<div class="flex flex-col items-center justify-center h-full theme-text-secondary">
 					<i class="fas fa-bolt text-6xl mb-4 opacity-50"></i>
 					<h3 class="text-xl font-semibold mb-2">No Actions Yet</h3>
 					<p class="text-sm mb-4 text-center max-w-md">
-						Create your first action to automatically modify requests or responses based on your rules.
+						Create your first action to automatically modify requests or responses based on your
+						rules.
 					</p>
 					<button
 						class="bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded-md text-sm"
@@ -226,7 +206,7 @@
 				</div>
 			{:else}
 				{@const groupedActions = actions.reduce((acc, action) => {
-					const actionType = actionTypes.find(t => t.id === action.type);
+					const actionType = actionTypes.find((t) => t.id === action.type);
 					const category = actionType?.category || 'Other';
 					if (!acc[category]) acc[category] = [];
 					acc[category].push(action);
