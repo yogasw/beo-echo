@@ -16,7 +16,9 @@ import (
 	"time"
 
 	"github.com/andybalholm/brotli"
+	"github.com/rs/zerolog/log"
 
+	"beo-echo/backend/src/actions"
 	"beo-echo/backend/src/database"
 	"beo-echo/backend/src/echo/repositories"
 	systemConfig "beo-echo/backend/src/systemConfigs"
@@ -24,24 +26,35 @@ import (
 
 // MockService handles mock response logic
 type MockService struct {
-	Repo *repositories.MockRepository
+	Repo      *repositories.MockRepository
+	ActionSvc *actions.ActionService
 }
 
 // NewMockService creates a new mock service
-func NewMockService(repo *repositories.MockRepository) *MockService {
+func NewMockService(repo *repositories.MockRepository, actionSvc *actions.ActionService) *MockService {
 	return &MockService{
-		Repo: repo,
+		Repo:      repo,
+		ActionSvc: actionSvc,
 	}
 }
 
 // HandleRequest processes an incoming request and returns a mock response or proxies it
 // Returns response, error, project ID, execution mode, whether the request matched an endpoint
 func (s *MockService) HandleRequest(ctx context.Context, alias, method, reqPath string, req *http.Request) (*http.Response, error, string, database.ProjectMode, bool) {
+
+	if req == nil {
+		return createErrorResponse(http.StatusBadRequest, "Invalid request"), nil, "", "", false
+	}
+
 	// Find project by alias
 	project, err := s.Repo.FindProjectByAlias(alias)
 	if err != nil {
 		// Get default response for project not found
 		return createDefaultJSONResponse(systemConfig.DEFAULT_RESPONSE_PROJECT_NOT_FOUND), nil, "", "", false
+	}
+
+	if err := s.ActionSvc.ExecuteBeforeRequestActions(ctx, project.ID, req); err != nil {
+		log.Err(err).Msgf("Failed to execute before request actions for project %s", project.ID)
 	}
 
 	// Extract the actual API endpoint path
@@ -53,12 +66,21 @@ func (s *MockService) HandleRequest(ctx context.Context, alias, method, reqPath 
 	switch project.Mode {
 	case database.ModeMock:
 		resp, err, mode, matched := s.handleMockMode(ctx, project, method, cleanPath, req)
+		if err := s.ActionSvc.ExecuteAfterRequestActions(ctx, project.ID, req, resp); err != nil {
+			log.Err(err).Msgf("Failed to execute after request actions for project %s", project.ID)
+		}
 		return resp, err, project.ID, mode, matched
 	case database.ModeProxy:
 		resp, matched, err := s.handleProxyMode(ctx, project, method, cleanPath, req)
+		if err := s.ActionSvc.ExecuteAfterRequestActions(ctx, project.ID, req, resp); err != nil {
+			log.Err(err).Msgf("Failed to execute after request actions for project %s", project.ID)
+		}
 		return resp, err, project.ID, project.Mode, matched // Matched is true only if handled by a mock endpoint
 	case database.ModeForwarder:
 		resp, err := s.handleForwarderMode(ctx, project, method, cleanPath, req)
+		if err := s.ActionSvc.ExecuteAfterRequestActions(ctx, project.ID, req, resp); err != nil {
+			log.Err(err).Msgf("Failed to execute after request actions for project %s", project.ID)
+		}
 		return resp, err, project.ID, project.Mode, false // Forwarder requests are always considered "not matched"
 	case database.ModeDisabled:
 		return createErrorResponse(http.StatusServiceUnavailable, "Service is disabled"), nil, project.ID, project.Mode, false

@@ -3,7 +3,9 @@ package handler
 import (
 	"log"
 
+	actionsServices "beo-echo/backend/src/actions"
 	"beo-echo/backend/src/database"
+	dbRepositories "beo-echo/backend/src/database/repositories"
 	"beo-echo/backend/src/echo/repositories"
 	"beo-echo/backend/src/echo/services"
 )
@@ -27,7 +29,9 @@ func InitMockService() {
 	}
 
 	repo := repositories.NewMockRepository(db)
-	mockService = services.NewMockService(repo)
+	actionRepo := dbRepositories.NewActionRepository(db)
+	actionSvc := actionsServices.NewActionService(actionRepo)
+	mockService = services.NewMockService(repo, actionSvc)
 }
 
 // EnsureMockService ensures that the mock service is initialized

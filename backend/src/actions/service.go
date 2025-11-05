@@ -2,10 +2,14 @@ package actions
 
 import (
 	"beo-echo/backend/src/database"
+	"bytes"
 	"context"
 	"encoding/json"
 	"errors"
+	"io"
+	"net/http"
 	"regexp"
+	"strconv"
 	"strings"
 
 	"github.com/rs/zerolog"
@@ -64,7 +68,7 @@ func (s *ActionService) CreateAction(ctx context.Context, action *database.Actio
 
 	// Validate execution point
 	if action.ExecutionPoint != database.ExecutionPointBeforeRequest &&
-	   action.ExecutionPoint != database.ExecutionPointAfterRequest {
+		action.ExecutionPoint != database.ExecutionPointAfterRequest {
 		return errors.New("invalid execution point")
 	}
 
@@ -121,7 +125,7 @@ func (s *ActionService) UpdateAction(ctx context.Context, action *database.Actio
 
 	// Validate execution point
 	if action.ExecutionPoint != database.ExecutionPointBeforeRequest &&
-	   action.ExecutionPoint != database.ExecutionPointAfterRequest {
+		action.ExecutionPoint != database.ExecutionPointAfterRequest {
 		return errors.New("invalid execution point")
 	}
 
@@ -150,11 +154,11 @@ func (s *ActionService) DeleteAction(ctx context.Context, id string) error {
 
 // ReplaceTextConfig represents the configuration for replace_text action type
 type ReplaceTextConfig struct {
-	Target      string `json:"target"`       // request_body, response_body, request_header, response_header
-	Pattern     string `json:"pattern"`      // String or regex pattern to find
-	Replacement string `json:"replacement"`  // Replacement text
-	UseRegex    bool   `json:"use_regex"`    // Whether to use regex matching
-	HeaderKey   string `json:"header_key"`   // Header key (only for header targets)
+	Target      string `json:"target"`      // request_body, response_body, request_header, response_header
+	Pattern     string `json:"pattern"`     // String or regex pattern to find
+	Replacement string `json:"replacement"` // Replacement text
+	UseRegex    bool   `json:"use_regex"`   // Whether to use regex matching
+	HeaderKey   string `json:"header_key"`  // Header key (only for header targets)
 }
 
 // validateReplaceTextConfig validates the configuration for replace_text actions
@@ -170,10 +174,10 @@ func (s *ActionService) validateReplaceTextConfig(configJSON string) error {
 
 	// Validate target
 	validTargets := map[string]bool{
-		"request_body":     true,
-		"response_body":    true,
-		"request_header":   true,
-		"response_header":  true,
+		"request_body":    true,
+		"response_body":   true,
+		"request_header":  true,
+		"response_header": true,
 	}
 	if !validTargets[config.Target] {
 		return errors.New("invalid target: must be request_body, response_body, request_header, or response_header")
@@ -199,23 +203,8 @@ func (s *ActionService) validateReplaceTextConfig(configJSON string) error {
 	return nil
 }
 
-// RequestData represents the data that can be modified by actions
-type RequestData struct {
-	Method  string
-	Path    string
-	Headers map[string]string
-	Body    string
-}
-
-// ResponseData represents the response data that can be modified by actions
-type ResponseData struct {
-	StatusCode int
-	Headers    map[string]string
-	Body       string
-}
-
 // ExecuteBeforeRequestActions executes all enabled actions that run before the request
-func (s *ActionService) ExecuteBeforeRequestActions(ctx context.Context, projectID string, reqData *RequestData) error {
+func (s *ActionService) ExecuteBeforeRequestActions(ctx context.Context, projectID string, req *http.Request) error {
 	log := zerolog.Ctx(ctx)
 
 	// Get enabled actions for this project and execution point
@@ -229,14 +218,14 @@ func (s *ActionService) ExecuteBeforeRequestActions(ctx context.Context, project
 	for _, action := range actions {
 		// Check if filters match
 		if len(action.Filters) > 0 {
-			if !s.matchFilters(action.Filters, reqData, nil) {
+			if !s.matchFilters(action.Filters, req, nil) {
 				log.Debug().Str("action_id", action.ID).Msg("action filters did not match, skipping")
 				continue
 			}
 		}
 
 		// Execute the action based on type
-		if err := s.executeAction(ctx, &action, reqData, nil); err != nil {
+		if err := s.executeAction(ctx, &action, req, nil); err != nil {
 			log.Error().Err(err).Str("action_id", action.ID).Msg("failed to execute action")
 			// Continue with other actions even if one fails
 			continue
@@ -249,7 +238,7 @@ func (s *ActionService) ExecuteBeforeRequestActions(ctx context.Context, project
 }
 
 // ExecuteAfterRequestActions executes all enabled actions that run after the request
-func (s *ActionService) ExecuteAfterRequestActions(ctx context.Context, projectID string, reqData *RequestData, respData *ResponseData) error {
+func (s *ActionService) ExecuteAfterRequestActions(ctx context.Context, projectID string, req *http.Request, resp *http.Response) error {
 	log := zerolog.Ctx(ctx)
 
 	// Get enabled actions for this project and execution point
@@ -263,14 +252,14 @@ func (s *ActionService) ExecuteAfterRequestActions(ctx context.Context, projectI
 	for _, action := range actions {
 		// Check if filters match
 		if len(action.Filters) > 0 {
-			if !s.matchFilters(action.Filters, reqData, respData) {
+			if !s.matchFilters(action.Filters, req, resp) {
 				log.Debug().Str("action_id", action.ID).Msg("action filters did not match, skipping")
 				continue
 			}
 		}
 
 		// Execute the action based on type
-		if err := s.executeAction(ctx, &action, reqData, respData); err != nil {
+		if err := s.executeAction(ctx, &action, req, resp); err != nil {
 			log.Error().Err(err).Str("action_id", action.ID).Msg("failed to execute action")
 			// Continue with other actions even if one fails
 			continue
@@ -283,17 +272,17 @@ func (s *ActionService) ExecuteAfterRequestActions(ctx context.Context, projectI
 }
 
 // executeAction executes a single action
-func (s *ActionService) executeAction(ctx context.Context, action *database.Action, reqData *RequestData, respData *ResponseData) error {
+func (s *ActionService) executeAction(ctx context.Context, action *database.Action, req *http.Request, resp *http.Response) error {
 	switch action.Type {
 	case database.ActionTypeReplaceText:
-		return s.executeReplaceTextAction(action, reqData, respData)
+		return s.executeReplaceTextAction(action, req, resp)
 	default:
 		return errors.New("unsupported action type: " + string(action.Type))
 	}
 }
 
 // executeReplaceTextAction executes a replace_text action
-func (s *ActionService) executeReplaceTextAction(action *database.Action, reqData *RequestData, respData *ResponseData) error {
+func (s *ActionService) executeReplaceTextAction(action *database.Action, req *http.Request, resp *http.Response) error {
 	var config ReplaceTextConfig
 	if err := json.Unmarshal([]byte(action.Config), &config); err != nil {
 		return err
@@ -302,23 +291,51 @@ func (s *ActionService) executeReplaceTextAction(action *database.Action, reqDat
 	// Perform replacement based on target
 	switch config.Target {
 	case "request_body":
-		if reqData != nil {
-			reqData.Body = s.replaceText(reqData.Body, config.Pattern, config.Replacement, config.UseRegex)
+		if req != nil && req.Body != nil {
+			// Read body
+			bodyBytes, err := io.ReadAll(req.Body)
+			if err != nil {
+				return err
+			}
+			req.Body.Close()
+
+			// Replace text
+			bodyStr := string(bodyBytes)
+			bodyStr = s.replaceText(bodyStr, config.Pattern, config.Replacement, config.UseRegex)
+
+			// Set new body
+			req.Body = io.NopCloser(bytes.NewBufferString(bodyStr))
+			req.ContentLength = int64(len(bodyStr))
 		}
 	case "response_body":
-		if respData != nil {
-			respData.Body = s.replaceText(respData.Body, config.Pattern, config.Replacement, config.UseRegex)
+		if resp != nil && resp.Body != nil {
+			// Read body
+			bodyBytes, err := io.ReadAll(resp.Body)
+			if err != nil {
+				return err
+			}
+			resp.Body.Close()
+
+			// Replace text
+			bodyStr := string(bodyBytes)
+			bodyStr = s.replaceText(bodyStr, config.Pattern, config.Replacement, config.UseRegex)
+
+			// Set new body
+			resp.Body = io.NopCloser(bytes.NewBufferString(bodyStr))
+			resp.ContentLength = int64(len(bodyStr))
 		}
 	case "request_header":
-		if reqData != nil && reqData.Headers != nil {
-			if value, ok := reqData.Headers[config.HeaderKey]; ok {
-				reqData.Headers[config.HeaderKey] = s.replaceText(value, config.Pattern, config.Replacement, config.UseRegex)
+		if req != nil && req.Header != nil {
+			value := req.Header.Get(config.HeaderKey)
+			if value != "" {
+				req.Header.Set(config.HeaderKey, s.replaceText(value, config.Pattern, config.Replacement, config.UseRegex))
 			}
 		}
 	case "response_header":
-		if respData != nil && respData.Headers != nil {
-			if value, ok := respData.Headers[config.HeaderKey]; ok {
-				respData.Headers[config.HeaderKey] = s.replaceText(value, config.Pattern, config.Replacement, config.UseRegex)
+		if resp != nil && resp.Header != nil {
+			value := resp.Header.Get(config.HeaderKey)
+			if value != "" {
+				resp.Header.Set(config.HeaderKey, s.replaceText(value, config.Pattern, config.Replacement, config.UseRegex))
 			}
 		}
 	}
@@ -339,10 +356,10 @@ func (s *ActionService) replaceText(text, pattern, replacement string, useRegex 
 }
 
 // matchFilters checks if any filter matches the request/response data (OR logic)
-func (s *ActionService) matchFilters(filters []database.ActionFilter, reqData *RequestData, respData *ResponseData) bool {
+func (s *ActionService) matchFilters(filters []database.ActionFilter, req *http.Request, resp *http.Response) bool {
 	// OR logic: if any filter matches, return true
 	for _, filter := range filters {
-		if s.matchFilter(filter, reqData, respData) {
+		if s.matchFilter(filter, req, resp) {
 			return true
 		}
 	}
@@ -350,26 +367,26 @@ func (s *ActionService) matchFilters(filters []database.ActionFilter, reqData *R
 }
 
 // matchFilter checks if a single filter matches
-func (s *ActionService) matchFilter(filter database.ActionFilter, reqData *RequestData, respData *ResponseData) bool {
+func (s *ActionService) matchFilter(filter database.ActionFilter, req *http.Request, resp *http.Response) bool {
 	var value string
 
 	// Get the value to compare based on filter type
 	switch filter.Type {
 	case "method":
-		if reqData != nil {
-			value = reqData.Method
+		if req != nil {
+			value = req.Method
 		}
 	case "path":
-		if reqData != nil {
-			value = reqData.Path
+		if req != nil {
+			value = req.URL.Path
 		}
 	case "header":
-		if reqData != nil && reqData.Headers != nil {
-			value = reqData.Headers[filter.Key]
+		if req != nil && req.Header != nil {
+			value = req.Header.Get(filter.Key)
 		}
 	case "status_code":
-		if respData != nil {
-			value = string(rune(respData.StatusCode))
+		if resp != nil {
+			value = strconv.Itoa(resp.StatusCode)
 		}
 	default:
 		return false
