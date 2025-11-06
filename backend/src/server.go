@@ -46,6 +46,8 @@ func SetupRouter() *gin.Engine {
 	// Create Gin router with default middleware
 	router := gin.Default()
 
+	// Middleware to log request IDs
+	router.Use(middlewares.LogRequestId())
 	// middleware to log requests to the database
 	router.Use(middlewares.RequestLoggerMiddleware(database.DB))
 

@@ -230,8 +230,6 @@ func (s *ActionService) ExecuteBeforeRequestActions(ctx context.Context, project
 			// Continue with other actions even if one fails
 			continue
 		}
-
-		log.Debug().Str("action_id", action.ID).Msg("action executed successfully")
 	}
 
 	return nil
@@ -264,8 +262,6 @@ func (s *ActionService) ExecuteAfterRequestActions(ctx context.Context, projectI
 			// Continue with other actions even if one fails
 			continue
 		}
-
-		log.Debug().Str("action_id", action.ID).Msg("action executed successfully")
 	}
 
 	return nil
