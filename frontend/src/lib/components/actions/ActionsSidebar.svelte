@@ -113,11 +113,11 @@
 						</div>
 
 						<!-- Mini Arrow Between Actions -->
-						{#if idx < beforeRequestActions.length - 1}
+						<!-- {#if idx < beforeRequestActions.length - 1}
 							<div class="flex justify-center py-0.5" aria-hidden="true">
 								<i class="fas fa-chevron-down text-blue-400 dark:text-blue-500" style="font-size: 8px;"></i>
 							</div>
-						{/if}
+						{/if} -->
 					{/each}
 				</div>
 			</div>
@@ -183,11 +183,11 @@
 						</div>
 
 						<!-- Mini Arrow Between Actions -->
-						{#if idx < afterRequestActions.length - 1}
+						<!-- {#if idx < afterRequestActions.length - 1}
 							<div class="flex justify-center py-0.5" aria-hidden="true">
 								<i class="fas fa-chevron-down text-green-400 dark:text-green-500" style="font-size: 8px;"></i>
 							</div>
-						{/if}
+						{/if} -->
 					{/each}
 				</div>
 			</div>

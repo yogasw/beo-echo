@@ -31,7 +31,8 @@ import (
 	"beo-echo/backend/src/workspaces"
 
 	// New imports for auth and workspace management
-	actionsModule "beo-echo/backend/src/actions"
+	actions "beo-echo/backend/src/actions"
+	actionsModules "beo-echo/backend/src/actions/modules"
 	aiModule "beo-echo/backend/src/ai"
 	authHandler "beo-echo/backend/src/auth/handler"
 	handlerLogs "beo-echo/backend/src/logs/handlers"
@@ -141,8 +142,9 @@ func SetupRouter() *gin.Engine {
 
 	// Initialize action service and handler
 	actionRepo := repositories.NewActionRepository(database.DB)
-	actionService := actionsModule.NewActionService(actionRepo)
-	actionHandler := actionsModule.NewActionHandler(actionService)
+	actionModules := actionsModules.NewActionModules()
+	actionService := actions.NewActionService(actionRepo, actionModules)
+	actionHandler := actions.NewActionHandler(actionService)
 
 	// Authentication routes
 	router.POST("/api/auth/login", authHandler.LoginHandler)

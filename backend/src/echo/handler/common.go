@@ -4,6 +4,7 @@ import (
 	"log"
 
 	actionsServices "beo-echo/backend/src/actions"
+	actionsModules "beo-echo/backend/src/actions/modules"
 	"beo-echo/backend/src/database"
 	dbRepositories "beo-echo/backend/src/database/repositories"
 	"beo-echo/backend/src/echo/repositories"
@@ -30,7 +31,8 @@ func InitMockService() {
 
 	repo := repositories.NewMockRepository(db)
 	actionRepo := dbRepositories.NewActionRepository(db)
-	actionSvc := actionsServices.NewActionService(actionRepo)
+	actionModules := actionsModules.NewActionModules()
+	actionSvc := actionsServices.NewActionService(actionRepo, actionModules)
 	mockService = services.NewMockService(repo, actionSvc)
 }
 
