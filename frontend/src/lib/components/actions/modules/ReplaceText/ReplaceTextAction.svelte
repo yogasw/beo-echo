@@ -50,7 +50,7 @@
 			<option value="request_header">Request Header</option>
 		</select>
 		<p id="target-help" class="mt-1 text-xs theme-text-secondary">
-			Choose where to perform the text replacement
+			Choose where to perform the text replacement2
 		</p>
 	</div>
 

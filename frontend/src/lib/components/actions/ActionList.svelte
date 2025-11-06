@@ -5,7 +5,6 @@
 	import { selectedWorkspace } from '$lib/stores/workspace';
 	import { toast } from '$lib/stores/toast';
 	import type { Action, ActionTypeInfo } from '$lib/types/Action';
-	import * as ThemeUtils from '$lib/utils/themeUtils';
 
 	import ActionItem from './ActionItem.svelte';
 	import ActionWizard from './ActionWizard.svelte';

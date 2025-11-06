@@ -4,9 +4,9 @@
 	import { selectedWorkspace } from '$lib/stores/workspace';
 	import { toast } from '$lib/stores/toast';
 	import type { Action, ActionFilter, CreateActionRequest, UpdateActionRequest } from '$lib/types/Action';
-	import BasicInfo from '../BasicInfo.svelte';
-	import ReplaceTextAction from '../types/ReplaceTextAction.svelte';
-	import ActionFilterForm from '../ActionFilterForm.svelte';
+	import ActionFilterForm from '../../ActionFilterForm.svelte';
+	import BasicInfo from '$lib/components/actions/BasicInfo.svelte';
+	import ReplaceTextAction from './ReplaceTextAction.svelte';
 
 	export let action: Action | null = null;
 	export let onCancel: () => void;
