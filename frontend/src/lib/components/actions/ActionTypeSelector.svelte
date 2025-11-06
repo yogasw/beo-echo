@@ -11,13 +11,16 @@
 	let isLoading = true;
 
 	// Group action types by category
-	$: groupedTypes = actionTypes.reduce((acc, type) => {
-		if (!acc[type.category]) {
-			acc[type.category] = [];
-		}
-		acc[type.category].push(type);
-		return acc;
-	}, {} as Record<string, ActionTypeInfo[]>);
+	$: groupedTypes = actionTypes.reduce(
+		(acc, type) => {
+			if (!acc[type.category]) {
+				acc[type.category] = [];
+			}
+			acc[type.category].push(type);
+			return acc;
+		},
+		{} as Record<string, ActionTypeInfo[]>
+	);
 
 	onMount(async () => {
 		try {
@@ -31,27 +34,29 @@
 	});
 </script>
 
-<div class="h-full flex flex-col theme-bg-primary">
+<div>
 	<!-- Header -->
-	<div class="p-6 theme-bg-primary border-b theme-border">
-		<div class="flex items-center mb-4">
+	<div class="px-4 pt-4 pb-3 border-b theme-border">
+		<div class="flex items-center gap-4">
+			<!-- Back Button -->
 			<button
+				type="button"
+				class="flex items-center justify-center w-10 h-10 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
 				on:click={onCancel}
-				class="mr-4 p-2 rounded-lg theme-bg-secondary hover:bg-gray-600 transition-colors"
-				title="Go back to actions list"
-				aria-label="Go back to actions list"
+				title="Back to actions list"
+				aria-label="Back to actions list"
 			>
-				<i class="fas fa-arrow-left theme-text-primary"></i>
+				<i class="fas fa-arrow-left text-lg theme-text-primary"></i>
 			</button>
-			<div class="flex items-center">
-				<div class="bg-amber-600/10 dark:bg-amber-600/10 p-2 rounded-lg mr-3">
-					<i class="fas fa-bolt text-amber-500 text-xl"></i>
+
+			<!-- Header Content -->
+			<div class="flex items-center flex-1">
+				<div class="bg-purple-600/10 dark:bg-purple-600/10 p-2 rounded-lg mr-3">
+					<i class="fas fa-bolt text-purple-500 text-xl"></i>
 				</div>
 				<div>
 					<h2 class="text-xl font-bold theme-text-primary">Select Action Type</h2>
-					<p class="text-sm theme-text-muted">
-						Choose the type of action you want to create
-					</p>
+					<p class="text-sm theme-text-muted">Choose an action to automate your requests</p>
 				</div>
 			</div>
 		</div>
@@ -89,7 +94,9 @@
 								>
 									<div class="flex flex-col items-center text-center">
 										<!-- Icon -->
-										<div class="w-16 h-16 bg-blue-600/20 rounded-full flex items-center justify-center mb-4 group-hover:bg-blue-600/30 transition-colors">
+										<div
+											class="w-16 h-16 bg-blue-600/20 rounded-full flex items-center justify-center mb-4 group-hover:bg-blue-600/30 transition-colors"
+										>
 											<i class="fas {actionType.icon} text-3xl text-blue-500"></i>
 										</div>
 
@@ -104,7 +111,9 @@
 										</p>
 
 										<!-- Category Badge -->
-										<span class="inline-block px-3 py-1 text-xs rounded-full bg-gray-700 theme-text-secondary">
+										<span
+											class="inline-block px-3 py-1 text-xs rounded-full bg-gray-700 theme-text-secondary"
+										>
 											{actionType.category}
 										</span>
 									</div>

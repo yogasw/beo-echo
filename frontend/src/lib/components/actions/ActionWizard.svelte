@@ -1,6 +1,6 @@
 <script lang="ts">
-	import ActionTypeSelector from './ActionTypeSelector.svelte';
-	import ReplaceTextActionForm from './modules/ReplaceText/ReplaceTextActionForm.svelte';
+	import ActionTypeSelector from '$lib/components/actions/ActionTypeSelector.svelte';
+	import ReplaceTextActionForm from '$lib/components/actions/modules/ReplaceText/ReplaceTextActionForm.svelte';
 	import type { Action } from '$lib/types/Action';
 
 	export let action: Action | null = null;
