@@ -76,6 +76,20 @@
 			return;
 		}
 
+		// Validate target compatibility with execution point
+		const target = config.target;
+		if (executionPoint === 'before_request') {
+			if (target === 'response_body' || target === 'response_header') {
+				toast.error('Cannot modify response when execution point is "Before Request". Please select request_body or request_header.');
+				return;
+			}
+		} else if (executionPoint === 'after_request') {
+			if (target === 'request_body' || target === 'request_header') {
+				toast.error('Cannot modify request when execution point is "After Request". Please select response_body or response_header.');
+				return;
+			}
+		}
+
 		try {
 			isSubmitting = true;
 			const configString = JSON.stringify(config);
@@ -180,7 +194,7 @@
 						<i class="fas fa-exchange-alt text-blue-500 text-sm"></i>
 						<h3 class="text-sm font-semibold theme-text-primary">Replace Text Configuration</h3>
 					</div>
-					<ReplaceTextAction {config} on:change={handleConfigChange} />
+					<ReplaceTextAction {config} {executionPoint} on:change={handleConfigChange} />
 				</div>
 
 				<!-- Divider -->
