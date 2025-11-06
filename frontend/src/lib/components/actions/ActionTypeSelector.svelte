@@ -10,18 +10,6 @@
 	let actionTypes: ActionTypeInfo[] = [];
 	let isLoading = true;
 
-	// Group action types by category
-	$: groupedTypes = actionTypes.reduce(
-		(acc, type) => {
-			if (!acc[type.category]) {
-				acc[type.category] = [];
-			}
-			acc[type.category].push(type);
-			return acc;
-		},
-		{} as Record<string, ActionTypeInfo[]>
-	);
-
 	onMount(async () => {
 		try {
 			const response = await actionsApi.getActionTypes();
@@ -37,22 +25,22 @@
 <div>
 	<!-- Header -->
 	<div class="px-4 pt-4 pb-3 border-b theme-border">
-		<div class="flex items-center gap-4">
-			<!-- Back Button -->
+		<div class="flex items-center gap-3">
+			<!-- Back Button (Left) -->
 			<button
 				type="button"
-				class="flex items-center justify-center w-10 h-10 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+				class="group flex items-center justify-center w-10 h-10 rounded-lg bg-gray-100 dark:bg-gray-700/50 hover:bg-gray-200 dark:hover:bg-gray-600 transition-all duration-200 flex-shrink-0"
 				on:click={onCancel}
 				title="Back to actions list"
 				aria-label="Back to actions list"
 			>
-				<i class="fas fa-arrow-left text-lg theme-text-primary"></i>
+				<i class="fas fa-arrow-left text-base text-gray-600 dark:text-gray-300 group-hover:text-gray-800 dark:group-hover:text-gray-100 transition-colors"></i>
 			</button>
 
 			<!-- Header Content -->
-			<div class="flex items-center flex-1">
-				<div class="bg-purple-600/10 dark:bg-purple-600/10 p-2 rounded-lg mr-3">
-					<i class="fas fa-bolt text-purple-500 text-xl"></i>
+			<div class="flex items-center">
+				<div class="flex items-center justify-center w-10 h-10 bg-purple-600/10 dark:bg-purple-600/10 rounded-lg mr-3 flex-shrink-0">
+					<i class="fas fa-bolt text-purple-500 text-lg"></i>
 				</div>
 				<div>
 					<h2 class="text-xl font-bold theme-text-primary">Select Action Type</h2>
@@ -63,7 +51,7 @@
 	</div>
 
 	<!-- Content -->
-	<div class="flex-1 overflow-y-auto p-6">
+	<div class="flex-1 overflow-y-auto p-4 theme-bg-primary">
 		<div class="max-w-6xl mx-auto">
 			{#if isLoading}
 				<div class="text-center py-12">
@@ -71,57 +59,79 @@
 					<p class="mt-4 text-sm theme-text-secondary">Loading action types...</p>
 				</div>
 			{:else}
-				{#each Object.entries(groupedTypes) as [category, types]}
-					<div class="mb-8">
-						<!-- Category Header -->
-						<div class="flex items-center mb-4">
-							<div class="flex-1 h-px theme-border"></div>
-							<h3 class="px-4 text-sm font-semibold theme-text-primary uppercase tracking-wide">
-								{category}
-							</h3>
-							<div class="flex-1 h-px theme-border"></div>
-						</div>
+				<!-- Flat list without category grouping -->
+				<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
+					{#each actionTypes as actionType}
+						<button
+							type="button"
+							class="group relative p-4 rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 hover:border-purple-500 dark:hover:border-purple-500 hover:shadow-lg transition-all duration-200 text-left overflow-hidden"
+							on:click={() => onSelectType(actionType.id)}
+							title="Create {actionType.name} action"
+							aria-label="Create {actionType.name} action"
+						>
+							<!-- Hover gradient overlay -->
+							<div
+								class="absolute inset-0 bg-gradient-to-br from-purple-500/0 to-blue-500/0 group-hover:from-purple-500/5 group-hover:to-blue-500/5 transition-all duration-200"
+							></div>
 
-						<!-- Action Type Cards -->
-						<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-							{#each types as actionType}
-								<button
-									type="button"
-									class="group p-6 rounded-lg border-2 theme-border theme-bg-secondary hover:border-blue-500 hover:bg-blue-900/10 transition-all text-left"
-									on:click={() => onSelectType(actionType.id)}
-									title="Create {actionType.name} action"
-									aria-label="Create {actionType.name} action"
+							<!-- Content -->
+							<div class="relative flex flex-col items-start">
+								<!-- Icon with category color -->
+								<div
+									class="w-11 h-11 rounded-lg flex items-center justify-center mb-3 group-hover:scale-105 transition-transform duration-200 {actionType.category === 'Transform'
+										? 'bg-blue-500/10 dark:bg-blue-500/20'
+										: actionType.category === 'Network'
+											? 'bg-green-500/10 dark:bg-green-500/20'
+											: actionType.category === 'Timing'
+												? 'bg-amber-500/10 dark:bg-amber-500/20'
+												: 'bg-purple-500/10 dark:bg-purple-500/20'}"
 								>
-									<div class="flex flex-col items-center text-center">
-										<!-- Icon -->
-										<div
-											class="w-16 h-16 bg-blue-600/20 rounded-full flex items-center justify-center mb-4 group-hover:bg-blue-600/30 transition-colors"
-										>
-											<i class="fas {actionType.icon} text-3xl text-blue-500"></i>
-										</div>
+									<i
+										class="fas {actionType.icon} text-lg {actionType.category === 'Transform'
+											? 'text-blue-500'
+											: actionType.category === 'Network'
+												? 'text-green-500'
+												: actionType.category === 'Timing'
+													? 'text-amber-500'
+													: 'text-purple-500'}"
+									></i>
+								</div>
 
-										<!-- Name -->
-										<h4 class="text-lg font-semibold theme-text-primary mb-2">
-											{actionType.name}
-										</h4>
+								<!-- Name -->
+								<h4 class="text-base font-bold theme-text-primary mb-1.5 group-hover:text-purple-600 dark:group-hover:text-purple-400 transition-colors">
+									{actionType.name}
+								</h4>
 
-										<!-- Description -->
-										<p class="text-sm theme-text-secondary mb-3">
-											{actionType.description}
-										</p>
+								<!-- Description -->
+								<p class="text-xs theme-text-secondary mb-3 leading-relaxed line-clamp-2">
+									{actionType.description}
+								</p>
 
-										<!-- Category Badge -->
-										<span
-											class="inline-block px-3 py-1 text-xs rounded-full bg-gray-700 theme-text-secondary"
-										>
-											{actionType.category}
-										</span>
-									</div>
-								</button>
-							{/each}
-						</div>
-					</div>
-				{/each}
+								<!-- Category Badge -->
+								<div class="flex items-center gap-2 mt-auto">
+									<span
+										class="inline-flex items-center px-2 py-0.5 text-xs font-medium rounded {actionType.category === 'Transform'
+											? 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300'
+											: actionType.category === 'Network'
+												? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300'
+												: actionType.category === 'Timing'
+													? 'bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300'
+													: 'bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300'}"
+									>
+										{actionType.category}
+									</span>
+								</div>
+
+								<!-- Arrow indicator on hover -->
+								<div
+									class="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity duration-200"
+								>
+									<i class="fas fa-arrow-right text-sm text-purple-500"></i>
+								</div>
+							</div>
+						</button>
+					{/each}
+				</div>
 			{/if}
 		</div>
 	</div>

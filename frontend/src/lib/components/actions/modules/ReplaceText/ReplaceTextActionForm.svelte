@@ -3,7 +3,12 @@
 	import { selectedProject } from '$lib/stores/selectedConfig';
 	import { selectedWorkspace } from '$lib/stores/workspace';
 	import { toast } from '$lib/stores/toast';
-	import type { Action, ActionFilter, CreateActionRequest, UpdateActionRequest } from '$lib/types/Action';
+	import type {
+		Action,
+		ActionFilter,
+		CreateActionRequest,
+		UpdateActionRequest
+	} from '$lib/types/Action';
 	import ActionFilterForm from '../../ActionFilterForm.svelte';
 	import BasicInfo from '$lib/components/actions/BasicInfo.svelte';
 	import ReplaceTextAction from './ReplaceTextAction.svelte';
@@ -16,7 +21,8 @@
 
 	// Basic info fields
 	let name = action?.name || '';
-	let executionPoint: 'before_request' | 'after_request' = action?.execution_point || 'after_request';
+	let executionPoint: 'before_request' | 'after_request' =
+		action?.execution_point || 'after_request';
 	let enabled = action?.enabled ?? true;
 
 	// Config for replace text
@@ -39,12 +45,13 @@
 		} catch {
 			config = null;
 		}
-		filters = action.filters?.map(f => ({
-			type: f.type,
-			key: f.key,
-			operator: f.operator,
-			value: f.value
-		})) || [];
+		filters =
+			action.filters?.map((f) => ({
+				type: f.type,
+				key: f.key,
+				operator: f.operator,
+				value: f.value
+			})) || [];
 
 		expandedSections = {
 			basic: true,
@@ -142,27 +149,31 @@
 
 <div class="h-full flex flex-col theme-bg-primary">
 	<!-- Header -->
-	<div class="p-6 theme-bg-primary border-b theme-border">
-		<div class="flex items-center mb-4">
+	<div class="px-4 pt-4 pb-3 border-b theme-border">
+		<div class="flex items-center gap-3">
+			<!-- Back Button (Left) -->
 			<button
+				type="button"
+				class="group flex items-center justify-center w-10 h-10 rounded-lg bg-gray-100 dark:bg-gray-700/50 hover:bg-gray-200 dark:hover:bg-gray-600 transition-all duration-200 flex-shrink-0"
 				on:click={onCancel}
-				class="mr-4 p-2 rounded-lg theme-bg-secondary hover:bg-gray-600 transition-colors"
 				title="Go back to action type selection"
 				aria-label="Go back to action type selection"
 			>
-				<i class="fas fa-arrow-left theme-text-primary"></i>
+				<i
+					class="fas fa-arrow-left text-base text-gray-600 dark:text-gray-300 group-hover:text-gray-800 dark:group-hover:text-gray-100 transition-colors"
+				></i>
 			</button>
+
+			<!-- Header Content -->
 			<div class="flex items-center">
-				<div class="bg-blue-600/10 dark:bg-blue-600/10 p-2 rounded-lg mr-3">
+				<div
+					class="flex items-center justify-center w-10 h-10 bg-blue-600/10 dark:bg-purple-600/10 rounded-lg mr-3 flex-shrink-0"
+				>
 					<i class="fas fa-exchange-alt text-blue-500 text-xl"></i>
 				</div>
 				<div>
-					<h2 class="text-xl font-bold theme-text-primary">
-						{action ? 'Edit' : 'Create'} Replace Text Action
-					</h2>
-					<p class="text-sm theme-text-muted">
-						Find and replace text in requests or responses
-					</p>
+					<h2 class="text-xl font-bold theme-text-primary">Create Replace Text Action</h2>
+					<p class="text-sm theme-text-muted">Find and replace text in requests or responses</p>
 				</div>
 			</div>
 		</div>
@@ -190,7 +201,8 @@
 							<p class="text-xs theme-text-muted">Action name and execution settings</p>
 						</div>
 					</div>
-					<i class="fas fa-chevron-{expandedSections.basic ? 'up' : 'down'} theme-text-secondary"></i>
+					<i class="fas fa-chevron-{expandedSections.basic ? 'up' : 'down'} theme-text-secondary"
+					></i>
 				</button>
 
 				{#if expandedSections.basic}
@@ -224,7 +236,8 @@
 							<p class="text-xs theme-text-muted">Set up find and replace patterns</p>
 						</div>
 					</div>
-					<i class="fas fa-chevron-{expandedSections.config ? 'up' : 'down'} theme-text-secondary"></i>
+					<i class="fas fa-chevron-{expandedSections.config ? 'up' : 'down'} theme-text-secondary"
+					></i>
 				</button>
 
 				{#if expandedSections.config}
@@ -250,10 +263,13 @@
 						</div>
 						<div class="text-left">
 							<h3 class="text-base font-semibold theme-text-primary">Filters (Optional)</h3>
-							<p class="text-xs theme-text-muted">Add conditions to control when this action runs</p>
+							<p class="text-xs theme-text-muted">
+								Add conditions to control when this action runs
+							</p>
 						</div>
 					</div>
-					<i class="fas fa-chevron-{expandedSections.filters ? 'up' : 'down'} theme-text-secondary"></i>
+					<i class="fas fa-chevron-{expandedSections.filters ? 'up' : 'down'} theme-text-secondary"
+					></i>
 				</button>
 
 				{#if expandedSections.filters}
