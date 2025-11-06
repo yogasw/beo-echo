@@ -43,8 +43,11 @@ import (
 
 // SetupRouter creates and configures a new Gin router
 func SetupRouter() *gin.Engine {
-	// Create Gin router with default middleware
-	router := gin.Default()
+	// Create Gin router without default logger (using custom logger instead)
+	router := gin.New()
+
+	// Add recovery middleware to handle panics
+	router.Use(gin.Recovery())
 
 	// Middleware to log request IDs
 	router.Use(middlewares.LogRequestId())
@@ -54,20 +57,20 @@ func SetupRouter() *gin.Engine {
 	// Add request logging middleware
 	router.Use(func(c *gin.Context) {
 		// Start timer
-		startTime := time.Now()
+		// startTime := time.Now()
 
 		// Process request
 		c.Next()
 
-		// Log request details
-		log.Printf(
-			"[%s] %s %s %d %s",
-			c.Request.Method,
-			c.Request.URL.Path,
-			c.ClientIP(),
-			c.Writer.Status(),
-			time.Since(startTime),
-		)
+		// // Log request details
+		// log.Printf(
+		// 	"[%s] %s %s %d %s",
+		// 	c.Request.Method,
+		// 	c.Request.URL.Path,
+		// 	c.ClientIP(),
+		// 	c.Writer.Status(),
+		// 	time.Since(startTime),
+		// )
 	})
 
 	// Configure CORS
