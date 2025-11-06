@@ -117,6 +117,8 @@
 		try {
 			for (let i = 0; i < reorderedActions.length; i++) {
 				const action = reorderedActions[i];
+
+				if (!$selectedWorkspace || !$selectedProject) return;
 				await actionsApi.updateAction($selectedWorkspace.id, $selectedProject.id, action.id, {
 					priority: i
 				});
