@@ -207,7 +207,7 @@
 					</button>
 				</div>
 			{:else}
-				{@const groupedActions = actions.reduce((acc, action) => {
+				{@const groupedActions = actions.reduce<Record<string, Action[]>>((acc, action) => {
 					const actionType = actionTypes.find((t) => t.id === action.type);
 					const category = actionType?.category || 'Other';
 					if (!acc[category]) acc[category] = [];
@@ -225,15 +225,24 @@
 							<div class="flex-1 h-px theme-border"></div>
 						</div>
 						<div class="grid grid-cols-1 gap-4">
-							{#each categoryActions as action, index (action.id)}
+							{#each categoryActions as action (action.id)}
 								<div
+									role="button"
+									tabindex="0"
 									draggable="true"
 									on:dragstart={() => handleDragStart(actions.indexOf(action))}
 									on:dragover={handleDragOver}
 									on:drop={(e) => handleDrop(e, actions.indexOf(action))}
 									on:dragend={handleDragEnd}
-									class="transition-opacity"
+									on:keydown={(e) => {
+										if (e.key === 'Enter' || e.key === ' ') {
+											e.preventDefault();
+										}
+									}}
+									class="transition-opacity cursor-move"
 									class:opacity-50={draggedIndex === actions.indexOf(action)}
+									title="Drag to reorder action"
+									aria-label="Drag to reorder action: {action.name || action.type}"
 								>
 									<ActionItem
 										{action}
