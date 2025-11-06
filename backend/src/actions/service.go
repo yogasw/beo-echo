@@ -302,6 +302,7 @@ func (s *ActionService) executeReplaceTextAction(action *database.Action, req *h
 			// Set new body
 			req.Body = io.NopCloser(bytes.NewBufferString(bodyStr))
 			req.ContentLength = int64(len(bodyStr))
+			req.Header.Set("Content-Length", strconv.Itoa(len(bodyStr)))
 		}
 	case "response_body":
 		if resp != nil && resp.Body != nil {
@@ -319,6 +320,7 @@ func (s *ActionService) executeReplaceTextAction(action *database.Action, req *h
 			// Set new body
 			resp.Body = io.NopCloser(bytes.NewBufferString(bodyStr))
 			resp.ContentLength = int64(len(bodyStr))
+			resp.Header.Set("Content-Length", strconv.Itoa(len(bodyStr)))
 		}
 	case "request_header":
 		if req != nil && req.Header != nil {

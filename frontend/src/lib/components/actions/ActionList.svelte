@@ -4,20 +4,33 @@
 	import { selectedProject } from '$lib/stores/selectedConfig';
 	import { selectedWorkspace } from '$lib/stores/workspace';
 	import { toast } from '$lib/stores/toast';
-	import type { Action, ActionTypeInfo } from '$lib/types/Action';
+	import type { Action } from '$lib/types/Action';
 
 	import ActionItem from './ActionItem.svelte';
 	import ActionWizard from './ActionWizard.svelte';
+	import ActionsSidebar from './ActionsSidebar.svelte';
 	import SkeletonLoader from '$lib/components/common/SkeletonLoader.svelte';
 	import ErrorDisplay from '$lib/components/common/ErrorDisplay.svelte';
 
 	let actions: Action[] = [];
-	let actionTypes: ActionTypeInfo[] = [];
 	let isLoading = true;
 	let error: string | null = null;
 	let showEditor = false;
 	let editingAction: Action | null = null;
 	let draggedIndex: number | null = null;
+	let activeActionId: string | null = null;
+
+	// Store references to action elements for scrolling
+	let actionElements: Record<string, HTMLElement> = {};
+
+	// Group actions by execution point
+	$: beforeRequestActions = actions
+		.map((action, index) => ({ action, originalIndex: index }))
+		.filter(({ action }) => action.execution_point === 'before_request');
+
+	$: afterRequestActions = actions
+		.map((action, index) => ({ action, originalIndex: index }))
+		.filter(({ action }) => action.execution_point === 'after_request');
 
 	// Load actions when project changes
 	$: if ($selectedProject && $selectedWorkspace) {
@@ -134,16 +147,28 @@
 		draggedIndex = null;
 	}
 
-	onMount(async () => {
-		loadActions();
-		// Load action types for category grouping
-		try {
-			const response = await actionsApi.getActionTypes();
-			actionTypes = response.data;
-		} catch (err) {
-			// Silently fail if action types can't be loaded
-			console.error('Failed to load action types:', err);
+	// Handle reorder from sidebar
+	function handleSidebarReorder(fromIndex: number, toIndex: number) {
+		handleDrop(new DragEvent('drop'), toIndex);
+		draggedIndex = fromIndex;
+		// The drop handler will do the actual reordering
+	}
+
+	// Handle click from sidebar - scroll to action
+	function handleSidebarActionClick(actionId: string) {
+		activeActionId = actionId;
+		const element = actionElements[actionId];
+		if (element) {
+			element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+			// Flash highlight effect
+			setTimeout(() => {
+				activeActionId = null;
+			}, 2000);
 		}
+	}
+
+	onMount(() => {
+		loadActions();
 	});
 </script>
 
@@ -152,10 +177,10 @@
 	<ActionWizard action={editingAction} onCancel={handleEditorCancel} onSave={handleEditorSave} />
 {:else}
 	<!-- List View -->
-	<div class="w-full theme-bg-primary p-4 relative">
+	<div class="w-full h-full theme-bg-primary flex flex-col">
 		<!-- Header -->
-		<div class="mb-6">
-			<div class="flex justify-between items-center mb-4">
+		<div class="px-4 pt-4 pb-3 border-b theme-border">
+			<div class="flex justify-between items-center">
 				<div class="flex items-center">
 					<div class="bg-blue-600/10 dark:bg-blue-600/10 p-2 rounded-lg mr-3">
 						<i class="fas fa-cogs text-blue-500 text-xl"></i>
@@ -168,21 +193,23 @@
 
 				<div class="flex items-center space-x-3">
 					<button
-					class="bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded-md text-sm flex items-center shadow-sm hover:shadow-md transition-all duration-200"
-					on:click={handleCreateAction}
-					disabled={!$selectedProject}
-					title="Create new action"
-					aria-label="Create new action"
-				>
-					<i class="fas fa-plus mr-2"></i>
-					New Action
-				</button>
+						class="bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded-md text-sm flex items-center shadow-sm hover:shadow-md transition-all duration-200"
+						on:click={handleCreateAction}
+						disabled={!$selectedProject}
+						title="Create new action"
+						aria-label="Create new action"
+					>
+						<i class="fas fa-plus mr-2"></i>
+						New Action
+					</button>
 				</div>
 			</div>
 		</div>
 
-		<!-- Content -->
-		<div class="flex-1 overflow-auto p-4">
+		<!-- Main Content with Sidebar -->
+		<div class="flex-1 flex overflow-hidden">
+			<!-- Actions List (Main Content) -->
+			<div class="flex-1 overflow-auto p-4">
 			{#if isLoading}
 				<SkeletonLoader type="card" count={3} />
 			{:else if error}
@@ -206,54 +233,141 @@
 					</button>
 				</div>
 			{:else}
-				{@const groupedActions = actions.reduce<Record<string, Action[]>>((acc, action) => {
-					const actionType = actionTypes.find((t) => t.id === action.type);
-					const category = actionType?.category || 'Other';
-					if (!acc[category]) acc[category] = [];
-					acc[category].push(action);
-					return acc;
-				}, {})}
+				<div class="space-y-0">
+					<!-- Before Request Actions -->
+					{#if beforeRequestActions.length > 0}
+						{#each beforeRequestActions as { action, originalIndex }, idx (action.id)}
+							<!-- Action Item -->
+							<div
+								bind:this={actionElements[action.id]}
+								role="button"
+								tabindex="0"
+								draggable="true"
+								on:dragstart={() => handleDragStart(originalIndex)}
+								on:dragover={handleDragOver}
+								on:drop={(e) => handleDrop(e, originalIndex)}
+								on:dragend={handleDragEnd}
+								on:keydown={(e) => {
+									if (e.key === 'Enter' || e.key === ' ') {
+										e.preventDefault();
+									}
+								}}
+								class="transition-all duration-200 cursor-move {activeActionId === action.id
+									? 'ring-2 ring-blue-500 dark:ring-blue-400 rounded-lg'
+									: ''}"
+								class:opacity-50={draggedIndex === originalIndex}
+								title="Drag to reorder action"
+								aria-label="Drag to reorder action: {action.name || action.type}"
+							>
+								<ActionItem
+									{action}
+									onEdit={() => handleEditAction(action)}
+									onDelete={() => handleDeleteAction(action.id)}
+									onToggle={() => handleToggleAction(action)}
+								/>
+							</div>
 
-				{#each Object.entries(groupedActions) as [category, categoryActions]}
-					<div class="mb-6">
-						<div class="flex items-center mb-3">
-							<div class="flex-1 h-px theme-border"></div>
-							<h3 class="px-4 text-sm font-semibold theme-text-secondary uppercase tracking-wide">
-								{category}
-							</h3>
-							<div class="flex-1 h-px theme-border"></div>
-						</div>
-						<div class="grid grid-cols-1 gap-4">
-							{#each categoryActions as action (action.id)}
-								<div
-									role="button"
-									tabindex="0"
-									draggable="true"
-									on:dragstart={() => handleDragStart(actions.indexOf(action))}
-									on:dragover={handleDragOver}
-									on:drop={(e) => handleDrop(e, actions.indexOf(action))}
-									on:dragend={handleDragEnd}
-									on:keydown={(e) => {
-										if (e.key === 'Enter' || e.key === ' ') {
-											e.preventDefault();
-										}
-									}}
-									class="transition-opacity cursor-move"
-									class:opacity-50={draggedIndex === actions.indexOf(action)}
-									title="Drag to reorder action"
-									aria-label="Drag to reorder action: {action.name || action.type}"
-								>
-									<ActionItem
-										{action}
-										onEdit={() => handleEditAction(action)}
-										onDelete={() => handleDeleteAction(action.id)}
-										onToggle={() => handleToggleAction(action)}
-									/>
+							<!-- Flow Arrow Between Actions -->
+							{#if idx < beforeRequestActions.length - 1}
+								<div class="flex items-center justify-center py-2" aria-hidden="true">
+									<div class="flex flex-col items-center">
+										<div class="w-0.5 h-3 bg-gradient-to-b from-blue-400 to-blue-500 dark:from-blue-500 dark:to-blue-600"></div>
+										<div class="flex items-center justify-center w-6 h-6 rounded-full bg-blue-500 dark:bg-blue-600 shadow-sm">
+											<i class="fas fa-chevron-down text-white text-xs"></i>
+										</div>
+										<div class="w-0.5 h-3 bg-gradient-to-b from-blue-500 to-blue-400 dark:from-blue-600 dark:to-blue-500"></div>
+									</div>
 								</div>
-							{/each}
+							{/if}
+						{/each}
+					{/if}
+
+					<!-- Main Separator: Before → Server → After -->
+					{#if beforeRequestActions.length > 0 && afterRequestActions.length > 0}
+						<div class="flex items-center justify-center py-4" aria-hidden="true">
+							<div class="flex flex-col items-center gap-1 max-w-md mx-auto">
+								<!-- Top connector -->
+								<div class="w-0.5 h-4 bg-gradient-to-b from-blue-400 to-purple-500 dark:from-blue-500 dark:to-purple-600"></div>
+
+								<!-- Server Processing Badge -->
+								<div class="flex items-center gap-3 px-4 py-2 bg-purple-50 dark:bg-purple-900/20 rounded-lg border border-purple-200 dark:border-purple-800 shadow-sm">
+									<div class="flex-1 h-px bg-gradient-to-r from-transparent via-purple-300 dark:via-purple-600 to-purple-500"></div>
+									<div class="flex items-center gap-2">
+										<div class="flex items-center justify-center w-7 h-7 rounded-full bg-purple-500 dark:bg-purple-600 shadow-md">
+											<i class="fas fa-server text-white text-xs"></i>
+										</div>
+										<span class="text-xs font-semibold text-purple-700 dark:text-purple-300 uppercase tracking-wide whitespace-nowrap">
+											Server Processing
+										</span>
+									</div>
+									<div class="flex-1 h-px bg-gradient-to-r from-purple-500 via-purple-300 dark:via-purple-600 to-transparent"></div>
+								</div>
+
+								<!-- Bottom connector -->
+								<div class="w-0.5 h-4 bg-gradient-to-b from-purple-500 to-green-400 dark:from-purple-600 dark:to-green-500"></div>
+							</div>
 						</div>
-					</div>
-				{/each}
+					{/if}
+
+					<!-- After Request Actions -->
+					{#if afterRequestActions.length > 0}
+						{#each afterRequestActions as { action, originalIndex }, idx (action.id)}
+							<!-- Action Item -->
+							<div
+								bind:this={actionElements[action.id]}
+								role="button"
+								tabindex="0"
+								draggable="true"
+								on:dragstart={() => handleDragStart(originalIndex)}
+								on:dragover={handleDragOver}
+								on:drop={(e) => handleDrop(e, originalIndex)}
+								on:dragend={handleDragEnd}
+								on:keydown={(e) => {
+									if (e.key === 'Enter' || e.key === ' ') {
+										e.preventDefault();
+									}
+								}}
+								class="transition-all duration-200 cursor-move {activeActionId === action.id
+									? 'ring-2 ring-green-500 dark:ring-green-400 rounded-lg'
+									: ''}"
+								class:opacity-50={draggedIndex === originalIndex}
+								title="Drag to reorder action"
+								aria-label="Drag to reorder action: {action.name || action.type}"
+							>
+								<ActionItem
+									{action}
+									onEdit={() => handleEditAction(action)}
+									onDelete={() => handleDeleteAction(action.id)}
+									onToggle={() => handleToggleAction(action)}
+								/>
+							</div>
+
+							<!-- Flow Arrow Between Actions -->
+							{#if idx < afterRequestActions.length - 1}
+								<div class="flex items-center justify-center py-2" aria-hidden="true">
+									<div class="flex flex-col items-center">
+										<div class="w-0.5 h-3 bg-gradient-to-b from-green-400 to-green-500 dark:from-green-500 dark:to-green-600"></div>
+										<div class="flex items-center justify-center w-6 h-6 rounded-full bg-green-500 dark:bg-green-600 shadow-sm">
+											<i class="fas fa-chevron-down text-white text-xs"></i>
+										</div>
+										<div class="w-0.5 h-3 bg-gradient-to-b from-green-500 to-green-400 dark:from-green-600 dark:to-green-500"></div>
+									</div>
+								</div>
+							{/if}
+						{/each}
+					{/if}
+				</div>
+			{/if}
+			</div>
+
+			<!-- Sidebar (Right) -->
+			{#if !isLoading && !error && actions.length > 0}
+				<ActionsSidebar
+					{actions}
+					{activeActionId}
+					onReorder={handleSidebarReorder}
+					onActionClick={handleSidebarActionClick}
+				/>
 			{/if}
 		</div>
 	</div>
