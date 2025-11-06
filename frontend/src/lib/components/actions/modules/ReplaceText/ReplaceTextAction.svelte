@@ -131,7 +131,7 @@
 				aria-label="Use regular expression matching"
 			/>
 			<div
-				class="w-11 h-6 bg-gray-700 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-800 rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"
+				class="w-11 h-6 bg-gray-300 dark:bg-gray-700 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"
 			></div>
 		</label>
 		<div>
@@ -145,7 +145,7 @@
 	</div>
 
 	<!-- Example Preview -->
-	<div class="mt-4 p-3 bg-gray-900/50 rounded border border-blue-900/50">
+	<div class="mt-4 p-3 bg-blue-50/70 dark:bg-gray-900/50 rounded border border-blue-200/50 dark:border-blue-900/50">
 		<div class="text-xs theme-text-secondary mb-2 flex items-center">
 			<i class="fas fa-info-circle mr-2 text-blue-500"></i>
 			Example Preview
@@ -153,7 +153,7 @@
 		<div class="space-y-2 text-xs">
 			<div>
 				<span class="theme-text-secondary">Input:</span>
-				<code class="ml-2 px-2 py-1 bg-gray-800 rounded theme-text-primary font-mono">
+				<code class="ml-2 px-2 py-1 bg-gray-100 dark:bg-gray-800 rounded theme-text-primary font-mono">
 					{pattern || '(text to find)'}
 				</code>
 			</div>
@@ -163,7 +163,7 @@
 			</div>
 			<div>
 				<span class="theme-text-secondary">Output:</span>
-				<code class="ml-2 px-2 py-1 bg-gray-800 rounded text-green-400 font-mono">
+				<code class="ml-2 px-2 py-1 bg-green-50 dark:bg-gray-800 rounded text-green-600 dark:text-green-400 font-mono">
 					{replacement || '(replacement text)'}
 				</code>
 			</div>

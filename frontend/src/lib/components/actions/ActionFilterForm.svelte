@@ -141,8 +141,8 @@
 				{/if}
 
 				<!-- Filter Example -->
-				<div class="text-xs theme-text-secondary bg-gray-900/50 p-2 rounded">
-					<i class="fas fa-info-circle mr-1"></i>
+				<div class="text-xs theme-text-secondary bg-blue-50/70 dark:bg-gray-900/50 border border-blue-200/50 dark:border-gray-700/50 p-2.5 rounded">
+					<i class="fas fa-info-circle mr-1 text-blue-500"></i>
 					Example: This action will run when
 					<span class="theme-text-primary font-medium">
 						{#if filter.type === 'method'}
@@ -175,7 +175,7 @@
 	</button>
 
 	{#if filters.length > 0}
-		<div class="text-xs theme-text-secondary bg-blue-900/20 border border-blue-900/50 p-3 rounded">
+		<div class="text-xs theme-text-secondary bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-900/50 p-3 rounded">
 			<i class="fas fa-info-circle mr-1 text-blue-500"></i>
 			<strong>Note:</strong> Multiple filters use OR logic - the action runs if ANY filter matches.
 			If no filters are set, the action runs for all requests.
