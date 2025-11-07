@@ -18,6 +18,7 @@
 	let showEditor = false;
 	let editingAction: Action | null = null;
 	let draggedIndex: number | null = null;
+	let draggedExecutionPoint: string | null = null;
 	let activeActionId: string | null = null;
 
 	// Store references to action elements for scrolling
@@ -100,58 +101,100 @@
 	}
 
 	// Drag & Drop handlers
-	function handleDragStart(index: number) {
-		draggedIndex = index;
+	function handleDragStart(action: Action, groupIndex: number) {
+		draggedIndex = groupIndex;
+		draggedExecutionPoint = action.execution_point;
 	}
 
 	function handleDragOver(event: DragEvent) {
 		event.preventDefault();
 	}
 
-	async function handleDrop(event: DragEvent, dropIndex: number) {
+	async function handleDrop(event: DragEvent, dropAction: Action, groupDropIndex: number) {
 		event.preventDefault();
 
-		if (draggedIndex === null || draggedIndex === dropIndex) {
-			draggedIndex = null;
+		if (draggedIndex === null || draggedExecutionPoint === null) {
 			return;
 		}
 
-		// Reorder actions array
-		const reorderedActions = [...actions];
-		const [draggedAction] = reorderedActions.splice(draggedIndex, 1);
-		reorderedActions.splice(dropIndex, 0, draggedAction);
+		// Prevent dropping across execution point boundaries
+		if (draggedExecutionPoint !== dropAction.execution_point) {
+			toast.error('Cannot move actions between Before Request and After Request groups');
+			draggedIndex = null;
+			draggedExecutionPoint = null;
+			return;
+		}
 
-		// Update UI immediately
-		actions = reorderedActions;
+		// If dropping at the same position, do nothing
+		if (draggedIndex === groupDropIndex) {
+			draggedIndex = null;
+			draggedExecutionPoint = null;
+			return;
+		}
+
+		if (!$selectedWorkspace || !$selectedProject) return;
+
+		// Get the actions in the same execution point group
+		const sameGroupActions =
+			dropAction.execution_point === 'before_request' ? beforeRequestActions : afterRequestActions;
+
+		const draggedAction = sameGroupActions[draggedIndex].action;
+
+		// Reset drag state immediately
+		const executionPoint = draggedExecutionPoint;
 		draggedIndex = null;
+		draggedExecutionPoint = null;
 
-		// Update priorities in backend
+		// Update priority via backend (using 1-based priority)
+		// Convert 0-based index to 1-based priority
 		try {
-			for (let i = 0; i < reorderedActions.length; i++) {
-				const action = reorderedActions[i];
+			await actionsApi.updateActionPriority(
+				$selectedWorkspace.id,
+				$selectedProject.id,
+				draggedAction.id,
+				groupDropIndex + 1 // Convert to 1-based priority
+			);
 
-				if (!$selectedWorkspace || !$selectedProject) return;
-				await actionsApi.updateAction($selectedWorkspace.id, $selectedProject.id, action.id, {
-					priority: i
-				});
-			}
-			toast.success('Actions reordered successfully');
+			// Reload to get the correct order from backend
+			await loadActions();
+			toast.success('Action priority updated successfully');
 		} catch (err: any) {
 			toast.error(err);
-			// Reload to get correct order
+			// Reload to restore correct order
 			await loadActions();
 		}
 	}
 
 	function handleDragEnd() {
 		draggedIndex = null;
+		draggedExecutionPoint = null;
 	}
 
-	// Handle reorder from sidebar
-	function handleSidebarReorder(fromIndex: number, toIndex: number) {
-		handleDrop(new DragEvent('drop'), toIndex);
-		draggedIndex = fromIndex;
-		// The drop handler will do the actual reordering
+	// Handle reorder from sidebar - with execution point validation
+	async function handleSidebarReorder(
+		actionId: string,
+		executionPoint: string,
+		groupIndex: number
+	) {
+		if (!$selectedWorkspace || !$selectedProject) return;
+
+		try {
+			// Convert 0-based index to 1-based priority
+			await actionsApi.updateActionPriority(
+				$selectedWorkspace.id,
+				$selectedProject.id,
+				actionId,
+				groupIndex + 1 // Convert to 1-based priority
+			);
+
+			// Reload to get the correct order from backend
+			await loadActions();
+			toast.success('Action priority updated successfully');
+		} catch (err: any) {
+			toast.error(err);
+			// Reload to restore correct order
+			await loadActions();
+		}
 	}
 
 	// Handle click from sidebar - scroll to action
@@ -243,9 +286,9 @@
 								role="button"
 								tabindex="0"
 								draggable="true"
-								on:dragstart={() => handleDragStart(originalIndex)}
+								on:dragstart={() => handleDragStart(action, idx)}
 								on:dragover={handleDragOver}
-								on:drop={(e) => handleDrop(e, originalIndex)}
+								on:drop={(e) => handleDrop(e, action, idx)}
 								on:dragend={handleDragEnd}
 								on:keydown={(e) => {
 									if (e.key === 'Enter' || e.key === ' ') {
@@ -255,8 +298,8 @@
 								class="transition-all duration-200 cursor-move {activeActionId === action.id
 									? 'ring-2 ring-blue-500 dark:ring-blue-400 rounded-lg'
 									: ''}"
-								class:opacity-50={draggedIndex === originalIndex}
-								title="Drag to reorder action"
+								class:opacity-50={draggedIndex === idx && draggedExecutionPoint === 'before_request'}
+								title="Drag to reorder action within Before Request group"
 								aria-label="Drag to reorder action: {action.name || action.type}"
 							>
 								<ActionItem
@@ -318,9 +361,9 @@
 								role="button"
 								tabindex="0"
 								draggable="true"
-								on:dragstart={() => handleDragStart(originalIndex)}
+								on:dragstart={() => handleDragStart(action, idx)}
 								on:dragover={handleDragOver}
-								on:drop={(e) => handleDrop(e, originalIndex)}
+								on:drop={(e) => handleDrop(e, action, idx)}
 								on:dragend={handleDragEnd}
 								on:keydown={(e) => {
 									if (e.key === 'Enter' || e.key === ' ') {
@@ -330,8 +373,8 @@
 								class="transition-all duration-200 cursor-move {activeActionId === action.id
 									? 'ring-2 ring-green-500 dark:ring-green-400 rounded-lg'
 									: ''}"
-								class:opacity-50={draggedIndex === originalIndex}
-								title="Drag to reorder action"
+								class:opacity-50={draggedIndex === idx && draggedExecutionPoint === 'after_request'}
+								title="Drag to reorder action within After Request group"
 								aria-label="Drag to reorder action: {action.name || action.type}"
 							>
 								<ActionItem

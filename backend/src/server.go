@@ -296,6 +296,7 @@ func SetupRouter() *gin.Engine {
 				projectRoutes.PUT("/actions/:id", actionHandler.UpdateAction)
 				projectRoutes.DELETE("/actions/:id", actionHandler.DeleteAction)
 				projectRoutes.POST("/actions/:id/toggle", actionHandler.ToggleAction)
+				projectRoutes.PATCH("/actions/:id/priority", actionHandler.UpdateActionPriority)
 
 			}
 		}

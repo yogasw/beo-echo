@@ -97,6 +97,23 @@ export class ActionsApi {
 		);
 		return response.data;
 	}
+
+	/**
+	 * Update action priority
+	 * Backend will automatically reorder other actions
+	 */
+	static async updateActionPriority(
+		workspaceId: string,
+		projectId: string,
+		actionId: string,
+		priority: number
+	): Promise<ActionMessageResponse> {
+		const response = await apiClient.patch(
+			`/workspaces/${workspaceId}/projects/${projectId}/actions/${actionId}/priority`,
+			{ priority }
+		);
+		return response.data;
+	}
 }
 
 // Export the class directly for static method access

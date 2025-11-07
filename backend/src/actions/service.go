@@ -151,6 +151,104 @@ func (s *ActionService) DeleteAction(ctx context.Context, id string) error {
 	return nil
 }
 
+// UpdateActionPriority updates the priority of an action and reorders other actions
+// Optimized to only update affected actions within the same execution point
+// Actions can only be reordered within their execution point group (before_request or after_request)
+func (s *ActionService) UpdateActionPriority(ctx context.Context, actionID string, newPriority int) error {
+	log := zerolog.Ctx(ctx)
+
+	// Get the action to update
+	action, err := s.repo.GetActionByID(ctx, actionID)
+	if err != nil {
+		log.Error().Err(err).Str("action_id", actionID).Msg("action not found")
+		return errors.New("action not found")
+	}
+
+	// Get all actions for the same project
+	allActions, err := s.repo.GetActionsByProjectID(ctx, action.ProjectID)
+	if err != nil {
+		log.Error().Err(err).Str("project_id", action.ProjectID).Msg("failed to get project actions")
+		return err
+	}
+
+	// Filter actions to only include those with the same execution_point
+	sameExecutionPointActions := make([]database.Action, 0)
+	for _, a := range allActions {
+		if a.ExecutionPoint == action.ExecutionPoint {
+			sameExecutionPointActions = append(sameExecutionPointActions, a)
+		}
+	}
+
+	// Validate new priority is within bounds of the same execution point group (1-based)
+	if newPriority < 1 || newPriority > len(sameExecutionPointActions) {
+		return errors.New("invalid priority: must be between 1 and " + strconv.Itoa(len(sameExecutionPointActions)) +
+			" for " + string(action.ExecutionPoint) + " actions")
+	}
+
+	oldPriority := action.Priority
+
+	// If priority hasn't changed, nothing to do
+	if oldPriority == newPriority {
+		log.Debug().
+			Str("action_id", actionID).
+			Int("priority", newPriority).
+			Msg("priority unchanged, skipping update")
+		return nil
+	}
+
+	// Collect only affected actions that need updating (within same execution point)
+	affectedActions := make([]*database.Action, 0)
+	affectedCount := 0
+
+	// Reorder priorities - only update affected actions in the same execution point
+	if oldPriority < newPriority {
+		// Moving down: shift actions up (decrease priority)
+		for i := range sameExecutionPointActions {
+			if sameExecutionPointActions[i].ID == actionID {
+				sameExecutionPointActions[i].Priority = newPriority
+				affectedActions = append(affectedActions, &sameExecutionPointActions[i])
+				affectedCount++
+			} else if sameExecutionPointActions[i].Priority > oldPriority && sameExecutionPointActions[i].Priority <= newPriority {
+				sameExecutionPointActions[i].Priority--
+				affectedActions = append(affectedActions, &sameExecutionPointActions[i])
+				affectedCount++
+			}
+		}
+	} else {
+		// Moving up: shift actions down (increase priority)
+		for i := range sameExecutionPointActions {
+			if sameExecutionPointActions[i].ID == actionID {
+				sameExecutionPointActions[i].Priority = newPriority
+				affectedActions = append(affectedActions, &sameExecutionPointActions[i])
+				affectedCount++
+			} else if sameExecutionPointActions[i].Priority >= newPriority && sameExecutionPointActions[i].Priority < oldPriority {
+				sameExecutionPointActions[i].Priority++
+				affectedActions = append(affectedActions, &sameExecutionPointActions[i])
+				affectedCount++
+			}
+		}
+	}
+
+	// Update only affected actions
+	for _, a := range affectedActions {
+		if err := s.repo.UpdateAction(ctx, a); err != nil {
+			log.Error().Err(err).Str("action_id", a.ID).Msg("failed to update action priority")
+			return errors.New("failed to update priorities")
+		}
+	}
+
+	log.Info().
+		Str("action_id", actionID).
+		Str("execution_point", string(action.ExecutionPoint)).
+		Int("old_priority", oldPriority).
+		Int("new_priority", newPriority).
+		Int("affected_actions", affectedCount).
+		Int("total_in_group", len(sameExecutionPointActions)).
+		Msg("action priority updated successfully")
+
+	return nil
+}
+
 // ExecuteBeforeRequestActions executes all enabled actions that run before the request
 func (s *ActionService) ExecuteBeforeRequestActions(ctx context.Context, projectID string, req *http.Request) error {
 	log := zerolog.Ctx(ctx)

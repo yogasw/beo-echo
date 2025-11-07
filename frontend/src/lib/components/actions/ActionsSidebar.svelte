@@ -1,12 +1,15 @@
 <script lang="ts">
 	import type { Action } from '$lib/types/Action';
+	import { toast } from '$lib/stores/toast';
 
 	export let actions: Action[];
-	export let onReorder: (fromIndex: number, toIndex: number) => void;
+	export let onReorder: (actionId: string, executionPoint: string, groupIndex: number) => void;
 	export let onActionClick: (actionId: string) => void;
 	export let activeActionId: string | null = null;
 
-	let draggedIndex: number | null = null;
+	let draggedActionId: string | null = null;
+	let draggedExecutionPoint: string | null = null;
+	let draggedGroupIndex: number | null = null;
 
 	// Group actions by execution point
 	$: beforeRequestActions = actions
@@ -17,26 +20,50 @@
 		.map((action, index) => ({ action, originalIndex: index }))
 		.filter(({ action }) => action.execution_point === 'after_request');
 
-	function handleDragStart(index: number) {
-		draggedIndex = index;
+	function handleDragStart(action: Action, groupIndex: number) {
+		draggedActionId = action.id;
+		draggedExecutionPoint = action.execution_point;
+		draggedGroupIndex = groupIndex;
 	}
 
 	function handleDragOver(event: DragEvent) {
 		event.preventDefault();
 	}
 
-	function handleDrop(event: DragEvent, dropIndex: number) {
+	function handleDrop(event: DragEvent, dropAction: Action, groupDropIndex: number) {
 		event.preventDefault();
-		if (draggedIndex === null || draggedIndex === dropIndex) {
-			draggedIndex = null;
+
+		if (draggedActionId === null || draggedExecutionPoint === null || draggedGroupIndex === null) {
 			return;
 		}
-		onReorder(draggedIndex, dropIndex);
-		draggedIndex = null;
+
+		// Prevent dropping across execution point boundaries
+		if (draggedExecutionPoint !== dropAction.execution_point) {
+			toast.error('Cannot move actions between Before Request and After Request groups');
+			draggedActionId = null;
+			draggedExecutionPoint = null;
+			draggedGroupIndex = null;
+			return;
+		}
+
+		// If dropping at the same position, do nothing
+		if (draggedGroupIndex === groupDropIndex) {
+			draggedActionId = null;
+			draggedExecutionPoint = null;
+			draggedGroupIndex = null;
+			return;
+		}
+
+		onReorder(draggedActionId, draggedExecutionPoint, groupDropIndex);
+		draggedActionId = null;
+		draggedExecutionPoint = null;
+		draggedGroupIndex = null;
 	}
 
 	function handleDragEnd() {
-		draggedIndex = null;
+		draggedActionId = null;
+		draggedExecutionPoint = null;
+		draggedGroupIndex = null;
 	}
 
 	function handleClick(actionId: string) {
@@ -89,16 +116,16 @@
 						<!-- svelte-ignore a11y-no-static-element-interactions -->
 						<div
 							draggable="true"
-							on:dragstart={() => handleDragStart(originalIndex)}
+							on:dragstart={() => handleDragStart(action, idx)}
 							on:dragover={handleDragOver}
-							on:drop={(e) => handleDrop(e, originalIndex)}
+							on:drop={(e) => handleDrop(e, action, idx)}
 							on:dragend={handleDragEnd}
 							on:click={() => handleClick(action.id)}
 							on:keydown={(e) => e.key === 'Enter' && handleClick(action.id)}
 							class="group px-2 py-2 rounded cursor-pointer transition-all duration-150 {activeActionId === action.id
 								? 'bg-blue-100 dark:bg-blue-900/40 border-l-2 border-blue-500'
 								: 'hover:bg-gray-200 dark:hover:bg-gray-700/50 border-l-2 border-transparent'}"
-							class:opacity-50={draggedIndex === originalIndex}
+							class:opacity-50={draggedActionId === action.id && draggedExecutionPoint === 'before_request'}
 							title="{action.name || action.type} - Click to jump"
 						>
 							<div class="flex items-center gap-2 min-w-0">
@@ -159,16 +186,16 @@
 						<!-- svelte-ignore a11y-no-static-element-interactions -->
 						<div
 							draggable="true"
-							on:dragstart={() => handleDragStart(originalIndex)}
+							on:dragstart={() => handleDragStart(action, idx)}
 							on:dragover={handleDragOver}
-							on:drop={(e) => handleDrop(e, originalIndex)}
+							on:drop={(e) => handleDrop(e, action, idx)}
 							on:dragend={handleDragEnd}
 							on:click={() => handleClick(action.id)}
 							on:keydown={(e) => e.key === 'Enter' && handleClick(action.id)}
 							class="group px-2 py-2 rounded cursor-pointer transition-all duration-150 {activeActionId === action.id
 								? 'bg-green-100 dark:bg-green-900/40 border-l-2 border-green-500'
 								: 'hover:bg-gray-200 dark:hover:bg-gray-700/50 border-l-2 border-transparent'}"
-							class:opacity-50={draggedIndex === originalIndex}
+							class:opacity-50={draggedActionId === action.id && draggedExecutionPoint === 'after_request'}
 							title="{action.name || action.type} - Click to jump"
 						>
 							<div class="flex items-center gap-2 min-w-0">

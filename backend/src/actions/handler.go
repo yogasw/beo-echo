@@ -81,7 +81,8 @@ func (h *ActionHandler) CreateAction(c *gin.Context) {
 	}
 
 	// Auto-set priority to last position (get max priority + 1)
-	priority := 0
+	// Priority is 1-based, so first action gets priority 1
+	priority := 1
 	existingActions, err := h.service.GetActionsByProject(c.Request.Context(), projectID)
 	if err == nil && len(existingActions) > 0 {
 		// Find max priority
@@ -341,6 +342,51 @@ func (h *ActionHandler) ToggleAction(c *gin.Context) {
 		"success": true,
 		"message": "Action toggled successfully",
 		"data":    action,
+	})
+}
+
+// UpdateActionPriorityRequest represents the request to update action priority
+// Priority is 1-based (starts from 1, not 0)
+type UpdateActionPriorityRequest struct {
+	Priority int `json:"priority" binding:"required,min=1"`
+}
+
+// UpdateActionPriority handles updating the priority of an action
+// This will automatically reorder other actions to maintain consistent priority ordering
+func (h *ActionHandler) UpdateActionPriority(c *gin.Context) {
+	log := zerolog.Ctx(c.Request.Context())
+
+	actionID := c.Param("id")
+	if actionID == "" {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"success": false,
+			"message": "action_id is required",
+		})
+		return
+	}
+
+	var req UpdateActionPriorityRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"success": false,
+			"message": "Invalid request: " + err.Error(),
+		})
+		return
+	}
+
+	// Update priority via service (which handles reordering)
+	if err := h.service.UpdateActionPriority(c.Request.Context(), actionID, req.Priority); err != nil {
+		log.Error().Err(err).Msg("failed to update action priority")
+		c.JSON(http.StatusBadRequest, gin.H{
+			"success": false,
+			"message": err.Error(),
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"success": true,
+		"message": "Action priority updated successfully",
 	})
 }
 
