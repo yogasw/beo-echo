@@ -56,8 +56,9 @@
 			fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace',
 			fontSize: 14,
 			minimap: {
-				enabled: true
-			}
+				enabled: false
+			},
+			scrollBeyondLastLine: false,
 		});
 
 		editor.onDidChangeModelContent(() => {
