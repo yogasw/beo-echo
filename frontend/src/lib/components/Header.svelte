@@ -17,6 +17,7 @@
 	let routesHover = false;
 	let logsHover = false;
 	let replayHover = false;
+	let actionsHover = false;
 	let configHover = false;
 
 	function handleTabClick(tab: string) {
@@ -169,6 +170,7 @@
 			on:mouseleave={() => replayHover = false}
 			disabled={!$selectedProject}
 			aria-label={!$selectedProject ? "Please select project" : "Switch to Replay tab"}
+			title="Replay Tab - Execute saved requests"
 		>
 			<div
 				class="w-12 aspect-square theme-text-primary p-3 rounded-full border-2 flex items-center justify-center"
@@ -184,6 +186,35 @@
 		<Tooltip
 			text={!$selectedProject ? "Select a project to manage Replays" : ""}
 			show={replayHover && !$selectedProject}
+			position="bottom"
+		/>
+	</div>
+	<div class="relative mr-4">
+		<button
+			class="group flex flex-col items-center"
+			class:opacity-50={!$selectedProject}
+			class:cursor-not-allowed={!$selectedProject}
+			on:click={() => $selectedProject && handleTabClick('actions')}
+			on:mouseenter={() => actionsHover = true}
+			on:mouseleave={() => actionsHover = false}
+			disabled={!$selectedProject}
+			aria-label={!$selectedProject ? "Please select project" : "Switch to Actions tab"}
+			title="Actions Tab - Modify requests and responses"
+		>
+			<div
+				class="w-12 aspect-square theme-text-primary p-3 rounded-full border-2 flex items-center justify-center"
+				class:border-amber-500={$selectedProject}
+				class:border-gray-400={!$selectedProject}
+				class:bg-blue-500={$activeTab === 'actions' && $selectedProject}
+				class:theme-bg-secondary={$activeTab !== 'actions' || !$selectedProject}
+			>
+				<i class="fas fa-bolt"></i>
+			</div>
+			<span class="text-xs mt-1 theme-text-primary">Actions</span>
+		</button>
+		<Tooltip
+			text={!$selectedProject ? "Select a project to manage Actions" : ""}
+			show={actionsHover && !$selectedProject}
 			position="bottom"
 		/>
 	</div>
