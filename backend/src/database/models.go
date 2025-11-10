@@ -385,10 +385,10 @@ func (uw *ReplayFolder) BeforeCreate(tx *gorm.DB) error {
 type ActionType string
 
 const (
-	ActionTypeReplaceText ActionType = "replace_text" // Find and replace text in request/response
+	ActionTypeReplaceText    ActionType = "replace_text"    // Find and replace text in request/response
+	ActionTypeRunJavascript  ActionType = "run_javascript"  // Execute JavaScript code to modify request/response
 	// Future action types can be added here:
 	// ActionTypeWebhook     ActionType = "webhook"      // Call external webhook
-	// ActionTypeScript      ActionType = "script"       // Execute custom script
 	// ActionTypeDelay       ActionType = "delay"        // Add delay
 )
 

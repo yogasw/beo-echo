@@ -1,6 +1,7 @@
 <script lang="ts">
 	import ActionTypeSelector from '$lib/components/actions/ActionTypeSelector.svelte';
 	import ReplaceTextActionForm from '$lib/components/actions/modules/ReplaceText/ReplaceTextActionForm.svelte';
+	import JavaScriptActionForm from '$lib/components/actions/modules/JavaScript/JavaScriptActionForm.svelte';
 	import type { Action } from '$lib/types/Action';
 
 	export let action: Action | null = null;
@@ -12,11 +13,8 @@
 
 	// Type-to-component mapping
 	const ActionForms = {
-		replace_text: ReplaceTextActionForm
-		// Future action types can be added here:
-		// add_header: AddHeaderActionForm,
-		// webhook: WebhookActionForm,
-		// delay: DelayActionForm,
+		replace_text: ReplaceTextActionForm,
+		run_javascript: JavaScriptActionForm
 	};
 
 	function handleSelectType(typeId: string) {

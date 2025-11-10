@@ -61,7 +61,7 @@ func (s *ActionService) CreateAction(ctx context.Context, action *database.Actio
 	}
 
 	// Validate action type
-	if action.Type != database.ActionTypeReplaceText {
+	if action.Type != database.ActionTypeReplaceText && action.Type != database.ActionTypeRunJavascript {
 		return errors.New("unsupported action type")
 	}
 
@@ -71,10 +71,15 @@ func (s *ActionService) CreateAction(ctx context.Context, action *database.Actio
 		return errors.New("invalid execution point")
 	}
 
-	// Validate config for replace_text action
+	// Validate config based on action type
 	if action.Type == database.ActionTypeReplaceText {
 		if err := s.modules.ValidateReplaceTextConfig(action.Config); err != nil {
 			log.Error().Err(err).Msg("invalid replace_text config")
+			return err
+		}
+	} else if action.Type == database.ActionTypeRunJavascript {
+		if err := s.modules.ValidateRunJavascriptConfig(action.Config); err != nil {
+			log.Error().Err(err).Msg("invalid run_javascript config")
 			return err
 		}
 	}
@@ -115,10 +120,17 @@ func (s *ActionService) UpdateAction(ctx context.Context, action *database.Actio
 	}
 
 	// Validate config if it changed
-	if action.Type == database.ActionTypeReplaceText && action.Config != existing.Config {
-		if err := s.modules.ValidateReplaceTextConfig(action.Config); err != nil {
-			log.Error().Err(err).Msg("invalid replace_text config")
-			return err
+	if action.Config != existing.Config {
+		if action.Type == database.ActionTypeReplaceText {
+			if err := s.modules.ValidateReplaceTextConfig(action.Config); err != nil {
+				log.Error().Err(err).Msg("invalid replace_text config")
+				return err
+			}
+		} else if action.Type == database.ActionTypeRunJavascript {
+			if err := s.modules.ValidateRunJavascriptConfig(action.Config); err != nil {
+				log.Error().Err(err).Msg("invalid run_javascript config")
+				return err
+			}
 		}
 	}
 
@@ -318,6 +330,8 @@ func (s *ActionService) executeAction(ctx context.Context, action *database.Acti
 	switch action.Type {
 	case database.ActionTypeReplaceText:
 		return s.modules.ExecuteReplaceTextAction(action, req, resp)
+	case database.ActionTypeRunJavascript:
+		return s.modules.ExecuteRunJavascriptAction(action, req, resp)
 	default:
 		return errors.New("unsupported action type: " + string(action.Type))
 	}

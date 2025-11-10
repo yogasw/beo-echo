@@ -4,7 +4,10 @@
       "Bash(go test:*)",
       "Bash(npx tsc:*)",
       "Bash(go build:*)",
-      "mcp__ide__getDiagnostics"
+      "mcp__ide__getDiagnostics",
+      "Bash(go get:*)",
+      "Bash(go mod tidy:*)",
+      "Bash(npm run build:*)"
     ],
     "deny": [],
     "ask": []

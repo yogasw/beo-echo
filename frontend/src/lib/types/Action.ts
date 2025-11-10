@@ -1,6 +1,6 @@
 // Action types and interfaces for the Actions feature
 
-export type ActionType = 'replace_text' | 'add_header' | 'webhook' | 'delay';
+export type ActionType = 'replace_text' | 'run_javascript';
 
 export type ExecutionPoint = 'before_request' | 'after_request';
 
@@ -46,6 +46,11 @@ export interface ReplaceTextConfig {
 	replacement: string;
 	use_regex: boolean;
 	header_key?: string; // Required for header targets
+}
+
+// JavaScript Action Config
+export interface JavaScriptConfig {
+	script: string;
 }
 
 // API Request/Response Types

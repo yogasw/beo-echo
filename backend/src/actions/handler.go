@@ -411,31 +411,14 @@ func (h *ActionHandler) GetActionTypes(c *gin.Context) {
 			Category:    "Transform",
 			Fields:      []string{"target", "pattern", "replacement", "use_regex", "header_key"},
 		},
-		// Future action types can be added here:
-		// {
-		// 	ID:          "add_header",
-		// 	Name:        "Add Header",
-		// 	Description: "Add or modify HTTP headers",
-		// 	Icon:        "fa-plus-circle",
-		// 	Category:    "Headers",
-		// 	Fields:      []string{"header_name", "header_value", "overwrite"},
-		// },
-		// {
-		// 	ID:          "webhook",
-		// 	Name:        "Call Webhook",
-		// 	Description: "Send HTTP request to external webhook URL",
-		// 	Icon:        "fa-share-square",
-		// 	Category:    "Integration",
-		// 	Fields:      []string{"url", "method", "headers", "body"},
-		// },
-		// {
-		// 	ID:          "delay",
-		// 	Name:        "Add Delay",
-		// 	Description: "Introduce artificial delay in request processing",
-		// 	Icon:        "fa-clock",
-		// 	Category:    "Testing",
-		// 	Fields:      []string{"delay_ms", "jitter"},
-		// },
+		{
+			ID:          "run_javascript",
+			Name:        "Run JavaScript",
+			Description: "Execute custom JavaScript code to modify request or response data",
+			Icon:        "fa-code",
+			Category:    "Transform",
+			Fields:      []string{"script"},
+		},
 	}
 
 	c.JSON(http.StatusOK, gin.H{

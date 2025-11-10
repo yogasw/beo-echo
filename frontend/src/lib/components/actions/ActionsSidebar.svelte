@@ -1,6 +1,7 @@
 <script lang="ts">
 	import type { Action } from '$lib/types/Action';
 	import { toast } from '$lib/stores/toast';
+	import { getActionTypeInfo } from '$lib/utils/actionTypeUtils';
 
 	export let actions: Action[];
 	export let onReorder: (actionId: string, executionPoint: string, groupIndex: number) => void;
@@ -69,17 +70,6 @@
 	function handleClick(actionId: string) {
 		onActionClick(actionId);
 	}
-
-	// Get action type icon
-	function getActionIcon(type: string): string {
-		const icons: Record<string, string> = {
-			replace_text: 'fa-exchange-alt',
-			add_header: 'fa-plus-circle',
-			webhook: 'fa-webhook',
-			delay: 'fa-clock'
-		};
-		return icons[type] || 'fa-bolt';
-	}
 </script>
 
 <div class="w-64 theme-bg-secondary border-l theme-border flex flex-col h-full overflow-hidden">
@@ -113,6 +103,7 @@
 				<!-- Action Items -->
 				<div class="space-y-1">
 					{#each beforeRequestActions as { action, originalIndex }, idx (action.id)}
+					{@const typeInfo = getActionTypeInfo(action.type)}
 						<!-- svelte-ignore a11y-no-static-element-interactions -->
 						<div
 							draggable="true"
@@ -129,7 +120,7 @@
 							title="{action.name || action.type} - Click to jump"
 						>
 							<div class="flex items-center gap-2 min-w-0">
-								<i class="fas {getActionIcon(action.type)} text-xs theme-text-secondary flex-shrink-0"></i>
+								<i class="{typeInfo.iconClass} {typeInfo.icon} text-xs {typeInfo.color} flex-shrink-0"></i>
 								<span class="text-xs font-medium theme-text-primary truncate flex-1">
 									{action.name || action.type}
 								</span>
@@ -183,6 +174,7 @@
 				<!-- Action Items -->
 				<div class="space-y-1">
 					{#each afterRequestActions as { action, originalIndex }, idx (action.id)}
+						{@const typeInfo = getActionTypeInfo(action.type)}
 						<!-- svelte-ignore a11y-no-static-element-interactions -->
 						<div
 							draggable="true"
@@ -199,7 +191,7 @@
 							title="{action.name || action.type} - Click to jump"
 						>
 							<div class="flex items-center gap-2 min-w-0">
-								<i class="fas {getActionIcon(action.type)} text-xs theme-text-secondary flex-shrink-0"></i>
+								<i class="{typeInfo.iconClass} {typeInfo.icon} text-xs {typeInfo.color} flex-shrink-0"></i>
 								<span class="text-xs font-medium theme-text-primary truncate flex-1">
 									{action.name || action.type}
 								</span>
