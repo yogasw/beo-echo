@@ -1,4 +1,3 @@
-
 # Beo Echo
 
 Beo Echo is a powerful API mocking service with a robust Golang backend and sleek Svelte frontend. It serves as a comprehensive control panel for creating, managing, and monitoring mock APIs and request forwarding, similar to popular tools like Beeceptor and Mockoon.
@@ -98,6 +97,7 @@ Choose your preferred visual experience:
 
 ### 🔐 Login Page
 ![Login Page](./images/login.png)
+[![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2Fyogasw%2Fbeo-echo.svg?type=shield)](https://app.fossa.com/projects/git%2Bgithub.com%2Fyogasw%2Fbeo-echo?ref=badge_shield)
 
 ### 📊 Logs Tab
 ![Logs Tab](./images/logs.png)
@@ -248,3 +248,7 @@ Based on the existing components, follow these established patterns:
 - Stack elements vertically on small screens
 - Use responsive grids: `grid-cols-1 md:grid-cols-2`
 - Test on various screen sizes
+
+
+## License
+[![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2Fyogasw%2Fbeo-echo.svg?type=large)](https://app.fossa.com/projects/git%2Bgithub.com%2Fyogasw%2Fbeo-echo?ref=badge_large)
