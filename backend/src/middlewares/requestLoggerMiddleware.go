@@ -37,6 +37,7 @@ func (w bodyWriter) Write(b []byte) (int, error) {
 // RequestLoggerMiddleware logs each HTTP request and response
 func RequestLoggerMiddleware(db *gorm.DB) gin.HandlerFunc {
 	return func(c *gin.Context) {
+		l := log.With().Str("func", "middlewares.RequestLoggerMiddleware").Logger()
 		start := time.Now()
 
 		// Clone request body
@@ -68,7 +69,14 @@ func RequestLoggerMiddleware(db *gorm.DB) gin.HandlerFunc {
 		if projectID == nil || projectID == "" || path == nil {
 			return
 		}
-		id := uuid.New().String()
+
+		var id string
+		requestId := c.GetString("request_id")
+		if requestId != "" {
+			id = requestId
+		} else {
+			id = uuid.New().String()
+		}
 
 		// Get response body - prefer raw response from handler context
 		var responseBody string
@@ -115,12 +123,12 @@ func RequestLoggerMiddleware(db *gorm.DB) gin.HandlerFunc {
 
 		entry, err := json.Marshal(logEntry)
 		if err != nil {
-			log.Error().Err(err).Msg("Failed to marshal log entry to JSON")
+			l.Error().Err(err).Msg("Failed to marshal log entry to JSON")
 		} else {
 			md5Hash := utils.HashMD5(string(entry))
 			logHash, errJwt := auth.GenerateJWTFromString(md5Hash)
 			if errJwt != nil {
-				log.Error().Err(errJwt).Msg("Failed to generate JWT from MD5 hash")
+				l.Error().Err(errJwt).Msg("Failed to generate JWT from MD5 hash")
 			}
 			logEntry.LogsHash = logHash
 		}
@@ -133,7 +141,7 @@ func RequestLoggerMiddleware(db *gorm.DB) gin.HandlerFunc {
 		// Check if auto-save is enabled
 		autoSaveEnabled, err := systemConfig.GetSystemConfigWithType[bool](systemConfig.AUTO_SAVE_LOGS_IN_DB_ENABLED)
 		if err != nil {
-			log.Error().Err(err).Msg("Failed to get AUTO_SAVE_LOGS_IN_DB_ENABLED config")
+			l.Error().Err(err).Msg("Failed to get AUTO_SAVE_LOGS_IN_DB_ENABLED config")
 			return
 		}
 
@@ -141,7 +149,7 @@ func RequestLoggerMiddleware(db *gorm.DB) gin.HandlerFunc {
 			// Save to database
 			if err := db.Create(logEntry).Error; err != nil {
 				// Log error if saving to DB fails
-				log.Error().Err(err).
+				l.Error().Err(err).
 					Str("project_id", toString(projectID)).
 					Msg("Failed to save request log to database")
 			}

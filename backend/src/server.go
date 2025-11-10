@@ -31,6 +31,8 @@ import (
 	"beo-echo/backend/src/workspaces"
 
 	// New imports for auth and workspace management
+	actions "beo-echo/backend/src/actions"
+	actionsModules "beo-echo/backend/src/actions/modules"
 	aiModule "beo-echo/backend/src/ai"
 	authHandler "beo-echo/backend/src/auth/handler"
 	handlerLogs "beo-echo/backend/src/logs/handlers"
@@ -42,29 +44,34 @@ import (
 
 // SetupRouter creates and configures a new Gin router
 func SetupRouter() *gin.Engine {
-	// Create Gin router with default middleware
-	router := gin.Default()
+	// Create Gin router without default logger (using custom logger instead)
+	router := gin.New()
 
+	// Add recovery middleware to handle panics
+	router.Use(gin.Recovery())
+
+	// Middleware to log request IDs
+	router.Use(middlewares.LogRequestId())
 	// middleware to log requests to the database
 	router.Use(middlewares.RequestLoggerMiddleware(database.DB))
 
 	// Add request logging middleware
 	router.Use(func(c *gin.Context) {
 		// Start timer
-		startTime := time.Now()
+		// startTime := time.Now()
 
 		// Process request
 		c.Next()
 
-		// Log request details
-		log.Printf(
-			"[%s] %s %s %d %s",
-			c.Request.Method,
-			c.Request.URL.Path,
-			c.ClientIP(),
-			c.Writer.Status(),
-			time.Since(startTime),
-		)
+		// // Log request details
+		// log.Printf(
+		// 	"[%s] %s %s %d %s",
+		// 	c.Request.Method,
+		// 	c.Request.URL.Path,
+		// 	c.ClientIP(),
+		// 	c.Writer.Status(),
+		// 	time.Since(startTime),
+		// )
 	})
 
 	// Configure CORS
@@ -133,6 +140,12 @@ func SetupRouter() *gin.Engine {
 	aiService := aiModule.NewAIService()
 	aiHandler := aiModule.NewAIHandler(aiService)
 
+	// Initialize action service and handler
+	actionRepo := repositories.NewActionRepository(database.DB)
+	actionModules := actionsModules.NewActionModules()
+	actionService := actions.NewActionService(actionRepo, actionModules)
+	actionHandler := actions.NewActionHandler(actionService)
+
 	// Authentication routes
 	router.POST("/api/auth/login", authHandler.LoginHandler)
 	router.POST("/api/auth/refresh", authHandler.RefreshTokenHandler)
@@ -146,6 +159,8 @@ func SetupRouter() *gin.Engine {
 	apiGroup := router.Group("/api")
 	apiGroup.Use(middlewares.JWTAuthMiddleware())
 	{
+		// Action types endpoint (not project-specific)
+		apiGroup.GET("/action-types", actionHandler.GetActionTypes)
 		// Owner-only system configuration routes
 		ownerGroup := apiGroup.Group("")
 		ownerGroup.Use(middlewares.OwnerOnlyMiddleware())
@@ -273,6 +288,15 @@ func SetupRouter() *gin.Engine {
 				projectRoutes.POST("/replays/execute", replayHandler.ExecuteReplayHandler)
 				projectRoutes.DELETE("/replays/:replayId", replayHandler.DeleteReplayHandler)
 				projectRoutes.GET("/replays/:replayId/logs", replayHandler.GetReplayLogsHandler)
+
+				// Action management
+				projectRoutes.GET("/actions", actionHandler.GetProjectActions)
+				projectRoutes.POST("/actions", actionHandler.CreateAction)
+				projectRoutes.GET("/actions/:id", actionHandler.GetAction)
+				projectRoutes.PUT("/actions/:id", actionHandler.UpdateAction)
+				projectRoutes.DELETE("/actions/:id", actionHandler.DeleteAction)
+				projectRoutes.POST("/actions/:id/toggle", actionHandler.ToggleAction)
+				projectRoutes.PATCH("/actions/:id/priority", actionHandler.UpdateActionPriority)
 
 			}
 		}
