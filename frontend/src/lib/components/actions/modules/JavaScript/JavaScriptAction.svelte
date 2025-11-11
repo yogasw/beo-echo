@@ -186,8 +186,10 @@ if (response) {
 			<i class="fas fa-shield-alt text-gray-500 dark:text-gray-400 text-sm mt-0.5"></i>
 			<div class="text-xs">
 				<div class="font-semibold theme-text-primary mb-1">Sandboxed Environment</div>
-				<div class="theme-text-secondary">
-					JavaScript code runs in a secure sandbox. Network requests and file system access are disabled. Scripts timeout after 5 seconds.
+				<div class="theme-text-secondary space-y-1">
+					<div>JavaScript code runs in a secure sandbox with ECMAScript 5.1 support.</div>
+					<div><strong>Limitations:</strong> No async/await, arrow functions (=&gt;), let/const, template literals, or other ES6+ features.</div>
+					<div>Network requests and file system access are disabled. Scripts timeout after 5 seconds.</div>
 				</div>
 			</div>
 		</div>
