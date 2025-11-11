@@ -146,3 +146,53 @@ func TestExecuteRunJavascriptAction_ScriptError(t *testing.T) {
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "script execution failed")
 }
+
+func TestExecuteRunJavascriptAction_InfiniteLoop_Timeout(t *testing.T) {
+	m := NewActionModules()
+
+	// Create an infinite loop script
+	script := `while(true) { var x = 1; }`
+
+	configJSON := fmt.Sprintf(`{"script":"%s"}`, script)
+
+	action := &database.Action{
+		Type:           database.ActionTypeRunJavascript,
+		ExecutionPoint: database.ExecutionPointBeforeRequest,
+		Config:         configJSON,
+	}
+
+	req := &http.Request{
+		Method: "GET",
+		Header: make(http.Header),
+		URL:    &url.URL{Path: "/test"},
+	}
+
+	err := m.ExecuteRunJavascriptAction(action, req, nil)
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "timeout")
+}
+
+func TestExecuteRunJavascriptAction_InfiniteLoop_ForLoop_Timeout(t *testing.T) {
+	m := NewActionModules()
+
+	// Create an infinite for loop script
+	script := `for(var i = 0; i >= 0; i++) { var x = i; }`
+
+	configJSON := fmt.Sprintf(`{"script":"%s"}`, script)
+
+	action := &database.Action{
+		Type:           database.ActionTypeRunJavascript,
+		ExecutionPoint: database.ExecutionPointBeforeRequest,
+		Config:         configJSON,
+	}
+
+	req := &http.Request{
+		Method: "GET",
+		Header: make(http.Header),
+		URL:    &url.URL{Path: "/test"},
+	}
+
+	err := m.ExecuteRunJavascriptAction(action, req, nil)
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "timeout")
+}
