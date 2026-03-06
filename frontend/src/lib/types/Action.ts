@@ -1,6 +1,6 @@
 // Action types and interfaces for the Actions feature
 
-export type ActionType = 'replace_text' | 'run_javascript';
+export type ActionType = 'replace_text' | 'run_javascript' | 'run_starlark';
 
 export type ExecutionPoint = 'before_request' | 'after_request';
 
@@ -50,6 +50,11 @@ export interface ReplaceTextConfig {
 
 // JavaScript Action Config
 export interface JavaScriptConfig {
+	script: string;
+}
+
+// Starlark Action Config
+export interface StarlarkConfig {
 	script: string;
 }
 

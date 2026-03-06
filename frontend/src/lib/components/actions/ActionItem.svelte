@@ -1,7 +1,8 @@
 <script lang="ts">
-	import type { Action, ReplaceTextConfig, JavaScriptConfig } from '$lib/types/Action';
+	import type { Action, ReplaceTextConfig, JavaScriptConfig, StarlarkConfig } from '$lib/types/Action';
 	import ReplacetextItem from './modules/ReplaceText/ReplacetextItem.svelte';
 	import JavaScriptItem from './modules/JavaScript/JavaScriptItem.svelte';
+	import StarlarkItem from './modules/Starlark/StarlarkItem.svelte';
 	import { getActionTypeInfo } from '$lib/utils/actionTypeUtils';
 
 	export let action: Action;
@@ -9,7 +10,7 @@
 	export let onDelete: () => void;
 	export let onToggle: () => void;
 
-	let config: ReplaceTextConfig | JavaScriptConfig | null = null;
+	let config: ReplaceTextConfig | JavaScriptConfig | StarlarkConfig | null = null;
 
 	// Parse config
 	$: {
@@ -110,6 +111,8 @@
 			<ReplacetextItem config={config as ReplaceTextConfig} />
 		{:else if action.type === 'run_javascript'}
 			<JavaScriptItem config={config as JavaScriptConfig} />
+		{:else if action.type === 'run_starlark'}
+			<StarlarkItem action={action} />
 		{:else}
 			<!-- Other action types: no preview (empty) -->
 			<div

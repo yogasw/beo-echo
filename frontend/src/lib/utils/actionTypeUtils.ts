@@ -30,6 +30,12 @@ export function getActionTypeInfo(type: ActionType): ActionTypeInfo {
 			icon: 'fa-js',
 			iconClass: 'fab', // Brand icon
 			color: 'text-yellow-500'
+		},
+		run_starlark: {
+			label: 'Run Starlark',
+			icon: 'fa-python',
+			iconClass: 'fab', // Brand icon
+			color: 'text-yellow-400'
 		}
 	};
 

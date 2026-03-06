@@ -61,7 +61,9 @@ func (s *ActionService) CreateAction(ctx context.Context, action *database.Actio
 	}
 
 	// Validate action type
-	if action.Type != database.ActionTypeReplaceText && action.Type != database.ActionTypeRunJavascript {
+	if action.Type != database.ActionTypeReplaceText &&
+		action.Type != database.ActionTypeRunJavascript &&
+		action.Type != database.ActionTypeRunStarlark {
 		return errors.New("unsupported action type")
 	}
 
@@ -80,6 +82,11 @@ func (s *ActionService) CreateAction(ctx context.Context, action *database.Actio
 	} else if action.Type == database.ActionTypeRunJavascript {
 		if err := s.modules.ValidateRunJavascriptConfig(action.Config); err != nil {
 			log.Error().Err(err).Msg("invalid run_javascript config")
+			return err
+		}
+	} else if action.Type == database.ActionTypeRunStarlark {
+		if err := s.modules.ValidateRunStarlarkConfig(action.Config); err != nil {
+			log.Error().Err(err).Msg("invalid run_starlark config")
 			return err
 		}
 	}
@@ -129,6 +136,11 @@ func (s *ActionService) UpdateAction(ctx context.Context, action *database.Actio
 		} else if action.Type == database.ActionTypeRunJavascript {
 			if err := s.modules.ValidateRunJavascriptConfig(action.Config); err != nil {
 				log.Error().Err(err).Msg("invalid run_javascript config")
+				return err
+			}
+		} else if action.Type == database.ActionTypeRunStarlark {
+			if err := s.modules.ValidateRunStarlarkConfig(action.Config); err != nil {
+				log.Error().Err(err).Msg("invalid run_starlark config")
 				return err
 			}
 		}
@@ -332,6 +344,8 @@ func (s *ActionService) executeAction(ctx context.Context, action *database.Acti
 		return s.modules.ExecuteReplaceTextAction(action, req, resp)
 	case database.ActionTypeRunJavascript:
 		return s.modules.ExecuteRunJavascriptAction(action, req, resp)
+	case database.ActionTypeRunStarlark:
+		return s.modules.ExecuteRunStarlarkAction(action, req, resp)
 	default:
 		return errors.New("unsupported action type: " + string(action.Type))
 	}

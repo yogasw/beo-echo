@@ -419,6 +419,14 @@ func (h *ActionHandler) GetActionTypes(c *gin.Context) {
 			Category:    "Transform",
 			Fields:      []string{"script"},
 		},
+		{
+			ID:          "run_starlark",
+			Name:        "Run Starlark",
+			Description: "Execute Python-like Starlark code with built-in JSON and HTTP support in a secure sandbox",
+			Icon:        "fa-python",
+			Category:    "Transform",
+			Fields:      []string{"script"},
+		},
 	}
 
 	c.JSON(http.StatusOK, gin.H{

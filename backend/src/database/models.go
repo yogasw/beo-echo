@@ -387,6 +387,7 @@ type ActionType string
 const (
 	ActionTypeReplaceText   ActionType = "replace_text"   // Find and replace text in request/response
 	ActionTypeRunJavascript ActionType = "run_javascript" // Execute JavaScript code to modify request/response
+	ActionTypeRunStarlark   ActionType = "run_starlark"   // Execute Starlark (Python-like) code to modify request/response
 )
 
 // ExecutionPoint defines when the action should be executed

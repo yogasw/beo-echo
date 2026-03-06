@@ -2,6 +2,7 @@
 	import ActionTypeSelector from '$lib/components/actions/ActionTypeSelector.svelte';
 	import ReplaceTextActionForm from '$lib/components/actions/modules/ReplaceText/ReplaceTextActionForm.svelte';
 	import JavaScriptActionForm from '$lib/components/actions/modules/JavaScript/JavaScriptActionForm.svelte';
+	import StarlarkActionForm from '$lib/components/actions/modules/Starlark/StarlarkActionForm.svelte';
 	import type { Action } from '$lib/types/Action';
 
 	export let action: Action | null = null;
@@ -14,7 +15,8 @@
 	// Type-to-component mapping
 	const ActionForms = {
 		replace_text: ReplaceTextActionForm,
-		run_javascript: JavaScriptActionForm
+		run_javascript: JavaScriptActionForm,
+		run_starlark: StarlarkActionForm
 	};
 
 	function handleSelectType(typeId: string) {
