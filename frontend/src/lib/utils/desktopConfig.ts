@@ -3,7 +3,7 @@ import { browser } from '$app/environment';
 
 // Check if running in desktop mode (Wails)
 export const isDesktopMode = () => {
-  return browser && typeof window !== 'undefined' && window.wails !== undefined;
+  return browser && typeof window !== 'undefined' && (window as any).wails !== undefined;
 };
 
 // Get appropriate API base URL based on environment
