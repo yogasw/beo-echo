@@ -354,3 +354,10 @@ jobs:
           body: ${{ steps.release_info.outputs.summary }}
           draft: false
           prerelease: false
+
+  trigger-deployment:
+      runs-on: ubuntu-latest
+      steps:
+        - name: Trigger Deployment 
+          run: |
+            curl -X POST -d {} ${{ secrets.BUILD_HOOK }}
