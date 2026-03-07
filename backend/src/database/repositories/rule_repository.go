@@ -58,10 +58,10 @@ func (r *ruleRepository) CreateRule(rule *database.MockRule) error {
 
 	// Validate operator
 	switch rule.Operator {
-	case "equals", "contains", "regex":
+	case "equals", "contains", "regex", "has_property", "matches_type", "matches_schema":
 		// Valid operators
 	default:
-		return fmt.Errorf("invalid operator: %s, must be equals, contains, or regex", rule.Operator)
+		return fmt.Errorf("invalid operator: %s, must be equals, contains, regex, has_property, matches_type, or matches_schema", rule.Operator)
 	}
 
 	// Create rule
@@ -70,6 +70,13 @@ func (r *ruleRepository) CreateRule(rule *database.MockRule) error {
 
 // UpdateRule updates an existing rule
 func (r *ruleRepository) UpdateRule(rule *database.MockRule) error {
+	// Validate operator
+	switch rule.Operator {
+	case "equals", "contains", "regex", "has_property", "matches_type", "matches_schema":
+		// Valid operators
+	default:
+		return fmt.Errorf("invalid operator: %s, must be equals, contains, regex, has_property, matches_type, or matches_schema", rule.Operator)
+	}
 	return r.db.Save(rule).Error
 }
 

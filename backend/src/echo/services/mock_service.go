@@ -120,7 +120,12 @@ func (s *MockService) handleMockMode(ctx context.Context, project *database.Proj
 	}
 
 	// Select response based on ResponseMode
-	response := selectResponseWithEndpoint(endpoint.ID, responses, endpoint.ResponseMode, req)
+	response, ruleErr := selectResponseWithEndpoint(endpoint.ID, responses, endpoint.ResponseMode, req)
+	if ruleErr != nil {
+		// Rule mismatch explicitly
+		return createErrorResponse(http.StatusBadRequest, ruleErr.Error()), nil, database.ModeMock, false
+	}
+
 	if response == nil {
 		// No valid response found based on rules
 		return createDefaultJSONResponse(systemConfig.DEFAULT_RESPONSE_NO_RESPONSE_CONFIGURED), nil, database.ModeMock, false
@@ -154,7 +159,12 @@ func (s *MockService) handleProxyMode(ctx context.Context, project *database.Pro
 		responses, err := s.Repo.FindResponsesByEndpointID(endpoint.ID)
 		if err == nil && len(responses) > 0 {
 			// Select response based on ResponseMode
-			response := selectResponseWithEndpoint(endpoint.ID, responses, endpoint.ResponseMode, req)
+			response, ruleErr := selectResponseWithEndpoint(endpoint.ID, responses, endpoint.ResponseMode, req)
+			if ruleErr != nil {
+				// We don't proxy if it explicitly hit an endpoint but rules mismatched: we fail fast
+				return createErrorResponse(http.StatusBadRequest, ruleErr.Error()), false, nil
+			}
+
 			if response != nil {
 				// Apply delay with proper priority: Response > Endpoint > Project
 				s.applyDelay(project, endpoint, response)
@@ -295,14 +305,22 @@ func executeProxyRequest(ctx context.Context, targetURLString, method, pathStr, 
 // Helper functions
 
 // selectResponseWithEndpoint selects a response based on mode and rules with endpoint ID for round-robin
-func selectResponseWithEndpoint(endpointID string, responses []database.MockResponse, mode string, req *http.Request) *database.MockResponse {
+func selectResponseWithEndpoint(endpointID string, responses []database.MockResponse, mode string, req *http.Request) (*database.MockResponse, error) {
 	// Filter responses by rules first
 	validResponses := filterResponsesByRules(responses, req)
+
+	// If the endpoint HAS responses with rules, but none matched, AND there's no fallback:
+	// We want to differentiate between "no rules match" vs "no responses available"
+	hasRulesConfigured := false
 	var fallbackResponses *database.MockResponse
+
 	if len(validResponses) == 0 {
 		// If no responses match rules, fallback to all responses
 		// search fallback responses
 		for _, resp := range responses {
+			if len(resp.Rules) > 0 {
+				hasRulesConfigured = true
+			}
 
 			if len(resp.Rules) == 0 {
 				validResponses = append(validResponses, resp)
@@ -316,9 +334,12 @@ func selectResponseWithEndpoint(endpointID string, responses []database.MockResp
 	}
 
 	if len(validResponses) == 0 && fallbackResponses == nil {
-		return nil
+		if hasRulesConfigured {
+			return nil, fmt.Errorf("rules mismatched: Request does not meet specified rule conditions")
+		}
+		return nil, nil
 	} else if len(validResponses) == 0 && fallbackResponses != nil {
-		return fallbackResponses
+		return fallbackResponses, nil
 	}
 
 	// Sort by priority (higher is more important)
@@ -328,17 +349,17 @@ func selectResponseWithEndpoint(endpointID string, responses []database.MockResp
 	switch strings.ToLower(mode) {
 	case "static":
 		// Return highest priority
-		return &validResponses[0]
+		return &validResponses[0], nil
 	case "random":
 		// Return random response
-		return &validResponses[rand.Intn(len(validResponses))]
+		return &validResponses[rand.Intn(len(validResponses))], nil
 	case "round_robin":
 		// Use the actual endpoint ID for round-robin selection
 		response := getNextRoundRobinResponse(endpointID, validResponses)
-		return &response
+		return &response, nil
 	default:
 		// Default to random
-		return &validResponses[rand.Intn(len(validResponses))]
+		return &validResponses[rand.Intn(len(validResponses))], nil
 	}
 }
 
@@ -449,16 +470,29 @@ func matchBodyRule(rule database.MockRule, req *http.Request) bool {
 	var bodyData map[string]interface{}
 	if err := json.Unmarshal(bodyBytes, &bodyData); err == nil {
 		// Try to find nested value
-		if value := getNestedValue(bodyData, rule.Key); value != "" {
-			return matchRuleValue(rule.Operator, value, rule.Value)
+		value, exists := getNestedValueEx(bodyData, rule.Key)
+
+		// Handle has_property operator specifically logic
+		if strings.ToLower(rule.Operator) == "has_property" {
+			return exists // matchRuleValue will not be used
+		}
+
+		if exists {
+			// For schema or type matches, we need the raw interface
+			return matchRuleValueTyped(rule.Operator, value, rule.Value)
 		}
 	}
 
-	// Fallback to treating body as string
+	// Basic operators on full string body if not JSON or property not found
+	// Handle has_property gracefully if not JSON
+	if strings.ToLower(rule.Operator) == "has_property" {
+		return false
+	}
+
 	return matchRuleValue(rule.Operator, string(bodyBytes), rule.Value)
 }
 
-// matchRuleValue compares values based on operator
+// matchRuleValue compares string values based on operator
 func matchRuleValue(operator, actual, expected string) bool {
 	switch strings.ToLower(operator) {
 	case "equals":
@@ -470,39 +504,179 @@ func matchRuleValue(operator, actual, expected string) bool {
 	}
 }
 
-// getNestedValue extracts a value from nested JSON using dot notation
-// e.g., "user.address.city" => data["user"]["address"]["city"]
-func getNestedValue(data map[string]interface{}, key string) string {
-	parts := strings.Split(key, ".")
-	var current interface{} = data
-
-	for _, part := range parts {
-		// Try to navigate the object
-		switch v := current.(type) {
-		case map[string]interface{}:
-			current = v[part]
-		default:
-			return "" // Can't navigate further
-		}
-
-		if current == nil {
-			return ""
-		}
+// matchRuleValueTyped handles advanced type checks and schemas
+func matchRuleValueTyped(operator string, actual interface{}, expected string) bool {
+	switch strings.ToLower(operator) {
+	case "matches_type":
+		return matchType(actual, expected)
+	case "matches_schema":
+		return matchSchema(actual, expected)
+	case "equals":
+		// convert actual to string for equals
+		strVal := interfaceToString(actual)
+		return strVal == expected
+	case "contains":
+		// convert actual to string for contains
+		strVal := interfaceToString(actual)
+		return strings.Contains(strVal, expected)
+	default:
+		strVal := interfaceToString(actual)
+		return strVal == expected
 	}
+}
 
-	// Convert result to string
-	switch v := current.(type) {
+// interfaceToString converts interface to string
+func interfaceToString(val interface{}) string {
+	switch v := val.(type) {
 	case string:
 		return v
 	case bool, int, float64:
 		return fmt.Sprintf("%v", v)
+	case nil:
+		return ""
 	default:
-		bytes, err := json.Marshal(current)
+		bytes, err := json.Marshal(v)
 		if err != nil {
 			return ""
 		}
 		return string(bytes)
 	}
+}
+
+// matchType checks if the underlying interface matches the expected type string
+func matchType(actual interface{}, expectedType string) bool {
+	expectedType = strings.ToLower(strings.TrimSpace(expectedType))
+	switch expectedType {
+	case "string":
+		_, ok := actual.(string)
+		return ok
+	case "number":
+		_, ok := actual.(float64) // JSON unmarshals numbers to float64
+		return ok
+	case "boolean":
+		_, ok := actual.(bool)
+		return ok
+	case "array":
+		_, ok := actual.([]interface{})
+		return ok
+	case "object":
+		_, ok := actual.(map[string]interface{})
+		return ok
+	case "null":
+		return actual == nil
+	default:
+		return false
+	}
+}
+
+// matchSchema deeply compares actual JSON structure with an expected schema structure
+func matchSchema(actual interface{}, expectedSchemaStr string) bool {
+	var expectedSchema interface{}
+	if err := json.Unmarshal([]byte(expectedSchemaStr), &expectedSchema); err != nil {
+		return false // Invalid schema JSON provided
+	}
+
+	return compareStructures(actual, expectedSchema)
+}
+
+// compareStructures recursively validates if actual matches the expected schema
+func compareStructures(actual, expected interface{}) bool {
+	// If expected is a map/object
+	expectedMap, isExpectedMap := expected.(map[string]interface{})
+	if isExpectedMap {
+		actualMap, isActualMap := actual.(map[string]interface{})
+		if !isActualMap {
+			return false
+		}
+		// Verify all keys in expected map exist and match in actual map
+		for k, expV := range expectedMap {
+			actV, exists := actualMap[k]
+			if !exists {
+				return false
+			}
+			if !compareStructures(actV, expV) {
+				return false
+			}
+		}
+		return true
+	}
+
+	// If expected is an array
+	expectedArr, isExpectedArr := expected.([]interface{})
+	if isExpectedArr {
+		actualArr, isActualArr := actual.([]interface{})
+		if !isActualArr {
+			return false
+		}
+		// Require array lengths to match? Or just elements to match?
+		// For schema validation, let's require lengths matching for strictness
+		if len(actualArr) != len(expectedArr) {
+			return false
+		}
+		for i, expV := range expectedArr {
+			if !compareStructures(actualArr[i], expV) {
+				return false
+			}
+		}
+		return true
+	}
+
+	// Primitive comparison
+	// For schema validation, we compare the type of the value
+	if expected == nil {
+		return actual == nil
+	}
+
+	// Compare types of primitives
+	switch expected.(type) {
+	case string:
+		_, ok := actual.(string)
+		return ok
+	case float64:
+		_, ok := actual.(float64)
+		return ok
+	case bool:
+		_, ok := actual.(bool)
+		return ok
+	}
+
+	return false
+}
+
+// getNestedValue extracts a string value from nested JSON using dot notation
+func getNestedValue(data map[string]interface{}, key string) string {
+	val, _ := getNestedValueEx(data, key)
+	return interfaceToString(val)
+}
+
+// getNestedValueEx extracts the raw interface value and a boolean indicating if it exists
+func getNestedValueEx(data map[string]interface{}, key string) (interface{}, bool) {
+	if key == "" {
+		return data, true // root object
+	}
+	parts := strings.Split(key, ".")
+	var current interface{} = data
+
+	for i, part := range parts {
+		// Try to navigate the object
+		switch v := current.(type) {
+		case map[string]interface{}:
+			val, exists := v[part]
+			if !exists {
+				return nil, false // key completely missing
+			}
+			current = val
+		default:
+			return nil, false // Can't navigate further
+		}
+
+		if current == nil && i < len(parts)-1 {
+			return nil, false // Intermediate object is null
+		}
+	}
+
+	return current, true
+
 }
 
 // createMockResponse builds an HTTP response from a mock response
