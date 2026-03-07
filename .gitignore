@@ -72,3 +72,4 @@ desktop/frontend/
 
 configs
 tmp/*
+backend/tmp/*
