@@ -206,7 +206,7 @@ jobs:
           git push origin v${{ steps.read_version.outputs.version }}
 
       - name: Create GitHub Release
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@a06a81a03ee405af7f2048a818ed3f03bbf83c7b # v2.5.0
         with:
           tag_name: v${{ steps.read_version.outputs.version }}
           name: ${{ steps.ai_summary.outputs.title }}
@@ -237,7 +237,7 @@ jobs:
           rm -f commit_log.txt
 
       - name: Create Pull Request to update CHANGELOG.md
-        uses: peter-evans/create-pull-request@v5
+        uses: peter-evans/create-pull-request@4e1beaa7521e8b457b572c090b25bd3db56bf1c5 # v5.0.3
         with:
           commit-message: "chore: update CHANGELOG.md for v${{ steps.read_version.outputs.version }}"
           title: "Update CHANGELOG.md for v${{ steps.read_version.outputs.version }}"
