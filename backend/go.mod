@@ -1,8 +1,6 @@
 module beo-echo/backend
 
-go 1.23.0
-
-toolchain go1.24.2
+go 1.26.1
 
 require (
 	github.com/dop251/goja v0.0.0-20251103141225-af2ceb9156d7
