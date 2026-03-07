@@ -3,9 +3,10 @@ package config
 const CADDY_DEFAULT_CONFIG = `{
 	# Global Caddy settings
 	admin off
+	auto_https off
 }
 
-{$PORT:80} {
+:{$PORT:80} {
 	# Log requests
 	log {
 		# output file /app/logs/caddy-access.log
