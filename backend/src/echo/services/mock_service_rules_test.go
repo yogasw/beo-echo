@@ -1,8 +1,10 @@
 package services
 
 import (
+	"io"
 	"net/http"
 	"net/url"
+	"strings"
 	"testing"
 
 	"beo-echo/backend/src/database"
@@ -230,5 +232,127 @@ func createTestRequest(method, urlStr string, headers map[string]string, queryPa
 		req.Header.Set(key, value)
 	}
 
+	return req
+}
+
+func TestMatchesRules_BodyJSON(t *testing.T) {
+	tests := []struct {
+		name     string
+		response database.MockResponse
+		req      *http.Request
+		expected bool
+	}{
+		{
+			name: "body has_property matches",
+			response: database.MockResponse{
+				RulesLogic: "and",
+				Rules: []database.MockRule{
+					{Type: "body", Key: "user.id", Operator: "has_property", Value: ""},
+				},
+			},
+			req:      createTestRequestWithBody("POST", "/test", `{"user":{"id":123,"name":"john"}}`),
+			expected: true,
+		},
+		{
+			name: "body has_property fails",
+			response: database.MockResponse{
+				RulesLogic: "and",
+				Rules: []database.MockRule{
+					{Type: "body", Key: "user.email", Operator: "has_property", Value: ""},
+				},
+			},
+			req:      createTestRequestWithBody("POST", "/test", `{"user":{"id":123,"name":"john"}}`),
+			expected: false,
+		},
+		{
+			name: "body matches_type string",
+			response: database.MockResponse{
+				RulesLogic: "and",
+				Rules: []database.MockRule{
+					{Type: "body", Key: "user.name", Operator: "matches_type", Value: "string"},
+				},
+			},
+			req:      createTestRequestWithBody("POST", "/test", `{"user":{"id":123,"name":"john"}}`),
+			expected: true,
+		},
+		{
+			name: "body matches_type number",
+			response: database.MockResponse{
+				RulesLogic: "and",
+				Rules: []database.MockRule{
+					{Type: "body", Key: "user.id", Operator: "matches_type", Value: "number"},
+				},
+			},
+			req:      createTestRequestWithBody("POST", "/test", `{"user":{"id":123,"name":"john"}}`),
+			expected: true,
+		},
+		{
+			name: "body matches_type array",
+			response: database.MockResponse{
+				RulesLogic: "and",
+				Rules: []database.MockRule{
+					{Type: "body", Key: "tags", Operator: "matches_type", Value: "array"},
+				},
+			},
+			req:      createTestRequestWithBody("POST", "/test", `{"tags":["a","b"]}`),
+			expected: true,
+		},
+		{
+			name: "body matches_schema valid",
+			response: database.MockResponse{
+				RulesLogic: "and",
+				Rules: []database.MockRule{
+					{Type: "body", Key: "", Operator: "matches_schema", Value: `{"user":{"id":0,"name":""}}`},
+				},
+			},
+			req:      createTestRequestWithBody("POST", "/test", `{"user":{"id":123,"name":"john"}}`),
+			expected: true, // structure matches
+		},
+		{
+			name: "body matches_schema invalid structure",
+			response: database.MockResponse{
+				RulesLogic: "and",
+				Rules: []database.MockRule{
+					{Type: "body", Key: "", Operator: "matches_schema", Value: `{"user":{"id":0,"email":""}}`},
+				},
+			},
+			req:      createTestRequestWithBody("POST", "/test", `{"user":{"id":123,"name":"john"}}`),
+			expected: false, // email missing in actual
+		},
+		{
+			name: "body matches_schema invalid type",
+			response: database.MockResponse{
+				RulesLogic: "and",
+				Rules: []database.MockRule{
+					{Type: "body", Key: "user", Operator: "matches_schema", Value: `{"id":0,"name":false}`}, // expecting boolean for name
+				},
+			},
+			req:      createTestRequestWithBody("POST", "/test", `{"user":{"id":123,"name":"john"}}`),
+			expected: false, // actual is string
+		},
+		{
+			name: "body matches_type invalid",
+			response: database.MockResponse{
+				RulesLogic: "and",
+				Rules: []database.MockRule{
+					{Type: "body", Key: "user", Operator: "matches_type", Value: `invalid_type`},
+				},
+			},
+			req:      createTestRequestWithBody("POST", "/test", `{"user":{"id":123,"name":"john"}}`),
+			expected: false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := matchesRules(tt.response, tt.req)
+			assert.Equal(t, tt.expected, result)
+		})
+	}
+}
+
+func createTestRequestWithBody(method, urlStr, bodyStr string) *http.Request {
+	req := createTestRequest(method, urlStr, nil, nil)
+	req.Body = io.NopCloser(strings.NewReader(bodyStr))
 	return req
 }
