@@ -5,7 +5,7 @@ const CADDY_DEFAULT_CONFIG = `{
 	admin off
 }
 
-:80 {
+{$PORT:80} {
 	# Log requests
 	log {
 		# output file /app/logs/caddy-access.log
