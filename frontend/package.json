@@ -35,6 +35,6 @@
   },
   "dependencies": {
     "@sveltejs/adapter-static": "^3.0.8",
-    "axios": "^1.9.0"
+    "axios": "^1.13.6"
   }
 }
