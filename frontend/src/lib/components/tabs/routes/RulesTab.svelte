@@ -165,6 +165,16 @@
 		if (localRules[index].operator === newOperator) return; // Prevent unnecessary updates
 
 		localRules[index].operator = newOperator;
+		
+		// Auto-clear or set default value based on new operator
+		if (newOperator === 'has_property') {
+			localRules[index].value = '';
+		} else if (newOperator === 'matches_type') {
+			localRules[index].value = 'string';
+		} else if (newOperator === 'matches_schema') {
+			localRules[index].value = '{\n  \n}';
+		}
+		
 		hasChanges = true;
 		localRules = localRules.slice();
 	}
@@ -528,16 +538,10 @@
 										type="text"
 										value={rule.key}
 										on:input={(e) => handleKeyChange(i, (e.target as HTMLInputElement).value)}
-										placeholder={rule.type === 'body' ? 'Not required for body rules' : 'Key name'}
-										disabled={rule.type === 'body'}
-										class="block w-full py-1 px-2 text-xs rounded bg-white dark:bg-gray-700 border {ThemeUtils.themeBorder()} {ThemeUtils.themeTextPrimary()} focus:ring-1 focus:ring-blue-500/50 focus:border-blue-500 {rule.type ===
-										'body'
-											? 'opacity-50 cursor-not-allowed'
-											: ''}"
+										placeholder={rule.type === 'body' && rule.operator === 'matches_schema' ? 'Optional (root schema if empty)' : 'Key name (e.g. user.id)'}
+										class="block w-full py-1 px-2 text-xs rounded bg-white dark:bg-gray-700 border {ThemeUtils.themeBorder()} {ThemeUtils.themeTextPrimary()} focus:ring-1 focus:ring-blue-500/50 focus:border-blue-500"
 										aria-label="Rule key"
-										title={rule.type === 'body'
-											? 'Key is not required for body rules'
-											: 'Enter the key name'}
+										title="Enter the key name"
 										bind:this={keyInputs[i]}
 									/>
 								</td>
@@ -552,29 +556,66 @@
 									>
 										<option value="equals">equals</option>
 										<option value="contains">contains</option>
+										{#if rule.type === 'body'}
+											<option value="has_property">has property</option>
+											<option value="matches_type">matches type</option>
+											<option value="matches_schema">matches schema</option>
+										{/if}
 									</select>
 								</td>
 								<td class="px-4 py-2 align-top">
 									<div class="flex items-center gap-2 w-full">
 										<div class="flex-1">
-											<input
-												type="text"
-												value={rule.value}
-												on:input={(e) => handleValueChange(i, (e.target as HTMLInputElement).value)}
-												placeholder="Value to match"
-												class="block w-full py-1 px-2 text-xs rounded bg-white dark:bg-gray-700 border {ThemeUtils.themeBorder()} {ThemeUtils.themeTextPrimary()} focus:ring-1 focus:ring-blue-500/50 focus:border-blue-500"
-												aria-label="Rule value"
-												bind:this={valueInputs[i]}
-												on:keydown={(e) => {
-													if (e.key === 'Enter') {
-														e.preventDefault();
-														if (i === localRules.length - 1) {
-															addRule();
+											{#if rule.operator === 'has_property'}
+												<input
+													type="text"
+													value=""
+													disabled
+													placeholder="Value not needed"
+													class="block w-full py-1 px-2 text-xs rounded bg-gray-100 dark:bg-gray-800 border {ThemeUtils.themeBorder()} {ThemeUtils.themeTextMuted()} opacity-50 cursor-not-allowed"
+												/>
+											{:else if rule.operator === 'matches_type'}
+												<select
+													value={rule.value || 'string'}
+													on:change={(e) => handleValueChange(i, (e.target as HTMLSelectElement).value)}
+													class="block w-full py-1 px-2 text-xs rounded bg-white dark:bg-gray-700 border {ThemeUtils.themeBorder()} {ThemeUtils.themeTextPrimary()} focus:ring-1 focus:ring-blue-500/50 focus:border-blue-500"
+												>
+													<option value="string">string</option>
+													<option value="number">number</option>
+													<option value="boolean">boolean</option>
+													<option value="array">array</option>
+													<option value="object">object</option>
+													<option value="null">null</option>
+												</select>
+											{:else if rule.operator === 'matches_schema'}
+												<textarea
+													value={rule.value}
+													on:input={(e) => handleValueChange(i, (e.target as HTMLTextAreaElement).value)}
+													placeholder='&lbrace;"type": "object", ...&rbrace;'
+													rows="3"
+													class="block w-full py-1 px-2 text-xs rounded bg-white dark:bg-gray-700 border {ThemeUtils.themeBorder()} {ThemeUtils.themeTextPrimary()} focus:ring-1 focus:ring-blue-500/50 focus:border-blue-500 font-mono resize-y"
+													aria-label="Rule schema value"
+												></textarea>
+											{:else}
+												<input
+													type="text"
+													value={rule.value}
+													on:input={(e) => handleValueChange(i, (e.target as HTMLInputElement).value)}
+													placeholder="Value to match"
+													class="block w-full py-1 px-2 text-xs rounded bg-white dark:bg-gray-700 border {ThemeUtils.themeBorder()} {ThemeUtils.themeTextPrimary()} focus:ring-1 focus:ring-blue-500/50 focus:border-blue-500"
+													aria-label="Rule value"
+													bind:this={valueInputs[i]}
+													on:keydown={(e) => {
+														if (e.key === 'Enter') {
+															e.preventDefault();
+															if (i === localRules.length - 1) {
+																addRule();
+															}
 														}
-													}
-													handleKeyDown(e, i);
-												}}
-											/>
+														handleKeyDown(e, i);
+													}}
+												/>
+											{/if}
 										</div>
 									</div>
 								</td>
