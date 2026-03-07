@@ -173,7 +173,7 @@ jobs:
 
           PROMPT=$(printf "Release version: %s\n\nPull Request: %s\n\nDescription:\n%s\n\nCommits:\n%s\n\nYou are an agent responsible for generating GitHub release summaries from pull request commits. Write the summary using only a numbered list under the relevant categories: New Features, Improvements, or Bug Fixes. Only include categories that are present based on the commit messages. Do not add any introductory sentences like \"This release includes...\" or \"In this version...\". Go straight to the list, and describe each item as specifically as possible based on the available commit details. Maintain a clear, professional tone appropriate for public changelogs." "$VERSION" "$PR_TITLE" "$PR_BODY" "$COMMITS")
           echo "Prompt: $PROMPT"
-          RESPONSE=$(curl -s "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${{ secrets.GEMINI_API_KEY }}" \
+          RESPONSE=$(curl -s "https://generativelanguage.googleapis.com/v1beta/models/${{ secrets.GEMINI_MODEL }}:generateContent?key=${{ secrets.GEMINI_API_KEY }}" \
             -H 'Content-Type: application/json' \
             -X POST \
             -d '{
