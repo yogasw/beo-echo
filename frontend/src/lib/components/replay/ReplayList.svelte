@@ -2,6 +2,7 @@
 	import { createEventDispatcher } from 'svelte';
 	import {
 		replays,
+		replayFolders,
 		filteredReplays,
 		replayFilter,
 		replayActions,
@@ -13,6 +14,8 @@
 	import { replayApi } from '$lib/api/replayApi';
 	import HttpMethodBadge from '$lib/components/common/HttpMethodBadge.svelte';
 	import ConfirmModal from '$lib/components/common/ConfirmModal.svelte';
+	import ImportModal from '$lib/components/common/ImportModal.svelte';
+	import ImportPreviewModal from '$lib/components/common/ImportPreviewModal.svelte';
 
 	let {
 		isPanelCollapsed = false
@@ -45,6 +48,12 @@
 	let confirmTitle = $state('');
 	let confirmMessage = $state('');
 	let itemToDelete: any | null = $state(null);
+
+	let isImportModalOpen = $state(false);
+
+	let isImportPreviewModalOpen = $state(false);
+	let importPreviewResult = $state<any>(null);
+	let selectedImportFolderId = $state<string | null>(null);
 
 	function handleContextMenu(event: MouseEvent, item: any) {
 		event.preventDefault();
@@ -224,6 +233,45 @@
 		inlineFolderParent = null; // null means root level
 		newFolderName = '';
 		showAddDropdown = false;
+	}
+
+	function handleOpenImport() {
+		// If a folder was right-clicked, grab its ID
+		if (contextMenu?.item?.itemType === 'folder') {
+			selectedImportFolderId = contextMenu.item.id;
+		} else if (contextMenu?.item?.folder_id) {
+			// If a request was right-clicked, grab its parent folder's ID
+			selectedImportFolderId = contextMenu.item.folder_id;
+		} else {
+			selectedImportFolderId = null;
+		}
+		
+		isImportModalOpen = true;
+		showAddDropdown = false;
+	}
+
+	function handleImportPreview(parsedResult: any) {
+		importPreviewResult = parsedResult;
+		isImportPreviewModalOpen = true;
+	}
+
+	function handleImportWithoutSaving(requestData: any) {
+		// dispatch an add event with the imported data
+		dispatch('add', { type: 'http', importedData: requestData });
+		isImportPreviewModalOpen = false;
+		importPreviewResult = null;
+	}
+
+	function handleImportIntoCollection(requestData: any, folderId: string | null) {
+		// dispatch an add event with the imported data and the selected folder
+		// Note: ReplayManager handles automatically saving to folder if `parentReplay` is mocked
+		dispatch('add', { 
+			type: 'http', 
+			importedData: requestData,
+			parentReplay: { id: folderId } // Pass folderId even if it's null, ReplayManager handles it. Update: just pass it down so we know it's a save action
+		});
+		isImportPreviewModalOpen = false;
+		importPreviewResult = null;
 	}
 
 	function handleCreateFolder(item: any) {
@@ -503,6 +551,13 @@
 									<i class="fas fa-folder text-yellow-400"></i>
 									<span>Folder</span>
 								</button>
+								<button
+									onclick={handleOpenImport}
+									class="w-full text-left px-4 py-2 text-sm theme-text-primary hover:theme-bg-secondary transition-colors flex items-center space-x-2 border-t theme-border mt-1 pt-2"
+								>
+									<i class="fas fa-file-import text-blue-500"></i>
+									<span>Import</span>
+								</button>
 							</div>
 						</div>
 					{/if}
@@ -744,5 +799,23 @@
 		cancelText="Cancel"
 		onconfirm={performDelete}
 		oncancel={handleCancelDelete}
+	/>
+
+	<!-- Import Modal -->
+	<ImportModal
+		isOpen={isImportModalOpen}
+		onclose={() => (isImportModalOpen = false)}
+		onpreview={handleImportPreview}
+	/>
+
+	<!-- Import Preview Modal -->
+	<ImportPreviewModal
+		isOpen={isImportPreviewModalOpen}
+		parsedResult={importPreviewResult}
+		folders={$replayFolders || []}
+		initialFolderId={selectedImportFolderId}
+		onclose={() => (isImportPreviewModalOpen = false)}
+		onImportWithoutSaving={handleImportWithoutSaving}
+		onImportIntoCollection={handleImportIntoCollection}
 	/>
 </div>

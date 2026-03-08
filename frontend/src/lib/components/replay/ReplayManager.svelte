@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { onMount, onDestroy } from 'svelte';
+	import { createEventDispatcher } from 'svelte';
 	import { selectedWorkspace } from '$lib/stores/workspace';
 	import { selectedProject } from '$lib/stores/selectedConfig';
 	import { replays, replayFolders, selectedReplay, replayActions, replayLoading } from '$lib/stores/replay';
@@ -23,6 +24,7 @@
 	import ReplayEditor from './ReplayEditor.svelte';
 	import type { Tab } from './types';
 	import type { ExecuteReplayResponse } from '$lib/types/Replay';
+	const dispatch = createEventDispatcher();
 
 	let isLoading = true;
 	let error: string | null = null;
@@ -325,7 +327,87 @@
 		if (detail?.parentReplay?.id) {
 			newTab.folder_id = detail.parentReplay.id;
 		}
+
+		if (detail?.importedData) {
+			newTab.name = detail.importedData.name || 'Imported Request';
+			newTab.url = detail.importedData.url || '';
+			newTab.method = detail.importedData.method || 'GET';
+			if (newTab.content) {
+				newTab.content.method = newTab.method;
+				newTab.content.url = newTab.url;
+				
+				if (detail.importedData.headers) {
+					try {
+						const hdrs = JSON.parse(detail.importedData.headers);
+						newTab.content.headers = Object.entries(hdrs).map(([k, v]) => ({ key: k, value: String(v), description: '', enabled: true }));
+					} catch(e) {}
+				}
+				
+				if (detail.importedData.payload) {
+					newTab.content.body = {
+						type: 'raw',
+						content: detail.importedData.payload,
+						formData: [],
+						urlEncoded: []
+					};
+				}
+			}
+		}
+		if (detail?.parentReplay?.id) {
+			newTab.folder_id = detail.parentReplay.id;
+		}
 		
+		// Automatically save if imported into collection
+		if (detail?.parentReplay && detail?.importedData) {
+			const payload: any = {
+				name: newTab.name,
+				method: newTab.method,
+				url: newTab.url,
+				itemType: 'request',
+				protocol: 'http',
+				headers: {},
+				metadata: { params: [] },
+				config: { auth: { type: 'none', config: {} }, settings: {} },
+				payload: newTab.content?.body?.content || ''
+			};
+
+			if (detail.parentReplay.id) {
+				payload.folder_id = detail.parentReplay.id;
+			}
+
+			if (newTab.content?.headers) {
+				newTab.content.headers.forEach(h => {
+					if (h.enabled && h.key) payload.headers[h.key] = h.value;
+				});
+			}
+
+			try {
+				if (!$selectedWorkspace?.id || !$selectedProject?.id) {
+					toast.error('Please select a workspace and project first');
+					return;
+				}
+
+				const res = await replayApi.createReplay(
+					$selectedWorkspace.id,
+					$selectedProject.id,
+					payload
+				);
+				
+				// Update tab state to be real, saved tab
+				newTab.id = res.replay.id;
+				newTab.isUnsaved = false;
+				if (newTab.content) (newTab.content as any).id = res.replay.id;
+				
+				// Optional: dispatch 'created' so list updates
+				// Needs dispatch to refresh the tree list immediately upon saving
+				dispatch('created', res.replay);
+				await loadReplays();
+			} catch (err: any) {
+				toast.error('Failed to auto-save imported request');
+				console.error(err);
+			}
+		}
+
 		// Check if we should replace the current active tab
 		const activeTabIndex = editorTabs.findIndex(t => t.id === editorActiveTabId);
 		const activeTab = activeTabIndex !== -1 ? editorTabs[activeTabIndex] : null;
