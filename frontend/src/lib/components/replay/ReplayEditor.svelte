@@ -21,16 +21,8 @@
 	import type { ExecuteReplayResponse, Replay } from '$lib/types/Replay';
 	import type { Tab } from './types';
 
-	export let tabs: Tab[] = [
-		{
-			id: 'tab-1',
-			name: 'New Request',
-			method: 'GET',
-			url: '',
-			isUnsaved: true
-		}
-	];
-	export let activeTabId = 'tab-1';
+	export let tabs: Tab[] = [];
+	export let activeTabId = '';
 
 	// Original replay data from API
 	export let replayData: Replay | null = null;
@@ -167,27 +159,17 @@
 	}
 
 	function closeTab(tabId: string) {
-		if (tabs.length === 1) {
-			// Don't close the last tab, just reset it
-			tabs[0] = {
-				id: 'tab-1',
-				name: 'New Request',
-				method: 'GET',
-				url: '',
-				isUnsaved: true
-			};
-			activeTabId = 'tab-1';
-			
-			shouldAutoDispatch = false; // Disable during reset
-			resetActiveTabContent();
-			shouldAutoDispatch = true; // Re-enable after reset
-			
-			dispatch('tabschange', { tabs, activeTabId, activeTabContent });
-			return;
-		}
-
 		const tabIndex = tabs.findIndex((tab) => tab.id === tabId);
 		tabs = tabs.filter((tab) => tab.id !== tabId);
+
+		if (tabs.length === 0) {
+			activeTabId = '';
+			shouldAutoDispatch = false;
+			resetActiveTabContent();
+			shouldAutoDispatch = true;
+			dispatch('tabschange', { tabs: [], activeTabId: '', activeTabContent: null });
+			return;
+		}
 
 		// Switch to adjacent tab
 		if (activeTabId === tabId) {
@@ -197,6 +179,7 @@
 				activeTabId = tabs[0].id;
 			}
 		}
+		
 		// Update activeTabContent based on the new activeTabId
 		const newActiveTab = tabs.find((t) => t.id === activeTabId);
 		if (newActiveTab) {

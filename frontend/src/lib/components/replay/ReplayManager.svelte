@@ -295,9 +295,21 @@
 		// Create a new tab with full content structure
 		const newTab = createDefaultTab();
 		
-		// Add to existing tabs or replace if only one empty tab exists
-		if (editorTabs.length === 1 && editorTabs[0].isUnsaved && !editorTabs[0].url) {
-			editorTabs = [newTab];
+		// Check if we should replace the current active tab
+		const activeTabIndex = editorTabs.findIndex(t => t.id === editorActiveTabId);
+		const activeTab = activeTabIndex !== -1 ? editorTabs[activeTabIndex] : null;
+
+		// Replace if:
+		// 1. It's the only tab and it's a completely empty unsaved tab, OR
+		// 2. It's a saved tab that hasn't been edited (!isUnsaved)
+		const shouldReplaceEmpty = editorTabs.length === 1 && editorTabs[0].isUnsaved && !editorTabs[0].url;
+		const shouldReplaceUnedited = activeTab && !activeTab.isUnsaved;
+
+		if (shouldReplaceEmpty || shouldReplaceUnedited) {
+			const indexToReplace = shouldReplaceEmpty ? 0 : activeTabIndex;
+			const newTabs = [...editorTabs];
+			newTabs[indexToReplace] = newTab;
+			editorTabs = newTabs;
 		} else {
 			editorTabs = [...editorTabs, newTab];
 		}
@@ -354,14 +366,25 @@
 					...createDefaultTabContent(),
 					method: replay.method || 'GET',
 					url: replay.url || '',
-					// TODO: Populate from replay data if available
-					// params: replay.params || [],
-					// headers: replay.headers || [],
-					// body: replay.body || { type: 'none', content: '' },
 				}
 			};
 			
-			editorTabs = [...editorTabs, newTab];
+			// Check if we should replace the current active tab.
+			// If the active tab hasn't been edited (!isUnsaved) we replace it.
+			const activeTabIndex = editorTabs.findIndex(t => t.id === editorActiveTabId);
+			const activeTab = activeTabIndex !== -1 ? editorTabs[activeTabIndex] : null;
+			const shouldReplace = activeTab && !activeTab.isUnsaved;
+
+			if (shouldReplace) {
+				// Replace the clean/unedited tab
+				const newTabs = [...editorTabs];
+				newTabs[activeTabIndex] = newTab;
+				editorTabs = newTabs;
+			} else {
+				// Append as new tab
+				editorTabs = [...editorTabs, newTab];
+			}
+			
 			editorActiveTabId = newTab.id;
 			editorActiveTabContent = {
 				method: newTab.method,
@@ -760,7 +783,7 @@
 		<div
 			class="flex-1 flex flex-col h-full bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg overflow-hidden shadow-sm"
 		>
-			{#if activeView === 'editor' || activeView === 'execution' || activeView === 'logs'}
+			{#if (activeView === 'editor' || activeView === 'execution' || activeView === 'logs') && editorTabs.length > 0}
 				<ReplayEditor 
 					bind:tabs={editorTabs} 
 					bind:activeTabId={editorActiveTabId} 
@@ -773,7 +796,7 @@
 					on:updated={handleReplayUpdated}
 					on:send={handleSendRequest}
 				/>
-			{:else if activeView === 'list' && ($selectedWorkspace && $selectedProject)}
+			{:else if (activeView === 'list' || editorTabs.length === 0) && ($selectedWorkspace && $selectedProject)}
 				<div class="flex flex-col items-center justify-center h-full text-center p-8 text-gray-500 dark:text-gray-400">
 					<div class="bg-gray-100 dark:bg-gray-700 rounded-full p-6 mb-4">
 						<i class="fas fa-mouse-pointer text-4xl text-gray-400 dark:text-gray-500"></i>
