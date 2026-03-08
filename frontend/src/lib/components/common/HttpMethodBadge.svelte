@@ -2,17 +2,24 @@
 <script lang="ts">
   import { getHttpMethodColor, getHttpMethodDescription, getBadgeSizeClasses, getBaseBadgeClasses } from '$lib/utils/badgeUtils';
 
-  export let method: string;
-  export let size: 'xs' | 'sm' | 'md' | 'lg' = 'sm';
-  export let showDescription: boolean = false;
-  export let className: string = '';
+  let {
+    method,
+    size = 'sm',
+    showDescription = false,
+    className = ''
+  }: {
+    method: string;
+    size?: 'xs' | 'sm' | 'md' | 'lg';
+    showDescription?: boolean;
+    className?: string;
+  } = $props();
 
   // Get method styling and information
-  $: methodColors = getHttpMethodColor(method);
-  $: methodDescription = getHttpMethodDescription(method);
-  $: sizeClasses = getBadgeSizeClasses(size);
-  $: baseClasses = getBaseBadgeClasses();
-  $: displayMethod = method.toUpperCase();
+  let methodColors = $derived(getHttpMethodColor(method));
+  let methodDescription = $derived(getHttpMethodDescription(method));
+  let sizeClasses = $derived(getBadgeSizeClasses(size));
+  let baseClasses = $derived(getBaseBadgeClasses());
+  let displayMethod = $derived(method.toUpperCase());
 </script>
 
 <div class="inline-flex items-center {className}">

@@ -1,40 +1,53 @@
 <script lang="ts">
 	import { createEventDispatcher } from 'svelte';
-	import { replays, filteredReplays, replayFilter, replayActions, selectedReplay } from '$lib/stores/replay';
+	import {
+		replays,
+		filteredReplays,
+		replayFilter,
+		replayActions,
+		selectedReplay
+	} from '$lib/stores/replay';
 	import { selectedWorkspace } from '$lib/stores/workspace';
 	import { selectedProject } from '$lib/stores/selectedConfig';
 	import { toast } from '$lib/stores/toast';
 	import { replayApi } from '$lib/api/replayApi';
 	import type { Replay } from '$lib/types/Replay';
 	import HttpMethodBadge from '$lib/components/common/HttpMethodBadge.svelte';
+	import { getHttpMethodColor } from '$lib/utils/badgeUtils';
 
-	export let isPanelCollapsed = false;
+	let {
+		isPanelCollapsed = false
+	}: {
+		isPanelCollapsed?: boolean;
+	} = $props();
 
 	const dispatch = createEventDispatcher();
 
-	let sortOrder: 'asc' | 'desc' = 'asc';
-	let showAddDropdown = false;
-	let searchTerm = '';
-	let openMenuId: string | null = null;
+	let sortOrder: 'asc' | 'desc' = $state('asc');
+	let showAddDropdown = $state(false);
+	let searchTerm = $state('');
+	let openMenuId: string | null = $state(null);
 
 	function handleToggleCollapse() {
 		dispatch('toggleCollapse', { animate: true });
 	}
 
 	// Sort replays
-	$: sortedReplays = $filteredReplays.sort((a, b) => {
-		const comparison = a.name.localeCompare(b.name);
-		return sortOrder === 'asc' ? comparison : -comparison;
-	});
+	let sortedReplays = $derived(
+		$filteredReplays.sort((a, b) => {
+			const comparison = a.name.localeCompare(b.name);
+			return sortOrder === 'asc' ? comparison : -comparison;
+		})
+	);
 
 	// Update store when filters change
-	$: {
+	$effect(() => {
 		console.log('Updating replayFilter with searchTerm:', searchTerm);
 		replayFilter.set({
 			searchTerm: searchTerm,
 			protocol: ''
 		});
-	}
+	});
 
 	async function handleDelete(replay: Replay) {
 		if (!$selectedWorkspace || !$selectedProject) return;
@@ -53,7 +66,7 @@
 		} finally {
 			replayActions.setLoading('delete', false);
 		}
-		
+
 		// Close menu after action
 		openMenuId = null;
 	}
@@ -104,7 +117,7 @@
 		<!-- Collapsed state: Show expand button centered vertically -->
 		<div class="flex flex-col items-center justify-center h-full">
 			<button
-				on:click={handleToggleCollapse}
+				onclick={handleToggleCollapse}
 				class="theme-text-primary hover:text-blue-500 px-2 py-2 rounded hover:bg-blue-500/10 transition-all duration-200 border border-gray-700/50 hover:border-blue-500/50"
 				title="Expand panel"
 				aria-label="Expand panel"
@@ -135,7 +148,7 @@
 			<!-- Action Buttons -->
 			<div class="flex items-center space-x-2">
 				<button
-					on:click={toggleSort}
+					onclick={toggleSort}
 					class="p-2 theme-text-secondary hover:theme-text-primary transition-colors"
 					title="Toggle sort order"
 					aria-label="Toggle sort order"
@@ -145,28 +158,34 @@
 
 				<div class="add-dropdown-container relative">
 					<button
-						on:click={handleAdd}
+						onclick={handleAdd}
 						title="Add new replay"
 						aria-label="Add new replay"
 						class="flex items-center space-x-1 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-md text-sm transition-colors"
 					>
 						<i class="fas fa-plus text-xs"></i>
-						<i class="fas fa-chevron-down text-xs {showAddDropdown ? 'rotate-180' : ''} transition-transform"></i>
+						<i
+							class="fas fa-chevron-down text-xs {showAddDropdown
+								? 'rotate-180'
+								: ''} transition-transform"
+						></i>
 					</button>
 
 					<!-- Add Options Dropdown -->
 					{#if showAddDropdown}
-						<div class="absolute top-full right-0 mt-1 w-48 theme-bg-primary theme-border border rounded-md shadow-lg z-20">
+						<div
+							class="absolute top-full right-0 mt-1 w-48 theme-bg-primary theme-border border rounded-md shadow-lg z-20"
+						>
 							<div class="py-1">
 								<button
-									on:click={handleAddHttp}
+									onclick={handleAddHttp}
 									class="w-full text-left px-4 py-2 text-sm theme-text-primary hover:theme-bg-secondary transition-colors flex items-center space-x-2"
 								>
 									<i class="fas fa-globe text-blue-400"></i>
 									<span>HTTP Replay</span>
 								</button>
 								<button
-									on:click={handleAddFolder}
+									onclick={handleAddFolder}
 									class="w-full text-left px-4 py-2 text-sm theme-text-primary hover:theme-bg-secondary transition-colors flex items-center space-x-2"
 								>
 									<i class="fas fa-folder text-yellow-400"></i>
@@ -177,85 +196,92 @@
 					{/if}
 				</div>
 
-			<!-- Collapse button -->
-			<button
-				on:click={handleToggleCollapse}
-				class="theme-text-primary hover:text-blue-500 px-2 py-1 rounded hover:bg-blue-500/10 transition-all duration-200 border border-gray-700/50 hover:border-blue-500/50 ml-2"
-				title="Collapse panel"
-				aria-label="Collapse panel"
-			>
-				<i class="fas fa-angle-double-left text-sm"></i>
-			</button>
+				<!-- Collapse button -->
+				<button
+					onclick={handleToggleCollapse}
+					class="theme-text-primary hover:text-blue-500 px-2 py-1 rounded hover:bg-blue-500/10 transition-all duration-200 border border-gray-700/50 hover:border-blue-500/50 ml-2"
+					title="Collapse panel"
+					aria-label="Collapse panel"
+				>
+					<i class="fas fa-angle-double-left text-sm"></i>
+				</button>
+			</div>
 		</div>
-	</div>
 
-	<!-- Content Area -->
+		<!-- Content Area -->
 		<div class="flex-1 overflow-auto">
 			{#if $filteredReplays.length === 0}
-			<div class="flex items-center justify-center h-full">
-				<div class="text-center theme-text-muted">
-					{#if $replays.length === 0}
-						<i class="fas fa-play-circle text-4xl mb-4 opacity-50"></i>
-						<h3 class="text-lg font-medium mb-2">No replays yet</h3>
-						<p class="text-sm">Create your first API replay to get started</p>
-					{:else}
-						<i class="fas fa-search text-4xl mb-4 opacity-50"></i>
-						<h3 class="text-lg font-medium mb-2">No matching replays</h3>
-						<p class="text-sm">Try adjusting your search criteria</p>
-					{/if}
+				<div class="flex items-center justify-center h-full">
+					<div class="text-center theme-text-muted">
+						{#if $replays.length === 0}
+							<i class="fas fa-play-circle text-4xl mb-4 opacity-50"></i>
+							<h3 class="text-lg font-medium mb-2">No replays yet</h3>
+							<p class="text-sm">Create your first API replay to get started</p>
+						{:else}
+							<i class="fas fa-search text-4xl mb-4 opacity-50"></i>
+							<h3 class="text-lg font-medium mb-2">No matching replays</h3>
+							<p class="text-sm">Try adjusting your search criteria</p>
+						{/if}
+					</div>
 				</div>
-			</div>
-		{:else}
-			<div class="divide-y theme-border">
-				{#each sortedReplays as replay (replay.id)}
-					<div 
-						class="group hover:theme-bg-secondary transition-colors cursor-pointer {$selectedReplay?.id === replay.id ? 'bg-blue-600/20 border-l-4 border-l-blue-500' : ''}"
-						on:click={() => handleSelectReplay(replay)}
-						role="button"
-						tabindex="0"
-						on:keydown={(e) => e.key === 'Enter' && handleSelectReplay(replay)}
-					>
-						<div class="flex items-center justify-between px-4 py-3">
-							<!-- Method Icon and Info -->
-							<div class="flex items-center space-x-3 flex-1 min-w-0">
-								
-								<HttpMethodBadge method={replay.method} />
-								
-								<div class="flex-1 min-w-0">
-									<h4 class="text-sm font-medium {$selectedReplay?.id === replay.id ? 'text-blue-300' : 'theme-text-primary'} truncate">
-										{replay.name}
-									</h4>
-									<p class="text-xs theme-text-muted truncate">
-										{replay.url}
-									</p>
+			{:else}
+				<div class="flex flex-col">
+					{#each sortedReplays as replay (replay.id)}
+						<div
+							class="group flex relative transition-colors cursor-pointer border-l-[3px] px-2 {$selectedReplay?.id ===
+							replay.id
+								? 'bg-white/5 border-[#3b82f6]'
+								: 'border-transparent hover:bg-white/5'}"
+							onclick={() => handleSelectReplay(replay)}
+							role="button"
+							tabindex="0"
+							onkeydown={(e) => e.key === 'Enter' && handleSelectReplay(replay)}
+						>
+							<div class="flex items-center w-full h-[32px] gap-3">
+								<!-- Fixed-width badge col so names always align -->
+								<div class="w-[50px] flex-shrink-0 flex justify-end">
+									<HttpMethodBadge method={replay.method} size="xs" />
 								</div>
+								<!-- Name -->
+								<span
+									class="text-[13px] {$selectedReplay?.id === replay.id
+										? 'text-gray-100'
+										: 'text-gray-300 dark:text-gray-300'} truncate"
+								>
+									{replay.name || 'Unnamed Request'}
+								</span>
 							</div>
 
 							<!-- Three-dot menu -->
-							<div class="menu-container relative">
+							<div class="absolute right-2 top-1/2 -translate-y-1/2 menu-container">
 								<button
-									on:click={(e) => toggleMenu(replay.id, e)}
-									class="p-1.5 theme-text-muted hover:theme-text-primary transition-colors opacity-0 group-hover:opacity-100 {openMenuId === replay.id ? 'opacity-100' : ''}"
+									onclick={(e) => toggleMenu(replay.id, e)}
+									class="p-1.5 text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 transition-colors opacity-0 group-hover:opacity-100 {openMenuId ===
+									replay.id
+										? 'opacity-100'
+										: ''}"
 									title="More options"
 									aria-label="More options"
 									aria-expanded={openMenuId === replay.id}
 								>
-									<i class="fas fa-ellipsis-v text-xs"></i>
+									<i class="fas fa-ellipsis-h text-sm"></i>
 								</button>
 
 								<!-- Dropdown Menu -->
 								{#if openMenuId === replay.id}
-									<div class="absolute top-full right-0 mt-1 w-48 theme-bg-primary theme-border border rounded-md shadow-lg z-20">
+									<div
+										class="absolute top-full right-0 mt-1 w-48 theme-bg-primary theme-border border rounded-md shadow-lg z-20"
+									>
 										<div class="py-1">
 											<button
-												on:click={() => handleDelete(replay)}
+												onclick={() => handleDelete(replay)}
 												class="w-full text-left px-4 py-2 text-sm theme-text-primary hover:theme-bg-secondary transition-colors flex items-center space-x-2"
 											>
 												<i class="fas fa-trash text-red-400"></i>
 												<span>Delete</span>
 											</button>
 											<button
-												on:click={() => handleCreateFolder(replay)}
+												onclick={() => handleCreateFolder(replay)}
 												class="w-full text-left px-4 py-2 text-sm theme-text-primary hover:theme-bg-secondary transition-colors flex items-center space-x-2"
 											>
 												<i class="fas fa-folder-plus text-yellow-400"></i>
@@ -266,10 +292,9 @@
 								{/if}
 							</div>
 						</div>
-					</div>
-				{/each}
-			</div>
-		{/if}
-	</div>
+					{/each}
+				</div>
+			{/if}
+		</div>
 	{/if}
 </div>
