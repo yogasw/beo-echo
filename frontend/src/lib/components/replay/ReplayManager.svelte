@@ -118,8 +118,8 @@
 			return;
 		}
 		
-		// Don't save if we don't have valid state
-		if (!editorTabs || editorTabs.length === 0 || !editorActiveTabId) {
+		// Don't save if we don't have valid state arrays
+		if (!editorTabs) {
 			console.log('⚠️ Invalid state, skipping save');
 			return;
 		}

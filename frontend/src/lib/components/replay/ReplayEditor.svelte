@@ -733,10 +733,12 @@
 					class={ThemeUtils.secondaryButton(
 						'flex items-center space-x-2 px-3 py-1.5 rounded-md text-sm border theme-border hover:shadow-md transition-all duration-200'
 					)}
+					class:opacity-50={$replayLoading.save || !(tabs.find(t => t.id === activeTabId)?.isUnsaved)}
+					class:cursor-not-allowed={$replayLoading.save || !(tabs.find(t => t.id === activeTabId)?.isUnsaved)}
 					title="Save current request configuration"
 					aria-label="Save request"
 					on:click={onSaveRequest}
-					disabled={$replayLoading.save}
+					disabled={$replayLoading.save || !(tabs.find(t => t.id === activeTabId)?.isUnsaved)}
 				>
 					{#if $replayLoading.save}
 						<i class="fas fa-circle-notch fa-spin text-sm"></i>
