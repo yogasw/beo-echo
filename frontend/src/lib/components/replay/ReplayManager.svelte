@@ -21,13 +21,15 @@
 	import SkeletonLoader from '$lib/components/common/SkeletonLoader.svelte';
 	import ErrorDisplay from '$lib/components/common/ErrorDisplay.svelte';
 	import ReplayEditor from './ReplayEditor.svelte';
+	import FolderView from './FolderView.svelte';
 	import type { Tab } from './types';
 	import type { ExecuteReplayResponse } from '$lib/types/Replay';
 
 	let isLoading = true;
 	let error: string | null = null;
-	let activeView: 'list' | 'editor' | 'execution' | 'logs' = 'list';
+	let activeView: 'list' | 'editor' | 'execution' | 'logs' | 'folder' = 'list';
 	let executionResult: ExecuteReplayResponse | null = null;
+	let selectedFolder: any = null;
 
 	// Panel width
 	let panelWidth: number; // Initialized in onMount
@@ -358,8 +360,17 @@
 
 	function handleEditReplay(event: CustomEvent) {
 		const replay = event.detail;
+
+		// Folder selected → show folder documentation view
+		if (replay?.itemType === 'folder') {
+			selectedFolder = replay;
+			activeView = 'folder';
+			return;
+		}
+
 		selectedReplay.set(replay);
 		activeView = 'editor';
+		selectedFolder = null;
 		
 		// Check if this replay is already open in a tab
 		const existingTab = editorTabs.find(tab => tab.id === replay.id);
@@ -387,10 +398,6 @@
 				}
 			};
 			
-			// Check if we should replace the current active tab.
-			// Replace if:
-			// 1. It's the only tab and it's a completely empty unsaved tab (default tab), OR
-			// 2. The active tab hasn't been edited (!isUnsaved)
 			const activeTabIndex = editorTabs.findIndex(t => t.id === editorActiveTabId);
 			const activeTab = activeTabIndex !== -1 ? editorTabs[activeTabIndex] : null;
 
@@ -398,13 +405,11 @@
 			const shouldReplaceUnedited = activeTab && !activeTab.isUnsaved;
 
 			if (shouldReplaceEmpty || shouldReplaceUnedited) {
-				// Replace the empty/unedited tab
 				const indexToReplace = shouldReplaceEmpty ? 0 : activeTabIndex;
 				const newTabs = [...editorTabs];
 				newTabs[indexToReplace] = newTab;
 				editorTabs = newTabs;
 			} else {
-				// Append as new tab
 				editorTabs = [...editorTabs, newTab];
 			}
 			
@@ -757,36 +762,6 @@
 						on:refresh={loadReplays}
 						on:toggleCollapse={togglePanelCollapse}
 					/>
-					
-					<!-- Debug Panel -->
-					<div class="p-4 border-t border-gray-200 dark:border-gray-700 space-y-2">
-						<div class="text-xs text-gray-500 dark:text-gray-400 mb-2">
-							<div>Tabs: {editorTabs.length}</div>
-							<div>Active: {editorActiveTabId}</div>
-							<div>View: {activeView}</div>
-							<div>Auto-save: {shouldSaveState ? '✅' : '❌'}</div>
-						</div>
-						
-						<button
-							class="w-full bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded text-xs flex items-center justify-center"
-							title="Test localStorage functionality"
-							aria-label="Test localStorage"
-							on:click={testLocalStorage}
-						>
-							<i class="fas fa-flask mr-2"></i>
-							Test LocalStorage
-						</button>
-						
-						<button
-							class="w-full bg-gray-600 hover:bg-gray-700 text-white py-2 px-4 rounded text-xs flex items-center justify-center"
-							title="Clear all editor tabs and reset state"
-							aria-label="Clear editor state"
-							on:click={clearAllEditorState}
-						>
-							<i class="fas fa-trash-alt mr-2"></i>
-							Clear Editor State
-						</button>
-					</div>
 				{/if}
 			</div>
 			<!-- Resizable handle -->
@@ -794,7 +769,7 @@
 				class="absolute top-0 right-0 bottom-0 w-1.5 cursor-col-resize group z-10 hover:bg-blue-500/20 dark:hover:bg-blue-400/20 transition-colors duration-200"
 				role="button"
 				tabindex="0"
-				on:mousedown|preventDefault={startResize}
+				onmousedown={(e) => { e.preventDefault(); startResize(e); }}
 				aria-label="Resize panel"
 				title="Drag to resize panel"
 			>
@@ -806,7 +781,15 @@
 		<div
 			class="flex-1 flex flex-col h-full bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg overflow-hidden shadow-sm"
 		>
-			{#if (activeView === 'editor' || activeView === 'execution' || activeView === 'logs') && editorTabs.length > 0}
+			{#if activeView === 'folder' && selectedFolder}
+				<FolderView
+					folder={selectedFolder}
+					on:folderUpdated={(e) => {
+						selectedFolder = e.detail;
+						loadReplays();
+					}}
+				/>
+			{:else if (activeView === 'editor' || activeView === 'execution' || activeView === 'logs') && editorTabs.length > 0}
 				<ReplayEditor 
 					bind:tabs={editorTabs} 
 					bind:activeTabId={editorActiveTabId} 
@@ -826,7 +809,7 @@
 					</div>
 					<h3 class="text-lg font-medium mb-2 text-gray-700 dark:text-gray-300">Select a Replay</h3>
 					<p class="text-sm max-w-xs leading-relaxed">
-						Choose a replay from the list to view or edit, or click "New Replay" to create one.
+						Choose a replay from the list to view or edit, or click a folder to see its documentation.
 					</p>
 				</div>
 			{:else}

@@ -11,7 +11,7 @@ export interface ReplayEditorState {
 		url: string;
 		activeSection: string;
 	};
-	activeView: 'list' | 'editor' | 'execution' | 'logs';
+	activeView: 'list' | 'editor' | 'execution' | 'logs' | 'folder';
 	selectedReplayId?: string;
 	projectId: string;
 	workspaceId: string;

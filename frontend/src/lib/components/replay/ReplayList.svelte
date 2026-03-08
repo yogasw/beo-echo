@@ -183,6 +183,9 @@
 
 	function handleSelectReplay(item: any) {
 		if (item.itemType === 'folder') {
+			// Select folder to show documentation view
+			selectedReplay.set(item);
+			dispatch('edit', item);
 			return;
 		}
 
