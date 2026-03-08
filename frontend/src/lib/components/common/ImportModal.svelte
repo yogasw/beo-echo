@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { fade, scale } from 'svelte/transition';
-	import { parseImportText } from '$lib/components/replay/utils/importParser';
+	import { parseImportText } from '$lib/components/replay/parsers';
 	import { toast } from '$lib/stores/toast';
 
 	let {
