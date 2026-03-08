@@ -80,6 +80,22 @@ export class ReplayApi {
 	/**
 	 * Execute a replay
 	 */
+	static async updateFolder(
+		workspaceId: string, 
+		projectId: string, 
+		folderId: string,
+		folderData: { name?: string; parent_id?: string | null; update_parent_id?: boolean }
+	): Promise<{ folder: Replay; message: string }> {
+		const response = await apiClient.patch(
+			`/workspaces/${workspaceId}/projects/${projectId}/replays/folder/${folderId}`,
+			folderData
+		);
+		return response.data;
+	}
+
+	/**
+	 * Execute a replay
+	 */
 	static async executeReplay(
 		workspaceId: string, 
 		projectId: string, 

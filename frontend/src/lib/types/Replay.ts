@@ -33,7 +33,8 @@ export interface UpdateReplayRequest {
 	headers?: Record<string, string>;
 	payload?: string;
 	body?: string; // Alias for payload for compatibility
-	folder_id?: string;
+	folder_id?: string | null;
+	update_folder_id?: boolean;
 	metadata?: any;
 	config?: any;
 }

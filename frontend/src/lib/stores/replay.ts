@@ -139,6 +139,26 @@ export const replayActions = {
 		);
 	},
 
+	// Update an existing replay folder
+	updateFolder: (updatedFolder: import('$lib/types/Replay').ReplayFolder) => {
+		replayFolders.update(list => 
+			list.map(folder => 
+				folder.id === updatedFolder.id ? updatedFolder : folder
+			)
+		);
+	},
+
+	// Optimistically move an item (replay or folder) to a new parent folder
+	// Can be used before the API call finishes to make the UI feel responsive
+	moveItem: (itemId: string, itemType: 'replay' | 'folder', newParentId: string | null) => {
+		const targetParentId = newParentId === null ? undefined : newParentId;
+		if (itemType === 'replay') {
+			replays.update(list => list.map(r => r.id === itemId ? { ...r, folder_id: targetParentId } : r));
+		} else if (itemType === 'folder') {
+			replayFolders.update(list => list.map(f => f.id === itemId ? { ...f, parent_id: targetParentId } : f));
+		}
+	},
+
 	// Set execution state
 	setExecuting: (isExecuting: boolean) => {
 		replayExecution.update(state => ({

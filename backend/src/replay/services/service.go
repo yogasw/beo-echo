@@ -16,6 +16,7 @@ type ReplayRepository interface {
 	FindByID(ctx context.Context, id string) (*database.Replay, error)
 	Create(ctx context.Context, replay *database.Replay) error
 	CreateFolder(ctx context.Context, folder *database.ReplayFolder) error
+	UpdateFolder(ctx context.Context, folder *database.ReplayFolder) error
 	Update(ctx context.Context, replay *database.Replay) error
 	Delete(ctx context.Context, id string) error
 	DeleteFolder(ctx context.Context, projectID string, folderID string) error
@@ -50,6 +51,13 @@ type CreateFolderRequest struct {
 	ParentID *string `json:"parent_id"`
 }
 
+// UpdateFolderRequest represents the request payload for updating a replay folder
+type UpdateFolderRequest struct {
+	Name           *string `json:"name"`
+	ParentID       *string `json:"parent_id"`
+	UpdateParentID bool    `json:"update_parent_id"` // indicates if ParentID should be updated (even to null)
+}
+
 // ListReplaysResponse represents the response for listing replays
 type ListReplaysResponse struct {
 	Replays []database.Replay       `json:"replays"`
@@ -71,9 +79,10 @@ type CreateReplayRequest struct {
 
 // UpdateReplayRequest represents the request payload for updating a replay
 type UpdateReplayRequest struct {
-	Name     *string            `json:"name"`
-	FolderID *string            `json:"folder_id"`
-	Protocol *string            `json:"protocol"`
+	Name           *string            `json:"name"`
+	FolderID       *string            `json:"folder_id"`
+	UpdateFolderID bool               `json:"update_folder_id"`
+	Protocol       *string            `json:"protocol"`
 	Method   *string            `json:"method"`
 	Url      *string            `json:"url"`
 	Headers  *map[string]string `json:"headers"`

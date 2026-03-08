@@ -79,6 +79,11 @@ func (r *replayRepository) CreateFolder(ctx context.Context, folder *database.Re
 	return r.db.WithContext(ctx).Create(folder).Error
 }
 
+// UpdateFolder updates an existing replay folder
+func (r *replayRepository) UpdateFolder(ctx context.Context, folder *database.ReplayFolder) error {
+	return r.db.WithContext(ctx).Save(folder).Error
+}
+
 // DeleteFolder deletes a folder, all its subfolders, and all replays inside it
 func (r *replayRepository) DeleteFolder(ctx context.Context, projectID string, folderID string) error {
 	return r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {

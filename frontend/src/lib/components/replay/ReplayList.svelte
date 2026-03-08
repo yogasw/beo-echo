@@ -26,6 +26,11 @@
 	let searchTerm = $state('');
 	let pendingFolderParent: any = $state(null);
 
+	let draggedItem: any | null = $state(null);
+	let dragOverItemId: string | null = $state(null);
+	let dragOverPosition: 'top' | 'bottom' | 'inside' | 'root' | null = $state(null);
+	let dragCounter = $state(0);
+
 	let contextMenu = $state<{ isOpen: boolean; x: number; y: number; item: any | null }>({
 		isOpen: false,
 		x: 0,
@@ -136,6 +141,159 @@
 		dispatch('add', { type: 'folder', parentReplay: item });
 	}
 
+	function handleDragStart(e: DragEvent, item: any) {
+		draggedItem = item;
+		if (e.dataTransfer) {
+			e.dataTransfer.effectAllowed = 'move';
+			e.dataTransfer.setData('text/plain', item.id);
+			// Optional: Custom ghost image could be set here
+		}
+	}
+
+	function handleDragOver(e: DragEvent, targetItem: any) {
+		e.preventDefault();
+		e.stopPropagation();
+		
+		if (!draggedItem || draggedItem.id === targetItem.id) return;
+		
+		// Determine position for visual feedback
+		const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+		const y = e.clientY - rect.top;
+		
+		dragOverItemId = targetItem.id;
+		
+		if (targetItem.itemType === 'folder') {
+			// Droppable inside folder
+			dragOverPosition = 'inside';
+		} else {
+			// If dropping on a replay, determine if it's top or bottom (for reordering, which isn't fully implemented backend yet, so just fallback to same folder)
+			// For now, if we drop on a replay, we just move it to that replay's folder
+			dragOverPosition = 'inside';
+		}
+
+		// Prevent folder dropping into itself
+		if (draggedItem.itemType === 'folder' && draggedItem.id === targetItem.id) {
+			dragOverItemId = null;
+			dragOverPosition = null;
+			return;
+		}
+
+		if (e.dataTransfer) e.dataTransfer.dropEffect = 'move';
+	}
+
+	function handleDragEnter(e: DragEvent, targetItem: any) {
+		e.preventDefault();
+		dragCounter++;
+	}
+
+	function handleDragLeave(e: DragEvent, targetItem: any) {
+		dragCounter--;
+		if (dragCounter === 0) {
+			// dragOverItemId = null;
+			// dragOverPosition = null;
+		}
+		// A more reliable way is just to nullify if we leave the main bounds, 
+		// but since we only care about drop, we can be a bit loose with leave or just use CSS pointer-events.
+		// To fix flickering, we won't clear dragOverItemId on leave, we'll clear it on drop or dragend.
+	}
+	
+	function handleDragEnd(e: DragEvent) {
+		draggedItem = null;
+		dragOverItemId = null;
+		dragOverPosition = null;
+		dragCounter = 0;
+	}
+
+	async function handleDrop(e: DragEvent, targetItem: any) {
+		e.preventDefault();
+		e.stopPropagation();
+		dragOverItemId = null;
+		dragOverPosition = null;
+		dragCounter = 0;
+		
+		if (!draggedItem || draggedItem.id === targetItem.id) return;
+		
+		const itemId = draggedItem.id;
+		const itemType = draggedItem.itemType;
+		// If dropped on a folder, target is the folder. If dropped on a replay, target is the replay's folder.
+		const targetId = targetItem.itemType === 'folder' ? targetItem.id : targetItem.folder_id || targetItem.parent_id;
+		
+		// Prevent dropping folder into itself
+		if (itemType === 'folder' && itemId === targetId) return;
+
+		if (!$selectedWorkspace || !$selectedProject) return;
+
+		// Optimistic UI update
+		replayActions.moveItem(itemId, itemType, targetId);
+
+		try {
+			if (itemType === 'replay') {
+				await replayApi.updateReplay($selectedWorkspace.id, $selectedProject.id, itemId, {
+					folder_id: targetId,
+					update_folder_id: true
+				});
+			} else {
+				await replayApi.updateFolder($selectedWorkspace.id, $selectedProject.id, itemId, {
+					parent_id: targetId,
+					update_parent_id: true
+				});
+			}
+			toast.success(`Moved ${itemType} to folder`);
+		} catch (error: any) {
+			toast.error(`Failed to move: ${error.message || 'Unknown error'}`);
+			dispatch('refresh'); // Refresh on error to restore state
+		}
+		
+		draggedItem = null;
+	}
+
+	function handleRootDragOver(e: DragEvent) {
+		e.preventDefault();
+		if (draggedItem) {
+			dragOverPosition = 'root';
+			if (e.dataTransfer) e.dataTransfer.dropEffect = 'move';
+		}
+	}
+
+	function handleRootDragLeave(e: DragEvent) {
+		dragOverPosition = null;
+	}
+
+	async function handleRootDrop(e: DragEvent) {
+		e.preventDefault();
+		dragOverPosition = null;
+		
+		if (!draggedItem) return;
+		
+		const itemId = draggedItem.id;
+		const itemType = draggedItem.itemType;
+
+		if (!$selectedWorkspace || !$selectedProject) return;
+
+		// Optimistic UI update
+		replayActions.moveItem(itemId, itemType, null);
+
+		try {
+			if (itemType === 'replay') {
+				await replayApi.updateReplay($selectedWorkspace.id, $selectedProject.id, itemId, {
+					folder_id: null,
+					update_folder_id: true
+				});
+			} else {
+				await replayApi.updateFolder($selectedWorkspace.id, $selectedProject.id, itemId, {
+					parent_id: null,
+					update_parent_id: true
+				});
+			}
+			toast.success(`Moved ${itemType} to root`);
+		} catch (error: any) {
+			toast.error(`Failed to move: ${error.message || 'Unknown error'}`);
+			dispatch('refresh'); // Refresh on error to restore state
+		}
+		
+		draggedItem = null;
+	}
+
 	function toggleSort() {
 		sortOrder = sortOrder === 'asc' ? 'desc' : 'asc';
 	}
@@ -242,7 +400,18 @@
 		</div>
 
 		<!-- Content Area -->
-		<div class="flex-1 overflow-auto">
+		<div class="flex-1 overflow-auto"
+			 role="group"
+			 ondragover={handleRootDragOver}
+			 ondragleave={handleRootDragLeave}
+			 ondrop={handleRootDrop}
+		>
+			{#if dragOverPosition === 'root'}
+				<div class="bg-blue-500/10 border-2 border-dashed border-blue-500 rounded-lg m-2 p-4 flex items-center justify-center pointer-events-none">
+					<span class="text-blue-500 font-medium">Move to Top Level</span>
+				</div>
+			{/if}
+
 			{#if $filteredReplays.length === 0}
 				<div class="flex items-center justify-center h-full">
 					<div class="text-center theme-text-muted">
@@ -261,17 +430,24 @@
 				<div class="flex flex-col">
 					{#each sortedReplays as item (item.id)}
 						<div
-							class="group flex transition-colors cursor-pointer border-l-[3px] px-2 {$selectedReplay?.id ===
-							item.id
-								? 'bg-white/5 border-[#3b82f6]'
-								: 'border-transparent hover:bg-white/5'} {contextMenu.isOpen && contextMenu.item?.id === item.id ? 'bg-white/5 relative z-40' : 'relative'}"
+							draggable="true"
+							ondragstart={(e) => handleDragStart(e, item)}
+							ondragover={(e) => handleDragOver(e, item)}
+							ondragenter={(e) => handleDragEnter(e, item)}
+							ondragleave={(e) => handleDragLeave(e, item)}
+							ondragend={(e) => handleDragEnd(e)}
+							ondrop={(e) => handleDrop(e, item)}
+							class="group flex transition-all cursor-pointer border-l-[3px] px-2 {draggedItem?.id === item.id ? 'opacity-30' : ''} {dragOverItemId === item.id ? (item.itemType === 'folder' ? 'bg-[#ff9800]/20 border-l-[#ff9800] ring-1 ring-[#ff9800]' : 'border-t-2 border-t-[#ff9800]') : 'border-l-transparent'} {$selectedReplay?.id ===
+							item.id && dragOverItemId !== item.id
+								? 'bg-white/5 border-l-[#3b82f6]'
+								: 'hover:bg-white/5'} {contextMenu.isOpen && contextMenu.item?.id === item.id ? 'bg-white/5 relative z-40' : 'relative'}"
 							onclick={() => handleSelectReplay(item)}
 							oncontextmenu={(e) => handleContextMenu(e, item)}
 							role="button"
 							tabindex="0"
 							onkeydown={(e) => e.key === 'Enter' && handleSelectReplay(item)}
 						>
-							<div class="flex items-center w-full h-[32px] gap-3">
+							<div class="flex items-center w-full h-[32px] gap-3 {draggedItem ? 'pointer-events-none' : ''}">
 								<!-- Fixed-width badge col so names always align -->
 								<div class="w-[50px] flex-shrink-0 flex justify-end">
 									{#if item.itemType === 'folder'}
@@ -292,7 +468,7 @@
 
 							<!-- Action Buttons -->
 							<div
-								class="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1 transition-opacity pl-2 opacity-0 group-hover:opacity-100 z-30"
+								class="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1 transition-opacity pl-2 opacity-0 group-hover:opacity-100 z-30 {draggedItem ? 'pointer-events-none' : ''}"
 							>
 								<!-- Three-dot menu -->
 								<div class="menu-container relative">

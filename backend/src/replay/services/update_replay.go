@@ -34,7 +34,9 @@ func (s *ReplayService) UpdateReplay(ctx context.Context, replayID string, req U
 		replay.Name = *req.Name
 	}
 
-	if req.FolderID != nil {
+	if req.UpdateFolderID {
+		replay.FolderID = req.FolderID
+	} else if req.FolderID != nil {
 		replay.FolderID = req.FolderID
 	}
 
