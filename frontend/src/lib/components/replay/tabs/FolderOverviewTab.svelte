@@ -4,34 +4,32 @@
 	// @ts-expect-error isomorphic-dompurify typing issue
 	import DOMPurify from 'isomorphic-dompurify';
 	import { theme } from '$lib/stores/theme';
-
-	const STORAGE_KEY = (id: string) => `beo_replay_folder_${id}_doc`;
+	import { replayApi } from '$lib/api/replayApi';
+	import { selectedWorkspace } from '$lib/stores/workspace';
+	import { selectedProject } from '$lib/stores/selectedConfig';
+	import { toast } from '$lib/stores/toast';
 
 	let { folder }: { folder: any } = $props();
 
-	function loadDescription(folderId: string): string {
+	async function saveDocumentation(doc: string) {
+		if (!$selectedWorkspace || !$selectedProject || !folder?.id) return;
+		
 		try {
-			const raw = localStorage.getItem(STORAGE_KEY(folderId));
-			if (raw) return JSON.parse(raw).description || '';
-		} catch {}
-		return '';
+			await replayApi.updateFolder($selectedWorkspace.id, $selectedProject.id, folder.id, {
+				doc: doc
+			});
+			folder.doc = doc;
+		} catch (err: any) {
+			toast.error(err.message || 'Failed to save documentation');
+		}
 	}
 
-	function saveDescription(folderId: string, desc: string) {
-		try {
-			localStorage.setItem(
-				STORAGE_KEY(folderId),
-				JSON.stringify({ description: desc, updatedAt: new Date().toISOString() })
-			);
-		} catch {}
-	}
-
-	let description = $state('');
+	let documentation = $state('');
 	let isEditing = $state(false);
 
 	$effect(() => {
 		if (folder?.id) {
-			description = loadDescription(folder.id);
+			documentation = folder.doc || '';
 			isEditing = false;
 		}
 	});
@@ -41,14 +39,14 @@
 	// Track changes from InkMde
 	$effect(() => {
 		if (!isEditing || !folder?.id) return;
-		const current = description;
+		const current = documentation;
 		if (saveTimer) clearTimeout(saveTimer);
-		saveTimer = setTimeout(() => saveDescription(folder.id, current), 400);
+		saveTimer = setTimeout(() => saveDocumentation(current), 800);
 	});
 
 	function exitEditMode() {
 		if (saveTimer) clearTimeout(saveTimer);
-		saveDescription(folder.id, description);
+		saveDocumentation(documentation);
 		isEditing = false;
 	}
 
@@ -59,9 +57,9 @@
 	}
 
 	// Render markdown for preview
-	let renderedDescription = $derived.by(() => {
-		if (!description.trim()) return '';
-		const html = marked.parse(description, { async: false }) as string;
+	let renderedDocumentation = $derived.by(() => {
+		if (!documentation.trim()) return '';
+		const html = marked.parse(documentation, { async: false }) as string;
 		return DOMPurify.sanitize(html);
 	});
 
@@ -90,7 +88,7 @@
 
 		<div class="flex-1 min-h-0 ink-editor-wrap rounded-lg overflow-hidden theme-border border theme-bg-primary">
 			<InkMde
-				bind:value={description}
+				bind:value={documentation}
 				options={{
 					interface: {
 						appearance: $theme === 'dark' ? 'dark' : 'light',
@@ -109,9 +107,9 @@
 			ondblclick={() => (isEditing = true)}
 		>
 			<div class="flex-1 overflow-auto min-h-0 bg-transparent rounded-lg">
-				{#if description.trim()}
+				{#if documentation.trim()}
 					<!-- eslint-disable-next-line svelte/no-at-html-tags -->
-					<div class="ink-viewer-wrap prose {$theme === 'dark' ? 'prose-invert' : ''} prose-sm max-w-none px-2 py-1">{@html renderedDescription}</div>
+					<div class="ink-viewer-wrap prose {$theme === 'dark' ? 'prose-invert' : ''} prose-sm max-w-none px-2 py-1">{@html renderedDocumentation}</div>
 				{:else}
 					<div class="flex flex-col items-center justify-center h-full text-center py-12 rounded-lg border-2 border-dashed theme-border theme-text-muted transition-colors">
 						<i class="fas fa-file-alt text-3xl mb-3 opacity-50"></i>

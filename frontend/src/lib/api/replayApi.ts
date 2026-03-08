@@ -78,13 +78,13 @@ export class ReplayApi {
 	}
 
 	/**
-	 * Execute a replay
+	 * Update a replay folder
 	 */
 	static async updateFolder(
 		workspaceId: string, 
 		projectId: string, 
 		folderId: string,
-		folderData: { name?: string; parent_id?: string | null; update_parent_id?: boolean }
+		folderData: { name?: string; doc?: string; parent_id?: string | null; update_parent_id?: boolean }
 	): Promise<{ folder: Replay; message: string }> {
 		const response = await apiClient.patch(
 			`/workspaces/${workspaceId}/projects/${projectId}/replays/folder/${folderId}`,
