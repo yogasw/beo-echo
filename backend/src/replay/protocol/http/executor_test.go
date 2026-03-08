@@ -1,4 +1,4 @@
-package http_test
+package http
 
 import (
 	"context"
@@ -7,12 +7,11 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	"beo-echo/backend/src/replay/models"
-	httpprotocol "beo-echo/backend/src/replay/protocol/http"
 )
 
 // TestHttpExecutor tests the HttpExecutor function with real HTTP calls
 func TestHttpExecutor(t *testing.T) {
-	executor := httpprotocol.NewExecutor()
+	executor := NewExecutor()
 	ctx := context.Background()
 	testProjectID := "test-project-id"
 
@@ -113,6 +112,27 @@ func TestHttpExecutor(t *testing.T) {
 		assert.Equal(t, 0, response.StatusCode, "Status code should be 0 for network errors")
 		assert.NotEmpty(t, response.ReplayID, "ReplayID should still be generated")
 		assert.Greater(t, response.LatencyMS, 0, "Latency should be recorded")
+	})
+
+	t.Run("ExecuteReplay_MissingProtocol", func(t *testing.T) {
+		// Test URL without http:// prefix
+		req := models.ExecuteReplayRequest{
+			Protocol: "http",
+			Method:   "GET",
+			URL:      "httpbin.org/get", // Missing protocol prefix
+			Query: map[string]string{
+				"test": "value",
+			},
+		}
+
+		// Execute the replay
+		response, err := executor.Execute(ctx, testProjectID, req)
+
+		// Assertions
+		assert.NoError(t, err, "ExecuteReplay should not return an error")
+		assert.NotNil(t, response, "Response should not be nil")
+		assert.Equal(t, 200, response.StatusCode, "Should receive 200 OK from httpbin")
+		assert.NotEmpty(t, response.ResponseBody, "Response body should not be empty")
 	})
 
 	t.Run("ExecuteReplay_InvalidURL", func(t *testing.T) {
