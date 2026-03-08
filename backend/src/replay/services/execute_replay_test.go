@@ -3,6 +3,7 @@ package services
 import (
 	"beo-echo/backend/src/database"
 	"beo-echo/backend/src/database/repositories"
+	"beo-echo/backend/src/replay/models"
 	"beo-echo/backend/src/utils"
 	"context"
 	"testing"
@@ -43,7 +44,7 @@ func TestExecuteReplay(t *testing.T) {
 
 	t.Run("ExecuteReplay_Success_HTTPBin", func(t *testing.T) {
 		// Test data using httpbin.org (a free HTTP testing service)
-		req := ExecuteReplayRequest{
+		req := models.ExecuteReplayRequest{
 			Protocol: "http",
 			Method:   "GET",
 			URL:      "https://httpbin.org/get",
@@ -80,7 +81,7 @@ func TestExecuteReplay(t *testing.T) {
 
 	t.Run("ExecuteReplay_Success_POST_with_Body", func(t *testing.T) {
 		// Test POST request with body
-		req := ExecuteReplayRequest{
+		req := models.ExecuteReplayRequest{
 			Protocol: "http",
 			Method:   "POST",
 			URL:      "https://httpbin.org/post",
@@ -107,7 +108,7 @@ func TestExecuteReplay(t *testing.T) {
 
 	t.Run("ExecuteReplay_InvalidProject", func(t *testing.T) {
 		// Test with non-existent project ID
-		req := ExecuteReplayRequest{
+		req := models.ExecuteReplayRequest{
 			Protocol: "http",
 			Method:   "GET",
 			URL:      "https://httpbin.org/get",
@@ -124,7 +125,7 @@ func TestExecuteReplay(t *testing.T) {
 
 	t.Run("ExecuteReplay_InvalidProtocol", func(t *testing.T) {
 		// Test with unsupported protocol
-		req := ExecuteReplayRequest{
+		req := models.ExecuteReplayRequest{
 			Protocol: "ftp",
 			Method:   "GET",
 			URL:      "ftp://example.com/file",
@@ -141,7 +142,7 @@ func TestExecuteReplay(t *testing.T) {
 
 	t.Run("ExecuteReplay_HTTPError_NotFound", func(t *testing.T) {
 		// Test with URL that returns 404
-		req := ExecuteReplayRequest{
+		req := models.ExecuteReplayRequest{
 			Protocol: "http",
 			Method:   "GET",
 			URL:      "https://httpbin.org/status/404",
@@ -160,7 +161,7 @@ func TestExecuteReplay(t *testing.T) {
 
 	t.Run("ExecuteReplay_NetworkError", func(t *testing.T) {
 		// Test with invalid URL that will cause network error
-		req := ExecuteReplayRequest{
+		req := models.ExecuteReplayRequest{
 			Protocol: "http",
 			Method:   "GET",
 			URL:      "https://non-existent-domain-12345.com",
@@ -180,7 +181,7 @@ func TestExecuteReplay(t *testing.T) {
 
 	t.Run("ExecuteReplay_InvalidURL", func(t *testing.T) {
 		// Test with malformed URL
-		req := ExecuteReplayRequest{
+		req := models.ExecuteReplayRequest{
 			Protocol: "http",
 			Method:   "GET",
 			URL:      "not-a-valid-url",
@@ -202,7 +203,7 @@ func TestExecuteReplay(t *testing.T) {
 
 	t.Run("ExecuteReplay_WithQueryParams", func(t *testing.T) {
 		// Test with multiple query parameters
-		req := ExecuteReplayRequest{
+		req := models.ExecuteReplayRequest{
 			Protocol: "http",
 			Method:   "GET",
 			URL:      "https://httpbin.org/get",
@@ -233,7 +234,7 @@ func TestExecuteReplay(t *testing.T) {
 
 	t.Run("ExecuteReplay_POST_JSON_Complex", func(t *testing.T) {
 		// Test POST request with complex JSON body
-		req := ExecuteReplayRequest{
+		req := models.ExecuteReplayRequest{
 			Protocol: "http",
 			Method:   "POST",
 			URL:      "https://httpbin.org/post",
@@ -278,7 +279,7 @@ func TestExecuteReplay(t *testing.T) {
 
 	t.Run("ExecuteReplay_POST_Form_Data", func(t *testing.T) {
 		// Test POST request with form data
-		req := ExecuteReplayRequest{
+		req := models.ExecuteReplayRequest{
 			Protocol: "http",
 			Method:   "POST",
 			URL:      "https://httpbin.org/post",
@@ -306,7 +307,7 @@ func TestExecuteReplay(t *testing.T) {
 
 	t.Run("ExecuteReplay_GET_Multiple_Params", func(t *testing.T) {
 		// Test GET with multiple parameters including special characters
-		req := ExecuteReplayRequest{
+		req := models.ExecuteReplayRequest{
 			Protocol: "http",
 			Method:   "GET",
 			URL:      "https://httpbin.org/get",
@@ -350,7 +351,7 @@ func TestExecuteReplay(t *testing.T) {
 
 		// This test simulates a multipart form request by setting the Content-Type header appropriately
 		// and providing a specially formatted body that httpbin will recognize
-		req := ExecuteReplayRequest{
+		req := models.ExecuteReplayRequest{
 			Protocol: "http",
 			Method:   "POST",
 			URL:      "https://httpbin.org/post",
@@ -383,7 +384,7 @@ func TestExecuteReplay(t *testing.T) {
 
 	t.Run("ExecuteReplay_Auth_Headers", func(t *testing.T) {
 		// Test request with different types of authentication headers
-		req := ExecuteReplayRequest{
+		req := models.ExecuteReplayRequest{
 			Protocol: "http",
 			Method:   "GET",
 			URL:      "https://httpbin.org/headers",
@@ -414,7 +415,7 @@ func TestExecuteReplay(t *testing.T) {
 
 	t.Run("ExecuteReplay_OAuth2_Bearer_Token", func(t *testing.T) {
 		// Test request with OAuth2 Bearer token authentication
-		req := ExecuteReplayRequest{
+		req := models.ExecuteReplayRequest{
 			Protocol: "http",
 			Method:   "GET",
 			URL:      "https://httpbin.org/bearer",
@@ -442,7 +443,7 @@ func TestExecuteReplay(t *testing.T) {
 		// Test request with Basic Authentication
 		// The header value is "Basic " + base64("username:password")
 		// For username "user" and password "pass", this is "Basic dXNlcjpwYXNz"
-		req := ExecuteReplayRequest{
+		req := models.ExecuteReplayRequest{
 			Protocol: "http",
 			Method:   "GET",
 			URL:      "https://httpbin.org/basic-auth/user/pass",
