@@ -77,6 +77,9 @@
 			...parseConfig(replayData.config),
 			...parseMetadata(replayData.metadata)
 		};
+		
+		lastDispatchedContent = JSON.stringify(getStructuredContentForStorage());
+		lastDispatchedTabId = replayData.id || activeTabId || '';
 	}
 
 	// Add props for execution status and results
@@ -129,6 +132,8 @@
 			...parseConfig(emptyConfigJson),
 			...parseMetadata(emptyMetadataJson)
 		};
+		// Reset tracker when resetting tab
+		lastDispatchedContent = JSON.stringify(getStructuredContentForStorage());
 	}
 
 	// Flag to control when content changes should be automatically dispatched
@@ -215,13 +220,14 @@
 				metadata: tabReplayData?.metadata || emptyMetadataJson,
 				payload: tabReplayData?.payload || '',
 
-				// Parse JSON fields
-				parsedHeaders: parseHeaders(tabReplayData?.headers || emptyHeadersJson),
-				...parseConfig(tabReplayData?.config || emptyConfigJson),
-				...parseMetadata(tabReplayData?.metadata || emptyMetadataJson)
-			};
-			
-			shouldAutoDispatch = true; // Re-enable after content update
+			// Parse JSON fields
+			parsedHeaders: parseHeaders(tabReplayData?.headers || emptyHeadersJson),
+			...parseConfig(tabReplayData?.config || emptyConfigJson),
+			...parseMetadata(tabReplayData?.metadata || emptyMetadataJson)
+		};
+		
+		lastDispatchedContent = JSON.stringify(getStructuredContentForStorage());
+		shouldAutoDispatch = true; // Re-enable after content update
 		}
 		dispatch('tabschange', { tabs, activeTabId, activeTabContent });
 	}
@@ -262,13 +268,14 @@
 				metadata: tabReplayData?.metadata || emptyMetadataJson,
 				payload: tabReplayData?.payload || '',
 
-				// Parse JSON fields
-				parsedHeaders: parseHeaders(tabReplayData?.headers || emptyHeadersJson),
-				...parseConfig(tabReplayData?.config || emptyConfigJson),
-				...parseMetadata(tabReplayData?.metadata || emptyMetadataJson)
-			};
-			
-			shouldAutoDispatch = true; // Re-enable after content update
+			// Parse JSON fields
+			parsedHeaders: parseHeaders(tabReplayData?.headers || emptyHeadersJson),
+			...parseConfig(tabReplayData?.config || emptyConfigJson),
+			...parseMetadata(tabReplayData?.metadata || emptyMetadataJson)
+		};
+		
+		lastDispatchedContent = JSON.stringify(getStructuredContentForStorage());
+		shouldAutoDispatch = true; // Re-enable after content update
 		}
 
 		dispatch('tabschange', { tabs, activeTabId, activeTabContent });
@@ -381,9 +388,25 @@
 		};
 	}
 
+	// Track the last dispatched content and its tab ID to prevent spurious changes flag when switching tabs
+	let lastDispatchedContent = '';
+	let lastDispatchedTabId = '';
+
 	// Propagate changes upwards with structured content
 	$: if (activeTabContent && shouldAutoDispatch) {
-		dispatch('tabContentChange', getStructuredContentForStorage());
+		const newContent = getStructuredContentForStorage();
+		const newContentStr = JSON.stringify(newContent);
+		
+		// If we just switched to a new tab or loaded fresh data, reset the baseline without dispatching
+		if (activeTabId !== lastDispatchedTabId) {
+			lastDispatchedTabId = activeTabId;
+			lastDispatchedContent = newContentStr;
+		} 
+		// If it's the exact same tab but content truly changed, dispatch the change
+		else if (newContentStr !== lastDispatchedContent) {
+			lastDispatchedContent = newContentStr;
+			dispatch('tabContentChange', newContent);
+		}
 	}
 
 	// Event handlers for ReplayResponseFooter
