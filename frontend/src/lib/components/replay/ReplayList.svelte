@@ -12,6 +12,7 @@
 	import { toast } from '$lib/stores/toast';
 	import { replayApi } from '$lib/api/replayApi';
 	import HttpMethodBadge from '$lib/components/common/HttpMethodBadge.svelte';
+	import ConfirmModal from '$lib/components/common/ConfirmModal.svelte';
 
 	let {
 		isPanelCollapsed = false
@@ -39,6 +40,11 @@
 		y: 0,
 		item: null
 	});
+
+	let isConfirmModalOpen = $state(false);
+	let confirmTitle = $state('');
+	let confirmMessage = $state('');
+	let itemToDelete: any | null = $state(null);
 
 	function handleContextMenu(event: MouseEvent, item: any) {
 		event.preventDefault();
@@ -147,17 +153,33 @@
 		});
 	});
 
-	async function handleDelete(item: any) {
+	function handleDelete(item: any) {
 		if (!$selectedWorkspace || !$selectedProject) return;
 
-		let message = `Are you sure you want to delete the ${item.itemType} "${item.name}"?`;
+		itemToDelete = item;
 		if (item.itemType === 'folder') {
-			message = `Are you sure you want to delete the folder "${item.name}"? All nested folders and replays inside it will also be deleted. This action cannot be undone.`;
+			confirmTitle = 'Delete Folder';
+			confirmMessage = `Are you sure you want to delete the folder "${item.name}"? All nested folders and replays inside it will also be deleted. This action cannot be undone.`;
+		} else {
+			confirmTitle = 'Delete Replay';
+			confirmMessage = `Are you sure you want to delete the replay "${item.name}"? This action cannot be undone.`;
 		}
 
-		if (!confirm(message)) {
-			return;
-		}
+		isConfirmModalOpen = true;
+		closeContextMenu();
+	}
+
+	function handleCancelDelete() {
+		isConfirmModalOpen = false;
+		itemToDelete = null;
+	}
+
+	async function performDelete() {
+		if (!$selectedWorkspace || !$selectedProject || !itemToDelete) return;
+		
+		const item = itemToDelete;
+		isConfirmModalOpen = false;
+		itemToDelete = null;
 
 		try {
 			replayActions.setLoading('delete', true);
@@ -174,9 +196,6 @@
 		} finally {
 			replayActions.setLoading('delete', false);
 		}
-
-		// Close menu after action
-		closeContextMenu();
 	}
 
 	function handleSelectReplay(item: any) {
@@ -715,4 +734,15 @@
 			</div>
 		</div>
 	{/if}
+
+	<!-- Custom Confirm Delete Modal -->
+	<ConfirmModal
+		isOpen={isConfirmModalOpen}
+		title={confirmTitle}
+		message={confirmMessage}
+		confirmText="Delete"
+		cancelText="Cancel"
+		onconfirm={performDelete}
+		oncancel={handleCancelDelete}
+	/>
 </div>
