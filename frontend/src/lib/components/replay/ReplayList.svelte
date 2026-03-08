@@ -55,22 +55,27 @@
 	async function handleDelete(item: any) {
 		if (!$selectedWorkspace || !$selectedProject) return;
 
-		if (!confirm(`Are you sure you want to delete the ${item.itemType} "${item.name}"?`)) {
+		let message = `Are you sure you want to delete the ${item.itemType} "${item.name}"?`;
+		if (item.itemType === 'folder') {
+			message = `Are you sure you want to delete the folder "${item.name}"? All nested folders and replays inside it will also be deleted. This action cannot be undone.`;
+		}
+
+		if (!confirm(message)) {
 			return;
 		}
 
 		try {
 			replayActions.setLoading('delete', true);
-			// TODO: Api doesn't have delete folder yet, so let's just assume we delete replay for now
-			// or conditionally call delete if it's a replay.
+			
 			if (item.itemType === 'folder') {
-				toast.error('Deleting folders is not yet supported in this view.');
-				replayActions.setLoading('delete', false);
-				return;
+				await replayApi.deleteFolder($selectedWorkspace.id, $selectedProject.id, item.id);
+				dispatch('refresh');
+				toast.success('Folder deleted successfully');
+			} else {
+				await replayApi.deleteReplay($selectedWorkspace.id, $selectedProject.id, item.id);
+				replayActions.removeReplay(item.id);
+				toast.success('Replay deleted successfully');
 			}
-			await replayApi.deleteReplay($selectedWorkspace.id, $selectedProject.id, item.id);
-			replayActions.removeReplay(item.id);
-			toast.success(`${item.itemType === 'folder' ? 'Folder' : 'Replay'} deleted successfully`);
 		} catch (err: any) {
 			toast.error(err);
 		} finally {

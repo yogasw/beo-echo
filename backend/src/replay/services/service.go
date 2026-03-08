@@ -18,6 +18,7 @@ type ReplayRepository interface {
 	CreateFolder(ctx context.Context, folder *database.ReplayFolder) error
 	Update(ctx context.Context, replay *database.Replay) error
 	Delete(ctx context.Context, id string) error
+	DeleteFolder(ctx context.Context, projectID string, folderID string) error
 
 	// Replay execution logging
 	CreateRequestLog(ctx context.Context, log *database.RequestLog) error

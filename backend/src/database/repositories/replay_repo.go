@@ -79,6 +79,52 @@ func (r *replayRepository) CreateFolder(ctx context.Context, folder *database.Re
 	return r.db.WithContext(ctx).Create(folder).Error
 }
 
+// DeleteFolder deletes a folder, all its subfolders, and all replays inside it
+func (r *replayRepository) DeleteFolder(ctx context.Context, projectID string, folderID string) error {
+	return r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		// Helper function for recursive deletion
+		var deleteFolderRecursive func(fID string) error
+		deleteFolderRecursive = func(fID string) error {
+			// Find all subfolders of the current folder
+			var subfolders []database.ReplayFolder
+			if err := tx.Where("parent_id = ? AND project_id = ?", fID, projectID).Find(&subfolders).Error; err != nil {
+				return err
+			}
+
+			// Recursively delete subfolders
+			for _, sub := range subfolders {
+				if err := deleteFolderRecursive(sub.ID); err != nil {
+					return err
+				}
+			}
+
+			// Delete all replays in this folder
+			if err := tx.Where("folder_id = ? AND project_id = ?", fID, projectID).Delete(&database.Replay{}).Error; err != nil {
+				return err
+			}
+
+			// Delete the folder itself
+			if err := tx.Where("id = ? AND project_id = ?", fID, projectID).Delete(&database.ReplayFolder{}).Error; err != nil {
+				return err
+			}
+
+			return nil
+		}
+
+		// Verify the target folder actually exists and belongs to the project
+		var targetFolder database.ReplayFolder
+		if err := tx.Where("id = ? AND project_id = ?", folderID, projectID).First(&targetFolder).Error; err != nil {
+			if errors.Is(err, gorm.ErrRecordNotFound) {
+				return errors.New("folder not found")
+			}
+			return err
+		}
+
+		// Start recursive deletion
+		return deleteFolderRecursive(folderID)
+	})
+}
+
 // Update updates an existing replay
 func (r *replayRepository) Update(ctx context.Context, replay *database.Replay) error {
 	return r.db.WithContext(ctx).Save(replay).Error

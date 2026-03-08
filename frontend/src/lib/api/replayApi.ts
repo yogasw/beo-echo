@@ -128,6 +128,20 @@ export class ReplayApi {
 	}
 
 	/**
+	 * Delete a replay folder
+	 */
+	static async deleteFolder(
+		workspaceId: string, 
+		projectId: string, 
+		folderId: string
+	): Promise<{ message: string }> {
+		const response = await apiClient.delete(
+			`/workspaces/${workspaceId}/projects/${projectId}/replays/folder/${folderId}`
+		);
+		return response.data;
+	}
+
+	/**
 	 * Get replay execution logs
 	 */
 	static async getReplayLogs(
