@@ -6,6 +6,8 @@ export interface Tab {
     method: string;
     url: string;
     isUnsaved: boolean;
+    itemType?: 'request' | 'folder';
+    folder?: any; // The whole folder object
     
     // Extended content for persistence
     content?: TabContent;

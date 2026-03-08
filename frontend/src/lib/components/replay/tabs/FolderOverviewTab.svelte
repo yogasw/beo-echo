@@ -1,6 +1,7 @@
 <script lang="ts">
 	import InkMde from 'ink-mde/svelte';
 	import { marked } from 'marked';
+	// @ts-expect-error isomorphic-dompurify typing issue
 	import DOMPurify from 'isomorphic-dompurify';
 	import { theme } from '$lib/stores/theme';
 

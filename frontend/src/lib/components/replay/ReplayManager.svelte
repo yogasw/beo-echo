@@ -21,7 +21,6 @@
 	import SkeletonLoader from '$lib/components/common/SkeletonLoader.svelte';
 	import ErrorDisplay from '$lib/components/common/ErrorDisplay.svelte';
 	import ReplayEditor from './ReplayEditor.svelte';
-	import FolderView from './FolderView.svelte';
 	import type { Tab } from './types';
 	import type { ExecuteReplayResponse } from '$lib/types/Replay';
 
@@ -29,7 +28,6 @@
 	let error: string | null = null;
 	let activeView: 'list' | 'editor' | 'execution' | 'logs' | 'folder' = 'list';
 	let executionResult: ExecuteReplayResponse | null = null;
-	let selectedFolder: any = null;
 
 	// Panel width
 	let panelWidth: number; // Initialized in onMount
@@ -46,7 +44,13 @@
 	// State for ReplayEditor - will be loaded from localStorage
 	let editorTabs: Tab[] = [];
 	let editorActiveTabId = '';
-	let editorActiveTabContent = {
+	let editorActiveTabContent: {
+		method: string;
+		url: string;
+		activeSection: string;
+		itemType?: 'request' | 'folder';
+		folder?: any;
+	} = {
 		method: 'GET',
 		url: '',
 		activeSection: 'params'
@@ -361,16 +365,8 @@
 	function handleEditReplay(event: CustomEvent) {
 		const replay = event.detail;
 
-		// Folder selected → show folder documentation view
-		if (replay?.itemType === 'folder') {
-			selectedFolder = replay;
-			activeView = 'folder';
-			return;
-		}
-
 		selectedReplay.set(replay);
 		activeView = 'editor';
-		selectedFolder = null;
 		
 		// Check if this replay is already open in a tab
 		const existingTab = editorTabs.find(tab => tab.id === replay.id);
@@ -381,16 +377,20 @@
 			editorActiveTabContent = {
 				method: existingTab.method,
 				url: existingTab.url,
-				activeSection: existingTab.content?.activeSection || 'params'
+				activeSection: existingTab.content?.activeSection || 'params',
+				itemType: existingTab.itemType,
+				folder: existingTab.folder
 			};
 		} else {
 			// Create new tab for this replay with full content
 			const newTab: Tab = {
 				id: replay.id || `tab-${Date.now()}`,
-				name: replay.name || 'Edit Request',
+				name: replay.name || (replay.itemType === 'folder' ? 'New Folder' : 'Edit Request'),
 				method: replay.method || 'GET',
 				url: replay.url || '',
 				isUnsaved: false,
+				itemType: replay.itemType === 'folder' ? 'folder' : 'request',
+				folder: replay.itemType === 'folder' ? replay : undefined,
 				content: {
 					...createDefaultTabContent(),
 					method: replay.method || 'GET',
@@ -417,7 +417,9 @@
 			editorActiveTabContent = {
 				method: newTab.method,
 				url: newTab.url,
-				activeSection: 'params'
+				activeSection: 'params',
+				itemType: newTab.itemType,
+				folder: newTab.folder
 			};
 		}
 	}
@@ -781,15 +783,7 @@
 		<div
 			class="flex-1 flex flex-col h-full bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg overflow-hidden shadow-sm"
 		>
-			{#if activeView === 'folder' && selectedFolder}
-				<FolderView
-					folder={selectedFolder}
-					on:folderUpdated={(e) => {
-						selectedFolder = e.detail;
-						loadReplays();
-					}}
-				/>
-			{:else if (activeView === 'editor' || activeView === 'execution' || activeView === 'logs') && editorTabs.length > 0}
+			{#if (activeView === 'editor' || activeView === 'execution' || activeView === 'logs') && editorTabs.length > 0}
 				<ReplayEditor 
 					bind:tabs={editorTabs} 
 					bind:activeTabId={editorActiveTabId} 

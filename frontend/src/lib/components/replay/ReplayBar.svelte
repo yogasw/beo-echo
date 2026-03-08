@@ -4,6 +4,7 @@
 	import {  tick } from 'svelte'; // Corrected import
 	import * as ThemeUtils from '$lib/utils/themeUtils';
 	import TabContextMenu from './tabs/TabContextMenu.svelte';
+	import type { Tab } from './types';
 
 	// Props using Svelte 5 runes mode
 	let {
@@ -23,12 +24,7 @@
 		closeOtherTabs: (tabId: string) => void;
 		closeAllTabs: () => void;
 		duplicateTab: (tabId: string) => void;
-		tabs?: {
-			id: string;
-			name: string;
-			method: string;
-			isUnsaved?: boolean;
-		}[];
+		tabs?: Tab[];
 	} = $props();
 
 	// Reactive state for the DOM element reference
@@ -169,9 +165,15 @@
 							<span
 								class={`${activeTabId === tab.id
 									? 'px-2 py-0.5 rounded text-xs font-semibold bg-white/20 text-white'
-									: ThemeUtils.methodBadge(tab.method, 'text-xs px-1.5 py-0.5')}`}
+									: tab.itemType === 'folder' 
+										? 'text-xs text-orange-500' // Folder icon style
+										: ThemeUtils.methodBadge(tab.method, 'text-xs px-1.5 py-0.5')}`}
 							>
-								{tab.method}
+								{#if tab.itemType === 'folder'}
+									<i class="fas fa-folder"></i>
+								{:else}
+									{tab.method}
+								{/if}
 							</span>
 							<span class="max-w-24 truncate text-sm font-medium">{tab.name}</span>
 							{#if tab.isUnsaved}

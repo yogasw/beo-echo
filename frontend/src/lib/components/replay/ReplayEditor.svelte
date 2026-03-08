@@ -14,6 +14,7 @@
 	import ParamsTab from './tabs/ParamsTab.svelte';
 	import AuthorizationTab from './tabs/AuthorizationTab.svelte';
 	import HeadersTab from './tabs/HeadersTab.svelte';
+	import FolderOverviewTab from './tabs/FolderOverviewTab.svelte';
 	// ScriptTab is not currently used - will be implemented in the future
 	// import ScriptTab from './tabs/ScriptTab.svelte';
 	import SettingsTab from './tabs/SettingsTab.svelte';
@@ -40,6 +41,8 @@
 
 		// UI state
 		activeSection: string;
+		itemType?: 'request' | 'folder';
+		folder?: any;
 
 		// Raw fields from replayData
 		headers?: string;
@@ -66,6 +69,8 @@
 			method: replayData.method || 'GET',
 			url: replayData.url || '',
 			activeSection: 'params',
+			itemType: (replayData as any).itemType === 'folder' ? 'folder' : 'request',
+			folder: (replayData as any).itemType === 'folder' ? replayData : undefined,
 
 			// Store raw JSON fields
 			headers: replayData.headers,
@@ -121,6 +126,8 @@
 			url: '',
 			protocol: 'http',
 			activeSection: 'params',
+			itemType: 'request',
+			folder: undefined,
 
 			// Store raw JSON fields
 			headers: emptyHeadersJson,
@@ -214,6 +221,8 @@
 				url: newActiveTab.url || '',
 				activeSection: 'params',
 				protocol: 'http',
+				itemType: newActiveTab.itemType || 'request',
+				folder: newActiveTab.folder,
 
 				// Use replay data fields if available, otherwise defaults
 				headers: tabReplayData?.headers || emptyHeadersJson,
@@ -289,6 +298,8 @@
 				url: tab.url || '',
 				activeSection: 'params',
 				protocol: 'http',
+				itemType: tab.itemType || 'request',
+				folder: tab.folder,
 
 				// Use replay data fields if available, otherwise defaults
 				headers: tabReplayData?.headers || emptyHeadersJson,
@@ -716,6 +727,8 @@
 					url: currentTab.url || '',
 					activeSection: tabContent?.activeSection || 'params',
 					protocol: 'http',
+					itemType: currentTab.itemType || 'request',
+					folder: currentTab.folder,
 
 					// Use proper TabContent structure for data
 					headers: JSON.stringify(tabContent?.headers || [{ key: '', value: '', description: '', enabled: true }]),
@@ -747,7 +760,7 @@
 <div class="flex flex-col h-full">
 	<ReplayBar {activeTabId} {switchTab} {closeTab} {closeOtherTabs} {closeAllTabs} {duplicateTab} {createNewTab} {tabs} />
 	<!-- Main content -->
-	<main class="flex-grow p-4 space-y-4 overflow-y-auto">
+	<main class="flex-grow p-4 space-y-4 flex flex-col overflow-y-auto">
 		<!-- Title and actions -->
 		<div class="flex items-center justify-between">
 			<div class="flex items-center space-x-2">
@@ -757,6 +770,7 @@
 				</h1>
 			</div>
 			<div class="flex items-center space-x-2">
+				{#if activeTabContent?.itemType !== 'folder'}
 				<button
 					class={ThemeUtils.secondaryButton(
 						'flex items-center space-x-2 px-3 py-1.5 rounded-md text-sm border theme-border hover:shadow-md transition-all duration-200'
@@ -776,15 +790,24 @@
 						<span>Save</span>
 					{/if}
 				</button>
+				{/if}
 			</div>
 		</div>
 
-		<!-- Request builder -->
-		<div
-			class={ThemeUtils.themeBgSecondary(
-				'flex items-center border theme-border rounded-lg shadow-sm'
-			)}
-		>
+		{#if activeTabContent?.itemType === 'folder'}
+			<!-- Folder Overview Mode -->
+			<div class="flex-grow flex flex-col min-h-0 w-full">
+				<FolderOverviewTab
+					folder={activeTabContent.folder}
+				/>
+			</div>
+		{:else}
+			<!-- Request builder -->
+			<div
+				class={ThemeUtils.themeBgSecondary(
+					'flex items-center border theme-border rounded-lg shadow-sm'
+				)}
+			>
 			<div class="relative">
 				<select
 					bind:value={activeTabContent.method}
@@ -925,12 +948,15 @@
 				on:settingsChange={handleSettingsChange}
 			/>
 		{/if}
+		{/if} <!-- End of request vs folder branch -->
 	</main>
 
-	<ReplayResponseFooter
-		bind:isExpanded={isFooterExpanded}
-		{executionResult}
-		on:toggleExpand={handleFooterToggleExpand}
-		on:showHistory={handleFooterShowHistory}
-	/>
+	{#if activeTabContent?.itemType === 'request'}
+		<ReplayResponseFooter
+			bind:isExpanded={isFooterExpanded}
+			{executionResult}
+			on:toggleExpand={handleFooterToggleExpand}
+			on:showHistory={handleFooterShowHistory}
+		/>
+	{/if}
 </div>
