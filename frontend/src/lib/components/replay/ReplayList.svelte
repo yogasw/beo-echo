@@ -165,11 +165,9 @@
 			if (item.itemType === 'folder') {
 				await replayApi.deleteFolder($selectedWorkspace.id, $selectedProject.id, item.id);
 				dispatch('refresh');
-				toast.success('Folder deleted successfully');
 			} else {
 				await replayApi.deleteReplay($selectedWorkspace.id, $selectedProject.id, item.id);
 				replayActions.removeReplay(item.id);
-				toast.success('Replay deleted successfully');
 			}
 		} catch (err: any) {
 			toast.error(err);
@@ -335,7 +333,6 @@
 					update_parent_id: true
 				});
 			}
-			toast.success(`Moved ${itemType} to folder`);
 		} catch (error: any) {
 			toast.error(`Failed to move: ${error.message || 'Unknown error'}`);
 			dispatch('refresh'); // Refresh on error to restore state
@@ -391,7 +388,6 @@
 					update_parent_id: true
 				});
 			}
-			toast.success(`Moved ${itemType} to root`);
 		} catch (error: any) {
 			toast.error(`Failed to move: ${error.message || 'Unknown error'}`);
 			dispatch('refresh'); // Refresh on error to restore state
