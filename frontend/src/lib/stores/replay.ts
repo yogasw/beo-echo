@@ -5,6 +5,12 @@ import type { Replay, ReplayLog, ExecuteReplayResponse } from '$lib/types/Replay
 // Main replay list store
 export const replays = writable<Replay[]>([]);
 
+// Replay folders
+export const replayFolders = writable<import('$lib/types/Replay').ReplayFolder[]>([]);
+
+// Combined type for UI
+export type ReplayItem = (import('$lib/types/Replay').Replay & { itemType: 'replay' }) | (import('$lib/types/Replay').ReplayFolder & { itemType: 'folder' });
+
 // Currently selected replay
 export const selectedReplay = writable<Replay | null>(null);
 
@@ -48,15 +54,22 @@ export const replayFilter = writable<{
 
 // Filtered replays based on search and filter criteria
 export const filteredReplays = derived(
-	[replays, replayFilter],
-	([$replays, $filter]) => {
-		return $replays.filter(replay => {
-			// Search by alias or URL
+	[replays, replayFolders, replayFilter],
+	([$replays, $folders, $filter]) => {
+		const combined: ReplayItem[] = [
+			...$folders.map(f => ({ ...f, itemType: 'folder' as const })),
+			...$replays.map(r => ({ ...r, itemType: 'replay' as const }))
+		];
+
+		return combined.filter(item => {
+			// Search by name or URL
 			const matchesSearch = !$filter.searchTerm || 
-				replay.name?.toLowerCase().includes($filter.searchTerm?.toLowerCase()) ||
-				replay.url?.toLowerCase().includes($filter.searchTerm?.toLowerCase());
-			// Filter by protocol
-			const matchesProtocol = !$filter.protocol || replay.protocol === $filter.protocol;
+				item.name?.toLowerCase().includes($filter.searchTerm?.toLowerCase()) ||
+				(item.itemType === 'replay' && item.url?.toLowerCase().includes($filter.searchTerm?.toLowerCase()));
+			
+			// Filter by protocol (only applies to replays)
+			const matchesProtocol = !$filter.protocol || 
+				(item.itemType === 'replay' ? item.protocol === $filter.protocol : true);
 
 			return matchesSearch && matchesProtocol;
 		});
@@ -150,6 +163,7 @@ export const replayActions = {
 	// Clear all state (useful for project switching)
 	clearAll: () => {
 		replays.set([]);
+		replayFolders.set([]);
 		selectedReplay.set(null);
 		replayLogs.set([]);
 		replayExecution.set({ isExecuting: false, lastResult: null });

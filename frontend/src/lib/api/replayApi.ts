@@ -33,6 +33,21 @@ export class ReplayApi {
 	}
 
 	/**
+	 * Create a new replay folder
+	 */
+	static async createFolder(
+		workspaceId: string, 
+		projectId: string, 
+		folderData: { name: string; parent_id?: string }
+	): Promise<{ folder: Replay; message: string }> {
+		const response = await apiClient.post(
+			`/workspaces/${workspaceId}/projects/${projectId}/replays/folder`,
+			folderData
+		);
+		return response.data;
+	}
+
+	/**
 	 * Get a specific replay
 	 */
 	static async getReplay(

@@ -27,6 +27,7 @@
 	let showAddDropdown = $state(false);
 	let searchTerm = $state('');
 	let openMenuId: string | null = $state(null);
+	let pendingFolderParent: any = $state(null);
 
 	function handleToggleCollapse() {
 		dispatch('toggleCollapse', { animate: true });
@@ -34,8 +35,12 @@
 
 	// Sort replays
 	let sortedReplays = $derived(
-		$filteredReplays.sort((a, b) => {
-			const comparison = a.name.localeCompare(b.name);
+		[...$filteredReplays].sort((a, b) => {
+			// Always put folders first in the list
+			if (a.itemType !== b.itemType) {
+				return a.itemType === 'folder' ? -1 : 1;
+			}
+			const comparison = (a.name || '').localeCompare(b.name || '');
 			return sortOrder === 'asc' ? comparison : -comparison;
 		})
 	);
@@ -49,18 +54,25 @@
 		});
 	});
 
-	async function handleDelete(replay: Replay) {
+	async function handleDelete(item: any) {
 		if (!$selectedWorkspace || !$selectedProject) return;
 
-		if (!confirm(`Are you sure you want to delete the replay "${replay.name}"?`)) {
+		if (!confirm(`Are you sure you want to delete the ${item.itemType} "${item.name}"?`)) {
 			return;
 		}
 
 		try {
 			replayActions.setLoading('delete', true);
-			await replayApi.deleteReplay($selectedWorkspace.id, $selectedProject.id, replay.id);
-			replayActions.removeReplay(replay.id);
-			toast.success('Replay deleted successfully');
+			// TODO: Api doesn't have delete folder yet, so let's just assume we delete replay for now
+			// or conditionally call delete if it's a replay.
+			if (item.itemType === 'folder') {
+				toast.error('Deleting folders is not yet supported in this view.');
+				replayActions.setLoading('delete', false);
+				return;
+			}
+			await replayApi.deleteReplay($selectedWorkspace.id, $selectedProject.id, item.id);
+			replayActions.removeReplay(item.id);
+			toast.success(`${item.itemType === 'folder' ? 'Folder' : 'Replay'} deleted successfully`);
 		} catch (err: any) {
 			toast.error(err);
 		} finally {
@@ -71,10 +83,14 @@
 		openMenuId = null;
 	}
 
-	function handleSelectReplay(replay: Replay) {
-		console.log('Selecting replay:', replay);
-		selectedReplay.set(replay);
-		dispatch('edit', replay); // Dispatch an 'edit' event with the selected replay
+	function handleSelectReplay(item: any) {
+		if (item.itemType === 'folder') {
+			return;
+		}
+
+		console.log('Selecting replay:', item);
+		selectedReplay.set(item);
+		dispatch('edit', item); // Dispatch an 'edit' event with the selected replay
 	}
 
 	function handleAdd() {
@@ -91,8 +107,10 @@
 		showAddDropdown = false;
 	}
 
-	function handleCreateFolder(replay: Replay) {
-		dispatch('add', { type: 'folder', parentReplay: replay });
+	function handleCreateFolder(item: any) {
+		openMenuId = null;
+		pendingFolderParent = item;
+		dispatch('add', { type: 'folder', parentReplay: item });
 		openMenuId = null;
 	}
 
@@ -226,70 +244,87 @@
 				</div>
 			{:else}
 				<div class="flex flex-col">
-					{#each sortedReplays as replay (replay.id)}
+					{#each sortedReplays as item (item.id)}
 						<div
 							class="group flex relative transition-colors cursor-pointer border-l-[3px] px-2 {$selectedReplay?.id ===
-							replay.id
+							item.id
 								? 'bg-white/5 border-[#3b82f6]'
 								: 'border-transparent hover:bg-white/5'}"
-							onclick={() => handleSelectReplay(replay)}
+							onclick={() => handleSelectReplay(item)}
 							role="button"
 							tabindex="0"
-							onkeydown={(e) => e.key === 'Enter' && handleSelectReplay(replay)}
+							onkeydown={(e) => e.key === 'Enter' && handleSelectReplay(item)}
 						>
 							<div class="flex items-center w-full h-[32px] gap-3">
 								<!-- Fixed-width badge col so names always align -->
 								<div class="w-[50px] flex-shrink-0 flex justify-end">
-									<HttpMethodBadge method={replay.method} size="xs" />
+									{#if item.itemType === 'folder'}
+										<i class="fas fa-folder text-yellow-400"></i>
+									{:else}
+										<HttpMethodBadge method={item.method} size="xs" />
+									{/if}
 								</div>
 								<!-- Name -->
 								<span
-									class="text-[13px] {$selectedReplay?.id === replay.id
+									class="text-[13px] {$selectedReplay?.id === item.id
 										? 'text-gray-100'
 										: 'text-gray-300 dark:text-gray-300'} truncate"
 								>
-									{replay.name || 'Unnamed Request'}
+									{item.name || 'Unnamed Request'}
 								</span>
 							</div>
 
-							<!-- Three-dot menu -->
-							<div class="absolute right-2 top-1/2 -translate-y-1/2 menu-container">
-								<button
-									onclick={(e) => toggleMenu(replay.id, e)}
-									class="p-1.5 text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 transition-colors opacity-0 group-hover:opacity-100 {openMenuId ===
-									replay.id
-										? 'opacity-100'
-										: ''}"
-									title="More options"
-									aria-label="More options"
-									aria-expanded={openMenuId === replay.id}
-								>
-									<i class="fas fa-ellipsis-h text-sm"></i>
-								</button>
-
-								<!-- Dropdown Menu -->
-								{#if openMenuId === replay.id}
-									<div
-										class="absolute top-full right-0 mt-1 w-48 theme-bg-primary theme-border border rounded-md shadow-lg z-20"
+							<!-- Action Buttons -->
+							<div
+								class="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity bg-gray-900/90 pl-2 rounded-l"
+							>
+								<!-- Three-dot menu -->
+								<div class="menu-container relative">
+									<button
+										onclick={(e) => toggleMenu(item.id, e)}
+										class="p-1.5 text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 transition-colors {openMenuId ===
+										item.id
+											? 'opacity-100 text-gray-200'
+											: ''}"
+										title="More options"
+										aria-label="More options"
+										aria-expanded={openMenuId === item.id}
 									>
-										<div class="py-1">
-											<button
-												onclick={() => handleDelete(replay)}
-												class="w-full text-left px-4 py-2 text-sm theme-text-primary hover:theme-bg-secondary transition-colors flex items-center space-x-2"
-											>
-												<i class="fas fa-trash text-red-400"></i>
-												<span>Delete</span>
-											</button>
-											<button
-												onclick={() => handleCreateFolder(replay)}
-												class="w-full text-left px-4 py-2 text-sm theme-text-primary hover:theme-bg-secondary transition-colors flex items-center space-x-2"
-											>
-												<i class="fas fa-folder-plus text-yellow-400"></i>
-												<span>Create Folder</span>
-											</button>
+										<i class="fas fa-ellipsis-h text-sm"></i>
+									</button>
+
+									<!-- Dropdown Menu -->
+									{#if openMenuId === item.id}
+										<div
+											class="absolute top-full right-0 mt-1 w-48 theme-bg-primary theme-border border rounded-md shadow-lg z-20"
+										>
+											<div class="py-1">
+												<button
+													onclick={(e) => {
+														e.stopPropagation();
+														handleDelete(item);
+													}}
+													class="w-full text-left px-4 py-2 text-sm text-red-400 hover:theme-bg-secondary transition-colors flex items-center space-x-2"
+												>
+													<i class="fas fa-trash"></i>
+													<span>Delete</span>
+												</button>
+												{#if item.itemType === 'folder'}
+													<button
+														onclick={(e) => {
+															e.stopPropagation();
+															handleCreateFolder(item);
+														}}
+														class="w-full text-left px-4 py-2 text-sm theme-text-primary hover:theme-bg-secondary transition-colors flex items-center space-x-2"
+													>
+														<i class="fas fa-folder-plus text-yellow-400"></i>
+														<span>Create Folder</span>
+													</button>
+												{/if}
+											</div>
 										</div>
-									</div>
-								{/if}
+									{/if}
+								</div>
 							</div>
 						</div>
 					{/each}

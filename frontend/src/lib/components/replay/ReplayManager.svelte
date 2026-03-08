@@ -2,7 +2,7 @@
 	import { onMount, onDestroy } from 'svelte';
 	import { selectedWorkspace } from '$lib/stores/workspace';
 	import { selectedProject } from '$lib/stores/selectedConfig';
-	import { replays, selectedReplay, replayActions, replayLoading } from '$lib/stores/replay';
+	import { replays, replayFolders, selectedReplay, replayActions, replayLoading } from '$lib/stores/replay';
 	import { toast } from '$lib/stores/toast';
 	import { replayApi } from '$lib/api/replayApi';
 	import { getReplayPanelWidth, setReplayPanelWidth } from '$lib/utils/localStorage';
@@ -183,7 +183,7 @@
 		console.log('🔄 Tabs changed from editor:', event.detail);
 		
 		// Update basic tab properties but preserve content structure
-		const newTabs = event.detail.tabs.map(newTab => {
+		const newTabs = event.detail.tabs.map((newTab: Tab) => {
 			// Find existing tab to preserve content
 			const existingTab = editorTabs.find(tab => tab.id === newTab.id);
 			
@@ -278,7 +278,8 @@
 			replayActions.setLoading('list', true);
 
 			const response = await replayApi.listReplays($selectedWorkspace.id, $selectedProject.id);
-			replays.set(response.replays);
+			replays.set(response.replays || []);
+			replayFolders.set(response.folders || []);
 		} catch (err: any) {
 			error = err.message || 'Failed to load replays';
 			toast.error(err);
@@ -288,7 +289,27 @@
 		}
 	}
 
-	function handleCreateNew() {
+	async function handleCreateNew(event?: CustomEvent) {
+		const detail = event?.detail;
+		if (detail?.type === 'folder') {
+			try {
+				if (!$selectedWorkspace || !$selectedProject) return;
+				replayActions.setLoading('create', true);
+				
+				const parentId = detail.parentReplay?.id || null;
+				await replayApi.createFolder($selectedWorkspace.id, $selectedProject.id, {
+					name: detail.name,
+					parent_id: parentId
+				});
+				loadReplays(); // Refresh the list
+			} catch (err: any) {
+				toast.error(err.message || 'Failed to create folder');
+			} finally {
+				replayActions.setLoading('create', false);
+			}
+			return;
+		}
+
 		selectedReplay.set(null);
 		activeView = 'editor';
 		
@@ -341,10 +362,7 @@
 		activeView = 'editor';
 		
 		// Check if this replay is already open in a tab
-		const existingTab = editorTabs.find(tab => 
-			tab.id === replay.id || 
-			(tab.method === replay.method && tab.url === replay.url && !tab.isUnsaved)
-		);
+		const existingTab = editorTabs.find(tab => tab.id === replay.id);
 		
 		if (existingTab) {
 			// Switch to existing tab

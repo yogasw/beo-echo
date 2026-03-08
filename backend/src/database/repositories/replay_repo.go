@@ -35,6 +35,22 @@ func (r *replayRepository) FindByProjectID(ctx context.Context, projectID string
 	return replays, nil
 }
 
+// FindFoldersByProjectID finds all replay folders for a specific project
+func (r *replayRepository) FindFoldersByProjectID(ctx context.Context, projectID string) ([]database.ReplayFolder, error) {
+	var folders []database.ReplayFolder
+
+	err := r.db.WithContext(ctx).
+		Where("project_id = ?", projectID).
+		Order("name ASC").
+		Find(&folders).Error
+
+	if err != nil {
+		return nil, err
+	}
+
+	return folders, nil
+}
+
 // FindByID finds a replay by its ID
 func (r *replayRepository) FindByID(ctx context.Context, id string) (*database.Replay, error) {
 	var replay database.Replay
@@ -56,6 +72,11 @@ func (r *replayRepository) FindByID(ctx context.Context, id string) (*database.R
 // Create creates a new replay
 func (r *replayRepository) Create(ctx context.Context, replay *database.Replay) error {
 	return r.db.WithContext(ctx).Create(replay).Error
+}
+
+// CreateFolder creates a new replay folder
+func (r *replayRepository) CreateFolder(ctx context.Context, folder *database.ReplayFolder) error {
+	return r.db.WithContext(ctx).Create(folder).Error
 }
 
 // Update updates an existing replay

@@ -283,6 +283,7 @@ func SetupRouter() *gin.Engine {
 				// Replay management
 				projectRoutes.GET("/replays", replayHandler.ListReplaysHandler)
 				projectRoutes.POST("/replays", replayHandler.CreateReplayHandler)
+				projectRoutes.POST("/replays/folder", replayHandler.CreateFolderHandler)
 				projectRoutes.GET("/replays/:replayId", replayHandler.GetReplayHandler)
 				projectRoutes.PUT("/replays/:replayId", replayHandler.UpdateReplayHandler)
 				projectRoutes.POST("/replays/execute", replayHandler.ExecuteReplayHandler)

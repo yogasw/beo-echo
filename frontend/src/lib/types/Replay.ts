@@ -63,9 +63,20 @@ export interface ReplayLog {
 	error_message?: string;
 }
 
+export interface ReplayFolder {
+	id: string;
+	name: string;
+	project_id: string;
+	parent_id?: string;
+	created_at: string;
+	updated_at: string;
+}
+
 export interface ListReplaysResponse {
 	replays: Replay[];
-	count: number;
+	folders: ReplayFolder[];
+	replayCount: number;
+	folderCount: number;
 }
 
 export interface ListReplayLogsResponse {
