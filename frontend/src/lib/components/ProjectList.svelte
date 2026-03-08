@@ -14,7 +14,7 @@
 	import { toast } from '$lib/stores/toast';
 	import { resetEndpointsList } from '$lib/stores/saveButton';
 	import * as ThemeUtils from '$lib/utils/themeUtils';
-	import { getVersionWithPrefix } from '$lib/utils/version';
+	import { getVersionWithPrefix, getVersionInfo } from '$lib/utils/version';
 	import { currentWorkspace, workspaces } from '$lib/stores/workspace';
 	import { isLoadingContentArea } from '$lib/stores/loadingContentArea';
 	import { initializeLogsStream } from '$lib/services/logsService';
@@ -36,6 +36,17 @@
 	let savedPanelWidth = 18; // Store the width before collapsing
 	const collapsedWidth = 4; // Width when collapsed (just enough for the toggle button)
 	let isAnimating = false; // Flag to enable animation only for toggle button
+
+	const versionInfo = getVersionInfo();
+	function formatBuildTime(dateString: string) {
+		try {
+			if (!dateString) return '';
+			const date = new Date(dateString);
+			return date.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+		} catch (e) {
+			return '';
+		}
+	}
 
 	const dispatch = createEventDispatcher<{
 		selectedProject: Project;
@@ -508,29 +519,23 @@
 
 			<!-- Version and Links -->
 			<div class="flex items-center justify-between px-2">
-				<span
-					class="inline-flex items-center px-3 py-1.5 rounded-full text-xs font-semibold bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-sm"
-				>
-					{#if panelWidth >= 16}
-						<i class="fas fa-tag mr-1.5 text-xs"></i>
-					{/if}
-					{getVersionWithPrefix('v')}
-				</span>
-
-				<!-- Action Links -->
-				<div class="flex items-center space-x-2">
+				<div class="flex items-center gap-2">
 					<a
-						href="https://github.com/yogasw/beo-echo"
+						href={getVersionWithPrefix('v').includes('-dev') ? 'https://github.com/yogasw/beo-echo/blob/main/CHANGELOG.md' : `https://github.com/yogasw/beo-echo/blob/main/CHANGELOG.md#${getVersionWithPrefix('v').replace(/\./g, '')}`}
 						target="_blank"
 						rel="noopener noreferrer"
-						class="group flex items-center justify-center w-8 h-8 rounded-lg theme-bg-secondary hover:bg-gray-600 dark:hover:bg-gray-500 transition-all duration-200 transform hover:scale-105"
+						class="inline-flex items-center px-3 py-1.5 rounded-full text-xs font-semibold bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-sm hover:from-blue-600 hover:to-blue-700 transition-all duration-200 transform hover:scale-105"
 						style="text-decoration: none !important;"
-						title="View on GitHub"
-						aria-label="View Beo Echo project on GitHub"
+						title={versionInfo.buildTime ? `View changelog (Built: ${formatBuildTime(versionInfo.buildTime)})` : 'View changelog'}
+						aria-label="View changelog"
 					>
-						<i
-							class="fab fa-github text-sm theme-text-secondary group-hover:text-white transition-colors"
-						></i>
+						<i class="fab fa-github mr-1.5 text-xs"></i>
+						<span>{getVersionWithPrefix('v')}</span>
+						{#if panelWidth >= 16 && versionInfo.buildTime}
+							<span class="ml-2 pl-2 border-l border-white/30 text-[10px] opacity-90 font-medium whitespace-nowrap">
+								{formatBuildTime(versionInfo.buildTime)}
+							</span>
+						{/if}
 					</a>
 				</div>
 			</div>
