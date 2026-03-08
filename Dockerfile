@@ -25,7 +25,7 @@ ENV NODE_ENV=production
 RUN npm run build -- --no-sourcemap
 
 # Stage 2: Build Backend
-FROM golang:1.24-alpine AS backend-builder
+FROM golang:1.26.1-alpine AS backend-builder
 
 WORKDIR /app/backend
 
@@ -65,12 +65,8 @@ RUN chmod +x /app/entrypoint.sh
 # Set environment variables
 ENV GIN_MODE=release
 
-# # Set a non-root user for better security
-# RUN addgroup -S beoecho && adduser -S -G beoecho beoecho && \
-#     chown -R beoecho:beoecho /app /data /config && \
-#     chmod -R 755 /app/logs
-
-# # Use the non-root user
-# USER beoecho
+# Set a non-root user for better security
+RUN adduser -D -u 1000 appuser && chown -R 1000:1000 /app /data /config
+USER 1000
 
 ENTRYPOINT ["/app/entrypoint.sh"]

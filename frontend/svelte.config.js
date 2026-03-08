@@ -35,7 +35,15 @@ const config = {
 			entries: isLandingMode ? ['/', '/login', '*'] : [], // Always prerender root and login in landing mode
 			handleHttpError: 'warn',
 			handleMissingId: 'warn',
-			handleEntryGeneratorMismatch: 'warn'
+			handleEntryGeneratorMismatch: 'warn',
+			handleUnseenRoutes: ({ id }) => {
+				// Ignore acceptable unlinked routes
+				if (['/demo', '/demo/badges', '/demo/components', '/demo/toggle-switch', '/home', '/login'].includes(id)) {
+					return;
+				}
+				// Default behavior for everything else
+				console.warn(`Unseen route: ${id}`);
+			}
 		}
 	}
 	
