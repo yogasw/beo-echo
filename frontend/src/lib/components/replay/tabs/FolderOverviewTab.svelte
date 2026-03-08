@@ -70,15 +70,15 @@
 	{#if isEditing}
 		<!-- Edit mode -->
 		<div class="flex items-center justify-between mb-2 flex-shrink-0">
-			<span class="text-xs text-gray-400 flex items-center gap-1.5">
+			<span class="text-xs theme-text-muted flex items-center gap-1.5">
 				<i class="fas fa-edit text-blue-400"></i>
 				Editing —
-				<kbd class="bg-zinc-800 border border-zinc-600 rounded px-1.5 py-0.5 text-[10px] font-mono">Esc</kbd>
+				<kbd class="theme-bg-secondary theme-border border rounded px-1.5 py-0.5 text-[10px] font-mono theme-text-primary">Esc</kbd>
 				to preview
 			</span>
 			<button
 				onclick={exitEditMode}
-				class="text-xs px-2.5 py-1 bg-zinc-700 hover:bg-zinc-600 text-gray-300 rounded transition-colors flex items-center gap-1.5 border border-zinc-600 shadow-sm"
+				class="text-xs px-2.5 py-1 theme-bg-secondary hover:theme-bg-hover theme-text-primary rounded transition-colors flex items-center gap-1.5 theme-border border shadow-sm"
 				title="Switch to preview"
 				aria-label="Switch to preview mode"
 			>
@@ -87,7 +87,7 @@
 			</button>
 		</div>
 
-		<div class="flex-1 min-h-0 ink-editor-wrap rounded-lg overflow-hidden border border-zinc-600 dark:bg-zinc-800 bg-white">
+		<div class="flex-1 min-h-0 ink-editor-wrap rounded-lg overflow-hidden theme-border border theme-bg-primary">
 			<InkMde
 				bind:value={description}
 				options={{
@@ -101,7 +101,6 @@
 		</div>
 	{:else}
 		<!-- Preview mode — double-click to edit -->
-		<!-- svelte-ignore a11y_no_static_element_interactions -->
 		<div
 			class="flex-1 flex flex-col min-h-0 cursor-text group"
 			role="region"
@@ -111,17 +110,17 @@
 			<div class="flex-1 overflow-auto min-h-0 bg-transparent rounded-lg">
 				{#if description.trim()}
 					<!-- eslint-disable-next-line svelte/no-at-html-tags -->
-					<div class="ink-viewer-wrap prose prose-invert prose-sm max-w-none px-2 py-1">{@html renderedDescription}</div>
+					<div class="ink-viewer-wrap prose {$theme === 'dark' ? 'prose-invert' : ''} prose-sm max-w-none px-2 py-1">{@html renderedDescription}</div>
 				{:else}
-					<div class="flex flex-col items-center justify-center h-full text-center py-12 rounded-lg border-2 border-dashed border-zinc-700 group-hover:border-zinc-500 transition-colors">
-						<i class="fas fa-file-alt text-3xl text-zinc-600 mb-3"></i>
-						<p class="text-sm text-zinc-400 mb-1">No documentation yet</p>
-						<p class="text-xs text-zinc-500">Double-click to start writing</p>
+					<div class="flex flex-col items-center justify-center h-full text-center py-12 rounded-lg border-2 border-dashed theme-border theme-text-muted transition-colors">
+						<i class="fas fa-file-alt text-3xl mb-3 opacity-50"></i>
+						<p class="text-sm mb-1 theme-text-primary">No documentation yet</p>
+						<p class="text-xs">Double-click to start writing</p>
 					</div>
 				{/if}
 			</div>
 
-			<p class="mt-3 flex-shrink-0 text-[11px] text-zinc-500 group-hover:text-zinc-400 transition-colors flex items-center gap-1.5 px-1 font-medium">
+			<p class="mt-3 flex-shrink-0 text-[11px] theme-text-muted transition-colors flex items-center gap-1.5 px-1 font-medium">
 				<i class="fas fa-mouse-pointer"></i>
 				Double-click to edit · Markdown supported by ink-mde
 			</p>

@@ -533,7 +533,7 @@
 								<input
 									type="text"
 									bind:value={newFolderName}
-									class="flex-1 bg-transparent border-b border-blue-500 outline-none text-[13px] text-white py-1 px-1"
+									class="flex-1 bg-transparent border-b border-blue-500 outline-none text-[13px] theme-text-primary py-1 px-1"
 									placeholder="Folder name"
 									autofocus
 									onkeydown={(e) => {
@@ -557,8 +557,8 @@
 							ondrop={(e) => handleDrop(e, item)}
 							class="group flex transition-all cursor-pointer {draggedItem?.id === item.id ? 'opacity-30' : ''} {dragOverItemId === item.id ? (item.itemType === 'folder' ? 'bg-[#ff6600]/10 ring-1 ring-inset ring-[#ff6600] z-10' : 'border-t-2 border-t-[#ff6600]') : 'border-t-2 border-t-transparent'} {$selectedReplay?.id ===
 							item.id && dragOverItemId !== item.id
-								? 'bg-white/5 border-l-[3px] border-l-[#ff6600]'
-								: 'border-l-[3px] border-l-transparent hover:bg-white/5'} {contextMenu.isOpen && contextMenu.item?.id === item.id ? 'bg-white/5 relative z-40' : 'relative'} px-2"
+								? 'bg-blue-500/10 border-l-[3px] border-l-[#ff6600]'
+								: 'border-l-[3px] border-l-transparent hover:bg-gray-500/10'} {contextMenu.isOpen && contextMenu.item?.id === item.id ? 'bg-gray-500/10 relative z-40' : 'relative'} px-2"
 							style="padding-left: {item.depth * 1.5}rem; padding-right: 0.5rem;"
 							onclick={() => handleSelectReplay(item)}
 							oncontextmenu={(e) => handleContextMenu(e, item)}
@@ -579,12 +579,12 @@
 									{#if item.itemType === 'folder'}
 										<button 
 											onclick={(e) => toggleFolderCollapse(e, item.id)}
-											class="w-4 h-4 flex items-center justify-center text-gray-400 hover:text-gray-200 transition-colors rounded hover:bg-white/10"
+											class="w-4 h-4 flex items-center justify-center theme-text-muted hover:theme-text-primary transition-colors rounded hover:bg-gray-500/10"
 											aria-label="Toggle Folder"
 										>
 											<i class="fas fa-chevron-{collapsedFolders.has(item.id) ? 'right' : 'down'} text-[10px]"></i>
 										</button>
-										<i class="far fa-folder text-gray-400 text-sm"></i>
+										<i class="far fa-folder theme-text-muted text-sm"></i>
 									{:else}
 										<HttpMethodBadge method={item.method} size="folder-size" />
 									{/if}
@@ -593,8 +593,8 @@
 								<!-- Name -->
 								<span
 									class="text-[13px] {$selectedReplay?.id === item.id
-										? 'text-gray-100'
-										: 'text-gray-300 dark:text-gray-300'} truncate"
+										? 'theme-text-primary font-medium'
+										: 'theme-text-secondary'} truncate"
 								>
 									{item.name || 'Unnamed Request'}
 								</span>
@@ -611,7 +611,7 @@
 											e.stopPropagation();
 											handleContextMenu(e, item)
 										}}
-										class="p-1.5 text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 transition-colors"
+										class="p-1.5 theme-text-muted hover:theme-text-primary transition-colors"
 										title="More options"
 										aria-label="More options"
 									>
@@ -633,7 +633,7 @@
 									<input
 										type="text"
 										bind:value={newFolderName}
-										class="flex-1 bg-transparent border-b border-blue-500 outline-none text-[13px] text-white py-1 px-1"
+										class="flex-1 bg-transparent border-b border-blue-500 outline-none text-[13px] theme-text-primary py-1 px-1"
 										placeholder="Folder name"
 										autofocus
 										onkeydown={(e) => {
@@ -656,7 +656,7 @@
 		<!-- svelte-ignore a11y_click_events_have_key_events -->
 		<!-- svelte-ignore a11y_no_static_element_interactions -->
 		<div
-			class="fixed bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-md shadow-xl z-[100] overflow-hidden min-w-[160px]"
+			class="fixed theme-bg-primary theme-border border rounded-md shadow-xl z-[100] overflow-hidden min-w-[160px]"
 			style="top: {contextMenu.y}px; left: {contextMenu.x}px;"
 			onclick={(e) => e.stopPropagation()}
 			oncontextmenu={(e) => e.stopPropagation()}

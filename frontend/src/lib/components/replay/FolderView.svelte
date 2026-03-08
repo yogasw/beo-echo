@@ -92,17 +92,17 @@
 	});
 </script>
 
-<div class="flex flex-col h-full overflow-hidden bg-white dark:bg-gray-800">
+<div class="flex flex-col h-full overflow-hidden theme-bg-primary">
 	<!-- ── Tab bar (matches ReplayEditor style) ── -->
-	<div class="flex-shrink-0 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-850">
+	<div class="flex-shrink-0 theme-border border-b theme-bg-secondary">
 		<!-- Breadcrumb row -->
 		{#if breadcrumbParts.length > 0}
-			<nav aria-label="Folder breadcrumb" class="flex items-center gap-1 text-xs text-gray-500 px-4 pt-2">
+			<nav aria-label="Folder breadcrumb" class="flex items-center gap-1 text-xs theme-text-muted px-4 pt-2">
 				{#each breadcrumbParts as part, i}
-					<span class="text-gray-400">{part}</span>
-					<i class="fas fa-chevron-right text-[9px] text-gray-600"></i>
+					<span class="theme-text-muted opacity-75">{part}</span>
+					<i class="fas fa-chevron-right text-[9px] opacity-50"></i>
 				{/each}
-				<span class="text-gray-300 font-medium">{folder?.name}</span>
+				<span class="theme-text-primary font-medium">{folder?.name}</span>
 			</nav>
 		{/if}
 
@@ -120,7 +120,7 @@
 							bind:value={titleValue}
 							onkeydown={handleTitleKeydown}
 							onblur={saveTitle}
-							class="flex-1 min-w-0 bg-gray-900 border border-blue-500 rounded px-2 py-0.5 text-sm font-semibold text-white focus:outline-none focus:ring-1 focus:ring-blue-500"
+							class="flex-1 min-w-0 theme-bg-primary theme-border border border-blue-500 rounded px-2 py-0.5 text-sm font-semibold theme-text-primary focus:outline-none focus:ring-1 focus:ring-blue-500"
 							title="Folder name"
 							aria-label="Edit folder name"
 							aria-required="true"
@@ -140,7 +140,7 @@
 						</button>
 						<button
 							onclick={cancelEditTitle}
-							class="flex-shrink-0 px-2 py-1 bg-gray-700 hover:bg-gray-600 text-gray-300 rounded text-xs transition-colors"
+							class="flex-shrink-0 px-2 py-1 theme-bg-secondary hover:theme-bg-hover theme-text-primary rounded text-xs transition-colors theme-border border"
 							title="Cancel rename"
 							aria-label="Cancel renaming folder"
 						>
@@ -149,14 +149,14 @@
 					</div>
 				{:else}
 					<h1
-						class="text-sm font-semibold text-white truncate flex-1 min-w-0 leading-tight"
+						class="text-sm font-semibold theme-text-primary truncate flex-1 min-w-0 leading-tight"
 						title={folder?.name}
 					>
 						{folder?.name || 'Unnamed Folder'}
 					</h1>
 					<button
 						onclick={startEditTitle}
-						class="flex-shrink-0 opacity-0 group-hover:opacity-100 p-1 text-gray-500 hover:text-gray-300 hover:bg-gray-700 rounded transition-all"
+						class="flex-shrink-0 opacity-0 group-hover:opacity-100 p-1 theme-text-muted hover:theme-text-primary hover:bg-gray-500/10 rounded transition-all"
 						title="Rename folder"
 						aria-label="Rename this folder"
 					>
@@ -167,7 +167,7 @@
 
 			<!-- Right: item count badge -->
 			<span
-				class="flex-shrink-0 flex items-center gap-1 text-xs text-gray-500 dark:text-gray-400"
+				class="flex-shrink-0 flex items-center gap-1 text-xs theme-text-muted"
 				title="{childCount} {childCount === 1 ? 'item' : 'items'} in folder"
 				aria-label="{childCount} items"
 			>
@@ -180,7 +180,7 @@
 		<!-- Active tab indicator -->
 		<div class="flex items-center px-4 mt-2">
 			<div
-				class="flex items-center gap-1.5 px-3 py-2 text-xs font-medium text-white border-b-2 border-[#ff6600]"
+				class="flex items-center gap-1.5 px-3 py-2 text-xs font-medium theme-text-primary border-b-2 border-[#ff6600]"
 				role="tab"
 				aria-selected="true"
 			>
