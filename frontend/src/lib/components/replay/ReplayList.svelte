@@ -25,6 +25,7 @@
 	let showAddDropdown = $state(false);
 	let searchTerm = $state('');
 	let pendingFolderParent: any = $state(null);
+	let collapsedFolders = $state(new Set<string>());
 
 	let draggedItem: any | null = $state(null);
 	let dragOverItemId: string | null = $state(null);
@@ -52,6 +53,17 @@
 		contextMenu.isOpen = false;
 	}
 
+	function toggleFolderCollapse(e: MouseEvent, folderId: string) {
+		e.stopPropagation();
+		const newCollapsed = new Set(collapsedFolders);
+		if (newCollapsed.has(folderId)) {
+			newCollapsed.delete(folderId);
+		} else {
+			newCollapsed.add(folderId);
+		}
+		collapsedFolders = newCollapsed;
+	}
+
 	function handleToggleCollapse() {
 		dispatch('toggleCollapse', { animate: true });
 	}
@@ -67,6 +79,63 @@
 			return sortOrder === 'asc' ? comparison : -comparison;
 		})
 	);
+
+	// Build a hierarchical ordered list that computes depth and handles collapse state
+	let displayItems = $derived.by(() => {
+		const items = sortedReplays;
+		const result: any[] = [];
+		const folders = items.filter(i => i.itemType === 'folder');
+		const replaysList = items.filter(i => i.itemType === 'replay');
+
+		// Defend against circular references
+		const processedFolderIds = new Set<string>();
+		
+		// Setup known folders to handle orphaned items
+		const knownFolderIds = new Set(folders.map(f => f.id));
+
+		function addChildren(parentId: string | null, depth: number, isVisible: boolean) {
+			// Add folders first
+			const childFolders = folders.filter(f => {
+				const fPid = f.parent_id ? String(f.parent_id).trim() : null;
+				// If parentId is null (we are currently at root), also include orphaned folders whose parent no longer exists
+				if (parentId === null) {
+					return fPid === null || !knownFolderIds.has(fPid);
+				}
+				return fPid === parentId;
+			});
+			
+			for (const folder of childFolders) {
+				if (processedFolderIds.has(folder.id)) continue;
+				processedFolderIds.add(folder.id);
+				
+				if (isVisible) {
+					result.push({ ...folder, depth, isVisible });
+				}
+				
+				// Calculate children recursively
+				const isExpanded = !collapsedFolders.has(folder.id);
+				addChildren(folder.id, depth + 1, isVisible && isExpanded);
+			}
+
+			// Add replays
+			const childReplays = replaysList.filter(r => {
+				const rFid = r.folder_id ? String(r.folder_id).trim() : null;
+				// If parentId is null (we are currently at root), also include orphaned replays whose folder no longer exists
+				if (parentId === null) {
+					return rFid === null || !knownFolderIds.has(rFid);
+				}
+				return rFid === parentId;
+			});
+			for (const replay of childReplays) {
+				if (isVisible) {
+					result.push({ ...replay, depth, isVisible });
+				}
+			}
+		}
+
+		addChildren(null, 0, true);
+		return result;
+	});
 
 	// Update store when filters change
 	$effect(() => {
@@ -428,7 +497,7 @@
 				</div>
 			{:else}
 				<div class="flex flex-col">
-					{#each sortedReplays as item (item.id)}
+					{#each displayItems as item (item.id)}
 						<div
 							draggable="true"
 							ondragstart={(e) => handleDragStart(e, item)}
@@ -437,25 +506,41 @@
 							ondragleave={(e) => handleDragLeave(e, item)}
 							ondragend={(e) => handleDragEnd(e)}
 							ondrop={(e) => handleDrop(e, item)}
-							class="group flex transition-all cursor-pointer border-l-[3px] px-2 {draggedItem?.id === item.id ? 'opacity-30' : ''} {dragOverItemId === item.id ? (item.itemType === 'folder' ? 'bg-[#ff9800]/20 border-l-[#ff9800] ring-1 ring-[#ff9800]' : 'border-t-2 border-t-[#ff9800]') : 'border-l-transparent'} {$selectedReplay?.id ===
+							class="group flex transition-all cursor-pointer {draggedItem?.id === item.id ? 'opacity-30' : ''} {dragOverItemId === item.id ? (item.itemType === 'folder' ? 'bg-[#ff6600]/10 ring-1 ring-inset ring-[#ff6600] z-10' : 'border-t-2 border-t-[#ff6600]') : 'border-t-2 border-t-transparent'} {$selectedReplay?.id ===
 							item.id && dragOverItemId !== item.id
-								? 'bg-white/5 border-l-[#3b82f6]'
-								: 'hover:bg-white/5'} {contextMenu.isOpen && contextMenu.item?.id === item.id ? 'bg-white/5 relative z-40' : 'relative'}"
+								? 'bg-white/5 border-l-[3px] border-l-[#ff6600]'
+								: 'border-l-[3px] border-l-transparent hover:bg-white/5'} {contextMenu.isOpen && contextMenu.item?.id === item.id ? 'bg-white/5 relative z-40' : 'relative'} px-2"
+							style="padding-left: {item.depth * 1.5}rem; padding-right: 0.5rem;"
 							onclick={() => handleSelectReplay(item)}
 							oncontextmenu={(e) => handleContextMenu(e, item)}
 							role="button"
 							tabindex="0"
 							onkeydown={(e) => e.key === 'Enter' && handleSelectReplay(item)}
 						>
-							<div class="flex items-center w-full h-[32px] gap-3 {draggedItem ? 'pointer-events-none' : ''}">
-								<!-- Fixed-width badge col so names always align -->
-								<div class="w-[50px] flex-shrink-0 flex justify-end">
+							{#if item.depth > 0}
+								<!-- Vertical guide line -->
+								{#each Array(item.depth) as _, i}
+									<div class="absolute top-0 bottom-0 border-l border-gray-700/50 pointer-events-none" style="left: {i * 1.5 + 0.625}rem"></div>
+								{/each}
+							{/if}
+							
+							<div class="flex items-center w-full h-[32px] gap-2 {draggedItem ? 'pointer-events-none' : ''}">
+								<!-- Icon column -->
+								<div class="w-[45px] flex-shrink-0 flex items-center justify-end gap-2">
 									{#if item.itemType === 'folder'}
-										<i class="fas fa-folder text-yellow-400"></i>
+										<button 
+											onclick={(e) => toggleFolderCollapse(e, item.id)}
+											class="w-4 h-4 flex items-center justify-center text-gray-400 hover:text-gray-200 transition-colors rounded hover:bg-white/10"
+											aria-label="Toggle Folder"
+										>
+											<i class="fas fa-chevron-{collapsedFolders.has(item.id) ? 'right' : 'down'} text-[10px]"></i>
+										</button>
+										<i class="far fa-folder text-gray-400 text-sm"></i>
 									{:else}
 										<HttpMethodBadge method={item.method} size="folder-size" />
 									{/if}
 								</div>
+								
 								<!-- Name -->
 								<span
 									class="text-[13px] {$selectedReplay?.id === item.id
