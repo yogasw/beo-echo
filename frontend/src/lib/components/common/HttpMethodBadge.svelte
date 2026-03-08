@@ -9,7 +9,7 @@
     className = ''
   }: {
     method: string;
-    size?: 'xs' | 'sm' | 'md' | 'lg';
+    size?: 'folder-size' | 'xs' | 'sm' | 'md' | 'lg';
     showDescription?: boolean;
     className?: string;
   } = $props();

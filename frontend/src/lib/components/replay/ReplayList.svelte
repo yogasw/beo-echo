@@ -24,8 +24,28 @@
 	let sortOrder: 'asc' | 'desc' = $state('asc');
 	let showAddDropdown = $state(false);
 	let searchTerm = $state('');
-	let openMenuId: string | null = $state(null);
 	let pendingFolderParent: any = $state(null);
+
+	let contextMenu = $state<{ isOpen: boolean; x: number; y: number; item: any | null }>({
+		isOpen: false,
+		x: 0,
+		y: 0,
+		item: null
+	});
+
+	function handleContextMenu(event: MouseEvent, item: any) {
+		event.preventDefault();
+		contextMenu = {
+			isOpen: true,
+			x: event.clientX,
+			y: event.clientY,
+			item
+		};
+	}
+
+	function closeContextMenu() {
+		contextMenu.isOpen = false;
+	}
 
 	function handleToggleCollapse() {
 		dispatch('toggleCollapse', { animate: true });
@@ -83,7 +103,7 @@
 		}
 
 		// Close menu after action
-		openMenuId = null;
+		closeContextMenu();
 	}
 
 	function handleSelectReplay(item: any) {
@@ -111,25 +131,17 @@
 	}
 
 	function handleCreateFolder(item: any) {
-		openMenuId = null;
+		closeContextMenu();
 		pendingFolderParent = item;
 		dispatch('add', { type: 'folder', parentReplay: item });
-		openMenuId = null;
-	}
-
-	function toggleMenu(replayId: string, event: Event) {
-		event.stopPropagation();
-		openMenuId = openMenuId === replayId ? null : replayId;
-	}
-
-	function closeMenu() {
-		openMenuId = null;
 	}
 
 	function toggleSort() {
 		sortOrder = sortOrder === 'asc' ? 'desc' : 'asc';
 	}
 </script>
+
+<svelte:window onclick={closeContextMenu} />
 
 <div
 	class="flex flex-col h-full theme-bg-primary theme-border border rounded-lg shadow-md overflow-hidden"
@@ -252,8 +264,9 @@
 							class="group flex transition-colors cursor-pointer border-l-[3px] px-2 {$selectedReplay?.id ===
 							item.id
 								? 'bg-white/5 border-[#3b82f6]'
-								: 'border-transparent hover:bg-white/5'} {openMenuId === item.id ? 'relative z-40' : 'relative'}"
+								: 'border-transparent hover:bg-white/5'} {contextMenu.isOpen && contextMenu.item?.id === item.id ? 'bg-white/5 relative z-40' : 'relative'}"
 							onclick={() => handleSelectReplay(item)}
+							oncontextmenu={(e) => handleContextMenu(e, item)}
 							role="button"
 							tabindex="0"
 							onkeydown={(e) => e.key === 'Enter' && handleSelectReplay(item)}
@@ -264,7 +277,7 @@
 									{#if item.itemType === 'folder'}
 										<i class="fas fa-folder text-yellow-400"></i>
 									{:else}
-										<HttpMethodBadge method={item.method} size="xs" />
+										<HttpMethodBadge method={item.method} size="folder-size" />
 									{/if}
 								</div>
 								<!-- Name -->
@@ -279,60 +292,64 @@
 
 							<!-- Action Buttons -->
 							<div
-								class="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1 transition-opacity pl-2 rounded-l {openMenuId === item.id ? 'opacity-100 bg-gray-50 dark:bg-gray-900 z-50' : 'opacity-0 group-hover:opacity-100 bg-gray-50/90 dark:bg-gray-900/90 z-30'}"
+								class="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1 transition-opacity pl-2 opacity-0 group-hover:opacity-100 z-30"
 							>
 								<!-- Three-dot menu -->
 								<div class="menu-container relative">
 									<button
-										onclick={(e) => toggleMenu(item.id, e)}
-										class="p-1.5 text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 transition-colors {openMenuId ===
-										item.id
-											? 'opacity-100 text-gray-800 dark:text-gray-200'
-											: ''}"
+										onclick={(e) => {
+											e.stopPropagation();
+											handleContextMenu(e, item)
+										}}
+										class="p-1.5 text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 transition-colors"
 										title="More options"
 										aria-label="More options"
-										aria-expanded={openMenuId === item.id}
 									>
 										<i class="fas fa-ellipsis-h text-sm"></i>
 									</button>
-
-									<!-- Dropdown Menu -->
-									{#if openMenuId === item.id}
-										<div
-											class="absolute top-full right-0 mt-1 w-48 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-md shadow-xl z-50 overflow-hidden"
-										>
-											<div class="py-1">
-												<button
-													onclick={(e) => {
-														e.stopPropagation();
-														handleDelete(item);
-													}}
-													class="w-full text-left px-4 py-2 text-sm text-red-400 hover:theme-bg-secondary transition-colors flex items-center space-x-2"
-												>
-													<i class="fas fa-trash"></i>
-													<span>Delete</span>
-												</button>
-												{#if item.itemType === 'folder'}
-													<button
-														onclick={(e) => {
-															e.stopPropagation();
-															handleCreateFolder(item);
-														}}
-														class="w-full text-left px-4 py-2 text-sm theme-text-primary hover:theme-bg-secondary transition-colors flex items-center space-x-2"
-													>
-														<i class="fas fa-folder-plus text-yellow-400"></i>
-														<span>Create Folder</span>
-													</button>
-												{/if}
-											</div>
-										</div>
-									{/if}
 								</div>
 							</div>
 						</div>
 					{/each}
 				</div>
 			{/if}
+		</div>
+	{/if}
+
+	<!-- Global Context Menu Overlay -->
+	{#if contextMenu.isOpen && contextMenu.item}
+		<!-- svelte-ignore a11y_click_events_have_key_events -->
+		<!-- svelte-ignore a11y_no_static_element_interactions -->
+		<div
+			class="fixed bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-md shadow-xl z-[100] overflow-hidden min-w-[160px]"
+			style="top: {contextMenu.y}px; left: {contextMenu.x}px;"
+			onclick={(e) => e.stopPropagation()}
+			oncontextmenu={(e) => e.stopPropagation()}
+		>
+			<div class="py-1">
+				<button
+					onclick={(e) => {
+						e.stopPropagation();
+						handleDelete(contextMenu.item);
+					}}
+					class="w-full text-left px-4 py-2 text-sm text-red-500 hover:theme-bg-secondary transition-colors flex items-center space-x-2"
+				>
+					<i class="fas fa-trash"></i>
+					<span>Delete</span>
+				</button>
+				{#if contextMenu.item.itemType === 'folder'}
+					<button
+						onclick={(e) => {
+							e.stopPropagation();
+							handleCreateFolder(contextMenu.item);
+						}}
+						class="w-full text-left px-4 py-2 text-sm theme-text-primary hover:theme-bg-secondary transition-colors flex items-center space-x-2"
+					>
+						<i class="fas fa-folder-plus text-yellow-400"></i>
+						<span>Create Folder</span>
+					</button>
+				{/if}
+			</div>
 		</div>
 	{/if}
 </div>
