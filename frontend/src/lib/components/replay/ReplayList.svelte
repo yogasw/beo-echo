@@ -11,9 +11,7 @@
 	import { selectedProject } from '$lib/stores/selectedConfig';
 	import { toast } from '$lib/stores/toast';
 	import { replayApi } from '$lib/api/replayApi';
-	import type { Replay } from '$lib/types/Replay';
 	import HttpMethodBadge from '$lib/components/common/HttpMethodBadge.svelte';
-	import { getHttpMethodColor } from '$lib/utils/badgeUtils';
 
 	let {
 		isPanelCollapsed = false
@@ -246,10 +244,10 @@
 				<div class="flex flex-col">
 					{#each sortedReplays as item (item.id)}
 						<div
-							class="group flex relative transition-colors cursor-pointer border-l-[3px] px-2 {$selectedReplay?.id ===
+							class="group flex transition-colors cursor-pointer border-l-[3px] px-2 {$selectedReplay?.id ===
 							item.id
 								? 'bg-white/5 border-[#3b82f6]'
-								: 'border-transparent hover:bg-white/5'}"
+								: 'border-transparent hover:bg-white/5'} {openMenuId === item.id ? 'relative z-40' : 'relative'}"
 							onclick={() => handleSelectReplay(item)}
 							role="button"
 							tabindex="0"
@@ -276,7 +274,7 @@
 
 							<!-- Action Buttons -->
 							<div
-								class="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity bg-gray-900/90 pl-2 rounded-l"
+								class="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1 transition-opacity pl-2 rounded-l {openMenuId === item.id ? 'opacity-100 bg-gray-50 dark:bg-gray-900 z-50' : 'opacity-0 group-hover:opacity-100 bg-gray-50/90 dark:bg-gray-900/90 z-30'}"
 							>
 								<!-- Three-dot menu -->
 								<div class="menu-container relative">
@@ -284,7 +282,7 @@
 										onclick={(e) => toggleMenu(item.id, e)}
 										class="p-1.5 text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 transition-colors {openMenuId ===
 										item.id
-											? 'opacity-100 text-gray-200'
+											? 'opacity-100 text-gray-800 dark:text-gray-200'
 											: ''}"
 										title="More options"
 										aria-label="More options"
@@ -296,7 +294,7 @@
 									<!-- Dropdown Menu -->
 									{#if openMenuId === item.id}
 										<div
-											class="absolute top-full right-0 mt-1 w-48 theme-bg-primary theme-border border rounded-md shadow-lg z-20"
+											class="absolute top-full right-0 mt-1 w-48 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-md shadow-xl z-50 overflow-hidden"
 										>
 											<div class="py-1">
 												<button
