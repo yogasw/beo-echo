@@ -50,8 +50,8 @@ type CreateReplayRequest struct {
 	Url      string            `json:"url" binding:"required"`
 	Headers  map[string]string `json:"headers"`
 	Payload  string            `json:"payload"`
-	Metadata map[string]string `json:"metadata"` // Additional protocol-specific metadata
-	Config   map[string]string `json:"config"`   // Optional configuration for specific protocols
+	Metadata map[string]any    `json:"metadata"` // Additional protocol-specific metadata
+	Config   map[string]any    `json:"config"`   // Optional configuration for specific protocols
 }
 
 // UpdateReplayRequest represents the request payload for updating a replay
@@ -63,7 +63,7 @@ type UpdateReplayRequest struct {
 	Url      *string            `json:"url"`
 	Headers  *map[string]string `json:"headers"`
 	Payload  *string            `json:"payload"`
-	Metadata map[string]string  `json:"metadata"` // Additional protocol-specific metadata
-	Config   map[string]string  `json:"config"`   // Optional configuration for specific protocols
+	Metadata *map[string]any   `json:"metadata"` // Additional protocol-specific metadata
+	Config   *map[string]any   `json:"config"`   // Optional configuration for specific protocols
 }
 

@@ -1,6 +1,10 @@
 <script lang="ts">
 	import { createEventDispatcher } from 'svelte';
 	import { onMount } from 'svelte';
+	import { selectedWorkspace } from '$lib/stores/workspace';
+	import { selectedProject } from '$lib/stores/selectedConfig';
+	import { toast } from '$lib/stores/toast';
+	import { replayApi } from '$lib/api/replayApi';
 	import ReplayResponseFooter from './ReplayResponseFooter.svelte'; // Import the new footer component
 	import * as ThemeUtils from '$lib/utils/themeUtils';
 	import ReplayBar from './ReplayBar.svelte';
@@ -411,6 +415,98 @@
 		// Handle showing history, potentially dispatching another event upwards
 	}
 
+	async function onSaveRequest() {
+		if (!$selectedWorkspace || !$selectedProject) {
+			toast.error('No workspace or project selected');
+			return;
+		}
+
+		try {
+			replayActions.setLoading('save', true);
+
+			const payload: any = {
+				name: activeTabContent.name || 'New Request',
+				protocol: activeTabContent.protocol || 'http',
+				method: activeTabContent.method || 'GET',
+				url: activeTabContent.url || '',
+				headers: {},
+				payload: activeTabContent.payload || '',
+				config: {
+					auth: activeTabContent.parsedAuth || { type: 'none', config: {} },
+					settings: activeTabContent.parsedSettings || {}
+				}
+			};
+
+			const validParams = (activeTabContent.parsedParams || []).filter((p: any) => p.key && p.enabled);
+			if (validParams.length > 0) {
+				payload.metadata = { params: validParams };
+			}
+
+			// Add folder ID if available on the original replay data
+			if (replayData && replayData.folder_id) {
+				payload.folder_id = replayData.folder_id;
+			}
+
+			// Process headers as object map
+			if (activeTabContent.parsedHeaders) {
+				activeTabContent.parsedHeaders.forEach((h: any) => {
+					if (h.enabled && h.key) {
+						payload.headers[h.key] = h.value;
+					}
+				});
+			}
+
+			if (activeTabContent.id && !activeTabContent.id.startsWith('tab-')) {
+				// Update existing
+				const res = await replayApi.updateReplay(
+					$selectedWorkspace.id,
+					$selectedProject.id,
+					activeTabContent.id,
+					payload
+				);
+				
+				// Mark current tab as saved
+				const tabIndex = tabs.findIndex(t => t.id === activeTabContent.id);
+				if (tabIndex !== -1) {
+					tabs[tabIndex].isUnsaved = false;
+					tabs[tabIndex].name = res.replay.name;
+					tabs[tabIndex].url = res.replay.url;
+					tabs[tabIndex].method = res.replay.method;
+					tabs = [...tabs];
+				}
+				
+				dispatch('updated', res.replay);
+			} else {
+				// Create new
+				const res = await replayApi.createReplay(
+					$selectedWorkspace.id,
+					$selectedProject.id,
+					payload
+				);
+				
+				// Update active tab with new ID
+				activeTabContent.id = res.replay.id;
+				
+				const tabIndex = tabs.findIndex(t => t.id === activeTabId);
+				if (tabIndex !== -1) {
+					tabs[tabIndex].id = res.replay.id;
+					tabs[tabIndex].isUnsaved = false;
+					tabs[tabIndex].name = res.replay.name;
+					tabs[tabIndex].url = res.replay.url;
+					tabs[tabIndex].method = res.replay.method;
+					activeTabId = res.replay.id;
+					tabs = [...tabs];
+				}
+				
+				dispatch('created', res.replay);
+			}
+		} catch (err: any) {
+			toast.error(err.message || 'Failed to save request');
+		} finally {
+			replayActions.setLoading('save', false);
+		}
+	}
+
 	function onExcuteRequest() {
 		// Prepare request data
 		const requestData: {
@@ -633,10 +729,16 @@
 					)}
 					title="Save current request configuration"
 					aria-label="Save request"
+					on:click={onSaveRequest}
+					disabled={$replayLoading.save}
 				>
-					<i class="fas fa-save text-sm"></i>
-					<span>Save</span>
-					<i class="fas fa-chevron-down text-sm ml-1"></i>
+					{#if $replayLoading.save}
+						<i class="fas fa-circle-notch fa-spin text-sm"></i>
+						<span>Saving...</span>
+					{:else}
+						<i class="fas fa-save text-sm"></i>
+						<span>Save</span>
+					{/if}
 				</button>
 			</div>
 		</div>

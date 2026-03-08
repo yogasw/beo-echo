@@ -1,6 +1,6 @@
 
 import { writable, derived } from 'svelte/store';
-import type { Replay, ReplayLog, ReplayExecutionResult } from '$lib/types/Replay';
+import type { Replay, ReplayLog, ExecuteReplayResponse } from '$lib/types/Replay';
 
 // Main replay list store
 export const replays = writable<Replay[]>([]);
@@ -14,7 +14,7 @@ export const replayLogs = writable<ReplayLog[]>([]);
 // Replay execution state
 export const replayExecution = writable<{
 	isExecuting: boolean;
-	lastResult: ReplayExecutionResult | null;
+	lastResult: ExecuteReplayResponse | null;
 }>({
 	isExecuting: false,
 	lastResult: null
@@ -27,12 +27,14 @@ export const replayLoading = writable<{
 	execute: boolean;
 	delete: boolean;
 	logs: boolean;
+	save: boolean;
 }>({
 	list: false,
 	create: false,
 	execute: false,
 	delete: false,
-	logs: false
+	logs: false,
+	save: false
 });
 
 // Replay search and filter
@@ -93,7 +95,7 @@ export const replayStats = derived(
 // Helper functions
 export const replayActions = {
 	// Set loading state for specific action
-	setLoading: (action: 'list' | 'create' | 'execute' | 'delete' | 'logs', isLoading: boolean) => {
+	setLoading: (action: 'list' | 'create' | 'execute' | 'delete' | 'logs' | 'save', isLoading: boolean) => {
 		replayLoading.update(state => ({
 			...state,
 			[action]: isLoading
@@ -133,7 +135,7 @@ export const replayActions = {
 	},
 
 	// Set last execution result
-	setLastResult: (result: ReplayExecutionResult | null) => {
+	setLastResult: (result: ExecuteReplayResponse | null) => {
 		replayExecution.update(state => ({
 			...state,
 			lastResult: result

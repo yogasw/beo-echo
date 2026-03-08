@@ -74,7 +74,7 @@ func (s *ReplayService) UpdateReplay(ctx context.Context, replayID string, req U
 
 	if req.Metadata != nil {
 		// Convert metadata to JSON
-		metadataJSON, err := json.Marshal(req.Metadata)
+		metadataJSON, err := json.Marshal(*req.Metadata)
 		if err != nil {
 			log.Error().
 				Err(err).
@@ -86,7 +86,7 @@ func (s *ReplayService) UpdateReplay(ctx context.Context, replayID string, req U
 
 	if req.Config != nil {
 		// Convert config to JSON
-		configJSON, err := json.Marshal(req.Config)
+		configJSON, err := json.Marshal(*req.Config)
 		if err != nil {
 			log.Error().
 				Err(err).

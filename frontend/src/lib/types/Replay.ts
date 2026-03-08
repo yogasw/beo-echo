@@ -34,6 +34,8 @@ export interface UpdateReplayRequest {
 	payload?: string;
 	body?: string; // Alias for payload for compatibility
 	folder_id?: string;
+	metadata?: any;
+	config?: any;
 }
 
 export interface ReplayLog {
