@@ -32,17 +32,7 @@ const config = {
 		
 		// Configure prerendering for landing page SSG
 		prerender: {
-			// Always prerender root, login, and known pages in landing mode
-			entries: isLandingMode ? [
-				'/', 
-				'/login', 
-				'/home',
-				'/demo',
-				'/demo/badges',
-				'/demo/components',
-				'/demo/toggle-switch',
-				'*'
-			] : [], 
+			entries: isLandingMode ? ['/', '/login', '*'] : [], // Always prerender root and login in landing mode
 			handleHttpError: 'warn',
 			handleMissingId: 'warn',
 			handleEntryGeneratorMismatch: 'warn',
