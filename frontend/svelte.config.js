@@ -32,10 +32,28 @@ const config = {
 		
 		// Configure prerendering for landing page SSG
 		prerender: {
-			entries: isLandingMode ? ['/', '/login', '*'] : [], // Always prerender root and login in landing mode
+			// Always prerender root, login, and known pages in landing mode
+			entries: isLandingMode ? [
+				'/', 
+				'/login', 
+				'/home',
+				'/demo',
+				'/demo/badges',
+				'/demo/components',
+				'/demo/toggle-switch',
+				'*'
+			] : [], 
 			handleHttpError: 'warn',
 			handleMissingId: 'warn',
-			handleEntryGeneratorMismatch: 'warn'
+			handleEntryGeneratorMismatch: 'warn',
+			handleUnseenRoutes: ({ id }) => {
+				// Ignore acceptable unlinked routes
+				if (['/demo', '/demo/badges', '/demo/components', '/demo/toggle-switch', '/home', '/login'].includes(id)) {
+					return;
+				}
+				// Default behavior for everything else
+				console.warn(`Unseen route: ${id}`);
+			}
 		}
 	}
 	
