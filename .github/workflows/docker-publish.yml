@@ -10,15 +10,15 @@ jobs:
   check-source-branch:
     name: Validate PR Source Branch
     runs-on: ubuntu-latest
-    
+
     permissions:
       contents: read
       pull-requests: read
-    
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
-      
+
       - name: Verify PR is from main branch
         uses: actions/github-script@v6
         with:
@@ -29,14 +29,14 @@ jobs:
               repo: context.repo.repo,
               pull_number: context.issue.number
             });
-            
+
             if (pr.head.ref !== 'main') {
               core.setFailed(`PR must be from the main branch, but was from: ${pr.head.ref}`);
               process.exit(1);
             }
-            
+
             console.log("PR is from main branch. Proceeding with release.");
-  
+
   release-docker-image:
     name: Release Docker Image
     needs: check-source-branch
@@ -54,14 +54,14 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '22.14.0'
-          cache: 'npm'
-          cache-dependency-path: 'frontend/package-lock.json'
+          node-version: "22.14.0"
+          cache: "npm"
+          cache-dependency-path: "frontend/package-lock.json"
 
       - name: Setup Go
         uses: actions/setup-go@v5
         with:
-          go-version: '1.24'
+          go-version: "1.24"
           cache: true
           cache-dependency-path: backend/go.sum
 
@@ -95,7 +95,7 @@ jobs:
               repo: context.repo.repo,
               pull_number: context.issue.number
             });
-            
+
             if (!pr) {
               core.setFailed("No matching PR found.");
               return;
@@ -124,7 +124,6 @@ jobs:
             });
             core.setOutput("commit_log", messages.join('\\n'));
 
-
       - name: Call Gemini to generate release summary
         id: ai_summary
         env:
@@ -133,12 +132,12 @@ jobs:
           COMMIT_LOG: ${{ steps.pr_data.outputs.commit_log }}
         run: |
           VERSION=v${{ steps.read_version.outputs.version }}
-          
+
           if [ -z "${{ vars.GEMINI_MODEL }}" ] || [ -z "${{ secrets.GEMINI_API_KEY }}" ]; then
             echo "::error::GEMINI_MODEL or GEMINI_API_KEY secret is missing. Check repository secrets/permissions."
             exit 1
           fi
-          
+
           # Write commit logs to file to avoid shell interpretation issues
           printf "%s\n" "$COMMIT_LOG" > commit_log.txt
           COMMITS=$(cat commit_log.txt)
@@ -168,7 +167,7 @@ jobs:
           DOCKER_SECTION=$(.github/scripts/generate-docker-section.sh "${{ github.repository }}" "${{ steps.read_version.outputs.version }}")
 
           echo "title=$VERSION" >> $GITHUB_OUTPUT
-          
+
           # Use a tightly bound EOF to prevent string evaluation
           echo "summary<<EOF_SUMMARY" >> $GITHUB_OUTPUT
           echo "$SUMMARY" >> $GITHUB_OUTPUT
@@ -267,21 +266,21 @@ jobs:
     needs: release-docker-image
     runs-on: ubuntu-latest
     if: success()
-    
+
     permissions:
       contents: write
       pull-requests: write
-    
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
-        
+
       - name: Set PR number from context
         id: pr_number
         run: |
           echo "pr_number=${{ github.event.pull_request.number }}" >> $GITHUB_OUTPUT
           echo "Found PR #${{ github.event.pull_request.number }}"
-      
+
       - name: Auto Merge PR Release
         uses: actions/github-script@v6
         with:
@@ -292,9 +291,9 @@ jobs:
               core.setFailed("No PR number found");
               return;
             }
-            
+
             console.log(`Attempting to merge PR #${pr_number}...`);
-            
+
             try {
               await github.rest.pulls.merge({
                 owner: context.repo.owner,
@@ -314,21 +313,21 @@ jobs:
     needs: auto-merge-pr
     runs-on: ubuntu-latest
     if: success()
-    
+
     permissions:
       contents: read
-    
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
-        
+
       - name: Read version from VERSION file
         id: read_version
         run: |
           version=$(cat VERSION)
           echo "Version: $version"
           echo "version=$version" >> $GITHUB_OUTPUT
-      
+
       - name: Checkout target public repository
         uses: actions/checkout@v3
         with:
@@ -340,7 +339,7 @@ jobs:
         run: |
           cp CHANGELOG.md public-repo/
           cd public-repo
-          
+
           if [[ -z $(git status --porcelain) ]]; then
             echo "No changes to commit"
           else
@@ -350,7 +349,7 @@ jobs:
             git commit -m "Update changelog for v${{ steps.read_version.outputs.version }}"
             git push
           fi
-      
+
       - name: Get Release Info
         id: release_info
         run: |
@@ -360,7 +359,7 @@ jobs:
           echo "summary<<EOF" >> $GITHUB_OUTPUT
           echo "$SUMMARY" >> $GITHUB_OUTPUT
           echo "EOF" >> $GITHUB_OUTPUT
-      
+
       - name: Create Public GitHub Release
         uses: softprops/action-gh-release@a06a81a03ee405af7f2048a818ed3f03bbf83c7b # v2.5.0
         with:
@@ -373,8 +372,10 @@ jobs:
           prerelease: false
 
   trigger-deployment:
-      runs-on: ubuntu-latest
-      steps:
-        - name: Trigger Deployment 
-          run: |
-            curl -X POST -d {} ${{ secrets.BUILD_HOOK }}
+    needs: create-public-release
+    runs-on: ubuntu-latest
+    if: success()
+    steps:
+      - name: Trigger Deployment
+        run: |
+          curl -X POST -d {} ${{ secrets.BUILD_HOOK }}
