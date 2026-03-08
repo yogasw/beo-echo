@@ -24,8 +24,9 @@
 	let sortOrder: 'asc' | 'desc' = $state('asc');
 	let showAddDropdown = $state(false);
 	let searchTerm = $state('');
-	let pendingFolderParent: any = $state(null);
 	let collapsedFolders = $state(new Set<string>());
+	let inlineFolderParent: string | null | undefined = $state(undefined);
+	let newFolderName = $state('');
 
 	let draggedItem: any | null = $state(null);
 	let dragOverItemId: string | null = $state(null);
@@ -200,14 +201,28 @@
 	}
 
 	function handleAddFolder() {
-		dispatch('add', { type: 'folder' });
+		inlineFolderParent = null; // null means root level
+		newFolderName = '';
 		showAddDropdown = false;
 	}
 
 	function handleCreateFolder(item: any) {
 		closeContextMenu();
-		pendingFolderParent = item;
-		dispatch('add', { type: 'folder', parentReplay: item });
+		inlineFolderParent = item.id;
+		newFolderName = '';
+		// Ensure the parent folder is expanded
+		const newCollapsed = new Set(collapsedFolders);
+		newCollapsed.delete(item.id);
+		collapsedFolders = newCollapsed;
+	}
+
+	function submitInlineFolder() {
+		if (newFolderName.trim()) {
+			const parentItem = inlineFolderParent === null ? null : { id: inlineFolderParent };
+			dispatch('add', { type: 'folder', name: newFolderName.trim(), parentReplay: parentItem });
+		}
+		inlineFolderParent = undefined;
+		newFolderName = '';
 	}
 
 	function handleDragStart(e: DragEvent, item: any) {
@@ -325,7 +340,16 @@
 	}
 
 	function handleRootDragLeave(e: DragEvent) {
-		dragOverPosition = null;
+		const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+		const { clientX: x, clientY: y } = e;
+		if (
+			x <= rect.left ||
+			x >= rect.right ||
+			y <= rect.top ||
+			y >= rect.bottom
+		) {
+			dragOverPosition = null;
+		}
 	}
 
 	async function handleRootDrop(e: DragEvent) {
@@ -497,6 +521,28 @@
 				</div>
 			{:else}
 				<div class="flex flex-col">
+					<!-- ROOT INLINE FOLDER -->
+					{#if inlineFolderParent === null}
+						<div class="group flex items-center transition-all px-2 py-1">
+							<div class="flex items-center w-full gap-2 pl-2">
+								<i class="fas fa-folder text-yellow-400"></i>
+								<!-- svelte-ignore a11y_autofocus -->
+								<input
+									type="text"
+									bind:value={newFolderName}
+									class="flex-1 bg-transparent border-b border-blue-500 outline-none text-[13px] text-white py-1 px-1"
+									placeholder="Folder name"
+									autofocus
+									onkeydown={(e) => {
+										if (e.key === 'Enter') submitInlineFolder();
+										if (e.key === 'Escape') inlineFolderParent = undefined;
+									}}
+									onblur={submitInlineFolder}
+								/>
+							</div>
+						</div>
+					{/if}
+
 					{#each displayItems as item (item.id)}
 						<div
 							draggable="true"
@@ -571,6 +617,31 @@
 								</div>
 							</div>
 						</div>
+						
+						<!-- NESTED INLINE FOLDER -->
+						{#if inlineFolderParent === item.id}
+							<div class="group flex items-center transition-all px-2 py-1" style="padding-left: {(item.depth + 1) * 1.5}rem; padding-right: 0.5rem;">
+								{#each Array(item.depth + 1) as _, i}
+									<div class="absolute top-0 bottom-0 border-l border-gray-700/50 pointer-events-none" style="left: {i * 1.5 + 0.625}rem"></div>
+								{/each}
+								<div class="flex flex-row items-center w-full gap-2 pl-6 relative z-10">
+									<i class="fas fa-folder text-yellow-400"></i>
+									<!-- svelte-ignore a11y_autofocus -->
+									<input
+										type="text"
+										bind:value={newFolderName}
+										class="flex-1 bg-transparent border-b border-blue-500 outline-none text-[13px] text-white py-1 px-1"
+										placeholder="Folder name"
+										autofocus
+										onkeydown={(e) => {
+											if (e.key === 'Enter') submitInlineFolder();
+											if (e.key === 'Escape') inlineFolderParent = undefined;
+										}}
+										onblur={submitInlineFolder}
+									/>
+								</div>
+							</div>
+						{/if}
 					{/each}
 				</div>
 			{/if}
