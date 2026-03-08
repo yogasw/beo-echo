@@ -12,7 +12,7 @@
 		onImportIntoCollection
 	}: {
 		isOpen?: boolean;
-		parsedResult?: { parsed: Partial<Replay>; importType: 'curl' | 'json'; rawText: string } | null;
+		parsedResult?: { parsed: Partial<Replay>; importType: string; displayName?: string; rawText: string } | null;
 		folders?: any[];
 		initialFolderId?: string | null;
 		onclose?: () => void;
@@ -97,7 +97,7 @@
 			<!-- Header -->
 			<div class="px-6 py-4 flex items-center justify-between border-b theme-border">
 				<h2 class="text-xl font-semibold theme-text-primary">
-					Import {parsedResult?.importType === 'curl' ? 'cURL' : 'JSON'} into a Folder
+					Import Replay from {parsedResult?.displayName ?? parsedResult?.importType} into a Folder
 				</h2>
 				<button 
 					onclick={onclose}

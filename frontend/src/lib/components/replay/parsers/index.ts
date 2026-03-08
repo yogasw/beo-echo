@@ -5,11 +5,13 @@ import { curlParser } from './curl';
 export interface ParserResult {
 	parsed: Partial<Replay>;
 	importType: string;
+	displayName?: string;
 	rawText: string;
 }
 
 export interface Parser {
 	name: string;
+	displayName: string;
 	canParse: (text: string) => boolean;
 	parse: (text: string) => ParserResult;
 }
@@ -17,11 +19,13 @@ export interface Parser {
 export const parsers: Parser[] = [
 	{
 		name: 'curl',
+		displayName: 'cURL',
 		canParse: (text: string) => text.trim().toLowerCase().startsWith('curl'),
 		parse: curlParser.parse
 	},
 	{
 		name: 'json-logs',
+		displayName: 'JSON Logs',
 		canParse: (text: string) => {
 			const trimmed = text.trim();
 			return trimmed.startsWith('{') || trimmed.startsWith('[');
@@ -35,7 +39,8 @@ export function parseImportText(text: string): ParserResult {
 	
 	for (const parser of parsers) {
 		if (parser.canParse(trimmed)) {
-			return parser.parse(trimmed);
+			const result = parser.parse(trimmed);
+			return { ...result, displayName: parser.displayName };
 		}
 	}
 
