@@ -76,6 +76,10 @@ func (s *ReplayService) UpdateFolder(ctx context.Context, projectID string, fold
 		targetFolder.Name = *req.Name
 	}
 	
+	if req.Doc != nil {
+		targetFolder.Doc = *req.Doc
+	}
+
 	// Update ParentID explicitly (can be set to nil)
 	if req.UpdateParentID {
 		targetFolder.ParentID = req.ParentID

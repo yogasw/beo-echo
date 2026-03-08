@@ -15,6 +15,7 @@ func (s *ReplayService) CreateFolder(ctx context.Context, projectID string, req 
 
 	folder := &database.ReplayFolder{
 		Name:      req.Name,
+		Doc:       req.Doc,
 		ProjectID: projectID,
 		ParentID:  req.ParentID,
 	}

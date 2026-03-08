@@ -48,12 +48,14 @@ func NewReplayService(repo ReplayRepository) *ReplayService {
 // CreateFolderRequest represents the request payload for creating a replay folder
 type CreateFolderRequest struct {
 	Name     string  `json:"name" binding:"required"`
+	Doc      string  `json:"doc"`
 	ParentID *string `json:"parent_id"`
 }
 
 // UpdateFolderRequest represents the request payload for updating a replay folder
 type UpdateFolderRequest struct {
 	Name           *string `json:"name"`
+	Doc            *string `json:"doc"`
 	ParentID       *string `json:"parent_id"`
 	UpdateParentID bool    `json:"update_parent_id"` // indicates if ParentID should be updated (even to null)
 }
@@ -67,6 +69,7 @@ type ListReplaysResponse struct {
 // CreateReplayRequest represents the request payload for creating a replay
 type CreateReplayRequest struct {
 	Name     string            `json:"name"`
+	Doc      string            `json:"doc"`
 	FolderID *string           `json:"folder_id"`
 	Protocol string            `json:"protocol" binding:"required"`
 	Method   string            `json:"method" binding:"required"`
@@ -80,14 +83,15 @@ type CreateReplayRequest struct {
 // UpdateReplayRequest represents the request payload for updating a replay
 type UpdateReplayRequest struct {
 	Name           *string            `json:"name"`
+	Doc            *string            `json:"doc"`
 	FolderID       *string            `json:"folder_id"`
 	UpdateFolderID bool               `json:"update_folder_id"`
 	Protocol       *string            `json:"protocol"`
-	Method   *string            `json:"method"`
-	Url      *string            `json:"url"`
-	Headers  *map[string]string `json:"headers"`
-	Payload  *string            `json:"payload"`
-	Metadata *map[string]any   `json:"metadata"` // Additional protocol-specific metadata
-	Config   *map[string]any   `json:"config"`   // Optional configuration for specific protocols
+	Method         *string            `json:"method"`
+	Url            *string            `json:"url"`
+	Headers        *map[string]string `json:"headers"`
+	Payload        *string            `json:"payload"`
+	Metadata       *map[string]any    `json:"metadata"` // Additional protocol-specific metadata
+	Config         *map[string]any    `json:"config"`   // Optional configuration for specific protocols
 }
 
