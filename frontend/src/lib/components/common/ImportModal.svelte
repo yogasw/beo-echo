@@ -113,7 +113,7 @@
 			<!-- Header / Close -->
 			<div class="px-4 py-3 flex items-center justify-between">
 				<div class="text-sm theme-text-muted">
-					Check out our <a href="javascript:void(0)" class="text-blue-500 hover:underline">documentation</a> for more details.
+					Check out our <a href="#" class="text-blue-500 hover:underline">documentation</a> for more details.
 				</div>
 				<button 
 					onclick={onclose}
