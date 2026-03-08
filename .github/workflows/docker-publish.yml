@@ -180,9 +180,16 @@ jobs:
               "contents": [{
                 "parts": [{"text": '"$(jq -Rs <<< "$PROMPT")"'}]
               }]
-            }')
+            }') || true
 
-          SUMMARY=$(echo "$RESPONSE" | jq -r '.candidates[0].content.parts[0].text')
+          SUMMARY=$(echo "$RESPONSE" | jq -r '.candidates[0].content.parts[0].text // empty' 2>/dev/null || true)
+
+          if [ -z "$SUMMARY" ] || [ "$SUMMARY" = "null" ]; then
+            echo "::error::Failed to generate summary from Gemini or parse the response."
+            echo "Raw Response:"
+            echo "$RESPONSE"
+            exit 1
+          fi
 
           # Generate Docker Images section using helper script
           chmod +x .github/scripts/generate-docker-section.sh
