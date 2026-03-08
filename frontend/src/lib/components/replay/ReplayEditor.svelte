@@ -754,6 +754,79 @@
 			}
 		}
 	}
+	let isEditingTitle = false;
+	let editTitleValue = '';
+	let titleInputRef: HTMLInputElement;
+
+	function startEditTitle() {
+		const tab = tabs.find(t => t.id === activeTabId);
+		if (tab) {
+			editTitleValue = tab.name || '';
+			isEditingTitle = true;
+			setTimeout(() => {
+				titleInputRef?.focus();
+				titleInputRef?.select();
+			}, 0);
+		}
+	}
+
+	async function saveTitle() {
+		if (!isEditingTitle) return;
+		isEditingTitle = false;
+		
+		const tabIndex = tabs.findIndex(t => t.id === activeTabId);
+		if (tabIndex === -1) return;
+		
+		const oldName = tabs[tabIndex].name;
+		const newName = editTitleValue.trim();
+		
+		if (newName && newName !== oldName) {
+			// Update local tab array immediately for quick UI update
+			tabs[tabIndex].name = newName;
+			if (activeTabContent) {
+				activeTabContent.name = newName;
+				if (activeTabContent.itemType === 'folder' && activeTabContent.folder) {
+					activeTabContent.folder.name = newName;
+				}
+			}
+			tabs = [...tabs]; // trigger Svelte reactivity
+			
+			// Save using API
+			if (tabs[tabIndex].itemType === 'folder' && tabs[tabIndex].folder?.id) {
+				try {
+					await replayApi.updateFolder($selectedWorkspace?.id as string, $selectedProject?.id as string, tabs[tabIndex].folder.id, { name: newName });
+					dispatch('updated', { ...tabs[tabIndex].folder, name: newName });
+				} catch (err) {
+					console.error('Failed to update folder name:', err);
+					toast.error('Failed to update folder name');
+				}
+			} else if (tabs[tabIndex].itemType !== 'folder') {
+				// We update request name right away, then it's technically unsaved 
+				// or we just save it immediately using onSaveRequest logic if it exists
+				if (activeTabContent.id && !activeTabContent.id.startsWith('tab-')) {
+					// Mark tab as unsaved so user knows they need to click Save button,
+					// or we can auto save via API. Replay list auto-save title:
+					try {
+						await replayApi.updateReplay($selectedWorkspace?.id as string, $selectedProject?.id as string, activeTabContent.id, { name: newName });
+						dispatch('updated', { id: activeTabContent.id, name: newName });
+					} catch (err) {
+						tabs[tabIndex].isUnsaved = true; // wait for explicit save
+					}
+				} else {
+					tabs[tabIndex].isUnsaved = true;
+				}
+			}
+		}
+	}
+	
+	function handleTitleKeydown(e: KeyboardEvent) {
+		if (e.key === 'Enter') {
+			saveTitle();
+		} else if (e.key === 'Escape') {
+			isEditingTitle = false;
+		}
+	}
+
 </script>
 
 <!-- Postman-like Request Interface -->
@@ -764,10 +837,25 @@
 		<!-- Title and actions -->
 		<div class="flex items-center justify-between">
 			<div class="flex items-center space-x-2">
-				<i class="fas fa-folder-open text-orange-500 text-xl"></i>
-				<h1 class="text-lg font-semibold theme-text-primary">
-					{tabs.find((t) => t.id === activeTabId)?.name || 'New Request'}
-				</h1>
+				<i class="fas {activeTabContent?.itemType === 'folder' ? 'fa-folder-open text-orange-500' : 'fa-file-alt text-blue-500'} text-xl"></i>
+				{#if isEditingTitle}
+					<input
+						bind:this={titleInputRef}
+						bind:value={editTitleValue}
+						on:keydown={handleTitleKeydown}
+						on:blur={saveTitle}
+						class="text-lg font-semibold px-2 py-0.5 border border-blue-500 rounded focus:outline-none theme-bg-primary theme-text-primary"
+						type="text"
+					/>
+				{:else}
+					<h1 
+						class="text-lg font-semibold theme-text-primary cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800 px-2 py-0.5 rounded transition-colors group flex items-center gap-2"
+						on:dblclick={startEditTitle}
+					>
+						{tabs.find((t) => t.id === activeTabId)?.name || 'New Request'}
+						<i class="fas fa-pencil-alt text-xs opacity-0 group-hover:opacity-50 transition-opacity" on:click={startEditTitle}></i>
+					</h1>
+				{/if}
 			</div>
 			<div class="flex items-center space-x-2">
 				{#if activeTabContent?.itemType !== 'folder'}

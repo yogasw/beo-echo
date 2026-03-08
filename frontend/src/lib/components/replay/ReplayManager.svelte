@@ -512,7 +512,7 @@
 		}
 		
 		loadReplays(); // Refresh the list
-		toast.success('Replay created successfully');
+		// toast.success('Replay created successfully');
 	}
 
 	function handleReplayUpdated() {
@@ -524,7 +524,7 @@
 		}
 		
 		loadReplays(); // Refresh the list
-		toast.success('Replay updated successfully');
+		// toast.success('Replay updated successfully');
 	}
 
 	async function executeReplay(replayData: any) {
@@ -555,7 +555,7 @@
 			
 			executionResult = result;
 			console.log('Execution result:', executionResult);
-			toast.success('Request executed successfully');
+			// toast.success('Request executed successfully');
 			
 			// You can optionally update UI to show the result or navigate to a result view
 			activeView = 'execution';
