@@ -42,13 +42,16 @@ func (e *HttpExecutor) Execute(ctx context.Context, projectID string, req models
 
 	// Build URL with query parameters
 	targetURL := req.URL
+	if !strings.HasPrefix(targetURL, "http://") && !strings.HasPrefix(targetURL, "https://") {
+		targetURL = "http://" + targetURL
+	}
 
 	if len(req.Query) > 0 {
-		u, err := url.Parse(req.URL)
+		u, err := url.Parse(targetURL)
 		if err != nil {
 			log.Error().
 				Err(err).
-				Str("url", req.URL).
+				Str("url", targetURL).
 				Msg("invalid URL format")
 			return nil, fmt.Errorf("invalid URL format: %w", err)
 		}
