@@ -22,6 +22,12 @@ type Config struct {
 }
 
 func GenerateDynamicConfig(ctx context.Context, tmplPath, outputPath string, configs []Config) error {
+	if strings.Contains(tmplPath, "..") {
+		return fmt.Errorf("invalid file path")
+	}
+	if strings.Contains(outputPath, "..") {
+		return fmt.Errorf("invalid file path")
+	}
 	tmpl, err := template.ParseFiles(tmplPath)
 	if err != nil {
 		log.Ctx(ctx).Error().Err(err).Msg("failed to parse template")
