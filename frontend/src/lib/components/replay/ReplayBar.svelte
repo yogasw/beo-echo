@@ -3,6 +3,7 @@
 	// for these imports to work.
 	import {  tick } from 'svelte'; // Corrected import
 	import * as ThemeUtils from '$lib/utils/themeUtils';
+	import TabContextMenu from './tabs/TabContextMenu.svelte';
 
 	// Props using Svelte 5 runes mode
 	let {
@@ -10,12 +11,18 @@
 		switchTab,
 		closeTab,
 		createNewTab,
+		closeOtherTabs,
+		closeAllTabs,
+		duplicateTab,
 		tabs = []
 	}: {
 		activeTabId: string;
 		switchTab: (tabId: string) => void;
 		closeTab: (tabId: string) => void;
 		createNewTab: () => void;
+		closeOtherTabs: (tabId: string) => void;
+		closeAllTabs: () => void;
+		duplicateTab: (tabId: string) => void;
 		tabs?: {
 			id: string;
 			name: string;
@@ -26,6 +33,9 @@
 
 	// Reactive state for the DOM element reference
 	let scrollableContainer: HTMLDivElement | null = $state(null);
+
+	// Context menu state
+	let contextMenu = $state({ show: false, x: 0, y: 0, tabId: '' });
 
 	// Reactive state for overflow status
 	let isOverflowing = $state(false);
@@ -55,6 +65,29 @@
 			}
 		}
 	}
+
+	function handleContextMenu(e: MouseEvent, tabId: string) {
+		e.preventDefault();
+		contextMenu = {
+			show: true,
+			x: e.clientX,
+			y: e.clientY,
+			tabId
+		};
+	}
+
+	function closeContextMenu() {
+		contextMenu.show = false;
+	}
+
+	// Close context menu when clicking outside
+	$effect(() => {
+		const handleClick = () => closeContextMenu();
+		window.addEventListener('click', handleClick);
+		return () => {
+			window.removeEventListener('click', handleClick);
+		};
+	});
 
 	// Effect for MutationObserver and initial check
 	$effect(() => {
@@ -102,7 +135,7 @@
 
 <!-- Header with tabs/actions -->
 <div class={ThemeUtils.themeBgSecondary('border-b theme-border')}>
-	<div class="flex items-center justify-between px-4 py-2 text-sm">
+	<div class="flex items-center justify-between px-4 py-2 text-sm relative">
 		<div class="flex items-center space-x-2 flex-1 min-w-0">
 			<button
 				class={`${ThemeUtils.themeBgAccent(
@@ -116,12 +149,14 @@
 			</button>
 
 			<div
-				class="flex items-center space-x-1 overflow-x-auto flex-1 hide-scrollbar"
+				class="flex items-center space-x-1 overflow-x-auto flex-1 hide-scrollbar relative"
 				bind:this={scrollableContainer}
 			>
 				{#each tabs as tab (tab.id)}
+					<!-- svelte-ignore a11y_no_static_element_interactions -->
 					<div
 						class="flex items-center bg-gray-100 dark:bg-gray-750 rounded-lg transition-all duration-200 hover:shadow-md flex-shrink-0"
+						oncontextmenu={(e) => handleContextMenu(e, tab.id)}
 					>
 						<button
 							class={`flex items-center space-x-2 px-3 py-2 ${activeTabId === tab.id
@@ -151,7 +186,10 @@
 							class="p-2 hover:bg-red-500 hover:text-white rounded-r-lg transition-all duration-200 theme-text-muted hover:theme-text-white"
 							title="Close {tab.name} tab"
 							aria-label="Close tab {tab.name}"
-							onclick={() => closeTab(tab.id)}
+							onclick={(e) => {
+								e.stopPropagation();
+								closeTab(tab.id);
+							}}
 						>
 							<i class="fas fa-times text-xs"></i>
 						</button>
@@ -181,6 +219,20 @@
 					<i class="fas fa-plus text-sm"></i>
 				</button>
 			{/if}
+
+			<!-- Context Menu -->
+			<TabContextMenu
+				show={contextMenu.show}
+				x={contextMenu.x}
+				y={contextMenu.y}
+				tabId={contextMenu.tabId}
+				onClose={closeContextMenu}
+				onCreateNewTab={createNewTab}
+				onDuplicateTab={duplicateTab}
+				onCloseTab={closeTab}
+				onCloseOtherTabs={closeOtherTabs}
+				onCloseAllTabs={closeAllTabs}
+			/>
 		</div>
 	</div>
 </div>

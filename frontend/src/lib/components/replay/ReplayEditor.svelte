@@ -18,6 +18,7 @@
 	// import ScriptTab from './tabs/ScriptTab.svelte';
 	import SettingsTab from './tabs/SettingsTab.svelte';
 	import ReplayBody from './tabs/ReplayBody.svelte';
+	import { createTabActions } from './tabs/tabActions';
 	import type { ExecuteReplayResponse, Replay } from '$lib/types/Replay';
 	import type { Tab } from './types';
 
@@ -220,16 +221,43 @@
 				metadata: tabReplayData?.metadata || emptyMetadataJson,
 				payload: tabReplayData?.payload || '',
 
-			// Parse JSON fields
-			parsedHeaders: parseHeaders(tabReplayData?.headers || emptyHeadersJson),
-			...parseConfig(tabReplayData?.config || emptyConfigJson),
-			...parseMetadata(tabReplayData?.metadata || emptyMetadataJson)
-		};
-		
-		lastDispatchedContent = JSON.stringify(getStructuredContentForStorage());
-		shouldAutoDispatch = true; // Re-enable after content update
+				// Parse JSON fields
+				parsedHeaders: parseHeaders(tabReplayData?.headers || emptyHeadersJson),
+				...parseConfig(tabReplayData?.config || emptyConfigJson),
+				...parseMetadata(tabReplayData?.metadata || emptyMetadataJson)
+			};
+			
+			lastDispatchedContent = JSON.stringify(getStructuredContentForStorage());
+			shouldAutoDispatch = true; // Re-enable after content update
 		}
 		dispatch('tabschange', { tabs, activeTabId, activeTabContent });
+	}
+
+	const tabActions = createTabActions({
+		getTabs: () => tabs,
+		setTabs: (t) => { tabs = t; },
+		getActiveTabId: () => activeTabId,
+		setActiveTabId: (id) => { activeTabId = id; },
+		getActiveTabContent: () => activeTabContent,
+		dispatchTabsChange: () => dispatch('tabschange', { tabs, activeTabId, activeTabContent }),
+		triggerResetActiveTabContent: () => {
+			shouldAutoDispatch = false;
+			resetActiveTabContent();
+			shouldAutoDispatch = true;
+			dispatch('tabschange', { tabs: [], activeTabId: '', activeTabContent: null });
+		}
+	});
+
+	function closeOtherTabs(tabIdToKeep: string) {
+		tabActions.closeOtherTabs(tabIdToKeep);
+	}
+
+	function closeAllTabs() {
+		tabActions.closeAllTabs();
+	}
+
+	function duplicateTab(tabId: string) {
+		tabActions.duplicateTab(tabId);
 	}
 
 	function switchTab(tabId: string) {
@@ -717,7 +745,7 @@
 
 <!-- Postman-like Request Interface -->
 <div class="flex flex-col h-full">
-	<ReplayBar {activeTabId} {switchTab} {closeTab} {createNewTab} {tabs} />
+	<ReplayBar {activeTabId} {switchTab} {closeTab} {closeOtherTabs} {closeAllTabs} {duplicateTab} {createNewTab} {tabs} />
 	<!-- Main content -->
 	<main class="flex-grow p-4 space-y-4 overflow-y-auto">
 		<!-- Title and actions -->
