@@ -370,15 +370,20 @@
 			};
 			
 			// Check if we should replace the current active tab.
-			// If the active tab hasn't been edited (!isUnsaved) we replace it.
+			// Replace if:
+			// 1. It's the only tab and it's a completely empty unsaved tab (default tab), OR
+			// 2. The active tab hasn't been edited (!isUnsaved)
 			const activeTabIndex = editorTabs.findIndex(t => t.id === editorActiveTabId);
 			const activeTab = activeTabIndex !== -1 ? editorTabs[activeTabIndex] : null;
-			const shouldReplace = activeTab && !activeTab.isUnsaved;
 
-			if (shouldReplace) {
-				// Replace the clean/unedited tab
+			const shouldReplaceEmpty = editorTabs.length === 1 && editorTabs[0].isUnsaved && !editorTabs[0].url;
+			const shouldReplaceUnedited = activeTab && !activeTab.isUnsaved;
+
+			if (shouldReplaceEmpty || shouldReplaceUnedited) {
+				// Replace the empty/unedited tab
+				const indexToReplace = shouldReplaceEmpty ? 0 : activeTabIndex;
 				const newTabs = [...editorTabs];
-				newTabs[activeTabIndex] = newTab;
+				newTabs[indexToReplace] = newTab;
 				editorTabs = newTabs;
 			} else {
 				// Append as new tab

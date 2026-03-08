@@ -169,7 +169,8 @@ export function createDefaultTabContent(): TabContent {
  * Create default tab with full content
  */
 export function createDefaultTab(id?: string): Tab {
-	const tabId = id || `tab-${Date.now()}`;
+	const randomSuffix = Math.random().toString(36).substring(2, 9);
+	const tabId = id || `tab-${Date.now()}-${randomSuffix}`;
 	
 	return {
 		id: tabId,
@@ -354,8 +355,18 @@ export function updateActiveSection(workspaceId: string, projectId: string, tabI
  * Add new tab to stored state
  */
 export function addTabToStorage(workspaceId: string, projectId: string, tab: Tab): void {
-	const currentState = getReplayEditorState(workspaceId, projectId);
-	if (!currentState) return;
+	let currentState = getReplayEditorState(workspaceId, projectId);
+	
+	// If no state exists yet, initialize a new default state
+	if (!currentState) {
+		currentState = createDefaultReplayEditorState(workspaceId, projectId);
+		// Replace the default tab created by createDefaultReplayEditorState with our new tab
+		currentState.tabs = [tab];
+		currentState.activeTabId = tab.id;
+		currentState.activeView = 'editor';
+		setReplayEditorState(currentState);
+		return;
+	}
 	
 	// Ensure tab has content
 	if (!tab.content) {
@@ -364,6 +375,7 @@ export function addTabToStorage(workspaceId: string, projectId: string, tab: Tab
 	
 	currentState.tabs.push(tab);
 	currentState.activeTabId = tab.id;
+	currentState.activeView = 'editor'; // Force the UI to show the editor, not the list
 	
 	setReplayEditorState(currentState);
 }
