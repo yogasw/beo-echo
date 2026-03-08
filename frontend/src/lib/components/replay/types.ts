@@ -12,6 +12,9 @@ export interface Tab {
     
     // Extended content for persistence
     content?: TabContent;
+
+    // Per-tab execution result (null = never executed)
+    executionResult?: import('$lib/types/Replay').ExecuteReplayResponse | null;
 }
 
 // Complete tab content that needs to be persisted

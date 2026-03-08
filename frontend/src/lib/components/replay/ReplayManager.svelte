@@ -29,7 +29,9 @@
 	let isLoading = true;
 	let error: string | null = null;
 	let activeView: 'list' | 'editor' | 'execution' | 'logs' | 'folder' = 'list';
-	let executionResult: ExecuteReplayResponse | null = null;
+
+	// Per-tab execution result — derived from the active tab
+	$: executionResult = editorTabs.find(t => t.id === editorActiveTabId)?.executionResult ?? null;
 
 	// Panel width
 	let panelWidth: number; // Initialized in onMount
@@ -490,13 +492,16 @@
 			const activeTabIndex = editorTabs.findIndex(t => t.id === editorActiveTabId);
 			const activeTab = activeTabIndex !== -1 ? editorTabs[activeTabIndex] : null;
 
-			const shouldReplaceEmpty = editorTabs.length === 1 && editorTabs[0].isUnsaved && !editorTabs[0].url;
-			const shouldReplaceUnedited = activeTab && !activeTab.isUnsaved;
+			// Only replace if it's the sole tab AND it's a blank placeholder (no URL, never executed, unsaved)
+			const shouldReplaceEmpty = 
+				editorTabs.length === 1 && 
+				editorTabs[0].isUnsaved && 
+				!editorTabs[0].url &&
+				!editorTabs[0].executionResult;
 
-			if (shouldReplaceEmpty || shouldReplaceUnedited) {
-				const indexToReplace = shouldReplaceEmpty ? 0 : activeTabIndex;
+			if (shouldReplaceEmpty) {
 				const newTabs = [...editorTabs];
-				newTabs[indexToReplace] = newTab;
+				newTabs[0] = newTab;
 				editorTabs = newTabs;
 			} else {
 				editorTabs = [...editorTabs, newTab];
@@ -665,6 +670,10 @@
 
 		try {
 			replayActions.setLoading('execute', true);
+			// Clear the active tab's previous result while loading
+			editorTabs = editorTabs.map(t =>
+				t.id === editorActiveTabId ? { ...t, executionResult: null } : t
+			);
 			
 			// Prepare request payload from editor data
 			const payload = {
@@ -683,14 +692,20 @@
 				payload
 			);
 			
-			executionResult = result;
-			console.log('Execution result:', executionResult);
+			// Save result into the active tab
+			editorTabs = editorTabs.map(t =>
+				t.id === editorActiveTabId ? { ...t, executionResult: result } : t
+			);
+			console.log('Execution result saved to tab:', editorActiveTabId);
 			
 			// You can optionally update UI to show the result or navigate to a result view
 			activeView = 'execution';
 		} catch (err: any) {
 			toast.error(err.message || 'Failed to execute request');
-			executionResult = null
+			// Clear result on error too
+			editorTabs = editorTabs.map(t =>
+				t.id === editorActiveTabId ? { ...t, executionResult: null } : t
+			);
 		} finally {
 			replayActions.setLoading('execute', false);
 		}
