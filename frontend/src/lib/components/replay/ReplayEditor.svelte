@@ -43,6 +43,7 @@
 		activeSection: string;
 		itemType?: 'request' | 'folder';
 		folder?: any;
+		folder_id?: string;
 
 		// Raw fields from replayData
 		headers?: string;
@@ -84,8 +85,25 @@
 			...parseMetadata(replayData.metadata)
 		};
 		
+		// If editing an existing item that has a folder_id, keep it in activeTabContent:
+		if (replayData.folder_id) {
+			activeTabContent.folder_id = replayData.folder_id;
+		} else {
+			// Try finding the tab by ID to inherit any initialized folder_id (from Create Request action)
+			const currentTab = tabs.find((t) => t.id === replayData.id || t.id === activeTabId);
+			if (currentTab?.folder_id) {
+				activeTabContent.folder_id = currentTab.folder_id;
+			}
+		}
+
 		lastDispatchedContent = JSON.stringify(getStructuredContentForStorage());
 		lastDispatchedTabId = replayData.id || activeTabId || '';
+	} else {
+		// If replayData is null, we might be on a brand new tab, attempt to load folder_id from the tab array
+		const currentTab = tabs.find((t) => t.id === activeTabId);
+		if (currentTab?.folder_id && activeTabContent) {
+			activeTabContent.folder_id = currentTab.folder_id;
+		}
 	}
 
 	// Add props for execution status and results
@@ -487,8 +505,10 @@
 				payload.metadata = { params: validParams };
 			}
 
-			// Add folder ID if available on the original replay data
-			if (replayData && replayData.folder_id) {
+			// Add folder ID if available on the original replay data or current tab
+			if (activeTabContent.folder_id) {
+				payload.folder_id = activeTabContent.folder_id;
+			} else if (replayData && replayData.folder_id) {
 				payload.folder_id = replayData.folder_id;
 			}
 

@@ -8,6 +8,7 @@ export interface Tab {
     isUnsaved: boolean;
     itemType?: 'request' | 'folder';
     folder?: any; // The whole folder object
+    folder_id?: string; // ID of the parent folder
     
     // Extended content for persistence
     content?: TabContent;

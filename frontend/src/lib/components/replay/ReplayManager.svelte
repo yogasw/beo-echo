@@ -50,6 +50,7 @@
 		activeSection: string;
 		itemType?: 'request' | 'folder';
 		folder?: any;
+		folder_id?: string;
 	} = {
 		method: 'GET',
 		url: '',
@@ -321,6 +322,9 @@
 		
 		// Create a new tab with full content structure
 		const newTab = createDefaultTab();
+		if (detail?.parentReplay?.id) {
+			newTab.folder_id = detail.parentReplay.id;
+		}
 		
 		// Check if we should replace the current active tab
 		const activeTabIndex = editorTabs.findIndex(t => t.id === editorActiveTabId);
@@ -348,6 +352,9 @@
 			url: '',
 			activeSection: 'params'
 		};
+		if (newTab.folder_id) {
+			editorActiveTabContent.folder_id = newTab.folder_id;
+		}
 		
 		// Save the new tab to localStorage
 		if ($selectedWorkspace?.id && $selectedProject?.id) {
@@ -421,6 +428,50 @@
 				itemType: newTab.itemType,
 				folder: newTab.folder
 			};
+		}
+	}
+
+	async function handleDuplicateReplay(event: CustomEvent) {
+		const item = event.detail;
+		if (!item) return;
+
+		try {
+			if (!$selectedWorkspace || !$selectedProject) return;
+
+			replayActions.setLoading('create', true);
+            
+			// Create a copy of the replay
+			const newItem = {
+				name: item.name + ' (Copy)',
+				protocol: item.protocol || 'http',
+				method: item.method || 'GET',
+				url: item.url || '',
+				headers: item.headers ? JSON.parse(item.headers) : {},
+				payload: item.payload || '',
+				body: item.payload || '',
+				config: item.config ? JSON.parse(item.config) : { auth: { type: 'none', config: {} }, settings: {} },
+				folder_id: item.folder_id || null
+			};
+			
+			// Add metadata if valid params exist
+			if (item.metadata) {
+				try {
+					const parsedObj = JSON.parse(item.metadata);
+					if (parsedObj.params && Array.isArray(parsedObj.params)) {
+						const validParams = parsedObj.params.filter((p: any) => p.key && p.enabled);
+						if (validParams.length > 0) (newItem as any).metadata = { params: validParams };
+					}
+				} catch(e) {}
+			}
+
+			await replayApi.createReplay($selectedWorkspace.id, $selectedProject.id, newItem as any);
+			
+			loadReplays();
+			toast.success('Replay duplicated successfully');
+		} catch (err: any) {
+			toast.error(err.message || 'Failed to duplicate replay');
+		} finally {
+			replayActions.setLoading('create', false);
 		}
 	}
 
@@ -763,6 +814,7 @@
 						on:logs={handleViewLogs}
 						on:refresh={loadReplays}
 						on:toggleCollapse={togglePanelCollapse}
+						on:duplicate={handleDuplicateReplay}
 					/>
 				{/if}
 			</div>

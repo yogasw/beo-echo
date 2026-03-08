@@ -219,6 +219,16 @@
 		collapsedFolders = newCollapsed;
 	}
 
+	function handleCreateHttpInFolder(item: any) {
+		closeContextMenu();
+		dispatch('add', { type: 'http', parentReplay: { id: item.id } });
+	}
+
+	function handleDuplicate(item: any) {
+		closeContextMenu();
+		dispatch('duplicate', item);
+	}
+
 	function submitInlineFolder() {
 		if (newFolderName.trim()) {
 			const parentItem = inlineFolderParent === null ? null : { id: inlineFolderParent };
@@ -676,12 +686,34 @@
 					<button
 						onclick={(e) => {
 							e.stopPropagation();
+							handleCreateHttpInFolder(contextMenu.item);
+						}}
+						class="w-full text-left px-4 py-2 text-sm theme-text-primary hover:theme-bg-secondary transition-colors flex items-center space-x-2"
+					>
+						<i class="fas fa-globe text-blue-400"></i>
+						<span>Create Request</span>
+					</button>
+					<button
+						onclick={(e) => {
+							e.stopPropagation();
 							handleCreateFolder(contextMenu.item);
 						}}
 						class="w-full text-left px-4 py-2 text-sm theme-text-primary hover:theme-bg-secondary transition-colors flex items-center space-x-2"
 					>
 						<i class="fas fa-folder-plus text-yellow-400"></i>
 						<span>Create Folder</span>
+					</button>
+				{/if}
+				{#if contextMenu.item.itemType === 'replay'}
+					<button
+						onclick={(e) => {
+							e.stopPropagation();
+							handleDuplicate(contextMenu.item);
+						}}
+						class="w-full text-left px-4 py-2 text-sm theme-text-primary hover:theme-bg-secondary transition-colors flex items-center space-x-2"
+					>
+						<i class="fas fa-copy text-blue-400"></i>
+						<span>Duplicate</span>
 					</button>
 				{/if}
 			</div>
