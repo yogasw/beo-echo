@@ -239,7 +239,7 @@
 				protocol: activeTab.replay?.protocol || 'http',
 				method: activeTab.content?.method || 'GET',
 				url: activeTab.content?.url || '',
-				headers: {},
+				headers: [],
 				payload: activeTab.content?.body?.content || '',
 				config: {
 					auth: activeTab.content?.auth || { type: 'none', config: {} },
@@ -275,13 +275,15 @@
 				payload.folder_id = activeTab.replay.folder_id;
 			}
 
-			// Process headers as object map
+			// Process headers as array with description (disabled = deleted)
 			if (activeTab.content?.headers) {
-				activeTab.content.headers.forEach((h: any) => {
-					if (h.enabled && h.key) {
-						payload.headers[h.key] = h.value;
-					}
-				});
+				payload.headers = activeTab.content.headers
+					.filter((h: any) => h.enabled && h.key)
+					.map((h: any) => ({
+						key: h.key,
+						value: h.value || '',
+						description: h.description || ''
+					}));
 			}
 
 			if (activeTab.id && !activeTab.id.startsWith('tab-')) {
@@ -417,7 +419,15 @@
 		try {
 			const headers = JSON.parse(headersJson);
 			if (Array.isArray(headers)) {
-				return headers.length > 0 ? headers : [{ key: '', value: '', description: '', enabled: true }];
+				if (headers.length > 0) {
+					return headers.map((h: any) => ({
+						key: h.key || '',
+						value: h.value || '',
+						description: h.description || '',
+						enabled: true
+					}));
+				}
+				return [{ key: '', value: '', description: '', enabled: true }];
 			}
 			// Handle object format: Record<string, string> from backend
 			if (typeof headers === 'object' && headers !== null) {

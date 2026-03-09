@@ -66,32 +66,39 @@ type ListReplaysResponse struct {
 	Folders []database.ReplayFolder `json:"folders"`
 }
 
+// HeaderItem represents a single header with key, value, and description
+type HeaderItem struct {
+	Key         string `json:"key"`
+	Value       string `json:"value"`
+	Description string `json:"description"`
+}
+
 // CreateReplayRequest represents the request payload for creating a replay
 type CreateReplayRequest struct {
-	Name     string            `json:"name"`
-	Doc      string            `json:"doc"`
-	FolderID *string           `json:"folder_id"`
-	Protocol string            `json:"protocol" binding:"required"`
-	Method   string            `json:"method" binding:"required"`
-	Url      string            `json:"url" binding:"required"`
-	Headers  map[string]string `json:"headers"`
-	Payload  string            `json:"payload"`
-	Metadata map[string]any    `json:"metadata"` // Additional protocol-specific metadata
-	Config   map[string]any    `json:"config"`   // Optional configuration for specific protocols
+	Name     string         `json:"name"`
+	Doc      string         `json:"doc"`
+	FolderID *string        `json:"folder_id"`
+	Protocol string         `json:"protocol" binding:"required"`
+	Method   string         `json:"method" binding:"required"`
+	Url      string         `json:"url" binding:"required"`
+	Headers  []HeaderItem   `json:"headers"`
+	Payload  string         `json:"payload"`
+	Metadata map[string]any `json:"metadata"` // Additional protocol-specific metadata
+	Config   map[string]any `json:"config"`   // Optional configuration for specific protocols
 }
 
 // UpdateReplayRequest represents the request payload for updating a replay
 type UpdateReplayRequest struct {
-	Name           *string            `json:"name"`
-	Doc            *string            `json:"doc"`
-	FolderID       *string            `json:"folder_id"`
-	UpdateFolderID bool               `json:"update_folder_id"`
-	Protocol       *string            `json:"protocol"`
-	Method         *string            `json:"method"`
-	Url            *string            `json:"url"`
-	Headers        *map[string]string `json:"headers"`
-	Payload        *string            `json:"payload"`
-	Metadata       *map[string]any    `json:"metadata"` // Additional protocol-specific metadata
-	Config         *map[string]any    `json:"config"`   // Optional configuration for specific protocols
+	Name           *string         `json:"name"`
+	Doc            *string         `json:"doc"`
+	FolderID       *string         `json:"folder_id"`
+	UpdateFolderID bool            `json:"update_folder_id"`
+	Protocol       *string         `json:"protocol"`
+	Method         *string         `json:"method"`
+	Url            *string         `json:"url"`
+	Headers        *[]HeaderItem   `json:"headers"`
+	Payload        *string         `json:"payload"`
+	Metadata       *map[string]any `json:"metadata"` // Additional protocol-specific metadata
+	Config         *map[string]any `json:"config"`   // Optional configuration for specific protocols
 }
 
