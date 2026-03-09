@@ -1,4 +1,5 @@
 import type { Replay } from '$lib/types/Replay';
+import type { BodyTypeHttp,ReplayMetadata } from '$lib/types/Replay';
 
 // --- Shared Types ---
 
@@ -19,6 +20,7 @@ export interface ImportResult {
 	method?: string;
 	headers?: Header[];
 	body?: string;
+	metadata?: ReplayMetadata;
 	config: ImportConfig;
 	availableKeys: string[];
 }
@@ -26,6 +28,11 @@ export interface ImportResult {
 // --- Utils ---
 
 export const METHODS = ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'HEAD', 'OPTIONS'];
+
+/** Infer HTTP body type from body content. Extend here to support more types. */
+export function inferBodyType(body?: string): BodyTypeHttp {
+	return body ? 'raw' : 'none';
+}
 
 export function extractKeyPaths(data: any, prefix = ''): string[] {
 	if (!data || typeof data !== 'object') return [];
@@ -195,12 +202,12 @@ function tryParseStructuredHttpLog(data: any): ImportResult | null {
 			body = JSON.stringify(rawBody, null, 2);
 		}
 	}
-
 	return {
 		url,
 		method: method.toUpperCase(),
 		headers,
 		body,
+		metadata: { bodyType: inferBodyType(body) },
 		config: { url: 'host+path', method: 'method', headers: 'user_agent', body: 'body' },
 		availableKeys: extractKeyPaths(data)
 	};
@@ -307,6 +314,9 @@ export function importFromJson(
 			} catch {}
 		}
 
+		// Set metadata.bodyType based on whether body was detected
+		result.metadata = { bodyType: inferBodyType(result.body) };
+
 		if (!result.url) {
 			throw new Error('Could not find a valid URL in the JSON mapping.');
 		}
@@ -325,13 +335,15 @@ function toReplay(result: ImportResult): Partial<Replay> {
 	if (result.headers) {
 		result.headers.forEach(h => (headersObj[h.key] = h.value));
 	}
+	const bodyType: BodyTypeHttp = result.metadata?.bodyType ?? inferBodyType(result.body);
 	return {
 		name: 'Imported Request',
 		url: result.url || '',
 		method: result.method || 'GET',
 		headers: JSON.stringify(headersObj),
 		payload: result.body || '',
-		config: JSON.stringify({ auth: { type: 'none', config: {} }, settings: {} })
+		config: JSON.stringify({ auth: { type: 'none', config: {} }, settings: {} }),
+		metadata: JSON.stringify({ params: [], bodyType })
 	};
 }
 

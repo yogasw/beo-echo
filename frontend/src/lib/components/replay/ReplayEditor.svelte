@@ -425,8 +425,17 @@
 	}
 
 	function handleBodyContentChange(event: CustomEvent) {
-		// Update payload field
-		activeTabContent.payload = event.detail.payload;
+		if (event.detail.payload !== undefined) {
+			activeTabContent.payload = event.detail.payload;
+		}
+		if (event.detail.bodyType !== undefined) {
+			// Persist bodyType into metadata JSON
+			try {
+				const meta = activeTabContent.metadata ? JSON.parse(activeTabContent.metadata) : {};
+				meta.bodyType = event.detail.bodyType;
+				activeTabContent.metadata = JSON.stringify(meta);
+			} catch(e) {}
+		}
 		
 		dispatch('tabContentChange', getStructuredContentForStorage());
 	}
@@ -757,7 +766,8 @@
 						settings: tabContent?.settings || {}
 					}),
 					metadata: JSON.stringify({
-						params: tabContent?.params || [{ key: '', value: '', description: '', enabled: true }]
+						params: tabContent?.params || [{ key: '', value: '', description: '', enabled: true }],
+						bodyType: tabContent?.body?.type
 					}),
 					payload: tabContent?.body?.content || '',
 
@@ -1047,7 +1057,9 @@
 			/>
 		{:else if activeTabContent.activeSection === 'body'}
 			<ReplayBody 
-				payload={activeTabContent?.payload} 
+				payload={activeTabContent?.payload}
+				metadata={activeTabContent?.metadata}
+				protocol={activeTabContent?.protocol}
 				on:change={handleBodyContentChange}
 			/>
 		{:else if activeTabContent.activeSection === 'settings'}

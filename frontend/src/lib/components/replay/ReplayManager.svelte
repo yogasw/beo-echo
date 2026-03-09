@@ -23,7 +23,7 @@
 	import ErrorDisplay from '$lib/components/common/ErrorDisplay.svelte';
 	import ReplayEditor from './ReplayEditor.svelte';
 	import type { Tab } from './types';
-	import type { ExecuteReplayResponse } from '$lib/types/Replay';
+	import type { ExecuteReplayResponse, ReplayMetadata, ReplayConfig, CreateReplayRequest } from '$lib/types/Replay';
 	const dispatch = createEventDispatcher();
 
 	let isLoading = true;
@@ -330,6 +330,14 @@
 			newTab.folder_id = detail.parentReplay.id;
 		}
 
+		// Parse imported metadata once — used by both tab UI state and API save payload
+		let importedMeta: ReplayMetadata = {};
+		try {
+			if (detail?.importedData?.metadata) {
+				importedMeta = JSON.parse(detail.importedData.metadata);
+			}
+		} catch(e) {}
+
 		if (detail?.importedData) {
 			newTab.name = detail.importedData.name || 'Imported Request';
 			newTab.url = detail.importedData.url || '';
@@ -346,11 +354,12 @@
 				}
 				
 				if (detail.importedData.payload) {
+					// Set body content AND type so ReplayEditor can build metadata correctly.
+					// tab.content.body.type drives the metadata JSON that ReplayBody reads.
 					newTab.content.body = {
-						type: 'raw',
-						content: detail.importedData.payload,
-						formData: [],
-						urlEncoded: []
+						...newTab.content.body,
+						type: importedMeta.bodyType ?? 'none',
+						content: detail.importedData.payload
 					};
 				}
 			}
@@ -361,14 +370,14 @@
 		
 		// Automatically save if imported into collection
 		if (detail?.parentReplay && detail?.importedData) {
-			const payload: any = {
+		const payload: CreateReplayRequest = {
 				name: newTab.name,
 				method: newTab.method,
 				url: newTab.url,
-				itemType: 'request',
 				protocol: 'http',
 				headers: {},
-				metadata: { params: [] },
+				// Carry over metadata from parser (includes bodyType, params, etc.)
+				metadata: importedMeta,
 				config: { auth: { type: 'none', config: {} }, settings: {} },
 				payload: newTab.content?.body?.content || ''
 			};
@@ -379,7 +388,8 @@
 
 			if (newTab.content?.headers) {
 				newTab.content.headers.forEach(h => {
-					if (h.enabled && h.key) payload.headers[h.key] = h.value;
+					if (h.enabled && h.key) payload.headers ??= {};
+					if (h.enabled && h.key) payload.headers![h.key] = h.value;
 				});
 			}
 
