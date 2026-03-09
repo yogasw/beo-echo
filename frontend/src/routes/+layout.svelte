@@ -160,15 +160,17 @@
 </script>
 
 {#if isLoginPage || isLandingPage || !$isAuthenticated}
-	<slot />
+	<div style="zoom: 0.9; min-height: calc(100vh / 0.9);">
+		<slot />
+	</div>
 {:else}
 	<!-- Desktop Menu Bar (only shown in desktop mode) -->
 	{#if isDesktopMode()}
 		<DesktopMenuBar />
 	{/if}
 	
-	<div class="min-h-screen w-full theme-bg-tertiary theme-text-primary font-sans transition-colors {isDesktopMode() ? 'pt-8' : ''}">
-		<div class="mx-auto flex h-screen">
+	<div style="zoom: 0.9; height: calc(100vh / 0.9);" class="w-full theme-bg-tertiary theme-text-primary font-sans transition-colors {isDesktopMode() ? 'pt-8' : ''}">
+		<div class="mx-auto flex h-full">
 			<ProjectList {searchTerm} bind:this={projectListComponent} />
 
 			<div class="flex-1 flex flex-col overflow-hidden">
