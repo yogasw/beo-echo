@@ -58,7 +58,7 @@
 			headers: parseHeaders(replay.headers),
 			auth: config.parsedAuth || { type: 'none', config: {} },
 			settings: config.parsedSettings || {},
-			params: meta.parsedParams || [{ key: '', value: '', description: '', enabled: true }],
+			params: parseUrlParams(replay.url || '', meta.parsedParams || []),
 			body: {
 				...activeTab.content?.body,
 				type: meta.parsedBodyType || 'none',
@@ -170,6 +170,7 @@
 	function handleParamsChange(event: CustomEvent) {
 		if (activeTab?.content) {
 			activeTab.content.params = event.detail.params;
+			activeTab.content.url = getUrlFromParams(activeTab.content.url, event.detail.params);
 			markUnsaved();
 		}
 	}
@@ -247,7 +248,7 @@
 				}
 			};
 
-			const validParams = (activeTab.content?.params || []).filter((p: any) => p.key && p.enabled);
+			const validParams = (activeTab.content?.params || []).filter((p: any) => p.key);
 			
 			// Parse existing metadata to preserve other properties (like bodyType)
 			let metaObj: any = {};
@@ -500,6 +501,67 @@
 		}
 	}
 
+	function parseUrlParams(url: string, existingParams?: Array<{ key: string; value: string; description: string; enabled: boolean }>): Array<{ key: string; value: string; description: string; enabled: boolean }> {
+		try {
+			const [, queryString] = (url || '').split('?');
+			const paramsList: Array<{ key: string; value: string; description: string; enabled: boolean }> = [];
+			
+			const existingKeyMap = new Map();
+			if (existingParams) {
+				existingParams.forEach(p => {
+					if (p.key) existingKeyMap.set(p.key, p);
+				});
+			}
+
+			const usedKeys = new Set<string>();
+
+			if (queryString) {
+				const urlParams = new URLSearchParams(queryString);
+				for (const [key, value] of urlParams.entries()) {
+					const existing = existingKeyMap.get(key);
+					paramsList.push({ 
+						key, 
+						value, 
+						description: existing ? existing.description : '', 
+						enabled: true 
+					});
+					usedKeys.add(key);
+				}
+			}
+
+			// Always keep existing unused parameters (keep their description), just mark them as disabled if they're not in the URL
+			if (existingParams) {
+				existingParams.forEach(p => {
+					if (p.key && !usedKeys.has(p.key)) {
+						paramsList.push({ ...p, enabled: false });
+					}
+				});
+			}
+
+			paramsList.push({ key: '', value: '', description: '', enabled: true });
+			return paramsList;
+		} catch (e) {
+			return [{ key: '', value: '', description: '', enabled: true }];
+		}
+	}
+
+	function getUrlFromParams(baseUrl: string, params: Array<{ key: string; value: string; enabled: boolean }>): string {
+		try {
+			const [base] = (baseUrl || '').split('?');
+			const searchParams = new URLSearchParams();
+			let hasParams = false;
+			params.forEach(p => {
+				if (p.enabled && p.key.trim() !== '') {
+					searchParams.append(p.key.trim(), p.value);
+					hasParams = true;
+				}
+			});
+			return hasParams ? `${base}?${searchParams.toString()}` : base;
+		} catch (e) {
+			return baseUrl || '';
+		}
+	}
+
 
 	let isEditingTitle = false;
 	let editTitleValue = '';
@@ -667,7 +729,12 @@
 			</div>
 			<input
 				bind:value={activeTab.content.url}
-				on:input={markUnsaved}
+				on:input={(e) => {
+					markUnsaved();
+					if (activeTab?.content) {
+						activeTab.content.params = parseUrlParams(e.currentTarget.value, activeTab.content.params);
+					}
+				}}
 				class={ThemeUtils.themeBgSecondary(
 					'flex-grow p-2.5 focus:outline-none focus:ring-2 focus:ring-blue-500 theme-text-secondary placeholder-gray-400 dark:placeholder-gray-500 transition-all duration-200'
 				)}
