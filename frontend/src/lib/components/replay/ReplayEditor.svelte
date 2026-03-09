@@ -26,140 +26,58 @@
 	export let tabs: Tab[] = [];
 	export let activeTabId = '';
 
-	// Original replay data from API
-	export let replayData: Replay | null = null;
+	$: activeTab = tabs.find((t) => t.id === activeTabId);
 
-	// Active tab content state - UI state and parsed fields separate from raw Replay data
-	let activeTabContent: {
-		// Basic fields for editing
-		id?: string;
-		name?: string;
-		project_id?: string;
-		protocol?: string;
-		method: string;
-		url: string;
 
-		// UI state
-		activeSection: string;
-		itemType?: 'request' | 'folder';
-		folder?: any;
-		folder_id?: string;
 
-		// Raw fields from replayData
-		headers?: string;
-		config?: string;
-		metadata?: string;
-		payload?: string;
+	const dispatch = createEventDispatcher();
 
-		// Parsed fields for editing
-		parsedParams?: Array<{ key: string; value: string; description: string; enabled: boolean }>;
-		parsedHeaders?: Array<{ key: string; value: string; description: string; enabled: boolean }>;
-		parsedAuth?: { type: string; config: any };
-		parsedBody?: string;
-		parsedSettings?: any;
-	};
+	// Function to flag a tab as unsaved whenever its content changes.
+	function markUnsaved() {
+		if (activeTab && !activeTab.isUnsaved) {
+			activeTab.isUnsaved = true;
+			tabs = [...tabs]; // trigger Svelte reactivity
+		}
+	}
 
-	// Watch for replayData changes and update activeTabContent
-	$: if (replayData) {
-		// Initialize with basic fields from replayData
-		activeTabContent = {
-			id: replayData.id,
-			name: replayData.name,
-			project_id: replayData.project_id,
-			protocol: replayData.protocol || 'http',
-			method: replayData.method || 'GET',
-			url: replayData.url || '',
-			activeSection: 'params',
-			itemType: (replayData as any).itemType === 'folder' ? 'folder' : 'request',
-			folder: (replayData as any).itemType === 'folder' ? replayData : undefined,
+	function triggerUpdate() {
+		tabs = [...tabs];
+	}
 
-			// Store raw JSON fields
-			headers: replayData.headers,
-			config: replayData.config,
-			metadata: replayData.metadata,
-			payload: replayData.payload,
-
-			// Parse the JSON fields with default fallbacks
-			parsedHeaders: parseHeaders(replayData.headers),
-			...parseConfig(replayData.config),
-			...parseMetadata(replayData.metadata)
-		};
+	// Initialize activeTab.content if it's new or hasn't parsed the original replay yet.
+	$: if (activeTab && activeTab.replay && !(activeTab.content as any)?._isParsed) {
+		const replay = activeTab.replay;
+		const config = parseConfig(replay.config);
+		const meta = parseMetadata(replay.metadata);
 		
-		// If editing an existing item that has a folder_id, keep it in activeTabContent:
-		if (replayData.folder_id) {
-			activeTabContent.folder_id = replayData.folder_id;
-		} else {
-			// Try finding the tab by ID to inherit any initialized folder_id (from Create Request action)
-			const currentTab = tabs.find((t) => t.id === replayData.id || t.id === activeTabId);
-			if (currentTab?.folder_id) {
-				activeTabContent.folder_id = currentTab.folder_id;
+		activeTab.content = {
+			...activeTab.content,
+			method: replay.method || 'GET',
+			url: replay.url || '',
+			activeSection: activeTab.content?.activeSection || 'params',
+			headers: parseHeaders(replay.headers),
+			auth: config.parsedAuth || { type: 'none', config: {} },
+			settings: config.parsedSettings || {},
+			params: meta.parsedParams || [{ key: '', value: '', description: '', enabled: true }],
+			body: {
+				...activeTab.content?.body,
+				type: meta.parsedBodyType || 'none',
+				content: replay.payload || ''
 			}
-		}
-
-		lastDispatchedContent = JSON.stringify(getStructuredContentForStorage());
-		lastDispatchedTabId = replayData.id || activeTabId || '';
-	} else {
-		// If replayData is null, we might be on a brand new tab, attempt to load folder_id from the tab array
-		const currentTab = tabs.find((t) => t.id === activeTabId);
-		if (currentTab?.folder_id && activeTabContent) {
-			activeTabContent.folder_id = currentTab.folder_id;
-		}
+		} as any;
+		(activeTab.content as any)._isParsed = true;
+		triggerUpdate();
 	}
 
 	// Add props for execution status and results
 	export let executionResult: ExecuteReplayResponse | null = null;
 
-	// Update footer expansion when execution result changes
-	$: if (executionResult) {
-		isFooterExpanded = true;
-	}
-	const dispatch = createEventDispatcher();
-
 	// Footer state
 	let isFooterExpanded = false;
-	let replayResponseFooter; // Reference to the footer component
+	let replayResponseFooter;
 
-	// Update footer expansion when execution result changes
 	$: if (executionResult) {
 		isFooterExpanded = true;
-	}
-
-	// Active tab content reset function
-	function resetActiveTabContent() {
-		// Create default empty strings for JSON fields
-		const emptyHeadersJson = JSON.stringify([
-			{ key: '', value: '', description: '', enabled: true }
-		]);
-		const emptyConfigJson = JSON.stringify({
-			auth: { type: 'none', config: {} },
-			settings: {}
-		});
-		const emptyMetadataJson = JSON.stringify({
-			params: [{ key: '', value: '', description: '', enabled: true }]
-		});
-
-		// Set activeTabContent with raw JSON fields and parsed values
-		activeTabContent = {
-			method: 'GET',
-			url: '',
-			protocol: 'http',
-			activeSection: 'params',
-			itemType: 'request',
-			folder: undefined,
-
-			// Store raw JSON fields
-			headers: emptyHeadersJson,
-			config: emptyConfigJson,
-			metadata: emptyMetadataJson,
-			payload: '',
-
-			// Parse the JSON fields with default fallbacks
-			parsedHeaders: parseHeaders(emptyHeadersJson),
-			...parseConfig(emptyConfigJson),
-			...parseMetadata(emptyMetadataJson)
-		};
-		// Reset tracker when resetting tab
-		lastDispatchedContent = JSON.stringify(getStructuredContentForStorage());
 	}
 
 	// Flag to control when content changes should be automatically dispatched
@@ -170,23 +88,54 @@
 		shouldAutoDispatch = true;
 	});
 
+	function closeOtherTabs(tabIdToKeep: string) {
+		tabs = tabs.filter(t => t.id === tabIdToKeep);
+		activeTabId = tabIdToKeep;
+		dispatch('tabschange', { tabs, activeTabId });
+	}
+
+	function closeAllTabs() {
+		tabs = [];
+		activeTabId = '';
+		dispatch('tabschange', { tabs: [], activeTabId: '' });
+	}
+
+	function duplicateTab(tabId: string) {
+		const tabToCopy = tabs.find(t => t.id === tabId);
+		if (!tabToCopy) return;
+		const newTab = JSON.parse(JSON.stringify(tabToCopy));
+		newTab.id = `tab-${Date.now()}`;
+		newTab.isUnsaved = true;
+		tabs = [...tabs, newTab];
+		activeTabId = newTab.id;
+		dispatch('tabschange', { tabs, activeTabId });
+	}
+
+	function switchTab(tabId: string) {
+		activeTabId = tabId;
+		dispatch('tabschange', { tabs, activeTabId });
+	}
+
 	function createNewTab() {
 		const newTabId = `tab-${Date.now()}`;
 		const newTab: Tab = {
 			id: newTabId,
-			name: 'New Request',
-			method: 'GET',
-			url: '',
-			isUnsaved: true
+			isUnsaved: true,
+			itemType: 'request',
+			content: {
+				method: 'GET',
+				url: '',
+				activeSection: 'params',
+				headers: [{ key: '', value: '', description: '', enabled: true }],
+				params: [{ key: '', value: '', description: '', enabled: true }],
+				auth: { type: 'none', config: {} },
+				settings: {},
+				body: { type: 'none', content: '' }
+			} as any
 		};
 		tabs = [...tabs, newTab];
 		activeTabId = newTabId;
-		
-		shouldAutoDispatch = false; // Disable during reset
-		resetActiveTabContent();
-		shouldAutoDispatch = true; // Re-enable after reset
-		
-		dispatch('tabschange', { tabs, activeTabId, activeTabContent });
+		dispatch('tabschange', { tabs, activeTabId });
 	}
 
 	function closeTab(tabId: string) {
@@ -195,14 +144,10 @@
 
 		if (tabs.length === 0) {
 			activeTabId = '';
-			shouldAutoDispatch = false;
-			resetActiveTabContent();
-			shouldAutoDispatch = true;
-			dispatch('tabschange', { tabs: [], activeTabId: '', activeTabContent: null });
+			dispatch('tabschange', { tabs: [], activeTabId: '' });
 			return;
 		}
 
-		// Switch to adjacent tab
 		if (activeTabId === tabId) {
 			if (tabIndex > 0) {
 				activeTabId = tabs[tabIndex - 1].id;
@@ -210,268 +155,61 @@
 				activeTabId = tabs[0].id;
 			}
 		}
-		
-		// Update activeTabContent based on the new activeTabId
-		const newActiveTab = tabs.find((t) => t.id === activeTabId);
-		if (newActiveTab) {
-			shouldAutoDispatch = false; // Disable during content update
-			
-			// Create default empty strings for JSON fields
-			const emptyHeadersJson = JSON.stringify([
-				{ key: '', value: '', description: '', enabled: true }
-			]);
-			const emptyConfigJson = JSON.stringify({
-				auth: { type: 'none', config: {} },
-				settings: {}
-			});
-			const emptyMetadataJson = JSON.stringify({
-				params: [{ key: '', value: '', description: '', enabled: true }]
-			});
-
-			// Find the replay data for this tab if it exists
-			const tabReplayData = replayData && replayData.id === newActiveTab.id ? replayData : null;
-
-			// Start with basic fields from tab or default values
-			activeTabContent = {
-				id: newActiveTab.id,
-				name: newActiveTab.name || 'New Request',
-				method: newActiveTab.method || 'GET',
-				url: newActiveTab.url || '',
-				activeSection: 'params',
-				protocol: 'http',
-				itemType: newActiveTab.itemType || 'request',
-				folder: newActiveTab.folder,
-
-				// Use replay data fields if available, otherwise defaults
-				headers: tabReplayData?.headers || emptyHeadersJson,
-				config: tabReplayData?.config || emptyConfigJson,
-				metadata: tabReplayData?.metadata || emptyMetadataJson,
-				payload: tabReplayData?.payload || '',
-
-				// Parse JSON fields
-				parsedHeaders: parseHeaders(tabReplayData?.headers || emptyHeadersJson),
-				...parseConfig(tabReplayData?.config || emptyConfigJson),
-				...parseMetadata(tabReplayData?.metadata || emptyMetadataJson)
-			};
-			
-			lastDispatchedContent = JSON.stringify(getStructuredContentForStorage());
-			shouldAutoDispatch = true; // Re-enable after content update
-		}
-		dispatch('tabschange', { tabs, activeTabId, activeTabContent });
-	}
-
-	const tabActions = createTabActions({
-		getTabs: () => tabs,
-		setTabs: (t) => { tabs = t; },
-		getActiveTabId: () => activeTabId,
-		setActiveTabId: (id) => { activeTabId = id; },
-		getActiveTabContent: () => activeTabContent,
-		dispatchTabsChange: () => dispatch('tabschange', { tabs, activeTabId, activeTabContent }),
-		triggerResetActiveTabContent: () => {
-			shouldAutoDispatch = false;
-			resetActiveTabContent();
-			shouldAutoDispatch = true;
-			dispatch('tabschange', { tabs: [], activeTabId: '', activeTabContent: null });
-		}
-	});
-
-	function closeOtherTabs(tabIdToKeep: string) {
-		tabActions.closeOtherTabs(tabIdToKeep);
-	}
-
-	function closeAllTabs() {
-		tabActions.closeAllTabs();
-	}
-
-	function duplicateTab(tabId: string) {
-		tabActions.duplicateTab(tabId);
-	}
-
-	function switchTab(tabId: string) {
-		activeTabId = tabId;
-		const tab = tabs.find((t) => t.id === tabId);
-		if (tab) {
-			shouldAutoDispatch = false; // Disable during content update
-			
-			// Create default empty strings for JSON fields
-			const emptyHeadersJson = JSON.stringify([
-				{ key: '', value: '', description: '', enabled: true }
-			]);
-			const emptyConfigJson = JSON.stringify({
-				auth: { type: 'none', config: {} },
-				settings: {}
-			});
-			const emptyMetadataJson = JSON.stringify({
-				params: [{ key: '', value: '', description: '', enabled: true }]
-			});
-
-			// Find the replay data for this tab if it exists
-			const tabReplayData = replayData && replayData.id === tab.id ? replayData : null;
-
-			// Start with basic fields from tab or default values
-			activeTabContent = {
-				id: tab.id,
-				name: tab.name || 'New Request',
-				method: tab.method || 'GET',
-				url: tab.url || '',
-				activeSection: 'params',
-				protocol: 'http',
-				itemType: tab.itemType || 'request',
-				folder: tab.folder,
-
-				// Use replay data fields if available, otherwise defaults
-				headers: tabReplayData?.headers || emptyHeadersJson,
-				config: tabReplayData?.config || emptyConfigJson,
-				metadata: tabReplayData?.metadata || emptyMetadataJson,
-				payload: tabReplayData?.payload || '',
-
-			// Parse JSON fields
-			parsedHeaders: parseHeaders(tabReplayData?.headers || emptyHeadersJson),
-			...parseConfig(tabReplayData?.config || emptyConfigJson),
-			...parseMetadata(tabReplayData?.metadata || emptyMetadataJson)
-		};
-		
-		lastDispatchedContent = JSON.stringify(getStructuredContentForStorage());
-		shouldAutoDispatch = true; // Re-enable after content update
-		}
-
-		dispatch('tabschange', { tabs, activeTabId, activeTabContent });
+		dispatch('tabschange', { tabs, activeTabId });
 	}
 
 	function setActiveSection(section: string) {
-		// to display the "Coming Soon" message
-		activeTabContent.activeSection = section;
-
+		if (activeTab?.content) {
+			activeTab.content.activeSection = section;
+			tabs = [...tabs];
+		}
 		dispatch('activeSectionChange', { activeSection: section });
 	}
 
 	// Event handlers for tab components
 	function handleParamsChange(event: CustomEvent) {
-		// Update parsedParams field
-		activeTabContent.parsedParams = event.detail.params;
-
-		// Update raw metadata JSON string to reflect the change
-		try {
-			const metadata = activeTabContent.metadata ? JSON.parse(activeTabContent.metadata) : {};
-			metadata.params = event.detail.params;
-			activeTabContent.metadata = JSON.stringify(metadata);
-		} catch (e) {
-			console.error('Failed to update metadata JSON with params change:', e);
-			// Create a new metadata object if parsing failed
-			const metadata = {
-				params: event.detail.params
-			};
-			activeTabContent.metadata = JSON.stringify(metadata);
+		if (activeTab?.content) {
+			activeTab.content.params = event.detail.params;
+			markUnsaved();
 		}
-
-		dispatch('tabContentChange', getStructuredContentForStorage());
 	}
 
 	function handleAuthChange(event: CustomEvent) {
-		// Update parsedAuth field
-		activeTabContent.parsedAuth = {
-			type: event.detail.authType,
-			config: event.detail.authConfig
-		};
-
-		// Update raw config JSON string to reflect the change
-		try {
-			const config = activeTabContent.config ? JSON.parse(activeTabContent.config) : {};
-			config.auth = activeTabContent.parsedAuth;
-			activeTabContent.config = JSON.stringify(config);
-		} catch (e) {
-			console.error('Failed to update config JSON with auth change:', e);
-			// Create a new config object if parsing failed
-			const config = {
-				auth: activeTabContent.parsedAuth,
-				settings: activeTabContent.parsedSettings || {}
+		if (activeTab?.content) {
+			activeTab.content.auth = {
+				type: event.detail.authType,
+				config: event.detail.authConfig
 			};
-			activeTabContent.config = JSON.stringify(config);
+			markUnsaved();
 		}
-
-		dispatch('tabContentChange', getStructuredContentForStorage());
 	}
 
 	function handleHeadersChange(event: CustomEvent) {
-		// Update parsedHeaders field
-		activeTabContent.parsedHeaders = event.detail.headers;
-
-		// Update raw headers JSON string
-		activeTabContent.headers = JSON.stringify(event.detail.headers);
-
-		dispatch('tabContentChange', getStructuredContentForStorage());
+		if (activeTab?.content) {
+			activeTab.content.headers = event.detail.headers;
+			markUnsaved();
+		}
 	}
 
 	function handleSettingsChange(event: CustomEvent) {
-		// Update parsedSettings field
-		activeTabContent.parsedSettings = event.detail.settings;
-
-		// Update raw config JSON string to reflect the change
-		try {
-			const config = activeTabContent.config ? JSON.parse(activeTabContent.config) : {};
-			config.settings = event.detail.settings;
-			activeTabContent.config = JSON.stringify(config);
-		} catch (e) {
-			console.error('Failed to update config JSON with settings change:', e);
-			// Create a new config object if parsing failed
-			const config = {
-				auth: activeTabContent.parsedAuth || { type: 'none', config: {} },
-				settings: event.detail.settings
-			};
-			activeTabContent.config = JSON.stringify(config);
+		if (activeTab?.content) {
+			activeTab.content.settings = event.detail.settings;
+			markUnsaved();
 		}
-
-		dispatch('tabContentChange', getStructuredContentForStorage());
 	}
 
 	function handleBodyContentChange(event: CustomEvent) {
-		if (event.detail.payload !== undefined) {
-			activeTabContent.payload = event.detail.payload;
-		}
-		if (event.detail.bodyType !== undefined) {
-			// Persist bodyType into metadata JSON
-			try {
-				const meta = activeTabContent.metadata ? JSON.parse(activeTabContent.metadata) : {};
-				meta.bodyType = event.detail.bodyType;
-				activeTabContent.metadata = JSON.stringify(meta);
-			} catch(e) {}
-		}
-		
-		dispatch('tabContentChange', getStructuredContentForStorage());
-	}
-
-	// Function to convert activeTabContent to structured format for storage
-	function getStructuredContentForStorage() {
-		return {
-			method: activeTabContent.method,
-			url: activeTabContent.url,
-			activeSection: activeTabContent.activeSection,
-			payload: activeTabContent.payload,
-			params: activeTabContent.parsedParams || [],
-			headers: activeTabContent.parsedHeaders || [],
-			auth: activeTabContent.parsedAuth || { type: 'none', config: {} },
-			settings: activeTabContent.parsedSettings || {}
-		};
-	}
-
-	// Track the last dispatched content and its tab ID to prevent spurious changes flag when switching tabs
-	let lastDispatchedContent = '';
-	let lastDispatchedTabId = '';
-
-	// Propagate changes upwards with structured content
-	$: if (activeTabContent && shouldAutoDispatch) {
-		const newContent = getStructuredContentForStorage();
-		const newContentStr = JSON.stringify(newContent);
-		
-		// If we just switched to a new tab or loaded fresh data, reset the baseline without dispatching
-		if (activeTabId !== lastDispatchedTabId) {
-			lastDispatchedTabId = activeTabId;
-			lastDispatchedContent = newContentStr;
-		} 
-		// If it's the exact same tab but content truly changed, dispatch the change
-		else if (newContentStr !== lastDispatchedContent) {
-			lastDispatchedContent = newContentStr;
-			dispatch('tabContentChange', newContent);
+		if (activeTab?.content) {
+			if (!activeTab.content.body) {
+				activeTab.content.body = { type: 'none', content: '' } as any;
+			}
+			if (event.detail.payload !== undefined) {
+				activeTab.content.body.content = event.detail.payload;
+			}
+			if (event.detail.bodyType !== undefined) {
+				activeTab.content.body.type = event.detail.bodyType;
+			}
+			markUnsaved();
 		}
 	}
 
@@ -488,7 +226,7 @@
 	}
 
 	async function onSaveRequest() {
-		if (!$selectedWorkspace || !$selectedProject) {
+		if (!activeTab || !$selectedWorkspace || !$selectedProject) {
 			toast.error('No workspace or project selected');
 			return;
 		}
@@ -497,55 +235,71 @@
 			replayActions.setLoading('save', true);
 
 			const payload: any = {
-				name: activeTabContent.name || 'New Request',
-				protocol: activeTabContent.protocol || 'http',
-				method: activeTabContent.method || 'GET',
-				url: activeTabContent.url || '',
+				name: activeTab.replay?.name || activeTab.folder?.name || 'New Request',
+				protocol: activeTab.replay?.protocol || 'http',
+				method: activeTab.content?.method || 'GET',
+				url: activeTab.content?.url || '',
 				headers: {},
-				payload: activeTabContent.payload || '',
+				payload: activeTab.content?.body?.content || '',
 				config: {
-					auth: activeTabContent.parsedAuth || { type: 'none', config: {} },
-					settings: activeTabContent.parsedSettings || {}
+					auth: activeTab.content?.auth || { type: 'none', config: {} },
+					settings: activeTab.content?.settings || {}
 				}
 			};
 
-			const validParams = (activeTabContent.parsedParams || []).filter((p: any) => p.key && p.enabled);
-			if (validParams.length > 0) {
-				payload.metadata = { params: validParams };
+			const validParams = (activeTab.content?.params || []).filter((p: any) => p.key && p.enabled);
+			
+			// Parse existing metadata to preserve other properties (like bodyType)
+			let metaObj: any = {};
+			try {
+				if (activeTab.replay?.metadata) {
+					metaObj = typeof activeTab.replay.metadata === 'string' 
+						? JSON.parse(activeTab.replay.metadata) 
+						: { ...(activeTab.replay.metadata as any) };
+				}
+			} catch(e) {
+				console.warn('Failed to parse metadata when saving', e);
 			}
 
+			if (validParams.length > 0) {
+				metaObj.params = validParams;
+			}
+			metaObj.bodyType = activeTab.content?.body?.type || 'none';
+			
+			// Always send metadata, even if it's empty, so we don't nullify database fields 
+			// if they had bodyType
+			payload.metadata = metaObj;
+
 			// Add folder ID if available on the original replay data or current tab
-			if (activeTabContent.folder_id) {
-				payload.folder_id = activeTabContent.folder_id;
-			} else if (replayData && replayData.folder_id) {
-				payload.folder_id = replayData.folder_id;
+			if (activeTab.replay?.folder_id) {
+				payload.folder_id = activeTab.replay.folder_id;
 			}
 
 			// Process headers as object map
-			if (activeTabContent.parsedHeaders) {
-				activeTabContent.parsedHeaders.forEach((h: any) => {
+			if (activeTab.content?.headers) {
+				activeTab.content.headers.forEach((h: any) => {
 					if (h.enabled && h.key) {
 						payload.headers[h.key] = h.value;
 					}
 				});
 			}
 
-			if (activeTabContent.id && !activeTabContent.id.startsWith('tab-')) {
+			if (activeTab.id && !activeTab.id.startsWith('tab-')) {
 				// Update existing
 				const res = await replayApi.updateReplay(
 					$selectedWorkspace.id,
 					$selectedProject.id,
-					activeTabContent.id,
+					activeTab.id,
 					payload
 				);
 				
 				// Mark current tab as saved
-				const tabIndex = tabs.findIndex(t => t.id === activeTabContent.id);
+				const tabIndex = tabs.findIndex(t => t.id === activeTab.id);
 				if (tabIndex !== -1) {
 					tabs[tabIndex].isUnsaved = false;
-					tabs[tabIndex].name = res.replay.name;
-					tabs[tabIndex].url = res.replay.url;
-					tabs[tabIndex].method = res.replay.method;
+					tabs[tabIndex].replay = {
+						...res.replay
+					};
 					tabs = [...tabs];
 				}
 				
@@ -559,15 +313,11 @@
 				);
 				
 				// Update active tab with new ID
-				activeTabContent.id = res.replay.id;
-				
 				const tabIndex = tabs.findIndex(t => t.id === activeTabId);
 				if (tabIndex !== -1) {
 					tabs[tabIndex].id = res.replay.id;
 					tabs[tabIndex].isUnsaved = false;
-					tabs[tabIndex].name = res.replay.name;
-					tabs[tabIndex].url = res.replay.url;
-					tabs[tabIndex].method = res.replay.method;
+					tabs[tabIndex].replay = res.replay;
 					activeTabId = res.replay.id;
 					tabs = [...tabs];
 				}
@@ -590,16 +340,16 @@
 			query: Record<string, string>;
 			payload: string;
 		} = {
-			method: activeTabContent.method,
-			url: activeTabContent.url,
+			method: activeTab?.content?.method || 'GET',
+			url: activeTab?.content?.url || '',
 			headers: {},
 			query: {},
-			payload: activeTabContent.payload || ''
+			payload: activeTab?.content?.body?.content || ''
 		};
 
 		// Process headers
-		if (activeTabContent.parsedHeaders) {
-			activeTabContent.parsedHeaders.forEach((header) => {
+		if (activeTab?.content?.headers) {
+			activeTab.content.headers.forEach((header: any) => {
 				if (header.enabled && header.key && header.value) {
 					requestData.headers[header.key] = header.value;
 				}
@@ -607,8 +357,8 @@
 		}
 
 		// Process query parameters
-		if (activeTabContent.parsedParams) {
-			activeTabContent.parsedParams.forEach((param) => {
+		if (activeTab?.content?.params) {
+			activeTab.content.params.forEach((param: any) => {
 				if (param.enabled && param.key && param.value) {
 					requestData.query[param.key] = param.value;
 				}
@@ -616,29 +366,29 @@
 		}
 
 		// Process auth
-		if (activeTabContent.parsedAuth?.type !== 'none') {
-			const authConfig = activeTabContent.parsedAuth?.config;
+		if (activeTab?.content?.auth?.type !== 'none') {
+			const authConfig = activeTab?.content?.auth?.config;
 
-			switch (activeTabContent.parsedAuth?.type) {
+			switch (activeTab?.content?.auth?.type) {
 				case 'basic':
 					// Add Basic Auth header
-					if (authConfig.username) {
-						const credentials = btoa(`${authConfig.username}:${authConfig.password || ''}`);
+					if (authConfig?.username) {
+						const credentials = btoa(`${authConfig?.username}:${authConfig?.password || ''}`);
 						requestData.headers['Authorization'] = `Basic ${credentials}`;
 					}
 					break;
 				case 'bearer':
 					// Add Bearer token header
-					if (authConfig.token) {
-						requestData.headers['Authorization'] = `Bearer ${authConfig.token}`;
+					if (authConfig?.token) {
+						requestData.headers['Authorization'] = `Bearer ${authConfig?.token}`;
 					}
 					break;
 				case 'apiKey':
 					// Add API key as header or query param
-					if (authConfig.key && authConfig.value) {
-						if (authConfig.in === 'header') {
+					if (authConfig?.key && authConfig?.value) {
+						if (authConfig?.in === 'header') {
 							requestData.headers[authConfig.key] = authConfig.value;
-						} else if (authConfig.in === 'query') {
+						} else if (authConfig?.in === 'query') {
 							requestData.query[authConfig.key] = authConfig.value;
 						}
 					}
@@ -666,9 +416,22 @@
 
 		try {
 			const headers = JSON.parse(headersJson);
-			return Array.isArray(headers)
-				? headers
-				: [{ key: '', value: '', description: '', enabled: true }];
+			if (Array.isArray(headers)) {
+				return headers.length > 0 ? headers : [{ key: '', value: '', description: '', enabled: true }];
+			}
+			// Handle object format: Record<string, string> from backend
+			if (typeof headers === 'object' && headers !== null) {
+				const entries = Object.entries(headers);
+				if (entries.length > 0) {
+					return entries.map(([key, value]) => ({
+						key,
+						value: String(value),
+						description: '',
+						enabled: true
+					}));
+				}
+			}
+			return [{ key: '', value: '', description: '', enabled: true }];
 		} catch (e) {
 			console.error('Failed to parse headers JSON:', e);
 			return [{ key: '', value: '', description: '', enabled: true }];
@@ -703,87 +466,31 @@
 
 	function parseMetadata(metadataJson?: string): {
 		parsedParams?: Array<{ key: string; value: string; description: string; enabled: boolean }>;
+		parsedBodyType?: string;
 	} {
 		if (!metadataJson) {
 			return {
-				parsedParams: [{ key: '', value: '', description: '', enabled: true }]
+				parsedParams: [{ key: '', value: '', description: '', enabled: true }],
+				parsedBodyType: 'none'
 			};
 		}
 
 		try {
 			const metadata = JSON.parse(metadataJson);
 			return {
-				parsedParams: metadata.params || [{ key: '', value: '', description: '', enabled: true }]
+				parsedParams: metadata.params || [{ key: '', value: '', description: '', enabled: true }],
+				parsedBodyType: metadata.bodyType || 'none'
 			};
 		} catch (e) {
 			console.error('Failed to parse metadata JSON:', e);
 			return {
-				parsedParams: [{ key: '', value: '', description: '', enabled: true }]
+				parsedParams: [{ key: '', value: '', description: '', enabled: true }],
+				parsedBodyType: 'none'
 			};
 		}
 	}
 
-	// Initialize activeTabContent if it's null
-	$: if (activeTabContent === undefined || activeTabContent === null) {
-		resetActiveTabContent();
-	}
 
-	// Sync activeTabContent when activeTabId or tabs change
-	$: if (activeTabId && tabs.length > 0) {
-		const currentTab = tabs.find(tab => tab.id === activeTabId);
-		if (currentTab) {
-			// Check if we need to initialize or update activeTabContent for this tab
-			if (!activeTabContent || activeTabContent.id !== activeTabId) {
-				// Create default empty strings for JSON fields
-				const emptyHeadersJson = JSON.stringify([
-					{ key: '', value: '', description: '', enabled: true }
-				]);
-				const emptyConfigJson = JSON.stringify({
-					auth: { type: 'none', config: {} },
-					settings: {}
-				});
-				const emptyMetadataJson = JSON.stringify({
-					params: [{ key: '', value: '', description: '', enabled: true }]
-				});
-
-				// Use tab content if available, otherwise defaults
-				const tabContent = currentTab.content;
-				
-				activeTabContent = {
-					id: currentTab.id,
-					name: currentTab.name || 'New Request',
-					method: currentTab.method || 'GET',
-					url: currentTab.url || '',
-					activeSection: tabContent?.activeSection || 'params',
-					protocol: 'http',
-					itemType: currentTab.itemType || 'request',
-					folder: currentTab.folder,
-
-					// Use proper TabContent structure for data
-					headers: JSON.stringify(tabContent?.headers || [{ key: '', value: '', description: '', enabled: true }]),
-					config: JSON.stringify({
-						auth: tabContent?.auth || { type: 'none', config: {} },
-						settings: tabContent?.settings || {}
-					}),
-					metadata: JSON.stringify({
-						params: tabContent?.params || [{ key: '', value: '', description: '', enabled: true }],
-						bodyType: tabContent?.body?.type
-					}),
-					payload: tabContent?.body?.content || '',
-
-					// Parse JSON fields
-					parsedHeaders: tabContent?.headers || [{ key: '', value: '', description: '', enabled: true }],
-					...parseConfig(JSON.stringify({
-						auth: tabContent?.auth || { type: 'none', config: {} },
-						settings: tabContent?.settings || {}
-					})),
-					...parseMetadata(JSON.stringify({
-						params: tabContent?.params || [{ key: '', value: '', description: '', enabled: true }]
-					}))
-				};
-			}
-		}
-	}
 	let isEditingTitle = false;
 	let editTitleValue = '';
 	let titleInputRef: HTMLInputElement;
@@ -791,7 +498,7 @@
 	function startEditTitle() {
 		const tab = tabs.find(t => t.id === activeTabId);
 		if (tab) {
-			editTitleValue = tab.name || '';
+			editTitleValue = tab.replay?.name || '';
 			isEditingTitle = true;
 			setTimeout(() => {
 				titleInputRef?.focus();
@@ -807,16 +514,16 @@
 		const tabIndex = tabs.findIndex(t => t.id === activeTabId);
 		if (tabIndex === -1) return;
 		
-		const oldName = tabs[tabIndex].name;
+		const oldName = tabs[tabIndex].replay?.name || tabs[tabIndex].folder?.name;
 		const newName = editTitleValue.trim();
 		
 		if (newName && newName !== oldName) {
-			// Update local tab array immediately for quick UI update
-			tabs[tabIndex].name = newName;
-			if (activeTabContent) {
-				activeTabContent.name = newName;
-				if (activeTabContent.itemType === 'folder' && activeTabContent.folder) {
-					activeTabContent.folder.name = newName;
+			if (tabs[tabIndex].replay) {
+				tabs[tabIndex].replay!.name = newName;
+			}
+			if (activeTab) {
+				if (activeTab.itemType === 'folder' && activeTab.folder) {
+					activeTab.folder.name = newName;
 				}
 			}
 			tabs = [...tabs]; // trigger Svelte reactivity
@@ -833,12 +540,12 @@
 			} else if (tabs[tabIndex].itemType !== 'folder') {
 				// We update request name right away, then it's technically unsaved 
 				// or we just save it immediately using onSaveRequest logic if it exists
-				if (activeTabContent.id && !activeTabContent.id.startsWith('tab-')) {
+				if (activeTab?.id && !activeTab.id.startsWith('tab-')) {
 					// Mark tab as unsaved so user knows they need to click Save button,
 					// or we can auto save via API. Replay list auto-save title:
 					try {
-						await replayApi.updateReplay($selectedWorkspace?.id as string, $selectedProject?.id as string, activeTabContent.id, { name: newName });
-						dispatch('updated', { id: activeTabContent.id, name: newName });
+						await replayApi.updateReplay($selectedWorkspace?.id as string, $selectedProject?.id as string, activeTab.id, { name: newName });
+						dispatch('updated', { id: activeTab.id, name: newName });
 					} catch (err) {
 						tabs[tabIndex].isUnsaved = true; // wait for explicit save
 					}
@@ -867,7 +574,7 @@
 		<!-- Title and actions -->
 		<div class="flex items-center justify-between">
 			<div class="flex items-center space-x-2">
-				<i class="fas {activeTabContent?.itemType === 'folder' ? 'fa-folder-open text-orange-500' : 'fa-file-alt text-blue-500'} text-xl"></i>
+				<i class="fas {activeTab?.itemType === 'folder' ? 'fa-folder-open text-orange-500' : 'fa-file-alt text-blue-500'} text-xl"></i>
 				{#if isEditingTitle}
 					<input
 						bind:this={titleInputRef}
@@ -882,13 +589,15 @@
 						class="text-lg font-semibold theme-text-primary cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800 px-2 py-0.5 rounded transition-colors group flex items-center gap-2"
 						on:dblclick={startEditTitle}
 					>
-						{tabs.find((t) => t.id === activeTabId)?.name || 'New Request'}
+						{tabs.find((t) => t.id === activeTabId)?.replay?.name || tabs.find((t) => t.id === activeTabId)?.folder?.name || 'New Request'}
+						<!-- svelte-ignore a11y_click_events_have_key_events -->
+						<!-- svelte-ignore a11y_no_static_element_interactions -->
 						<i class="fas fa-pencil-alt text-xs opacity-0 group-hover:opacity-50 transition-opacity" on:click={startEditTitle}></i>
 					</h1>
 				{/if}
 			</div>
 			<div class="flex items-center space-x-2">
-				{#if activeTabContent?.itemType !== 'folder'}
+				{#if activeTab?.itemType !== 'folder'}
 				<button
 					class={ThemeUtils.secondaryButton(
 						'flex items-center space-x-2 px-3 py-1.5 rounded-md text-sm border theme-border hover:shadow-md transition-all duration-200'
@@ -912,14 +621,14 @@
 			</div>
 		</div>
 
-		{#if activeTabContent?.itemType === 'folder'}
+		{#if activeTab?.itemType === 'folder'}
 			<!-- Folder Overview Mode -->
 			<div class="flex-grow flex flex-col min-h-0 w-full">
 				<FolderOverviewTab
-					folder={activeTabContent.folder}
+					folder={activeTab.folder}
 				/>
 			</div>
-		{:else}
+		{:else if activeTab && activeTab.content}
 			<!-- Request builder -->
 			<div
 				class={ThemeUtils.themeBgSecondary(
@@ -928,7 +637,8 @@
 			>
 			<div class="relative">
 				<select
-					bind:value={activeTabContent.method}
+					bind:value={activeTab.content.method}
+					on:change={markUnsaved}
 					class={ThemeUtils.themeBgSecondary(
 						'appearance-none font-semibold px-4 py-2.5 rounded-l-lg focus:outline-none focus:ring-2 focus:ring-blue-500 border-r theme-border pr-8 theme-text-primary transition-all duration-200'
 					)}
@@ -946,7 +656,8 @@
 				></i>
 			</div>
 			<input
-				bind:value={activeTabContent.url}
+				bind:value={activeTab.content.url}
+				on:input={markUnsaved}
 				class={ThemeUtils.themeBgSecondary(
 					'flex-grow p-2.5 focus:outline-none focus:ring-2 focus:ring-blue-500 theme-text-secondary placeholder-gray-400 dark:placeholder-gray-500 transition-all duration-200'
 				)}
@@ -979,61 +690,61 @@
 		<div class="border-b theme-border">
 			<div class="flex space-x-4 text-sm" role="tablist" aria-label="Request configuration tabs">
 				<button
-					class="py-2 px-1 border-b-2 {activeTabContent.activeSection === 'params'
+					class="py-2 px-1 border-b-2 {activeTab.content.activeSection === 'params'
 						? 'border-orange-600 text-orange-600'
 						: 'border-transparent hover:theme-text-primary'} transition-colors duration-200"
 					title="Configure query parameters"
 					aria-label="Parameters tab"
 					role="tab"
-					aria-selected={activeTabContent.activeSection === 'params'}
+					aria-selected={activeTab.content.activeSection === 'params'}
 					on:click={() => setActiveSection('params')}
 				>
 					Params
 				</button>
 				<button
-					class="py-2 px-1 border-b-2 {activeTabContent.activeSection === 'auth'
+					class="py-2 px-1 border-b-2 {activeTab.content.activeSection === 'auth'
 						? 'border-orange-600 text-orange-600'
 						: 'border-transparent hover:theme-text-primary'} transition-colors duration-200"
 					title="Configure request authorization"
 					aria-label="Authorization tab"
 					role="tab"
-					aria-selected={activeTabContent.activeSection === 'auth'}
+					aria-selected={activeTab.content.activeSection === 'auth'}
 					on:click={() => setActiveSection('auth')}
 				>
 					Authorization
 				</button>
 				<button
-					class="py-2 px-1 border-b-2 {activeTabContent.activeSection === 'headers'
+					class="py-2 px-1 border-b-2 {activeTab.content.activeSection === 'headers'
 						? 'border-orange-600 text-orange-600'
 						: 'border-transparent hover:theme-text-primary'} transition-colors duration-200"
 					title="Configure request headers"
 					aria-label="Headers tab"
 					role="tab"
-					aria-selected={activeTabContent.activeSection === 'headers'}
+					aria-selected={activeTab.content.activeSection === 'headers'}
 					on:click={() => setActiveSection('headers')}
 				>
 					Headers
 				</button>
 				<button
-					class="py-2 px-1 border-b-2 {activeTabContent.activeSection === 'body'
+					class="py-2 px-1 border-b-2 {activeTab.content.activeSection === 'body'
 						? 'border-orange-600 text-orange-600'
 						: 'border-transparent hover:theme-text-primary'} transition-colors duration-200"
 					title="Configure request body"
 					aria-label="Body tab"
 					role="tab"
-					aria-selected={activeTabContent.activeSection === 'body'}
+					aria-selected={activeTab.content.activeSection === 'body'}
 					on:click={() => setActiveSection('body')}
 				>
 					Body
 				</button>
 				<!-- <button
-					class="py-2 px-1 border-b-2 {activeTabContent.activeSection === 'settings'
+					class="py-2 px-1 border-b-2 {activeTab.content.activeSection === 'settings'
 						? 'border-orange-600 text-orange-600'
 						: 'border-transparent hover:theme-text-primary'} transition-colors duration-200"
 					title="Configure request settings"
 					aria-label="Settings tab"
 					role="tab"
-					aria-selected={activeTabContent.activeSection === 'settings'}
+					aria-selected={activeTab.content.activeSection === 'settings'}
 					on:click={() => setActiveSection('settings')}
 				>
 					Settings
@@ -1042,36 +753,36 @@
 		</div>
 
 		<!-- Dynamic content based on active section -->
-		{#if activeTabContent.activeSection === 'params'}
-			<ParamsTab params={activeTabContent?.parsedParams} on:paramsChange={handleParamsChange} />
-		{:else if activeTabContent.activeSection === 'auth'}
+		{#if activeTab.content.activeSection === 'params'}
+			<ParamsTab params={activeTab.content?.params} on:paramsChange={handleParamsChange} />
+		{:else if activeTab.content.activeSection === 'auth'}
 			<AuthorizationTab
-				authType={activeTabContent?.parsedAuth?.type}
-				authConfig={activeTabContent?.parsedAuth?.config}
+				authType={activeTab.content?.auth?.type}
+				authConfig={activeTab.content?.auth?.config}
 				on:authChange={handleAuthChange}
 			/>
-		{:else if activeTabContent.activeSection === 'headers'}
+		{:else if activeTab.content.activeSection === 'headers'}
 			<HeadersTab
-				headers={activeTabContent?.parsedHeaders}
+				headers={activeTab.content?.headers}
 				on:headersChange={handleHeadersChange}
 			/>
-		{:else if activeTabContent.activeSection === 'body'}
+		{:else if activeTab.content.activeSection === 'body'}
 			<ReplayBody 
-				payload={activeTabContent?.payload}
-				metadata={activeTabContent?.metadata}
-				protocol={activeTabContent?.protocol}
+				payload={activeTab.content?.body?.content}
+				metadata={JSON.stringify({ params: activeTab.content?.params, bodyType: activeTab.content?.body?.type })}
+				protocol={activeTab.replay?.protocol || 'http'}
 				on:change={handleBodyContentChange}
 			/>
-		{:else if activeTabContent.activeSection === 'settings'}
+		{:else if activeTab.content.activeSection === 'settings'}
 			<SettingsTab
-				settings={activeTabContent?.parsedSettings}
+				settings={activeTab.content?.settings}
 				on:settingsChange={handleSettingsChange}
 			/>
 		{/if}
 		{/if} <!-- End of request vs folder branch -->
 	</main>
 
-	{#if activeTabContent?.itemType === 'request'}
+	{#if activeTab?.itemType === 'request'}
 		<ReplayResponseFooter
 			bind:isExpanded={isFooterExpanded}
 			{executionResult}

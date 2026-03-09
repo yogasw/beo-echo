@@ -38,13 +38,16 @@ export function createTabActions(ctx: TabActionsContext) {
 			const randomSuffix = Math.random().toString(36).substring(2, 9);
 			const newTabId = `tab-${Date.now()}-${randomSuffix}`;
 			
-			const newTab: Tab = {
+		const newTab: Tab = {
 				...tabToDuplicate,
 				id: newTabId,
-				name: `${tabToDuplicate.name} Copy`,
 				isUnsaved: true,
 				content: tabToDuplicate.content ? JSON.parse(JSON.stringify(tabToDuplicate.content)) : undefined
 			};
+			// Set duplicated name on replay if it exists
+			if (newTab.replay) {
+				newTab.replay = { ...newTab.replay, name: `${tabToDuplicate.replay?.name || 'Request'} Copy` };
+			}
 
 			ctx.setTabs([...currentTabs, newTab]);
 			ctx.setActiveTabId(newTabId);

@@ -158,8 +158,8 @@
 							class={`flex items-center space-x-2 px-3 py-2 ${activeTabId === tab.id
 								? 'bg-blue-600 text-white shadow-md'
 								: 'hover:bg-gray-200 dark:hover:bg-gray-600 theme-text-primary'} rounded-l-lg transition-all duration-200 min-w-0`}
-							title="Switch to {tab.name} ({tab.method})"
-							aria-label="Switch to tab {tab.name} using {tab.method} method"
+							title="Switch to {tab.replay?.name || 'tab'} ({tab.replay?.method || 'GET'})"
+							aria-label="Switch to tab {tab.replay?.name || 'tab'} using {tab.replay?.method || 'GET'} method"
 							onclick={() => switchTab(tab.id)}
 						>
 							<span
@@ -167,15 +167,15 @@
 									? 'px-2 py-0.5 rounded text-xs font-semibold bg-white/20 text-white'
 									: tab.itemType === 'folder' 
 										? 'text-xs text-orange-500' // Folder icon style
-										: ThemeUtils.methodBadge(tab.method, 'text-xs px-1.5 py-0.5')}`}
+										: ThemeUtils.methodBadge(tab.replay?.method || 'GET', 'text-xs px-1.5 py-0.5')}`}
 							>
 								{#if tab.itemType === 'folder'}
 									<i class="fas fa-folder"></i>
 								{:else}
-									{tab.method}
+									{tab.replay?.method || 'GET'}
 								{/if}
 							</span>
-							<span class="max-w-24 truncate text-sm font-medium">{tab.name}</span>
+							<span class="max-w-24 truncate text-sm font-medium">{tab.replay?.name || tab.folder?.name || 'New Tab'}</span>
 							{#if tab.isUnsaved}
 								<span
 									class="w-2 h-2 bg-orange-500 rounded-full flex-shrink-0"
@@ -186,8 +186,8 @@
 						</button>
 						<button
 							class="p-2 hover:bg-red-500 hover:text-white rounded-r-lg transition-all duration-200 theme-text-muted hover:theme-text-white"
-							title="Close {tab.name} tab"
-							aria-label="Close tab {tab.name}"
+							title="Close {tab.replay?.name || 'tab'} tab"
+							aria-label="Close tab {tab.replay?.name || 'tab'}"
 							onclick={(e) => {
 								e.stopPropagation();
 								closeTab(tab.id);

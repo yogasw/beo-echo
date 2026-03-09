@@ -22,12 +22,10 @@
 			// Create test state
 			const state = createDefaultReplayEditorState(testWorkspaceId, testProjectId);
 			state.tabs.push({
-				id: 'test-tab-1',
-				name: 'Test Tab',
-				method: 'GET',
-				url: 'https://api.example.com/test',
-				isUnsaved: true
-			});
+			id: 'test-tab-1',
+			isUnsaved: true,
+			replay: { id: 'test-tab-1', name: 'Test Tab', method: 'GET', url: 'https://api.example.com/test', doc: '', project_id: '', folder_id: null, protocol: 'http', config: '{}', metadata: '{}', headers: '{}', payload: '', created_at: '', updated_at: '' }
+		});
 
 			// Save state
 			setReplayEditorState(state);
@@ -57,10 +55,10 @@
 
 			// Create different states for different projects
 			const state1 = createDefaultReplayEditorState(workspace1, project1);
-			state1.tabs[0].name = 'Project 1 Tab';
+			(state1.tabs[0] as any).testName = 'Project 1 Tab';
 			
 			const state2 = createDefaultReplayEditorState(workspace2, project2);
-			state2.tabs[0].name = 'Project 2 Tab';
+			(state2.tabs[0] as any).testName = 'Project 2 Tab';
 
 			// Save both states
 			setReplayEditorState(state1);
@@ -70,8 +68,8 @@
 			const loaded1 = getReplayEditorState(workspace1, project1);
 			const loaded2 = getReplayEditorState(workspace2, project2);
 
-			if (loaded1?.tabs[0].name === 'Project 1 Tab' && 
-				loaded2?.tabs[0].name === 'Project 2 Tab') {
+			if ((loaded1?.tabs[0] as any).testName === 'Project 1 Tab' && 
+				(loaded2?.tabs[0] as any).testName === 'Project 2 Tab') {
 				testResult = '✅ Project isolation test PASSED';
 			} else {
 				testResult = '❌ Project isolation test FAILED';

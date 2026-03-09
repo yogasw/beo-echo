@@ -1,4 +1,4 @@
-import type { Tab, TabContent } from '$lib/components/replay/types';
+import type { Tab } from '$lib/components/replay/types';
 
 const REPLAY_EDITOR_STORAGE_PREFIX = 'replay-editor-state';
 const WORKSPACE_PROJECT_REGISTRY_KEY = 'replay-editor-workspaces';
@@ -124,7 +124,7 @@ function cleanupWorkspaceProjects(workspaceId: string): void {
 /**
  * Create default tab content
  */
-export function createDefaultTabContent(): TabContent {
+export function createDefaultTabContent(): any {
 	return {
 		method: 'GET',
 		url: '',
@@ -174,11 +174,9 @@ export function createDefaultTab(id?: string): Tab {
 	
 	return {
 		id: tabId,
-		name: 'New Request',
-		method: 'GET',
-		url: '',
 		isUnsaved: true,
 		content: createDefaultTabContent()
+		// replay is undefined — this is an unsaved placeholder tab
 	};
 }
 
@@ -308,10 +306,6 @@ export function updateTabContentInStorage(workspaceId: string, projectId: string
 	
 	currentTab.content = updatedContent;
 	
-	// Update basic tab properties if they changed
-	if (content.method) currentTab.method = content.method;
-	if (content.url) currentTab.url = content.url;
-	
 	// Mark as unsaved if content changed
 	currentTab.isUnsaved = true;
 	
@@ -321,7 +315,7 @@ export function updateTabContentInStorage(workspaceId: string, projectId: string
 /**
  * Get tab content by ID
  */
-export function getTabContentFromStorage(workspaceId: string, projectId: string, tabId: string): TabContent | null {
+export function getTabContentFromStorage(workspaceId: string, projectId: string, tabId: string): any | null {
 	const currentState = getReplayEditorState(workspaceId, projectId);
 	if (!currentState) return null;
 	
@@ -409,6 +403,27 @@ export function removeTabFromStorage(workspaceId: string, projectId: string, tab
  * Validate and fix tab content structure
  */
 export function validateAndFixTabContent(tab: Tab): Tab {
+	// Migration: handle old localStorage format where name/method/url were flat fields
+	const anyTab = tab as any;
+	if (!tab.replay && (anyTab.name || anyTab.method || anyTab.url)) {
+		tab.replay = {
+			name: anyTab.name || 'Imported Request',
+			method: anyTab.method || 'GET',
+			url: anyTab.url || '',
+			doc: '',
+			project_id: '',
+			folder_id: anyTab.folder_id || null,
+			protocol: 'http',
+			id: anyTab.id || '',
+			config: '{}',
+			metadata: '{}',
+			headers: '{}',
+			payload: '',
+			created_at: '',
+			updated_at: ''
+		};
+	}
+
 	if (!tab.content) {
 		tab.content = createDefaultTabContent();
 	} else {

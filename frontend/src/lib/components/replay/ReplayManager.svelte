@@ -96,8 +96,8 @@
 				console.warn('⚠️ Active tab not found, using first tab');
 				editorActiveTabId = editorTabs[0].id;
 				editorActiveTabContent = {
-					method: editorTabs[0].method,
-					url: editorTabs[0].url,
+					method: editorTabs[0].replay?.method || editorTabs[0].content?.method || 'GET',
+					url: editorTabs[0].replay?.url || editorTabs[0].content?.url || '',
 					activeSection: 'params'
 				};
 			}
@@ -234,9 +234,11 @@
 		// Update the corresponding tab and its content
 		const activeTab = editorTabs.find(tab => tab.id === editorActiveTabId);
 		if (activeTab) {
-			// Update basic tab properties
-			if (event.detail.method) activeTab.method = event.detail.method;
-			if (event.detail.url) activeTab.url = event.detail.url;
+			// Update basic tab.replay properties if they exist
+			if (activeTab.replay) {
+				if (event.detail.method) activeTab.replay.method = event.detail.method;
+				if (event.detail.url) activeTab.replay.url = event.detail.url;
+			}
 			
 			// Update tab content
 			if (!activeTab.content) {
@@ -327,7 +329,7 @@
 		// Create a new tab with full content structure
 		const newTab = createDefaultTab();
 		if (detail?.parentReplay?.id) {
-			newTab.folder_id = detail.parentReplay.id;
+			newTab.replay = { ...newTab.replay, folder_id: detail.parentReplay.id } as import('$lib/types/Replay').Replay;
 		}
 
 		// Parse imported metadata once — used by both tab UI state and API save payload
@@ -339,41 +341,41 @@
 		} catch(e) {}
 
 		if (detail?.importedData) {
-			newTab.name = detail.importedData.name || 'Imported Request';
-			newTab.url = detail.importedData.url || '';
-			newTab.method = detail.importedData.method || 'GET';
+			const importedReplay = detail.importedData;
+			// Group replay data under tab.replay
+			newTab.replay = {
+				...importedReplay,
+				folder_id: detail?.parentReplay?.id || importedReplay.folder_id
+			};
 			if (newTab.content) {
-				newTab.content.method = newTab.method;
-				newTab.content.url = newTab.url;
+				newTab.content.method = importedReplay.method || 'GET';
+				newTab.content.url = importedReplay.url || '';
 				
-				if (detail.importedData.headers) {
+				if (importedReplay.headers) {
 					try {
-						const hdrs = JSON.parse(detail.importedData.headers);
+						const hdrs = JSON.parse(importedReplay.headers);
 						newTab.content.headers = Object.entries(hdrs).map(([k, v]) => ({ key: k, value: String(v), description: '', enabled: true }));
 					} catch(e) {}
 				}
 				
-				if (detail.importedData.payload) {
+				if (importedReplay.payload) {
 					// Set body content AND type so ReplayEditor can build metadata correctly.
 					// tab.content.body.type drives the metadata JSON that ReplayBody reads.
 					newTab.content.body = {
 						...newTab.content.body,
 						type: importedMeta.bodyType ?? 'none',
-						content: detail.importedData.payload
+						content: importedReplay.payload
 					};
 				}
 			}
-		}
-		if (detail?.parentReplay?.id) {
-			newTab.folder_id = detail.parentReplay.id;
 		}
 		
 		// Automatically save if imported into collection
 		if (detail?.parentReplay && detail?.importedData) {
 		const payload: CreateReplayRequest = {
-				name: newTab.name,
-				method: newTab.method,
-				url: newTab.url,
+				name: detail.importedData.name || 'Imported Request',
+				method: detail.importedData.method || 'GET',
+				url: detail.importedData.url || '',
 				protocol: 'http',
 				headers: {},
 				// Carry over metadata from parser (includes bodyType, params, etc.)
@@ -387,7 +389,7 @@
 			}
 
 			if (newTab.content?.headers) {
-				newTab.content.headers.forEach(h => {
+				newTab.content.headers.forEach((h: any) => {
 					if (h.enabled && h.key) payload.headers ??= {};
 					if (h.enabled && h.key) payload.headers![h.key] = h.value;
 				});
@@ -408,6 +410,7 @@
 				// Update tab state to be real, saved tab
 				newTab.id = res.replay.id;
 				newTab.isUnsaved = false;
+				newTab.replay = res.replay;
 				if (newTab.content) (newTab.content as any).id = res.replay.id;
 				
 				// Optional: dispatch 'created' so list updates
@@ -427,7 +430,7 @@
 		// Replace if:
 		// 1. It's the only tab and it's a completely empty unsaved tab, OR
 		// 2. It's a saved tab that hasn't been edited (!isUnsaved)
-		const shouldReplaceEmpty = editorTabs.length === 1 && editorTabs[0].isUnsaved && !editorTabs[0].url;
+		const shouldReplaceEmpty = editorTabs.length === 1 && editorTabs[0].isUnsaved && !editorTabs[0].replay?.url;
 		const shouldReplaceUnedited = activeTab && !activeTab.isUnsaved;
 
 		if (shouldReplaceEmpty || shouldReplaceUnedited) {
@@ -446,8 +449,8 @@
 			url: '',
 			activeSection: 'params'
 		};
-		if (newTab.folder_id) {
-			editorActiveTabContent.folder_id = newTab.folder_id;
+		if (newTab.replay?.folder_id) {
+			editorActiveTabContent.folder_id = newTab.replay.folder_id;
 		}
 		
 		// Save the new tab to localStorage
@@ -476,8 +479,8 @@
 			// Switch to existing tab
 			editorActiveTabId = existingTab.id;
 			editorActiveTabContent = {
-				method: existingTab.method,
-				url: existingTab.url,
+				method: existingTab.replay?.method || existingTab.content?.method || 'GET',
+				url: existingTab.replay?.url || existingTab.content?.url || '',
 				activeSection: existingTab.content?.activeSection || 'params',
 				itemType: existingTab.itemType,
 				folder: existingTab.folder
@@ -486,12 +489,10 @@
 			// Create new tab for this replay with full content
 			const newTab: Tab = {
 				id: replay.id || `tab-${Date.now()}`,
-				name: replay.name || (replay.itemType === 'folder' ? 'New Folder' : 'Edit Request'),
-				method: replay.method || 'GET',
-				url: replay.url || '',
 				isUnsaved: false,
 				itemType: replay.itemType === 'folder' ? 'folder' : 'request',
 				folder: replay.itemType === 'folder' ? replay : undefined,
+				replay: replay.itemType !== 'folder' ? replay : undefined,
 				content: {
 					...createDefaultTabContent(),
 					method: replay.method || 'GET',
@@ -506,7 +507,7 @@
 			const shouldReplaceEmpty = 
 				editorTabs.length === 1 && 
 				editorTabs[0].isUnsaved && 
-				!editorTabs[0].url &&
+				!editorTabs[0].replay?.url &&
 				!editorTabs[0].executionResult;
 
 			if (shouldReplaceEmpty) {
@@ -519,8 +520,8 @@
 			
 			editorActiveTabId = newTab.id;
 			editorActiveTabContent = {
-				method: newTab.method,
-				url: newTab.url,
+				method: newTab.replay?.method || newTab.content?.method || 'GET',
+				url: newTab.replay?.url || newTab.content?.url || '',
 				activeSection: 'params',
 				itemType: newTab.itemType,
 				folder: newTab.folder

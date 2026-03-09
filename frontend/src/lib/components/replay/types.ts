@@ -1,49 +1,25 @@
 
+import type { Replay, ReplayFolder } from '$lib/types/Replay';
+import type { ExecuteReplayResponse } from '$lib/types/Replay';
+
 // Tab management with extended content storage
 export interface Tab {
     id: string;
-    name: string;
-    method: string;
-    url: string;
     isUnsaved: boolean;
     itemType?: 'request' | 'folder';
-    folder?: any; // The whole folder object
-    folder_id?: string; // ID of the parent folder
-    
+    folder?: ReplayFolder; // The whole folder object (UI state)
+
+    // Replay data — null/undefined means unsaved placeholder tab
+    replay?: Replay;
+
+    // UI state
+    activeSection?: string;
+
     // Extended content for persistence
-    content?: TabContent;
+    content?: Replay | ReplayFolder | any;
 
     // Per-tab execution result (null = never executed)
-    executionResult?: import('$lib/types/Replay').ExecuteReplayResponse | null;
-}
-
-// Complete tab content that needs to be persisted
-export interface TabContent {
-    // Basic request data
-    method: string;
-    url: string;
-    
-    // Request components
-    params: Param[];
-    headers: Header[];
-    body: {
-        type: 'none' | 'form-data' | 'x-www-form-urlencoded' | 'raw' | 'binary';
-        content: string;
-        formData?: Array<{ key: string; value: string; type: 'text' | 'file'; enabled: boolean; }>;
-        urlEncoded?: Array<{ key: string; value: string; enabled: boolean; }>;
-    };
-    
-    // Authentication
-    auth: AuthConfig;
-    
-    // Scripts
-    scripts: ScriptConfig;
-    
-    // Settings
-    settings: SettingsConfig;
-    
-    // UI state
-    activeSection: string;
+    executionResult?: ExecuteReplayResponse | null;
 }
 
 // Data structures for tab components
