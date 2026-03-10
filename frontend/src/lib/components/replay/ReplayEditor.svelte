@@ -37,8 +37,11 @@
 	// Function to flag a tab as unsaved whenever its content changes.
 	function markUnsaved() {
 		if (activeTab && !activeTab.isUnsaved) {
-			activeTab.isUnsaved = true;
-			tabs = [...tabs]; // trigger Svelte reactivity
+			const index = tabs.findIndex(t => t.id === activeTab.id);
+			if (index !== -1) {
+				tabs[index] = { ...tabs[index], isUnsaved: true };
+				tabs = [...tabs]; // trigger Svelte reactivity
+			}
 		}
 	}
 
@@ -362,9 +365,10 @@
 				// Mark current tab as saved
 				const tabIndex = tabs.findIndex(t => t.id === activeTab.id);
 				if (tabIndex !== -1) {
-					tabs[tabIndex].isUnsaved = false;
-					tabs[tabIndex].replay = {
-						...res.replay
+					tabs[tabIndex] = {
+						...tabs[tabIndex],
+						isUnsaved: false,
+						replay: { ...res.replay }
 					};
 					tabs = [...tabs];
 				}
