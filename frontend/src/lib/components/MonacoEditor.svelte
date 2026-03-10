@@ -61,6 +61,14 @@
 			},
 			scrollBeyondLastLine: false,
 			fixedOverflowWidgets: true,
+			wordWrap: 'on',
+			padding: { top: 8, bottom: 8 },
+			scrollbar: {
+				verticalScrollbarSize: 8,
+				horizontalScrollbarSize: 8,
+				alwaysConsumeMouseWheel: false
+			},
+			overviewRulerLanes: 0,
 		});
 
 		editor.onDidChangeModelContent(() => {
@@ -112,8 +120,7 @@
   Monaco Editor has a known issue where it does not support CSS `zoom` and its native coordinate system breaks.
   If the parent app applies a CSS zoom (e.g., 0.9), Monaco calculates mouse clicks with incorrect offsets, causing context menus to immediately close.
   To fix this, we apply an "inverted" zoom (1 / appZoom) specifically to Monaco's wrapper to force it back to a true 1.0 scale relative to the screen pixels.
-  Then we manually adjust its width and height back down by multiplying by appZoom so it fits perfectly in its parent container.
 -->
-<div class="monaco-unzoom-wrapper" style="zoom: calc(1 / {$zoomLevel}); width: calc(100% * {$zoomLevel}); height: calc(100% * {$zoomLevel});">
+<div class="monaco-unzoom-wrapper" style="zoom: calc(1 / {$zoomLevel}); width: 100%; height: 100%;">
 	<div bind:this={container} class="w-full h-full relative"></div>
 </div>
