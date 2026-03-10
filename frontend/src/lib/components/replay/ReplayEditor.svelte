@@ -9,6 +9,8 @@
 	import * as ThemeUtils from '$lib/utils/themeUtils';
 	import ReplayBar from './ReplayBar.svelte';
 	import { replayActions, replayLoading } from '$lib/stores/replay';
+	import { parseHeaders, parseConfig, parseMetadata, parseUrlParams, getUrlFromParams } from './utils/parsersUtil';
+	import { buildExecutePayload } from './utils/execute';
 
 	// Import modular tab components
 	import ParamsTab from './tabs/ParamsTab.svelte';
@@ -87,6 +89,69 @@
 	onMount(() => {
 		shouldAutoDispatch = true;
 	});
+
+	// --- Global execution and shortcuts ---
+	function handleGlobalKeydown(e: KeyboardEvent) {
+		// Detect Cmd+Enter (Mac) or Ctrl+Enter (Windows)
+		if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') {
+			e.preventDefault();
+			if (!$replayLoading.execute) {
+				onExcuteRequest();
+			}
+		}
+	}
+
+	function handleUrlKeydown(e: KeyboardEvent) {
+		if (e.key === 'Enter') {
+			e.preventDefault();
+			if (!$replayLoading.execute) {
+				onExcuteRequest();
+			}
+		}
+	}
+
+	// --- Send Button Context Menu State ---
+	let showSendOptions = false;
+	let sendButtonRef: HTMLElement;
+
+	function handleSendContextMenu(e: MouseEvent) {
+		e.preventDefault();
+		showSendOptions = !showSendOptions;
+	}
+
+	function handleWindowClick(e: MouseEvent) {
+		if (showSendOptions && sendButtonRef && !sendButtonRef.contains(e.target as Node)) {
+			showSendOptions = false;
+		}
+	}
+
+	function executeWithOption(option: 'beo-echo' | 'browser' | 'localhost') {
+		showSendOptions = false;
+
+		if (option === 'localhost') {
+			// Replace current URL host with localhost
+			try {
+				if (activeTab?.content?.url) {
+					// We add a dummy base in case it's a relative URL, but normally it should be absolute
+					const originalUrl = activeTab.content.url.startsWith('http') ? activeTab.content.url : `http://${activeTab.content.url}`;
+					const urlObj = new URL(originalUrl);
+					urlObj.hostname = 'localhost';
+					
+					// Update store and URL param parsing
+					activeTab.content.url = urlObj.toString();
+					activeTab.content.params = parseUrlParams(urlObj.toString(), activeTab.content.params);
+					markUnsaved();
+				}
+			} catch (e) {
+				console.warn('Could not parse URL to replace host with localhost:', e);
+			}
+		}
+
+		// Optional: We can dispatch 'source' down the line if the parent needs to know
+		// For now we just run the execution logic. If parent needs to know the source, 
+		// we can append it to the requestData in onExcuteRequest or just pass it directly.
+		onExcuteRequest(option);
+	}
 
 	function closeOtherTabs(tabIdToKeep: string) {
 		tabs = tabs.filter(t => t.id === tabIdToKeep);
@@ -334,71 +399,8 @@
 		}
 	}
 
-	function onExcuteRequest() {
-		// Prepare request data
-		const requestData: {
-			method: string;
-			url: string;
-			headers: Record<string, string>;
-			query: Record<string, string>;
-			payload: string;
-		} = {
-			method: activeTab?.content?.method || 'GET',
-			url: activeTab?.content?.url || '',
-			headers: {},
-			query: {},
-			payload: activeTab?.content?.body?.content || ''
-		};
-
-		// Process headers
-		if (activeTab?.content?.headers) {
-			activeTab.content.headers.forEach((header: any) => {
-				if (header.enabled && header.key && header.value) {
-					requestData.headers[header.key] = header.value;
-				}
-			});
-		}
-
-		// Process query parameters
-		if (activeTab?.content?.params) {
-			activeTab.content.params.forEach((param: any) => {
-				if (param.enabled && param.key && param.value) {
-					requestData.query[param.key] = param.value;
-				}
-			});
-		}
-
-		// Process auth
-		if (activeTab?.content?.auth?.type !== 'none') {
-			const authConfig = activeTab?.content?.auth?.config;
-
-			switch (activeTab?.content?.auth?.type) {
-				case 'basic':
-					// Add Basic Auth header
-					if (authConfig?.username) {
-						const credentials = btoa(`${authConfig?.username}:${authConfig?.password || ''}`);
-						requestData.headers['Authorization'] = `Basic ${credentials}`;
-					}
-					break;
-				case 'bearer':
-					// Add Bearer token header
-					if (authConfig?.token) {
-						requestData.headers['Authorization'] = `Bearer ${authConfig?.token}`;
-					}
-					break;
-				case 'apiKey':
-					// Add API key as header or query param
-					if (authConfig?.key && authConfig?.value) {
-						if (authConfig?.in === 'header') {
-							requestData.headers[authConfig.key] = authConfig.value;
-						} else if (authConfig?.in === 'query') {
-							requestData.query[authConfig.key] = authConfig.value;
-						}
-					}
-					break;
-				// Add other auth types as needed
-			}
-		}
+	function onExcuteRequest(source?: string) {
+		const requestData = buildExecutePayload(activeTab?.content, source);
 
 		// Dispatch the send event with request data
 		dispatch('send', requestData);
@@ -407,159 +409,6 @@
 	function onCancelRequest() {
 		console.log('Cancel request clicked');
 		// Add logic to cancel the request if needed
-	}
-
-	// Utility functions to parse the JSON fields from replayData
-	function parseHeaders(
-		headersJson?: string
-	): Array<{ key: string; value: string; description: string; enabled: boolean }> {
-		if (!headersJson) {
-			return [{ key: '', value: '', description: '', enabled: true }];
-		}
-
-		try {
-			const headers = JSON.parse(headersJson);
-			if (Array.isArray(headers)) {
-				if (headers.length > 0) {
-					return headers.map((h: any) => ({
-						key: h.key || '',
-						value: h.value || '',
-						description: h.description || '',
-						enabled: true
-					}));
-				}
-				return [{ key: '', value: '', description: '', enabled: true }];
-			}
-			// Handle object format: Record<string, string> from backend
-			if (typeof headers === 'object' && headers !== null) {
-				const entries = Object.entries(headers);
-				if (entries.length > 0) {
-					return entries.map(([key, value]) => ({
-						key,
-						value: String(value),
-						description: '',
-						enabled: true
-					}));
-				}
-			}
-			return [{ key: '', value: '', description: '', enabled: true }];
-		} catch (e) {
-			console.error('Failed to parse headers JSON:', e);
-			return [{ key: '', value: '', description: '', enabled: true }];
-		}
-	}
-
-	function parseConfig(configJson?: string): {
-		parsedAuth?: { type: string; config: any };
-		parsedSettings?: any;
-	} {
-		if (!configJson) {
-			return {
-				parsedAuth: { type: 'none', config: {} },
-				parsedSettings: {}
-			};
-		}
-
-		try {
-			const config = JSON.parse(configJson);
-			return {
-				parsedAuth: config.auth || { type: 'none', config: {} },
-				parsedSettings: config.settings || {}
-			};
-		} catch (e) {
-			console.error('Failed to parse config JSON:', e);
-			return {
-				parsedAuth: { type: 'none', config: {} },
-				parsedSettings: {}
-			};
-		}
-	}
-
-	function parseMetadata(metadataJson?: string): {
-		parsedParams?: Array<{ key: string; value: string; description: string; enabled: boolean }>;
-		parsedBodyType?: string;
-	} {
-		if (!metadataJson) {
-			return {
-				parsedParams: [{ key: '', value: '', description: '', enabled: true }],
-				parsedBodyType: 'none'
-			};
-		}
-
-		try {
-			const metadata = JSON.parse(metadataJson);
-			return {
-				parsedParams: metadata.params || [{ key: '', value: '', description: '', enabled: true }],
-				parsedBodyType: metadata.bodyType || 'none'
-			};
-		} catch (e) {
-			console.error('Failed to parse metadata JSON:', e);
-			return {
-				parsedParams: [{ key: '', value: '', description: '', enabled: true }],
-				parsedBodyType: 'none'
-			};
-		}
-	}
-
-	function parseUrlParams(url: string, existingParams?: Array<{ key: string; value: string; description: string; enabled: boolean }>): Array<{ key: string; value: string; description: string; enabled: boolean }> {
-		try {
-			const [, queryString] = (url || '').split('?');
-			const paramsList: Array<{ key: string; value: string; description: string; enabled: boolean }> = [];
-			
-			const existingKeyMap = new Map();
-			if (existingParams) {
-				existingParams.forEach(p => {
-					if (p.key) existingKeyMap.set(p.key, p);
-				});
-			}
-
-			const usedKeys = new Set<string>();
-
-			if (queryString) {
-				const urlParams = new URLSearchParams(queryString);
-				for (const [key, value] of urlParams.entries()) {
-					const existing = existingKeyMap.get(key);
-					paramsList.push({ 
-						key, 
-						value, 
-						description: existing ? existing.description : '', 
-						enabled: true 
-					});
-					usedKeys.add(key);
-				}
-			}
-
-			// Always keep existing unused parameters (keep their description), just mark them as disabled if they're not in the URL
-			if (existingParams) {
-				existingParams.forEach(p => {
-					if (p.key && !usedKeys.has(p.key)) {
-						paramsList.push({ ...p, enabled: false });
-					}
-				});
-			}
-
-			paramsList.push({ key: '', value: '', description: '', enabled: true });
-			return paramsList;
-		} catch (e) {
-			return [{ key: '', value: '', description: '', enabled: true }];
-		}
-	}
-
-	function getUrlFromParams(baseUrl: string, params: Array<{ key: string; value: string; enabled: boolean }>): string {
-		try {
-			const [base] = (baseUrl || '').split('?');
-			const searchParams = new URLSearchParams();
-			let hasParams = false;
-			params.forEach(p => {
-				if (p.enabled && p.key.trim() !== '') {
-					searchParams.append(p.key.trim(), p.value);
-					hasParams = true;
-				}
-			});
-			return hasParams ? `${base}?${searchParams.toString()}` : base;
-		} catch (e) {
-			return baseUrl || '';
-		}
 	}
 
 
@@ -637,6 +486,8 @@
 	}
 
 </script>
+
+<svelte:window on:keydown={handleGlobalKeydown} on:click={handleWindowClick} />
 
 <!-- Postman-like Request Interface -->
 <div class="flex flex-col h-full">
@@ -735,32 +586,62 @@
 						activeTab.content.params = parseUrlParams(e.currentTarget.value, activeTab.content.params);
 					}
 				}}
+				on:keydown={handleUrlKeydown}
 				class={ThemeUtils.themeBgSecondary(
-					'flex-grow p-2.5 focus:outline-none focus:ring-2 focus:ring-blue-500 theme-text-secondary placeholder-gray-400 dark:placeholder-gray-500 transition-all duration-200'
+					'flex-grow p-2.5 focus:outline-none focus:ring-0 theme-text-secondary placeholder-gray-400 dark:placeholder-gray-500 transition-all duration-200'
 				)}
 				placeholder="Enter URL or describe the request"
 				type="text"
 				title="Request URL input"
 				aria-label="Enter request URL"
 			/>
-			<button
-				class={$replayLoading.execute
-					? 'bg-gray-600 hover:bg-gray-700 text-white px-4 py-2.5 rounded-r-lg flex items-center space-x-1 shadow-sm hover:shadow-md transition-all duration-200'
-					: ThemeUtils.primaryButton(
-							'px-4 py-2.5 rounded-r-lg space-x-1 shadow-sm hover:shadow-md transition-all duration-200'
-						)}
-				title={$replayLoading.execute ? 'Cancel HTTP request' : 'Send HTTP request'}
-				aria-label={$replayLoading.execute ? 'Cancel request' : 'Send request'}
-				on:click={$replayLoading.execute ? onCancelRequest : onExcuteRequest}
-			>
-				{#if $replayLoading.execute}
-					<span>Cancel</span>
-					<i class="fas fa-times text-sm"></i>
-				{:else}
-					<span>Send</span>
-					<i class="fas fa-paper-plane text-sm"></i>
+			<div class="relative flex" bind:this={sendButtonRef}>
+				<button
+					class={$replayLoading.execute
+						? 'bg-gray-600 hover:bg-gray-700 text-white px-4 py-2.5 rounded-r-lg flex items-center space-x-1 shadow-sm hover:shadow-md transition-all duration-200'
+						: ThemeUtils.primaryButton(
+								'px-4 py-2.5 rounded-r-lg space-x-1 shadow-sm hover:shadow-md transition-all duration-200'
+							)}
+					title={$replayLoading.execute ? 'Cancel HTTP request' : 'Send HTTP request (Right click for more options)'}
+					aria-label={$replayLoading.execute ? 'Cancel request' : 'Send request'}
+					on:click={$replayLoading.execute ? onCancelRequest : () => onExcuteRequest()}
+					on:contextmenu={handleSendContextMenu}
+				>
+					{#if $replayLoading.execute}
+						<span>Cancel</span>
+						<i class="fas fa-times text-sm"></i>
+					{:else}
+						<span>Send</span>
+						<i class="fas fa-paper-plane text-sm"></i>
+					{/if}
+				</button>
+				
+				{#if showSendOptions}
+					<div class="absolute top-full right-0 mt-2 w-64 bg-white dark:bg-gray-800 rounded-md shadow-lg border theme-border z-50 flex flex-col py-1 overflow-hidden">
+						<button 
+							class="text-left px-4 py-2 text-sm text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/30 transition-colors flex items-center gap-2"
+							on:click={() => executeWithOption('beo-echo')}
+						>
+							<i class="fas fa-server w-4 text-center"></i>
+							<span>Start from Beo Echo server</span>
+						</button>
+						<button 
+							class="text-left px-4 py-2 text-sm text-green-600 dark:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/30 transition-colors flex items-center gap-2"
+							on:click={() => executeWithOption('browser')}
+						>
+							<i class="fas fa-globe w-4 text-center"></i>
+							<span>Start from your local browser</span>
+						</button>
+						<button 
+							class="text-left px-4 py-2 text-sm text-orange-600 dark:text-orange-400 hover:bg-orange-50 dark:hover:bg-orange-900/30 transition-colors flex items-center gap-2"
+							on:click={() => executeWithOption('localhost')}
+						>
+							<i class="fas fa-laptop-code w-4 text-center"></i>
+							<span>Replace host to localhost</span>
+						</button>
+					</div>
 				{/if}
-			</button>
+			</div>
 		</div>
 
 		<!-- Tab navigation -->
