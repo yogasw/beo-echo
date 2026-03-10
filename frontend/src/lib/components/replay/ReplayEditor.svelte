@@ -740,7 +740,7 @@
 		{/if} <!-- End of request vs folder branch -->
 	</main>
 
-	{#if activeTab?.itemType === 'request'}
+	{#if activeTab?.itemType !== 'folder'}
 		<ReplayResponseFooter
 			bind:isExpanded={isFooterExpanded}
 			{executionResult}
