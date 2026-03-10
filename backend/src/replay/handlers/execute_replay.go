@@ -2,8 +2,7 @@ package handlers
 
 import (
 	"net/http"
-
-	"beo-echo/backend/src/replay/services"
+	"beo-echo/backend/src/replay/models"
 
 	"github.com/gin-gonic/gin"
 	"github.com/rs/zerolog"
@@ -20,7 +19,7 @@ func (s *replayHandler) ExecuteReplayHandler(c *gin.Context) {
 		return
 	}
 
-	var req services.ExecuteReplayRequest
+	var req models.ExecuteReplayRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		log.Error().
 			Err(err).

@@ -1,39 +1,76 @@
+// Body type for HTTP request body
+export type BodyTypeHttp = 'none' | 'raw' | 'form-data' | 'x-www-form-urlencoded';
+
+// Typed shape of the metadata JSON field stored in Replay
+export interface ReplayMetadata {
+	params?: Array<{ key: string; value: string; description: string; enabled: boolean }>;
+	bodyType?: BodyTypeHttp;
+}
+
+// Typed shape of the config JSON field stored in Replay
+export interface ReplayConfig {
+	auth?: {
+		type: 'none' | 'basic' | 'bearer' | 'apiKey';
+		config: Record<string, string>;
+	};
+	settings?: {
+		timeout?: number;
+		followRedirects?: boolean;
+		verifySsl?: boolean;
+		[key: string]: unknown;
+	};
+}
+
+// Typed shape of the payload JSON field stored in Replay (for HTTP protocol)
+export interface ReplayPayload {
+	content: string;
+	bodyType?: ReplayMetadata['bodyType'];
+}
+
 export interface Replay {
 	id: string
 	name: string
+	doc: string       // User-defined documentation
 	project_id: string
 	folder_id: any
 	protocol: string
 	method: string
 	url: string
-	config: string
-	metadata: string
-	headers: string
-	payload: string
+	config: string    // JSON string — parse with JSON.parse()
+	metadata: string  // JSON string — parse with JSON.parse() → ReplayMetadata
+	headers: string   // JSON string — parse with JSON.parse() → Record<string, string>
+	payload: string   // raw body content string
 	created_at: string
 	updated_at: string
 }
 
 export interface CreateReplayRequest {
 	name: string
+	doc?: string
 	protocol: string
 	method: string
 	url: string
 	headers?: Record<string, string>
 	payload?: string
 	body?: string
-	folder_id?: string;
+	folder_id?: string
+	metadata?: ReplayMetadata
+	config?: ReplayConfig
 }
 
 export interface UpdateReplayRequest {
 	name?: string;
+	doc?: string;
 	protocol?: string;
 	method?: string;
 	url?: string;
 	headers?: Record<string, string>;
 	payload?: string;
-	body?: string; // Alias for payload for compatibility
-	folder_id?: string;
+	body?: string;
+	folder_id?: string | null;
+	update_folder_id?: boolean;
+	metadata?: ReplayMetadata;
+	config?: ReplayConfig;
 }
 
 export interface ReplayLog {
@@ -61,9 +98,20 @@ export interface ReplayLog {
 	error_message?: string;
 }
 
+export interface ReplayFolder {
+	id: string;
+	name: string;
+	project_id: string;
+	parent_id?: string;
+	created_at: string;
+	updated_at: string;
+}
+
 export interface ListReplaysResponse {
 	replays: Replay[];
-	count: number;
+	folders: ReplayFolder[];
+	replayCount: number;
+	folderCount: number;
 }
 
 export interface ListReplayLogsResponse {

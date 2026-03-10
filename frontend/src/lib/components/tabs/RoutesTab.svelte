@@ -88,7 +88,7 @@
 		}
 
 		// check when last selected response id in route selected that it is still available
-		if (lastSelectedResponseId) {
+		if (lastSelectedResponseId && route.responses) {
 			const response = route.responses.find((r) => r.id === lastSelectedResponseId);
 			if (response) {
 				selectedResponse = response;

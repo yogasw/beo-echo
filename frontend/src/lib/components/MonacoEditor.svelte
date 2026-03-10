@@ -1,8 +1,9 @@
 <script lang="ts">
 	// reference https://dev.to/lawrencecchen/monaco-editor-svelte-kit-572
-	import { onMount, onDestroy, createEventDispatcher, afterUpdate } from 'svelte';
+	import { onMount, onDestroy, createEventDispatcher } from 'svelte';
 	import type * as monacoType from 'monaco-editor';
 	import { theme as appTheme } from '$lib/stores/theme';
+	import { zoomLevel } from '$lib/stores/zoom';
 
 	// Worker setup (modern)
 	import editorWorker from 'monaco-editor/esm/vs/editor/editor.worker?worker';
@@ -59,6 +60,15 @@
 				enabled: false
 			},
 			scrollBeyondLastLine: false,
+			fixedOverflowWidgets: true,
+			wordWrap: 'on',
+			padding: { top: 8, bottom: 8 },
+			scrollbar: {
+				verticalScrollbarSize: 8,
+				horizontalScrollbarSize: 8,
+				alwaysConsumeMouseWheel: false
+			},
+			overviewRulerLanes: 0,
 		});
 
 		editor.onDidChangeModelContent(() => {
@@ -69,14 +79,17 @@
 		});
 	});
 
-	afterUpdate(() => {
-		if (editor && value !== currentValue) {
+	// Reactively sync value from parent
+	$: updateContent(value);
+
+	function updateContent(val: string) {
+		if (editor && val !== currentValue) {
 			isUpdating = true;
-			currentValue = value;
-			editor.setValue(value);
+			currentValue = val;
+			editor.setValue(val);
 			isUpdating = false;
 		}
-	});
+	}
 
 	onDestroy(() => {
 		editor?.dispose();
@@ -103,4 +116,11 @@
 	}
 </script>
 
-<div bind:this={container} class="w-full h-full"></div>
+<!--
+  Monaco Editor has a known issue where it does not support CSS `zoom` and its native coordinate system breaks.
+  If the parent app applies a CSS zoom (e.g., 0.9), Monaco calculates mouse clicks with incorrect offsets, causing context menus to immediately close.
+  To fix this, we apply an "inverted" zoom (1 / appZoom) specifically to Monaco's wrapper to force it back to a true 1.0 scale relative to the screen pixels.
+-->
+<div class="monaco-unzoom-wrapper" style="zoom: calc(1 / {$zoomLevel}); width: 100%; height: 100%;">
+	<div bind:this={container} class="w-full h-full relative"></div>
+</div>

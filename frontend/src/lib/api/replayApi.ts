@@ -33,6 +33,21 @@ export class ReplayApi {
 	}
 
 	/**
+	 * Create a new replay folder
+	 */
+	static async createFolder(
+		workspaceId: string, 
+		projectId: string, 
+		folderData: { name: string; parent_id?: string }
+	): Promise<{ folder: Replay; message: string }> {
+		const response = await apiClient.post(
+			`/workspaces/${workspaceId}/projects/${projectId}/replays/folder`,
+			folderData
+		);
+		return response.data;
+	}
+
+	/**
 	 * Get a specific replay
 	 */
 	static async getReplay(
@@ -58,6 +73,22 @@ export class ReplayApi {
 		const response = await apiClient.put(
 			`/workspaces/${workspaceId}/projects/${projectId}/replays/${replayId}`,
 			replayData
+		);
+		return response.data;
+	}
+
+	/**
+	 * Update a replay folder
+	 */
+	static async updateFolder(
+		workspaceId: string, 
+		projectId: string, 
+		folderId: string,
+		folderData: { name?: string; doc?: string; parent_id?: string | null; update_parent_id?: boolean }
+	): Promise<{ folder: Replay; message: string }> {
+		const response = await apiClient.patch(
+			`/workspaces/${workspaceId}/projects/${projectId}/replays/folder/${folderId}`,
+			folderData
 		);
 		return response.data;
 	}
@@ -108,6 +139,20 @@ export class ReplayApi {
 	): Promise<{ message: string }> {
 		const response = await apiClient.delete(
 			`/workspaces/${workspaceId}/projects/${projectId}/replays/${replayId}`
+		);
+		return response.data;
+	}
+
+	/**
+	 * Delete a replay folder
+	 */
+	static async deleteFolder(
+		workspaceId: string, 
+		projectId: string, 
+		folderId: string
+	): Promise<{ message: string }> {
+		const response = await apiClient.delete(
+			`/workspaces/${workspaceId}/projects/${projectId}/replays/folder/${folderId}`
 		);
 		return response.data;
 	}
