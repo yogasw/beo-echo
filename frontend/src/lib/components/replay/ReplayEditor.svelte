@@ -10,7 +10,7 @@
 	import ReplayBar from './ReplayBar.svelte';
 	import { replayActions, replayLoading } from '$lib/stores/replay';
 	import { parseHeaders, parseConfig, parseMetadata, parseUrlParams, getUrlFromParams } from './utils/parsersUtil';
-	import { buildExecutePayload } from './utils/execute';
+	import { buildExecutePayload, replaceUrlHostToLocalhost } from './utils/execute';
 
 	// Import modular tab components
 	import ParamsTab from './tabs/ParamsTab.svelte';
@@ -125,32 +125,30 @@
 		}
 	}
 
-	function executeWithOption(option: 'beo-echo' | 'browser' | 'localhost') {
+	function executeWithOption(option: 'server' | 'browser') {
 		showSendOptions = false;
 
-		if (option === 'localhost') {
-			// Replace current URL host with localhost
-			try {
-				if (activeTab?.content?.url) {
-					// We add a dummy base in case it's a relative URL, but normally it should be absolute
-					const originalUrl = activeTab.content.url.startsWith('http') ? activeTab.content.url : `http://${activeTab.content.url}`;
-					const urlObj = new URL(originalUrl);
-					urlObj.hostname = 'localhost';
-					
-					// Update store and URL param parsing
-					activeTab.content.url = urlObj.toString();
-					activeTab.content.params = parseUrlParams(urlObj.toString(), activeTab.content.params);
-					markUnsaved();
-				}
-			} catch (e) {
-				console.warn('Could not parse URL to replace host with localhost:', e);
-			}
+		if (activeTab?.content) {
+			activeTab.content.executionSource = option;
+			markUnsaved(); // So they can save their preferred execution environment
 		}
 
 		// Optional: We can dispatch 'source' down the line if the parent needs to know
 		// For now we just run the execution logic. If parent needs to know the source, 
 		// we can append it to the requestData in onExcuteRequest or just pass it directly.
 		onExcuteRequest(option);
+	}
+
+	function handleReplaceLocalhost() {
+		showSendOptions = false;
+		if (activeTab?.content?.url) {
+			const newUrl = replaceUrlHostToLocalhost(activeTab.content.url);
+			if (newUrl !== activeTab.content.url) {
+				activeTab.content.url = newUrl;
+				activeTab.content.params = parseUrlParams(newUrl, activeTab.content.params);
+				markUnsaved();
+			}
+		}
 	}
 
 	function closeOtherTabs(tabIdToKeep: string) {
@@ -599,12 +597,15 @@
 				<button
 					class={$replayLoading.execute
 						? 'bg-gray-600 hover:bg-gray-700 text-white px-4 py-2.5 rounded-r-lg flex items-center space-x-1 shadow-sm hover:shadow-md transition-all duration-200'
-						: ThemeUtils.primaryButton(
-								'px-4 py-2.5 rounded-r-lg space-x-1 shadow-sm hover:shadow-md transition-all duration-200'
-							)}
-					title={$replayLoading.execute ? 'Cancel HTTP request' : 'Send HTTP request (Right click for more options)'}
-					aria-label={$replayLoading.execute ? 'Cancel request' : 'Send request'}
-					on:click={$replayLoading.execute ? onCancelRequest : () => onExcuteRequest()}
+						: (activeTab?.content?.executionSource === 'browser' 
+							? 'bg-green-600 hover:bg-green-700 text-white px-4 py-2.5 rounded-r-lg flex items-center space-x-1 shadow-sm hover:shadow-md transition-all duration-200'
+							: ThemeUtils.primaryButton(
+									'px-4 py-2.5 rounded-r-lg space-x-1 shadow-sm hover:shadow-md transition-all duration-200'
+								))
+					}
+					title={$replayLoading.execute ? 'Cancel HTTP request' : 'Execute HTTP request (Right click for more options)'}
+					aria-label={$replayLoading.execute ? 'Cancel request' : 'Execute request'}
+					on:click={$replayLoading.execute ? onCancelRequest : () => onExcuteRequest(activeTab?.content?.executionSource || 'server')}
 					on:contextmenu={handleSendContextMenu}
 				>
 					{#if $replayLoading.execute}
@@ -612,31 +613,36 @@
 						<i class="fas fa-times text-sm"></i>
 					{:else}
 						<span>Send</span>
-						<i class="fas fa-paper-plane text-sm"></i>
+						{#if activeTab?.content?.executionSource === 'browser'}
+							<i class="fas fa-globe text-sm"></i>
+						{:else}
+							<i class="fas fa-paper-plane text-sm"></i>
+						{/if}
 					{/if}
 				</button>
 				
 				{#if showSendOptions}
-					<div class="absolute top-full right-0 mt-2 w-64 bg-white dark:bg-gray-800 rounded-md shadow-lg border theme-border z-50 flex flex-col py-1 overflow-hidden">
+					<div class="absolute top-full right-0 mt-2 w-72 bg-white dark:bg-gray-800 rounded-md shadow-lg border theme-border z-50 flex flex-col py-1 overflow-hidden">
 						<button 
-							class="text-left px-4 py-2 text-sm text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/30 transition-colors flex items-center gap-2"
-							on:click={() => executeWithOption('beo-echo')}
+							class="text-left px-4 py-3 text-sm text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/30 transition-colors flex items-center gap-3"
+							on:click={() => executeWithOption('server')}
 						>
-							<i class="fas fa-server w-4 text-center"></i>
-							<span>Start from Beo Echo server</span>
+							<i class="fas fa-server w-5 text-center text-lg"></i>
+							<span class="font-medium">Execute from Beo Echo server</span>
 						</button>
 						<button 
-							class="text-left px-4 py-2 text-sm text-green-600 dark:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/30 transition-colors flex items-center gap-2"
+							class="text-left px-4 py-3 text-sm text-green-600 dark:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/30 transition-colors flex items-center gap-3"
 							on:click={() => executeWithOption('browser')}
 						>
-							<i class="fas fa-globe w-4 text-center"></i>
-							<span>Start from your local browser</span>
+							<i class="fas fa-globe w-5 text-center text-lg"></i>
+							<span class="font-medium">Execute from your local browser</span>
 						</button>
+						<div class="h-px bg-gray-200 dark:bg-gray-700 my-1 mx-2"></div>
 						<button 
-							class="text-left px-4 py-2 text-sm text-orange-600 dark:text-orange-400 hover:bg-orange-50 dark:hover:bg-orange-900/30 transition-colors flex items-center gap-2"
-							on:click={() => executeWithOption('localhost')}
+							class="text-left px-4 py-2 text-sm text-orange-600 dark:text-orange-400 hover:bg-orange-50 dark:hover:bg-orange-900/30 transition-colors flex items-center gap-3"
+							on:click={handleReplaceLocalhost}
 						>
-							<i class="fas fa-laptop-code w-4 text-center"></i>
+							<i class="fas fa-laptop-code w-5 text-center"></i>
 							<span>Replace host to localhost</span>
 						</button>
 					</div>

@@ -6,6 +6,7 @@
 	import { replays, replayFolders, selectedReplay, replayActions, replayLoading } from '$lib/stores/replay';
 	import { toast } from '$lib/stores/toast';
 	import { replayApi } from '$lib/api/replayApi';
+	import { executeRequest } from './utils/execute';
 	import { getReplayPanelWidth, setReplayPanelWidth } from '$lib/utils/localStorage';
 	import { 
 		getReplayEditorState, 
@@ -686,21 +687,11 @@
 				t.id === editorActiveTabId ? { ...t, executionResult: null } : t
 			);
 			
-			// Prepare request payload from editor data
-			const payload = {
-				protocol: 'http', // Default to http
-				method: replayData.method || 'GET',
-				url: replayData.url || '',
-				headers: replayData.headers || {},
-				body: replayData.body || '',
-				query: replayData.query || {}
-			};
-
-			// Execute the replay request
-			const result = await replayApi.executeReplayRequest(
-				$selectedWorkspace.id, 
-				$selectedProject.id, 
-				payload
+			// Execute the replay request using the utility function
+			const result = await executeRequest(
+				$selectedWorkspace.id,
+				$selectedProject.id,
+				replayData
 			);
 			
 			// Save result into the active tab
