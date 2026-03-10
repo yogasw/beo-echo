@@ -19,13 +19,9 @@
 	$effect(() => {
 		try {
 			const meta = metadata ? JSON.parse(metadata) : {};
-			console.log("meta",meta)
 			localBodyType = meta.bodyType ?? 'none';
-			console.debug('[ReplayBody] props:', { payload, metadata, protocol });
-			console.debug('[ReplayBody] parsed meta:', meta, '→ bodyType:', localBodyType);
 		} catch {
 			localBodyType = 'none';
-			console.debug('[ReplayBody] failed to parse metadata:', metadata);
 		}
 	});
 
