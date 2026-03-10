@@ -20,6 +20,7 @@
 	import DesktopMenuBar from '$lib/components/desktop/DesktopMenuBar.svelte';
 	import BackendStatus from '$lib/components/desktop/BackendStatus.svelte';
 	import { isDesktopMode } from '$lib/utils/desktopConfig';
+	import { zoomLevel } from '$lib/stores/zoom';
 
 	let searchTerm = '';
 	let activeTab = 'routes';
@@ -160,7 +161,7 @@
 </script>
 
 {#if isLoginPage || isLandingPage || !$isAuthenticated}
-	<div style="zoom: 0.9; min-height: calc(100vh / 0.9);">
+	<div style="zoom: {$zoomLevel}; min-height: calc(100vh / {$zoomLevel}); display: flex; flex-direction: column;">
 		<slot />
 	</div>
 {:else}
@@ -169,7 +170,7 @@
 		<DesktopMenuBar />
 	{/if}
 	
-	<div style="zoom: 0.9; height: calc(100vh / 0.9);" class="w-full theme-bg-tertiary theme-text-primary font-sans transition-colors {isDesktopMode() ? 'pt-8' : ''}">
+	<div style="zoom: {$zoomLevel}; height: calc(100vh / {$zoomLevel});" class="w-full theme-bg-tertiary theme-text-primary font-sans transition-colors {isDesktopMode() ? 'pt-8' : ''}">
 		<div class="mx-auto flex h-full">
 			<ProjectList {searchTerm} bind:this={projectListComponent} />
 

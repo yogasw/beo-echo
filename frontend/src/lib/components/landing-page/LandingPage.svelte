@@ -23,7 +23,7 @@
 </script>
 
 <!-- Landing Page Layout -->
-<div class="min-h-screen bg-white dark:bg-gray-900 transition-colors duration-200">
+<div class="flex-1 w-full bg-white dark:bg-gray-900 transition-colors duration-200 flex flex-col">
 	<!-- Header -->
 	<LandingPageHeader 
 		showUserMenu={true}

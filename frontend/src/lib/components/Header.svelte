@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { activeTab } from '$lib/stores/activeTab';
 	import { theme, toggleTheme } from '$lib/stores/theme';
+	import { zoomLevel } from '$lib/stores/zoom';
 	import { logStatus } from '$lib/stores/logStatus';
 	import SaveButton from './SaveButton.svelte';
 	import WorkspaceManager from './workspace/WorkspaceManager.svelte';
@@ -245,6 +246,26 @@
 			show={configHover && !$selectedProject}
 			position="bottom"
 		/>
+	</div>
+
+	<!-- Zoom Controls -->
+	<div class="relative flex flex-col items-center mr-4">
+		<div class="flex items-center space-x-1 h-12">
+			<button class="w-8 aspect-square theme-bg-secondary theme-text-primary p-2 rounded-full border-2 border-gray-500 flex items-center justify-center hover:bg-gray-200 dark:hover:bg-gray-700 transition cursor-pointer active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
+				on:click={() => zoomLevel.update(z => Math.max(Number((z - 0.1).toFixed(1)), 0.5))}
+				disabled={$zoomLevel <= 0.5}
+				title="Zoom Out">
+				<i class="fas fa-search-minus text-xs"></i>
+			</button>
+			<span class="text-xs font-mono w-10 text-center theme-text-primary">{Math.round($zoomLevel * 100)}%</span>
+			<button class="w-8 aspect-square theme-bg-secondary theme-text-primary p-2 rounded-full border-2 border-gray-500 flex items-center justify-center hover:bg-gray-200 dark:hover:bg-gray-700 transition cursor-pointer active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
+				on:click={() => zoomLevel.update(z => Math.min(Number((z + 0.1).toFixed(1)), 1.5))}
+				disabled={$zoomLevel >= 1.5}
+				title="Zoom In">
+				<i class="fas fa-search-plus text-xs"></i>
+			</button>
+		</div>
+		<span class="text-xs mt-1 theme-text-primary">Zoom</span>
 	</div>
 
 	<!-- Theme Toggle Button -->
