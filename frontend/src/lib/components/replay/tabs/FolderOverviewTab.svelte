@@ -1,7 +1,6 @@
 <script lang="ts">
-	import InkMde from 'ink-mde/svelte';
+	import MonacoEditor from '$lib/components/MonacoEditor.svelte';
 	import { marked } from 'marked';
-	// @ts-expect-error isomorphic-dompurify typing issue
 	import DOMPurify from 'isomorphic-dompurify';
 	import { theme } from '$lib/stores/theme';
 	import { replayApi } from '$lib/api/replayApi';
@@ -65,7 +64,7 @@
 
 </script>
 
-<div class="ink-wrapper h-full flex flex-col" onkeydown={handleKeydown} role="presentation">
+<div class="h-full flex flex-col" onkeydown={handleKeydown} role="presentation">
 	{#if isEditing}
 		<!-- Edit mode -->
 		<div class="flex items-center justify-between mb-2 flex-shrink-0">
@@ -86,16 +85,11 @@
 			</button>
 		</div>
 
-		<div class="flex-1 min-h-0 ink-editor-wrap rounded-lg overflow-hidden theme-border border theme-bg-primary">
-			<InkMde
-				bind:value={documentation}
-				options={{
-					interface: {
-						appearance: $theme === 'dark' ? 'dark' : 'light',
-						spellcheck: false,
-						readonly: false,
-					},
-				}}
+		<div class="flex-1 min-h-[300px] rounded-lg overflow-hidden theme-border border theme-bg-primary relative z-10 w-full h-full">
+			<MonacoEditor
+				value={documentation}
+				on:change={(e: CustomEvent<string>) => documentation = e.detail}
+				language="markdown"
 			/>
 		</div>
 	{:else}
@@ -109,7 +103,7 @@
 			<div class="flex-1 overflow-auto min-h-0 bg-transparent rounded-lg">
 				{#if documentation.trim()}
 					<!-- eslint-disable-next-line svelte/no-at-html-tags -->
-					<div class="ink-viewer-wrap prose {$theme === 'dark' ? 'prose-invert' : ''} prose-sm max-w-none px-2 py-1">{@html renderedDocumentation}</div>
+					<div class="prose {$theme === 'dark' ? 'prose-invert' : ''} prose-sm max-w-none px-2 py-1">{@html renderedDocumentation}</div>
 				{:else}
 					<div class="flex flex-col items-center justify-center h-full text-center py-12 rounded-lg border-2 border-dashed theme-border theme-text-muted transition-colors">
 						<i class="fas fa-file-alt text-3xl mb-3 opacity-50"></i>
@@ -121,26 +115,8 @@
 
 			<p class="mt-3 flex-shrink-0 text-[11px] theme-text-muted transition-colors flex items-center gap-1.5 px-1 font-medium">
 				<i class="fas fa-mouse-pointer"></i>
-				Double-click to edit · Markdown supported by ink-mde
+				Double-click to edit · Markdown supported
 			</p>
 		</div>
 	{/if}
 </div>
-
-<style>
-	/* ── Ink MDE attribution hide ── */
-	:global(.ink-mde-details) {
-		display: none !important;
-	}
-	
-/* Hide internal frame styling */
-:global(.ink-mde) {
---ink-internal-block-background-color: transparent !important;
---ink-internal-border-radius: 0 !important;
-}
-
-/* Hide editor focus outline */
-:global(.ink-mde .cm-editor.cm-focused) {
-	outline: none !important;
-}
-</style>

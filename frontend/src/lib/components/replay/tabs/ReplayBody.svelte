@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { createEventDispatcher } from 'svelte';
 	import type { BodyTypeHttp } from '$lib/types/Replay';
+	import MonacoEditor from '$lib/components/MonacoEditor.svelte';
 
 	let { 
 		payload = '',
@@ -35,6 +36,17 @@
 		dispatch('change', { payload: target.value });
 	}
 
+	let editorLanguage = $derived.by(() => {
+		if (localBodyType === 'raw') {
+			if (!payload || !payload.trim()) return 'json';
+			const trimmed = payload.trim();
+			if (trimmed.startsWith('{') || trimmed.startsWith('[')) return 'json';
+			if (trimmed.startsWith('<')) return 'xml';
+			return 'plaintext';
+		}
+		return 'plaintext';
+	});
+
 	function beautifyJson() {
 		try {
 			const parsed = JSON.parse(payload);
@@ -46,8 +58,8 @@
 </script>
 
 <!-- Body section -->
-<div role="tabpanel" aria-labelledby="body-tab" class="space-y-4">
-	<div class="flex items-center mb-4">
+<div role="tabpanel" aria-labelledby="body-tab" class="space-y-4 flex flex-col h-full">
+	<div class="flex items-center mb-4 shrink-0">
 		<h2 class="text-sm font-semibold theme-text-primary flex items-center">
 			<i class="fas fa-file-alt text-purple-500 mr-2"></i>
 			Request Body
@@ -64,9 +76,9 @@
 			<p class="text-xs theme-text-muted">Only HTTP / HTTPS requests support a request body.</p>
 		</div>
 	{:else}
-		<div class="bg-white dark:bg-gray-800 border theme-border rounded-lg p-4">
-			<div class="space-y-4">
-				<fieldset>
+		<div class="bg-white dark:bg-gray-800 border theme-border rounded-lg p-4 flex-1 flex flex-col min-h-0">
+			<div class="flex flex-col flex-1 min-h-0 gap-4">
+				<fieldset class="shrink-0">
 					<legend class="sr-only">Body type selection</legend>
 					<div class="flex flex-wrap gap-4 text-sm">
 						{#each [
@@ -93,20 +105,20 @@
 				</fieldset>
 
 				{#if localBodyType !== 'none'}
-					<div>
-						<label for="request-body" class="block text-sm font-medium theme-text-secondary mb-2">
+					<div class="flex flex-col flex-1 min-h-0">
+						<label for="request-body" class="block text-sm font-medium theme-text-secondary mb-2 shrink-0">
 							Body Content
 						</label>
-						<textarea
-							id="request-body"
-							class="w-full h-64 theme-bg-secondary p-3 focus:outline-none focus:ring-2 focus:ring-blue-500 rounded-md border theme-border theme-text-secondary font-mono text-sm transition-all duration-200"
-							placeholder="Enter request body content..."
-							title="Request body content"
-							aria-label="Request body textarea"
-							value={payload}
-							oninput={handleBodyContentChange}
-						></textarea>
-						<div class="flex justify-between items-center mt-2">
+						<div class="flex-1 w-full rounded-md border theme-border overflow-hidden relative z-10 min-h-[300px]">
+							<MonacoEditor
+								value={payload}
+								on:change={(e: CustomEvent<string>) => {
+									dispatch('change', { payload: e.detail });
+								}}
+								language={editorLanguage}
+							/>
+						</div>
+						<div class="flex justify-between items-center mt-2 shrink-0">
 							<p class="text-xs theme-text-muted">
 								<i class="fas fa-info-circle mr-1"></i>
 								{#if localBodyType === 'raw'}

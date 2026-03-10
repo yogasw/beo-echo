@@ -24,7 +24,7 @@
     "@sveltejs/vite-plugin-svelte": "^5.0.0",
     "@vitest/ui": "^4.0.18",
     "autoprefixer": "^10.4.21",
-    "monaco-editor": "^0.52.2",
+    "monaco-editor": "^0.55.1",
     "postcss": "^8.5.3",
     "prettier": "^3.4.2",
     "prettier-plugin-svelte": "^3.3.3",
@@ -38,7 +38,6 @@
   "dependencies": {
     "@sveltejs/adapter-static": "^3.0.8",
     "axios": "^1.13.6",
-    "ink-mde": "^0.34.0",
     "isomorphic-dompurify": "^3.0.0",
     "marked": "^17.0.4"
   }

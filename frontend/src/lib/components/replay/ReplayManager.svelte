@@ -511,9 +511,12 @@
 				!editorTabs[0].replay?.url &&
 				!editorTabs[0].executionResult;
 
-			if (shouldReplaceEmpty) {
+			const shouldReplaceUnedited = activeTab && !activeTab.isUnsaved;
+
+			if (shouldReplaceEmpty || shouldReplaceUnedited) {
+				const indexToReplace = shouldReplaceEmpty ? 0 : activeTabIndex;
 				const newTabs = [...editorTabs];
-				newTabs[0] = newTab;
+				newTabs[indexToReplace] = newTab;
 				editorTabs = newTabs;
 			} else {
 				editorTabs = [...editorTabs, newTab];
