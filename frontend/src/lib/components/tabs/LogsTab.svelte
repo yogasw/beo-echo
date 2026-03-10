@@ -252,10 +252,23 @@
 			// Create new replay tab with request data
 			const newTab = createDefaultTab();
 
-			// Update tab with the request data
-			newTab.name = `New ${method} ${log.path}`;
-			newTab.method = method;
-			newTab.url = baseUrl; // Base URL without query params
+			// Set replay data on the tab
+			newTab.replay = {
+				id: '',
+				name: `New ${method} ${log.path}`,
+				doc: '',
+				project_id: '',
+				folder_id: null,
+				protocol: 'http',
+				method: method,
+				url: baseUrl,
+				config: '{}',
+				metadata: '{}',
+				headers: JSON.stringify(parsedHeaders),
+				payload: body,
+				created_at: '',
+				updated_at: ''
+			};
 			newTab.isUnsaved = true;
 
 			// Update tab content with parsed data

@@ -1,4 +1,4 @@
-import type { Tab, TabContent } from '$lib/components/replay/types';
+import type { Tab } from '$lib/components/replay/types';
 
 const REPLAY_EDITOR_STORAGE_PREFIX = 'replay-editor-state';
 const WORKSPACE_PROJECT_REGISTRY_KEY = 'replay-editor-workspaces';
@@ -11,7 +11,7 @@ export interface ReplayEditorState {
 		url: string;
 		activeSection: string;
 	};
-	activeView: 'list' | 'editor' | 'execution' | 'logs';
+	activeView: 'list' | 'editor' | 'execution' | 'logs' | 'folder';
 	selectedReplayId?: string;
 	projectId: string;
 	workspaceId: string;
@@ -124,7 +124,7 @@ function cleanupWorkspaceProjects(workspaceId: string): void {
 /**
  * Create default tab content
  */
-export function createDefaultTabContent(): TabContent {
+export function createDefaultTabContent(): any {
 	return {
 		method: 'GET',
 		url: '',
@@ -169,15 +169,14 @@ export function createDefaultTabContent(): TabContent {
  * Create default tab with full content
  */
 export function createDefaultTab(id?: string): Tab {
-	const tabId = id || `tab-${Date.now()}`;
+	const randomSuffix = Math.random().toString(36).substring(2, 9);
+	const tabId = id || `tab-${Date.now()}-${randomSuffix}`;
 	
 	return {
 		id: tabId,
-		name: 'New Request',
-		method: 'GET',
-		url: '',
 		isUnsaved: true,
 		content: createDefaultTabContent()
+		// replay is undefined — this is an unsaved placeholder tab
 	};
 }
 
@@ -307,10 +306,6 @@ export function updateTabContentInStorage(workspaceId: string, projectId: string
 	
 	currentTab.content = updatedContent;
 	
-	// Update basic tab properties if they changed
-	if (content.method) currentTab.method = content.method;
-	if (content.url) currentTab.url = content.url;
-	
 	// Mark as unsaved if content changed
 	currentTab.isUnsaved = true;
 	
@@ -320,7 +315,7 @@ export function updateTabContentInStorage(workspaceId: string, projectId: string
 /**
  * Get tab content by ID
  */
-export function getTabContentFromStorage(workspaceId: string, projectId: string, tabId: string): TabContent | null {
+export function getTabContentFromStorage(workspaceId: string, projectId: string, tabId: string): any | null {
 	const currentState = getReplayEditorState(workspaceId, projectId);
 	if (!currentState) return null;
 	
@@ -354,8 +349,18 @@ export function updateActiveSection(workspaceId: string, projectId: string, tabI
  * Add new tab to stored state
  */
 export function addTabToStorage(workspaceId: string, projectId: string, tab: Tab): void {
-	const currentState = getReplayEditorState(workspaceId, projectId);
-	if (!currentState) return;
+	let currentState = getReplayEditorState(workspaceId, projectId);
+	
+	// If no state exists yet, initialize a new default state
+	if (!currentState) {
+		currentState = createDefaultReplayEditorState(workspaceId, projectId);
+		// Replace the default tab created by createDefaultReplayEditorState with our new tab
+		currentState.tabs = [tab];
+		currentState.activeTabId = tab.id;
+		currentState.activeView = 'editor';
+		setReplayEditorState(currentState);
+		return;
+	}
 	
 	// Ensure tab has content
 	if (!tab.content) {
@@ -364,6 +369,7 @@ export function addTabToStorage(workspaceId: string, projectId: string, tab: Tab
 	
 	currentState.tabs.push(tab);
 	currentState.activeTabId = tab.id;
+	currentState.activeView = 'editor'; // Force the UI to show the editor, not the list
 	
 	setReplayEditorState(currentState);
 }
@@ -397,6 +403,27 @@ export function removeTabFromStorage(workspaceId: string, projectId: string, tab
  * Validate and fix tab content structure
  */
 export function validateAndFixTabContent(tab: Tab): Tab {
+	// Migration: handle old localStorage format where name/method/url were flat fields
+	const anyTab = tab as any;
+	if (!tab.replay && (anyTab.name || anyTab.method || anyTab.url)) {
+		tab.replay = {
+			name: anyTab.name || 'Imported Request',
+			method: anyTab.method || 'GET',
+			url: anyTab.url || '',
+			doc: '',
+			project_id: '',
+			folder_id: anyTab.folder_id || null,
+			protocol: 'http',
+			id: anyTab.id || '',
+			config: '{}',
+			metadata: '{}',
+			headers: '{}',
+			payload: '',
+			created_at: '',
+			updated_at: ''
+		};
+	}
+
 	if (!tab.content) {
 		tab.content = createDefaultTabContent();
 	} else {

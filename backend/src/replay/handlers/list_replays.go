@@ -22,7 +22,7 @@ func (s *replayHandler) ListReplaysHandler(c *gin.Context) {
 		Str("project_id", projectID).
 		Msg("handling list replays request")
 
-	replays, err := s.service.ListReplays(c.Request.Context(), projectID)
+	result, err := s.service.ListReplays(c.Request.Context(), projectID)
 	if err != nil {
 		log.Error().
 			Err(err).
@@ -32,13 +32,10 @@ func (s *replayHandler) ListReplaysHandler(c *gin.Context) {
 		return
 	}
 
-	log.Info().
-		Str("project_id", projectID).
-		Int("count", len(replays)).
-		Msg("successfully listed replays")
-
 	c.JSON(http.StatusOK, gin.H{
-		"replays": replays,
-		"count":   len(replays),
+		"replays":      result.Replays,
+		"folders":      result.Folders,
+		"replay_count": len(result.Replays),
+		"folder_count": len(result.Folders),
 	})
 }

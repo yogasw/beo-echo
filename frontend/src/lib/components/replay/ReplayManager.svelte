@@ -1,10 +1,12 @@
 <script lang="ts">
 	import { onMount, onDestroy } from 'svelte';
+	import { createEventDispatcher } from 'svelte';
 	import { selectedWorkspace } from '$lib/stores/workspace';
 	import { selectedProject } from '$lib/stores/selectedConfig';
-	import { replays, selectedReplay, replayActions, replayLoading } from '$lib/stores/replay';
+	import { replays, replayFolders, selectedReplay, replayActions, replayLoading } from '$lib/stores/replay';
 	import { toast } from '$lib/stores/toast';
 	import { replayApi } from '$lib/api/replayApi';
+	import { executeRequest } from './utils/execute';
 	import { getReplayPanelWidth, setReplayPanelWidth } from '$lib/utils/localStorage';
 	import { 
 		getReplayEditorState, 
@@ -22,12 +24,15 @@
 	import ErrorDisplay from '$lib/components/common/ErrorDisplay.svelte';
 	import ReplayEditor from './ReplayEditor.svelte';
 	import type { Tab } from './types';
-	import type { ExecuteReplayResponse } from '$lib/types/Replay';
+	import type { ExecuteReplayResponse, ReplayMetadata, ReplayConfig, CreateReplayRequest } from '$lib/types/Replay';
+	const dispatch = createEventDispatcher();
 
 	let isLoading = true;
 	let error: string | null = null;
-	let activeView: 'list' | 'editor' | 'execution' | 'logs' = 'list';
-	let executionResult: ExecuteReplayResponse | null = null;
+	let activeView: 'list' | 'editor' | 'execution' | 'logs' | 'folder' = 'list';
+
+	// Per-tab execution result — derived from the active tab
+	$: executionResult = editorTabs.find(t => t.id === editorActiveTabId)?.executionResult ?? null;
 
 	// Panel width
 	let panelWidth: number; // Initialized in onMount
@@ -44,7 +49,14 @@
 	// State for ReplayEditor - will be loaded from localStorage
 	let editorTabs: Tab[] = [];
 	let editorActiveTabId = '';
-	let editorActiveTabContent = {
+	let editorActiveTabContent: {
+		method: string;
+		url: string;
+		activeSection: string;
+		itemType?: 'request' | 'folder';
+		folder?: any;
+		folder_id?: string;
+	} = {
 		method: 'GET',
 		url: '',
 		activeSection: 'params'
@@ -85,8 +97,8 @@
 				console.warn('⚠️ Active tab not found, using first tab');
 				editorActiveTabId = editorTabs[0].id;
 				editorActiveTabContent = {
-					method: editorTabs[0].method,
-					url: editorTabs[0].url,
+					method: editorTabs[0].replay?.method || editorTabs[0].content?.method || 'GET',
+					url: editorTabs[0].replay?.url || editorTabs[0].content?.url || '',
 					activeSection: 'params'
 				};
 			}
@@ -118,8 +130,8 @@
 			return;
 		}
 		
-		// Don't save if we don't have valid state
-		if (!editorTabs || editorTabs.length === 0 || !editorActiveTabId) {
+		// Don't save if we don't have valid state arrays
+		if (!editorTabs) {
 			console.log('⚠️ Invalid state, skipping save');
 			return;
 		}
@@ -183,7 +195,7 @@
 		console.log('🔄 Tabs changed from editor:', event.detail);
 		
 		// Update basic tab properties but preserve content structure
-		const newTabs = event.detail.tabs.map(newTab => {
+		const newTabs = event.detail.tabs.map((newTab: Tab) => {
 			// Find existing tab to preserve content
 			const existingTab = editorTabs.find(tab => tab.id === newTab.id);
 			
@@ -223,9 +235,11 @@
 		// Update the corresponding tab and its content
 		const activeTab = editorTabs.find(tab => tab.id === editorActiveTabId);
 		if (activeTab) {
-			// Update basic tab properties
-			if (event.detail.method) activeTab.method = event.detail.method;
-			if (event.detail.url) activeTab.url = event.detail.url;
+			// Update basic tab.replay properties if they exist
+			if (activeTab.replay) {
+				if (event.detail.method) activeTab.replay.method = event.detail.method;
+				if (event.detail.url) activeTab.replay.url = event.detail.url;
+			}
 			
 			// Update tab content
 			if (!activeTab.content) {
@@ -278,7 +292,8 @@
 			replayActions.setLoading('list', true);
 
 			const response = await replayApi.listReplays($selectedWorkspace.id, $selectedProject.id);
-			replays.set(response.replays);
+			replays.set(response.replays || []);
+			replayFolders.set(response.folders || []);
 		} catch (err: any) {
 			error = err.message || 'Failed to load replays';
 			toast.error(err);
@@ -288,16 +303,142 @@
 		}
 	}
 
-	function handleCreateNew() {
+	async function handleCreateNew(event?: CustomEvent) {
+		const detail = event?.detail;
+		if (detail?.type === 'folder') {
+			try {
+				if (!$selectedWorkspace || !$selectedProject) return;
+				replayActions.setLoading('create', true);
+				
+				const parentId = detail.parentReplay?.id || null;
+				await replayApi.createFolder($selectedWorkspace.id, $selectedProject.id, {
+					name: detail.name,
+					parent_id: parentId
+				});
+				loadReplays(); // Refresh the list
+			} catch (err: any) {
+				toast.error(err.message || 'Failed to create folder');
+			} finally {
+				replayActions.setLoading('create', false);
+			}
+			return;
+		}
+
 		selectedReplay.set(null);
 		activeView = 'editor';
 		
 		// Create a new tab with full content structure
 		const newTab = createDefaultTab();
+		if (detail?.parentReplay?.id) {
+			newTab.replay = { ...newTab.replay, folder_id: detail.parentReplay.id } as import('$lib/types/Replay').Replay;
+		}
+
+		// Parse imported metadata once — used by both tab UI state and API save payload
+		let importedMeta: ReplayMetadata = {};
+		try {
+			if (detail?.importedData?.metadata) {
+				importedMeta = JSON.parse(detail.importedData.metadata);
+			}
+		} catch(e) {}
+
+		if (detail?.importedData) {
+			const importedReplay = detail.importedData;
+			// Group replay data under tab.replay
+			newTab.replay = {
+				...importedReplay,
+				folder_id: detail?.parentReplay?.id || importedReplay.folder_id
+			};
+			if (newTab.content) {
+				newTab.content.method = importedReplay.method || 'GET';
+				newTab.content.url = importedReplay.url || '';
+				
+				if (importedReplay.headers) {
+					try {
+						const hdrs = JSON.parse(importedReplay.headers);
+						newTab.content.headers = Object.entries(hdrs).map(([k, v]) => ({ key: k, value: String(v), description: '', enabled: true }));
+					} catch(e) {}
+				}
+				
+				if (importedReplay.payload) {
+					// Set body content AND type so ReplayEditor can build metadata correctly.
+					// tab.content.body.type drives the metadata JSON that ReplayBody reads.
+					newTab.content.body = {
+						...newTab.content.body,
+						type: importedMeta.bodyType ?? 'none',
+						content: importedReplay.payload
+					};
+				}
+			}
+		}
 		
-		// Add to existing tabs or replace if only one empty tab exists
-		if (editorTabs.length === 1 && editorTabs[0].isUnsaved && !editorTabs[0].url) {
-			editorTabs = [newTab];
+		// Automatically save if imported into collection
+		if (detail?.parentReplay && detail?.importedData) {
+		const payload: CreateReplayRequest = {
+				name: detail.importedData.name || 'Imported Request',
+				method: detail.importedData.method || 'GET',
+				url: detail.importedData.url || '',
+				protocol: 'http',
+				headers: {},
+				// Carry over metadata from parser (includes bodyType, params, etc.)
+				metadata: importedMeta,
+				config: { auth: { type: 'none', config: {} }, settings: {} },
+				payload: newTab.content?.body?.content || ''
+			};
+
+			if (detail.parentReplay.id) {
+				payload.folder_id = detail.parentReplay.id;
+			}
+
+			if (newTab.content?.headers) {
+				newTab.content.headers.forEach((h: any) => {
+					if (h.enabled && h.key) payload.headers ??= {};
+					if (h.enabled && h.key) payload.headers![h.key] = h.value;
+				});
+			}
+
+			try {
+				if (!$selectedWorkspace?.id || !$selectedProject?.id) {
+					toast.error('Please select a workspace and project first');
+					return;
+				}
+
+				const res = await replayApi.createReplay(
+					$selectedWorkspace.id,
+					$selectedProject.id,
+					payload
+				);
+				
+				// Update tab state to be real, saved tab
+				newTab.id = res.replay.id;
+				newTab.isUnsaved = false;
+				newTab.replay = res.replay;
+				if (newTab.content) (newTab.content as any).id = res.replay.id;
+				
+				// Optional: dispatch 'created' so list updates
+				// Needs dispatch to refresh the tree list immediately upon saving
+				dispatch('created', res.replay);
+				await loadReplays();
+			} catch (err: any) {
+				toast.error('Failed to auto-save imported request');
+				console.error(err);
+			}
+		}
+
+		// Check if we should replace the current active tab
+		const activeTabIndex = editorTabs.findIndex(t => t.id === editorActiveTabId);
+		const activeTab = activeTabIndex !== -1 ? editorTabs[activeTabIndex] : null;
+
+		// Replace if:
+		// 1. It's the only tab and it's a completely empty unsaved tab, OR
+		// 2. It's a saved tab that hasn't been edited (!isUnsaved)
+		const shouldReplaceEmpty = editorTabs.length === 1 && editorTabs[0].isUnsaved && !editorTabs[0].replay?.url;
+		const shouldReplaceUnedited = activeTab && !activeTab.isUnsaved;
+
+		if (shouldReplaceEmpty || shouldReplaceUnedited) {
+			const indexToReplace = shouldReplaceEmpty ? 0 : activeTabIndex;
+			const newTabs = [...editorTabs];
+			newTabs[indexToReplace] = newTab;
+			editorTabs = newTabs;
 		} else {
 			editorTabs = [...editorTabs, newTab];
 		}
@@ -309,6 +450,9 @@
 			url: '',
 			activeSection: 'params'
 		};
+		if (newTab.replay?.folder_id) {
+			editorActiveTabContent.folder_id = newTab.replay.folder_id;
+		}
 		
 		// Save the new tab to localStorage
 		if ($selectedWorkspace?.id && $selectedProject?.id) {
@@ -325,49 +469,107 @@
 
 	function handleEditReplay(event: CustomEvent) {
 		const replay = event.detail;
+
 		selectedReplay.set(replay);
 		activeView = 'editor';
 		
 		// Check if this replay is already open in a tab
-		const existingTab = editorTabs.find(tab => 
-			tab.id === replay.id || 
-			(tab.method === replay.method && tab.url === replay.url && !tab.isUnsaved)
-		);
+		const existingTab = editorTabs.find(tab => tab.id === replay.id);
 		
 		if (existingTab) {
 			// Switch to existing tab
 			editorActiveTabId = existingTab.id;
 			editorActiveTabContent = {
-				method: existingTab.method,
-				url: existingTab.url,
-				activeSection: existingTab.content?.activeSection || 'params'
+				method: existingTab.replay?.method || existingTab.content?.method || 'GET',
+				url: existingTab.replay?.url || existingTab.content?.url || '',
+				activeSection: existingTab.content?.activeSection || 'params',
+				itemType: existingTab.itemType,
+				folder: existingTab.folder
 			};
 		} else {
 			// Create new tab for this replay with full content
 			const newTab: Tab = {
 				id: replay.id || `tab-${Date.now()}`,
-				name: replay.name || 'Edit Request',
-				method: replay.method || 'GET',
-				url: replay.url || '',
 				isUnsaved: false,
+				itemType: replay.itemType === 'folder' ? 'folder' : 'request',
+				folder: replay.itemType === 'folder' ? replay : undefined,
+				replay: replay.itemType !== 'folder' ? replay : undefined,
 				content: {
 					...createDefaultTabContent(),
 					method: replay.method || 'GET',
 					url: replay.url || '',
-					// TODO: Populate from replay data if available
-					// params: replay.params || [],
-					// headers: replay.headers || [],
-					// body: replay.body || { type: 'none', content: '' },
 				}
 			};
 			
-			editorTabs = [...editorTabs, newTab];
+			const activeTabIndex = editorTabs.findIndex(t => t.id === editorActiveTabId);
+			const activeTab = activeTabIndex !== -1 ? editorTabs[activeTabIndex] : null;
+
+			// Only replace if it's the sole tab AND it's a blank placeholder (no URL, never executed, unsaved)
+			const shouldReplaceEmpty = 
+				editorTabs.length === 1 && 
+				editorTabs[0].isUnsaved && 
+				!editorTabs[0].replay?.url &&
+				!editorTabs[0].executionResult;
+
+			if (shouldReplaceEmpty) {
+				const newTabs = [...editorTabs];
+				newTabs[0] = newTab;
+				editorTabs = newTabs;
+			} else {
+				editorTabs = [...editorTabs, newTab];
+			}
+			
 			editorActiveTabId = newTab.id;
 			editorActiveTabContent = {
-				method: newTab.method,
-				url: newTab.url,
-				activeSection: 'params'
+				method: newTab.replay?.method || newTab.content?.method || 'GET',
+				url: newTab.replay?.url || newTab.content?.url || '',
+				activeSection: 'params',
+				itemType: newTab.itemType,
+				folder: newTab.folder
 			};
+		}
+	}
+
+	async function handleDuplicateReplay(event: CustomEvent) {
+		const item = event.detail;
+		if (!item) return;
+
+		try {
+			if (!$selectedWorkspace || !$selectedProject) return;
+
+			replayActions.setLoading('create', true);
+            
+			// Create a copy of the replay
+			const newItem = {
+				name: item.name + ' (Copy)',
+				protocol: item.protocol || 'http',
+				method: item.method || 'GET',
+				url: item.url || '',
+				headers: item.headers ? JSON.parse(item.headers) : {},
+				payload: item.payload || '',
+				body: item.payload || '',
+				config: item.config ? JSON.parse(item.config) : { auth: { type: 'none', config: {} }, settings: {} },
+				folder_id: item.folder_id || null
+			};
+			
+			// Add metadata if valid params exist
+			if (item.metadata) {
+				try {
+					const parsedObj = JSON.parse(item.metadata);
+					if (parsedObj.params && Array.isArray(parsedObj.params)) {
+						const validParams = parsedObj.params.filter((p: any) => p.key && p.enabled);
+						if (validParams.length > 0) (newItem as any).metadata = { params: validParams };
+					}
+				} catch(e) {}
+			}
+
+			await replayApi.createReplay($selectedWorkspace.id, $selectedProject.id, newItem as any);
+			
+			loadReplays();
+		} catch (err: any) {
+			toast.error(err.message || 'Failed to duplicate replay');
+		} finally {
+			replayActions.setLoading('create', false);
 		}
 	}
 
@@ -459,7 +661,6 @@
 		}
 		
 		loadReplays(); // Refresh the list
-		toast.success('Replay created successfully');
 	}
 
 	function handleReplayUpdated() {
@@ -471,7 +672,6 @@
 		}
 		
 		loadReplays(); // Refresh the list
-		toast.success('Replay updated successfully');
 	}
 
 	async function executeReplay(replayData: any) {
@@ -482,33 +682,32 @@
 
 		try {
 			replayActions.setLoading('execute', true);
-			
-			// Prepare request payload from editor data
-			const payload = {
-				protocol: 'http', // Default to http
-				method: replayData.method || 'GET',
-				url: replayData.url || '',
-				headers: replayData.headers || {},
-				body: replayData.body || '',
-				query: replayData.query || {}
-			};
-
-			// Execute the replay request
-			const result = await replayApi.executeReplayRequest(
-				$selectedWorkspace.id, 
-				$selectedProject.id, 
-				payload
+			// Clear the active tab's previous result while loading
+			editorTabs = editorTabs.map(t =>
+				t.id === editorActiveTabId ? { ...t, executionResult: null } : t
 			);
 			
-			executionResult = result;
-			console.log('Execution result:', executionResult);
-			toast.success('Request executed successfully');
+			// Execute the replay request using the utility function
+			const result = await executeRequest(
+				$selectedWorkspace.id,
+				$selectedProject.id,
+				replayData
+			);
+			
+			// Save result into the active tab
+			editorTabs = editorTabs.map(t =>
+				t.id === editorActiveTabId ? { ...t, executionResult: result } : t
+			);
+			console.log('Execution result saved to tab:', editorActiveTabId);
 			
 			// You can optionally update UI to show the result or navigate to a result view
 			activeView = 'execution';
 		} catch (err: any) {
 			toast.error(err.message || 'Failed to execute request');
-			executionResult = null
+			// Clear result on error too
+			editorTabs = editorTabs.map(t =>
+				t.id === editorActiveTabId ? { ...t, executionResult: null } : t
+			);
 		} finally {
 			replayActions.setLoading('execute', false);
 		}
@@ -710,37 +909,8 @@
 						on:logs={handleViewLogs}
 						on:refresh={loadReplays}
 						on:toggleCollapse={togglePanelCollapse}
+						on:duplicate={handleDuplicateReplay}
 					/>
-					
-					<!-- Debug Panel -->
-					<div class="p-4 border-t border-gray-200 dark:border-gray-700 space-y-2">
-						<div class="text-xs text-gray-500 dark:text-gray-400 mb-2">
-							<div>Tabs: {editorTabs.length}</div>
-							<div>Active: {editorActiveTabId}</div>
-							<div>View: {activeView}</div>
-							<div>Auto-save: {shouldSaveState ? '✅' : '❌'}</div>
-						</div>
-						
-						<button
-							class="w-full bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded text-xs flex items-center justify-center"
-							title="Test localStorage functionality"
-							aria-label="Test localStorage"
-							on:click={testLocalStorage}
-						>
-							<i class="fas fa-flask mr-2"></i>
-							Test LocalStorage
-						</button>
-						
-						<button
-							class="w-full bg-gray-600 hover:bg-gray-700 text-white py-2 px-4 rounded text-xs flex items-center justify-center"
-							title="Clear all editor tabs and reset state"
-							aria-label="Clear editor state"
-							on:click={clearAllEditorState}
-						>
-							<i class="fas fa-trash-alt mr-2"></i>
-							Clear Editor State
-						</button>
-					</div>
 				{/if}
 			</div>
 			<!-- Resizable handle -->
@@ -748,7 +918,7 @@
 				class="absolute top-0 right-0 bottom-0 w-1.5 cursor-col-resize group z-10 hover:bg-blue-500/20 dark:hover:bg-blue-400/20 transition-colors duration-200"
 				role="button"
 				tabindex="0"
-				on:mousedown|preventDefault={startResize}
+				onmousedown={(e) => { e.preventDefault(); startResize(e); }}
 				aria-label="Resize panel"
 				title="Drag to resize panel"
 			>
@@ -760,7 +930,7 @@
 		<div
 			class="flex-1 flex flex-col h-full bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg overflow-hidden shadow-sm"
 		>
-			{#if activeView === 'editor' || activeView === 'execution' || activeView === 'logs'}
+			{#if (activeView === 'editor' || activeView === 'execution' || activeView === 'logs') && editorTabs.length > 0}
 				<ReplayEditor 
 					bind:tabs={editorTabs} 
 					bind:activeTabId={editorActiveTabId} 
@@ -773,14 +943,14 @@
 					on:updated={handleReplayUpdated}
 					on:send={handleSendRequest}
 				/>
-			{:else if activeView === 'list' && ($selectedWorkspace && $selectedProject)}
+			{:else if (activeView === 'list' || editorTabs.length === 0) && ($selectedWorkspace && $selectedProject)}
 				<div class="flex flex-col items-center justify-center h-full text-center p-8 text-gray-500 dark:text-gray-400">
 					<div class="bg-gray-100 dark:bg-gray-700 rounded-full p-6 mb-4">
 						<i class="fas fa-mouse-pointer text-4xl text-gray-400 dark:text-gray-500"></i>
 					</div>
 					<h3 class="text-lg font-medium mb-2 text-gray-700 dark:text-gray-300">Select a Replay</h3>
 					<p class="text-sm max-w-xs leading-relaxed">
-						Choose a replay from the list to view or edit, or click "New Replay" to create one.
+						Choose a replay from the list to view or edit, or click a folder to see its documentation.
 					</p>
 				</div>
 			{:else}

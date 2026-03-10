@@ -136,8 +136,9 @@ export function getStatusCodeInfo(statusCode: number): {
  * @param size - The size variant
  * @returns CSS classes for the specified size
  */
-export function getBadgeSizeClasses(size: 'xs' | 'sm' | 'md' | 'lg'): string {
+export function getBadgeSizeClasses(size: 'folder-size' | 'xs' | 'sm' | 'md' | 'lg'): string {
   const sizeMap = {
+    'folder-size': 'px-1 py-0.5 text-[0.6rem] flex items-center justify-center font-bold tracking-wider',
     xs: 'px-1.5 py-0.5 text-xs',
     sm: 'px-2 py-1 text-xs',
     md: 'px-2.5 py-1.5 text-sm',

@@ -335,6 +335,7 @@ const (
 type Replay struct {
 	ID        string  `gorm:"primaryKey;type:TEXT" json:"id"`   // Unique identifier (UUID)
 	Name      string  `json:"name"`                             // User-defined name for this replay
+	Doc       string  `gorm:"type:text" json:"doc"`             // User-defined documentation
 	ProjectID string  `gorm:"index;not null" json:"project_id"` // Project scoping
 	FolderID  *string `gorm:"index" json:"folder_id"`           // Optional folder location
 
@@ -364,6 +365,7 @@ func (uw *Replay) BeforeCreate(tx *gorm.DB) error {
 type ReplayFolder struct {
 	ID        string  `gorm:"primaryKey;type:TEXT" json:"id"`   // Unique identifier (UUID)
 	Name      string  `gorm:"not null" json:"name"`             // Folder name
+	Doc       string  `gorm:"type:text" json:"doc"`             // User-defined documentation
 	ParentID  *string `gorm:"type:TEXT;index" json:"parent_id"` // Optional parent folder (null = root)
 	ProjectID string  `gorm:"index;not null" json:"project_id"` // Project scoping
 

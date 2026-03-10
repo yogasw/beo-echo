@@ -16,7 +16,6 @@
   export let inputClass: string = '';
   export let containerClass: string = '';
   export let labelClass: string = '';
-  export let variant: 'default' | 'compact' = 'default';
 </script>
 
 <!-- Reusable Input with Icon -->
@@ -137,8 +136,8 @@
         {id}
         {name}
         {disabled}
-        bind:checked={value === 'true' || value === true}
-        on:change={(e) => value = e.target.checked}
+        checked={value == 'true'}
+        on:change={(e) => value = e.currentTarget.checked as any}
         class="sr-only peer"
       />
       <div class="w-11 h-6 bg-gray-700 peer-focus:outline-none peer-focus:ring-4 
