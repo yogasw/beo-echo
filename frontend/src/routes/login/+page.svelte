@@ -174,7 +174,7 @@
 	<meta name="description" content="Login to access your Beo Echo API mock dashboard" />
 </svelte:head>
 
-<div class="min-h-screen flex flex-col theme-bg-tertiary">
+<div class="flex-1 w-full flex flex-col theme-bg-tertiary">
 	<!-- Header - only show if landing page is enabled and config is loaded -->
 	{#if !configLoading && ($publicConfig?.landing_enabled || LANDING_MODE)}
 		<LandingPageHeader showUserMenu={false} on:back={() => goto('/')} />

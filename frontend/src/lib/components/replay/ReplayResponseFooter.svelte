@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { replayLoading } from '$lib/stores/replay';
 	import type { ExecuteReplayResponse } from '$lib/types/Replay';
-	import { createEventDispatcher } from 'svelte';
+	import { createEventDispatcher, onMount } from 'svelte';
 
 	const dispatch = createEventDispatcher();
 
@@ -16,6 +16,40 @@
 
 	// For response content tabs
 	let activeSection = $state('response'); // 'response', 'headers', 'cookies'
+
+	// Drag-to-resize state
+	const MIN_HEIGHT = 120;
+	const MAX_HEIGHT_RATIO = 0.85; // max 85% of viewport
+	let footerHeight = $state(Math.round(window.innerHeight * 0.4)); // default 50vh
+	let isDragging = $state(false);
+	let startY = 0;
+	let startHeight = 0;
+
+	function onDragStart(e: MouseEvent) {
+		e.preventDefault();
+		isDragging = true;
+		startY = e.clientY;
+		startHeight = footerHeight;
+		document.addEventListener('mousemove', onDragMove);
+		document.addEventListener('mouseup', onDragEnd);
+		document.body.style.cursor = 'ns-resize';
+		document.body.style.userSelect = 'none';
+	}
+
+	function onDragMove(e: MouseEvent) {
+		if (!isDragging) return;
+		const delta = startY - e.clientY; // drag up = bigger
+		const maxH = Math.round(window.innerHeight * MAX_HEIGHT_RATIO);
+		footerHeight = Math.min(maxH, Math.max(MIN_HEIGHT, startHeight + delta));
+	}
+
+	function onDragEnd() {
+		isDragging = false;
+		document.removeEventListener('mousemove', onDragMove);
+		document.removeEventListener('mouseup', onDragEnd);
+		document.body.style.cursor = '';
+		document.body.style.userSelect = '';
+	}
 
 	// Function to expand the footer (can be called from parent)
 	export function expand() {
@@ -83,6 +117,17 @@
 </script>
 
 <div class="bg-white dark:bg-gray-800 border-t border-gray-300 dark:border-gray-600 relative">
+	<!-- Drag handle for resizing -->
+	{#if isExpanded}
+		<!-- svelte-ignore a11y_no_static_element_interactions -->
+		<div
+			class="drag-handle"
+			class:dragging={isDragging}
+			onmousedown={onDragStart}
+		>
+			<div class="drag-grip"></div>
+		</div>
+	{/if}
 	<!-- Loading bar similar to Postman -->
 	{#if $replayLoading.execute}
 		<div class="absolute top-0 left-0 right-0 h-1 bg-gray-200 dark:bg-gray-700 overflow-hidden">
@@ -168,7 +213,7 @@
 	</div>
 	{#if isExpanded}
 		{#if executionResult}
-			<div class="flex flex-col h-64 overflow-auto">
+			<div class="flex flex-col overflow-auto" style="height: {footerHeight}px;">
 				<!-- Response tabs -->
 				<div class="border-b border-gray-200 dark:border-gray-700">
 					<div class="flex space-x-4 text-sm px-4" role="tablist" aria-label="Response tabs">
@@ -341,7 +386,8 @@
 			</div>
 		{:else}
 			<div
-				class="flex flex-col items-center justify-center h-64 text-center p-6 bg-gray-50 dark:bg-gray-900"
+				class="flex flex-col items-center justify-center text-center p-6 bg-gray-50 dark:bg-gray-900"
+				style="height: {footerHeight}px;"
 			>
 				<!-- Placeholder for response body or actual response display -->
 				<div
@@ -356,3 +402,37 @@
 		{/if}
 	{/if}
 </div>
+
+<style>
+	.drag-handle {
+		position: absolute;
+		top: -4px;
+		left: 0;
+		right: 0;
+		height: 8px;
+		cursor: ns-resize;
+		z-index: 10;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		transition: background-color 0.15s;
+	}
+
+	.drag-handle:hover,
+	.drag-handle.dragging {
+		background-color: rgba(59, 130, 246, 0.3);
+	}
+
+	.drag-grip {
+		width: 36px;
+		height: 4px;
+		border-radius: 2px;
+		background-color: rgba(156, 163, 175, 0.5);
+		transition: background-color 0.15s;
+	}
+
+	.drag-handle:hover .drag-grip,
+	.drag-handle.dragging .drag-grip {
+		background-color: rgba(59, 130, 246, 0.7);
+	}
+</style>

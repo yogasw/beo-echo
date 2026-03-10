@@ -7,6 +7,8 @@
 	import { currentUser } from '$lib/stores/auth';
 	import { selectedProject } from '$lib/stores/selectedConfig';
 	import Tooltip from './common/Tooltip.svelte';
+	import { onMount, onDestroy } from 'svelte';
+	import { logsConnectionStatus } from '$lib/stores/logs';
 
 	export let handleLogout: () => void;
 
@@ -44,8 +46,7 @@
 		}
 	}
 
-	import { onMount, onDestroy } from 'svelte';
-	import { logsConnectionStatus } from '$lib/stores/logs';
+
 
 	onMount(() => {
 		if (typeof window !== 'undefined') {

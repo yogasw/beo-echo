@@ -28,7 +28,6 @@
 	}
 
 	function openBulkEdit() {
-		// TODO: Implement bulk edit functionality
 		console.log('Open bulk edit for params');
 	}
 

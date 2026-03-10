@@ -30,13 +30,13 @@
 </script>
 
 {#if isLoading}
-	<div class="flex items-center justify-center min-h-screen">
+	<div class="flex items-center justify-center h-full w-full flex-1">
 		<div class="text-center">
 			<BeoEchoLoader message="Loading project...." size="lg" animated={true} />
 		</div>
 	</div>
 {:else if error}
-	<div class="flex items-center justify-center min-h-screen">
+	<div class="flex items-center justify-center h-full w-full flex-1">
 		<ErrorDisplay message={error} type="error" retryable={false} />
 	</div>
 {/if}

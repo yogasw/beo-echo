@@ -4,13 +4,11 @@ import (
 	"context"
 	"fmt"
 
-	"beo-echo/backend/src/database"
-
 	"github.com/rs/zerolog"
 )
 
 // ListReplays retrieves all replays for a project
-func (s *ReplayService) ListReplays(ctx context.Context, projectID string) ([]database.Replay, error) {
+func (s *ReplayService) ListReplays(ctx context.Context, projectID string) (*ListReplaysResponse, error) {
 	log := zerolog.Ctx(ctx)
 
 	log.Info().
@@ -36,10 +34,17 @@ func (s *ReplayService) ListReplays(ctx context.Context, projectID string) ([]da
 		return nil, fmt.Errorf("failed to list replays: %w", err)
 	}
 
-	log.Info().
-		Str("project_id", projectID).
-		Int("count", len(replays)).
-		Msg("successfully listed replays")
+	folders, err := s.repo.FindFoldersByProjectID(ctx, projectID)
+	if err != nil {
+		log.Error().
+			Err(err).
+			Str("project_id", projectID).
+			Msg("failed to list folders")
+		return nil, fmt.Errorf("failed to list folders: %w", err)
+	}
 
-	return replays, nil
+	return &ListReplaysResponse{
+		Replays: replays,
+		Folders: folders,
+	}, nil
 }

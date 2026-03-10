@@ -84,7 +84,7 @@
 	<!-- Dynamic content for non-landing mode -->
 	{#if isLoading}
 		<!-- Show beautiful Beo Echo loader while fetching configuration -->
-		<div class="min-h-screen flex items-center justify-center theme-bg-primary">
+		<div class="flex-1 w-full flex items-center justify-center theme-bg-primary">
 			<BeoEchoLoader 
 				message="Loading configuration..." 
 				size="lg"
@@ -93,7 +93,7 @@
 		</div>
 	{:else if error}
 		<!-- Show error with retry option -->
-		<div class="min-h-screen flex items-center justify-center theme-bg-primary">
+		<div class="flex-1 w-full flex items-center justify-center theme-bg-primary">
 			<ErrorDisplay message={error.message} type="error" retryable={true} onRetry={loadConfig} />
 		</div>
 	{:else if showLandingPage}

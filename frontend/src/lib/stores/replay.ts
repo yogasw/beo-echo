@@ -1,9 +1,15 @@
 
 import { writable, derived } from 'svelte/store';
-import type { Replay, ReplayLog, ReplayExecutionResult } from '$lib/types/Replay';
+import type { Replay, ReplayLog, ExecuteReplayResponse } from '$lib/types/Replay';
 
 // Main replay list store
 export const replays = writable<Replay[]>([]);
+
+// Replay folders
+export const replayFolders = writable<import('$lib/types/Replay').ReplayFolder[]>([]);
+
+// Combined type for UI
+export type ReplayItem = (import('$lib/types/Replay').Replay & { itemType: 'replay' }) | (import('$lib/types/Replay').ReplayFolder & { itemType: 'folder' });
 
 // Currently selected replay
 export const selectedReplay = writable<Replay | null>(null);
@@ -14,7 +20,7 @@ export const replayLogs = writable<ReplayLog[]>([]);
 // Replay execution state
 export const replayExecution = writable<{
 	isExecuting: boolean;
-	lastResult: ReplayExecutionResult | null;
+	lastResult: ExecuteReplayResponse | null;
 }>({
 	isExecuting: false,
 	lastResult: null
@@ -27,12 +33,14 @@ export const replayLoading = writable<{
 	execute: boolean;
 	delete: boolean;
 	logs: boolean;
+	save: boolean;
 }>({
 	list: false,
 	create: false,
 	execute: false,
 	delete: false,
-	logs: false
+	logs: false,
+	save: false
 });
 
 // Replay search and filter
@@ -46,15 +54,22 @@ export const replayFilter = writable<{
 
 // Filtered replays based on search and filter criteria
 export const filteredReplays = derived(
-	[replays, replayFilter],
-	([$replays, $filter]) => {
-		return $replays.filter(replay => {
-			// Search by alias or URL
+	[replays, replayFolders, replayFilter],
+	([$replays, $folders, $filter]) => {
+		const combined: ReplayItem[] = [
+			...$folders.map(f => ({ ...f, itemType: 'folder' as const })),
+			...$replays.map(r => ({ ...r, itemType: 'replay' as const }))
+		];
+
+		return combined.filter(item => {
+			// Search by name or URL
 			const matchesSearch = !$filter.searchTerm || 
-				replay.name?.toLowerCase().includes($filter.searchTerm?.toLowerCase()) ||
-				replay.url?.toLowerCase().includes($filter.searchTerm?.toLowerCase());
-			// Filter by protocol
-			const matchesProtocol = !$filter.protocol || replay.protocol === $filter.protocol;
+				item.name?.toLowerCase().includes($filter.searchTerm?.toLowerCase()) ||
+				(item.itemType === 'replay' && item.url?.toLowerCase().includes($filter.searchTerm?.toLowerCase()));
+			
+			// Filter by protocol (only applies to replays)
+			const matchesProtocol = !$filter.protocol || 
+				(item.itemType === 'replay' ? item.protocol === $filter.protocol : true);
 
 			return matchesSearch && matchesProtocol;
 		});
@@ -93,7 +108,7 @@ export const replayStats = derived(
 // Helper functions
 export const replayActions = {
 	// Set loading state for specific action
-	setLoading: (action: 'list' | 'create' | 'execute' | 'delete' | 'logs', isLoading: boolean) => {
+	setLoading: (action: 'list' | 'create' | 'execute' | 'delete' | 'logs' | 'save', isLoading: boolean) => {
 		replayLoading.update(state => ({
 			...state,
 			[action]: isLoading
@@ -124,6 +139,26 @@ export const replayActions = {
 		);
 	},
 
+	// Update an existing replay folder
+	updateFolder: (updatedFolder: import('$lib/types/Replay').ReplayFolder) => {
+		replayFolders.update(list => 
+			list.map(folder => 
+				folder.id === updatedFolder.id ? updatedFolder : folder
+			)
+		);
+	},
+
+	// Optimistically move an item (replay or folder) to a new parent folder
+	// Can be used before the API call finishes to make the UI feel responsive
+	moveItem: (itemId: string, itemType: 'replay' | 'folder', newParentId: string | null) => {
+		const targetParentId = newParentId === null ? undefined : newParentId;
+		if (itemType === 'replay') {
+			replays.update(list => list.map(r => r.id === itemId ? { ...r, folder_id: targetParentId } : r));
+		} else if (itemType === 'folder') {
+			replayFolders.update(list => list.map(f => f.id === itemId ? { ...f, parent_id: targetParentId } : f));
+		}
+	},
+
 	// Set execution state
 	setExecuting: (isExecuting: boolean) => {
 		replayExecution.update(state => ({
@@ -133,7 +168,7 @@ export const replayActions = {
 	},
 
 	// Set last execution result
-	setLastResult: (result: ReplayExecutionResult | null) => {
+	setLastResult: (result: ExecuteReplayResponse | null) => {
 		replayExecution.update(state => ({
 			...state,
 			lastResult: result
@@ -148,6 +183,7 @@ export const replayActions = {
 	// Clear all state (useful for project switching)
 	clearAll: () => {
 		replays.set([]);
+		replayFolders.set([]);
 		selectedReplay.set(null);
 		replayLogs.set([]);
 		replayExecution.set({ isExecuting: false, lastResult: null });
