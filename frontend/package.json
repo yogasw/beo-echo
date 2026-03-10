@@ -24,7 +24,7 @@
     "@sveltejs/vite-plugin-svelte": "^5.0.0",
     "@vitest/ui": "^4.0.18",
     "autoprefixer": "^10.4.21",
-    "monaco-editor": "^0.52.2",
+    "monaco-editor": "^0.55.1",
     "postcss": "^8.5.3",
     "prettier": "^3.4.2",
     "prettier-plugin-svelte": "^3.3.3",
