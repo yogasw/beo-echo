@@ -174,12 +174,25 @@ export async function executeRequest(
 	return result;
 }
 
-export function replaceUrlHostToLocalhost(originalUrl: string): string {
+export function replaceUrlHostToLocalhost(originalUrl: string, port?: string | number): string {
 	try {
 		if (!originalUrl) return originalUrl;
 		const urlWithProtocol = originalUrl.startsWith('http') ? originalUrl : `http://${originalUrl}`;
 		const urlObj = new URL(urlWithProtocol);
+		
+		// Force http for localhost development
+		urlObj.protocol = 'http:';
 		urlObj.hostname = 'localhost';
+		
+		if (port !== undefined && port !== null && port !== '') {
+			urlObj.port = port.toString();
+		} else {
+			// Clear port if it was standard HTTP/HTTPS port from original URL
+			if (urlObj.port === '80' || urlObj.port === '443') {
+				urlObj.port = '';
+			}
+		}
+		
 		return urlObj.toString();
 	} catch (e) {
 		console.warn('Could not parse URL to replace host with localhost:', e);

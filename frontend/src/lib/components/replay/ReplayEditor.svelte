@@ -21,6 +21,7 @@
 	// import ScriptTab from './tabs/ScriptTab.svelte';
 	import SettingsTab from './tabs/SettingsTab.svelte';
 	import ReplayBody from './tabs/ReplayBody.svelte';
+	import ReplaySendOptions from './ReplaySendOptions.svelte';
 	import type { ExecuteReplayResponse } from '$lib/types/Replay';
 	import type { Tab } from './types';
 
@@ -121,12 +122,6 @@
 		showSendOptions = !showSendOptions;
 	}
 
-	function handleWindowClick(e: MouseEvent) {
-		if (showSendOptions && sendButtonRef && !sendButtonRef.contains(e.target as Node)) {
-			showSendOptions = false;
-		}
-	}
-
 	function executeWithOption(option: 'server' | 'browser') {
 		showSendOptions = false;
 
@@ -141,10 +136,10 @@
 		onExcuteRequest(option);
 	}
 
-	function handleReplaceLocalhost() {
+	function handleReplaceLocalhost(port?: string | number) {
 		showSendOptions = false;
 		if (activeTab?.content?.url) {
-			const newUrl = replaceUrlHostToLocalhost(activeTab.content.url);
+			const newUrl = replaceUrlHostToLocalhost(activeTab.content.url, port);
 			if (newUrl !== activeTab.content.url) {
 				activeTab.content.url = newUrl;
 				activeTab.content.params = parseUrlParams(newUrl, activeTab.content.params);
@@ -487,8 +482,8 @@
 	}
 
 </script>
+<svelte:window on:keydown={handleGlobalKeydown} />
 
-<svelte:window on:keydown={handleGlobalKeydown} on:click={handleWindowClick} />
 
 <!-- Postman-like Request Interface -->
 <div class="flex flex-col h-full">
@@ -617,39 +612,20 @@
 					{:else}
 						<span>Send</span>
 						{#if activeTab?.content?.executionSource === 'browser'}
-							<i class="fas fa-globe text-sm"></i>
+							<i class="fas fa-desktop text-sm"></i>
 						{:else}
 							<i class="fas fa-paper-plane text-sm"></i>
 						{/if}
 					{/if}
 				</button>
 				
-				{#if showSendOptions}
-					<div class="absolute top-full right-0 mt-2 w-72 bg-white dark:bg-gray-800 rounded-md shadow-lg border theme-border z-50 flex flex-col py-1 overflow-hidden">
-						<button 
-							class="text-left px-4 py-3 text-sm text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/30 transition-colors flex items-center gap-3"
-							on:click={() => executeWithOption('server')}
-						>
-							<i class="fas fa-server w-5 text-center text-lg"></i>
-							<span class="font-medium">Execute from Beo Echo server</span>
-						</button>
-						<button 
-							class="text-left px-4 py-3 text-sm text-green-600 dark:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/30 transition-colors flex items-center gap-3"
-							on:click={() => executeWithOption('browser')}
-						>
-							<i class="fas fa-globe w-5 text-center text-lg"></i>
-							<span class="font-medium">Execute from your local browser</span>
-						</button>
-						<div class="h-px bg-gray-200 dark:bg-gray-700 my-1 mx-2"></div>
-						<button 
-							class="text-left px-4 py-2 text-sm text-orange-600 dark:text-orange-400 hover:bg-orange-50 dark:hover:bg-orange-900/30 transition-colors flex items-center gap-3"
-							on:click={handleReplaceLocalhost}
-						>
-							<i class="fas fa-laptop-code w-5 text-center"></i>
-							<span>Replace host to localhost</span>
-						</button>
-					</div>
-				{/if}
+				<ReplaySendOptions
+					show={showSendOptions}
+					activeSource={activeTab?.content?.executionSource || 'server'}
+					on:selectSource={(e: CustomEvent) => executeWithOption(e.detail.source)}
+					on:replaceHost={(e: CustomEvent) => handleReplaceLocalhost(e.detail.port)}
+					on:close={() => showSendOptions = false}
+				/>
 			</div>
 		</div>
 
