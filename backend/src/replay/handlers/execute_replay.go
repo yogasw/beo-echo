@@ -1,8 +1,8 @@
 package handlers
 
 import (
-	"net/http"
 	"beo-echo/backend/src/replay/models"
+	"net/http"
 
 	"github.com/gin-gonic/gin"
 	"github.com/rs/zerolog"
@@ -29,13 +29,6 @@ func (s *replayHandler) ExecuteReplayHandler(c *gin.Context) {
 		return
 	}
 
-	log.Info().
-		Str("project_id", projectID).
-		Str("protocol", req.Protocol).
-		Str("method", req.Method).
-		Str("url", req.URL).
-		Msg("handling execute replay request")
-
 	result, err := s.service.ExecuteReplay(c.Request.Context(), projectID, req)
 	if err != nil {
 		log.Error().
@@ -47,13 +40,6 @@ func (s *replayHandler) ExecuteReplayHandler(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
-
-	log.Info().
-		Str("project_id", projectID).
-		Str("protocol", req.Protocol).
-		Int("status_code", result.StatusCode).
-		Int("latency_ms", result.LatencyMS).
-		Msg("successfully executed replay")
 
 	c.JSON(http.StatusOK, gin.H{
 		"result":  result,

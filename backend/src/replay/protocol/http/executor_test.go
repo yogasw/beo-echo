@@ -57,7 +57,7 @@ func TestHttpExecutor(t *testing.T) {
 			Headers: map[string]string{
 				"Content-Type": "application/json",
 			},
-			Body: `{"test": "data", "number": 123}`,
+			Payload: `{"test": "data", "number": 123}`,
 		}
 
 		// Execute the replay
@@ -201,7 +201,7 @@ func TestHttpExecutor(t *testing.T) {
 				"Content-Type": "application/json",
 				"Accept":       "application/json",
 			},
-			Body: `{
+			Payload: `{
 				"user": {
 					"name": "Test User",
 					"email": "test@example.com",
@@ -245,7 +245,7 @@ func TestHttpExecutor(t *testing.T) {
 			Headers: map[string]string{
 				"Content-Type": "application/x-www-form-urlencoded",
 			},
-			Body: "username=testuser&password=secret&remember=true&options=option1&options=option2",
+			Payload: "username=testuser&password=secret&remember=true&options=option1&options=option2",
 		}
 
 		// Execute the replay
@@ -317,7 +317,7 @@ func TestHttpExecutor(t *testing.T) {
 			Headers: map[string]string{
 				"Content-Type": "application/json", // Using JSON to simulate the form data for httpbin
 			},
-			Body: `{
+			Payload: `{
 				"file_simulation": "This is file content that would be uploaded",
 				"filename": "test.txt",
 				"form_field1": "value1",
@@ -424,5 +424,41 @@ func TestHttpExecutor(t *testing.T) {
 		assert.Contains(t, response.ResponseBody, "authenticated", "Response should indicate authenticated status")
 		assert.Contains(t, response.ResponseBody, "true", "Response should show authenticated as true")
 		assert.Contains(t, response.ResponseBody, "user", "Response should contain username")
+	})
+
+	t.Run("ExecuteReplay_Metadata_ContentType", func(t *testing.T) {
+		// Test that Metadata["bodyType"] correctly sets Content-Type header
+		req := models.ExecuteReplayRequest{
+			Protocol: "http",
+			Method:   "POST",
+			URL:      "https://httpbin.org/post",
+			Payload:  `{"test": "json"}`,
+			Metadata: map[string]string{
+				"bodyType": "raw",
+			},
+		}
+
+		// Execute the replay
+		response, err := executor.Execute(ctx, testProjectID, req)
+
+		// Assertions
+		assert.NoError(t, err)
+		assert.NotNil(t, response)
+		// httpbin echoes headers back in "headers" field of response body
+		assert.Contains(t, response.ResponseBody, "application/json", "Content-Type should be auto-set to application/json for raw + JSON payload")
+
+		// Test x-www-form-urlencoded
+		req2 := models.ExecuteReplayRequest{
+			Protocol: "http",
+			Method:   "POST",
+			URL:      "https://httpbin.org/post",
+			Payload:  "key=value",
+			Metadata: map[string]string{
+				"bodyType": "x-www-form-urlencoded",
+			},
+		}
+		response2, err := executor.Execute(ctx, testProjectID, req2)
+		assert.NoError(t, err)
+		assert.Contains(t, response2.ResponseBody, "application/x-www-form-urlencoded", "Content-Type should be auto-set for x-www-form-urlencoded metadata")
 	})
 }
