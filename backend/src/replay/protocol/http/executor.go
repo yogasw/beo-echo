@@ -66,8 +66,8 @@ func (e *HttpExecutor) Execute(ctx context.Context, projectID string, req models
 
 	// Create HTTP request
 	var reqBody io.Reader
-	if req.Body != "" {
-		reqBody = strings.NewReader(req.Body)
+	if req.Payload != "" {
+		reqBody = strings.NewReader(req.Payload)
 	}
 
 	httpReq, err := http.NewRequestWithContext(ctx, strings.ToUpper(req.Method), targetURL, reqBody)
@@ -82,6 +82,28 @@ func (e *HttpExecutor) Execute(ctx context.Context, projectID string, req models
 	// Set headers
 	for key, value := range req.Headers {
 		httpReq.Header.Set(key, value)
+	}
+
+	// Set default Content-Type based on bodyType in metadata if missing
+	if bodyType, ok := req.Metadata["bodyType"]; ok {
+		contentType := httpReq.Header.Get("Content-Type")
+		if contentType == "" {
+			switch bodyType {
+			case "x-www-form-urlencoded":
+				httpReq.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+			case "form-data":
+				// For form-data, we usually need a boundary if we were generating it,
+				// but here we just set the type to help the server understand it.
+				httpReq.Header.Set("Content-Type", "multipart/form-data")
+			case "raw":
+				// If it looks like JSON and no content type is set, default to application/json
+				trimmed := strings.TrimSpace(req.Payload)
+				if trimmed != "" && (strings.HasPrefix(trimmed, "{") || strings.HasPrefix(trimmed, "[")) {
+					httpReq.Header.Set("Content-Type", "application/json")
+				}
+			}
+
+		}
 	}
 
 	// Execute request

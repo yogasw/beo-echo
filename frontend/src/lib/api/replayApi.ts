@@ -118,8 +118,9 @@ export class ReplayApi {
 			method: string;
 			url: string;
 			headers?: Record<string, string>;
-			body?: string;
+			payload?: string;
 			query?: Record<string, string>;
+			metadata?: Record<string, string>;
 		}
 	): Promise<ExecuteReplayResponse> {
 		const response = await apiClient.post(
