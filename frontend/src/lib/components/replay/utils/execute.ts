@@ -7,12 +7,16 @@ export function buildExecutePayload(content: any, source?: string) {
 		query: Record<string, string>;
 		payload: string;
 		source?: string;
+		metadata: Record<string, string>;
 	} = {
 		method: content?.method || 'GET',
 		url: content?.url || '',
 		headers: {},
 		query: {},
-		payload: content?.body?.content || ''
+		payload: content?.body?.content || '',
+		metadata: {
+			bodyType: content?.body?.type || 'none'
+		}
 	};
 
 	// Process headers
@@ -83,8 +87,9 @@ export async function executeRequest(
 		method: replayData.method || 'GET',
 		url: replayData.url || '',
 		headers: replayData.headers || {},
-		body: replayData.body || '',
-		query: replayData.query || {}
+		payload: replayData.payload || '',
+		query: replayData.query || {},
+		metadata: replayData.metadata || {}
 	};
 
 	let result: any; // ExecuteReplayResponse
@@ -103,6 +108,15 @@ export async function executeRequest(
 			requestUrl = urlObj.toString();
 		}
 
+		// Set default content type if missing based on metadata
+		if (!payload.headers['Content-Type'] && !payload.headers['content-type']) {
+			if (payload.metadata.bodyType === 'x-www-form-urlencoded') {
+				payload.headers['Content-Type'] = 'application/x-www-form-urlencoded';
+			} else if (payload.metadata.bodyType === 'raw') {
+				payload.headers['Content-Type'] = 'application/json';
+			}
+		}
+
 		try {
 			// dynamically import axios inside function to avoid heavy bundle if not needed immediately
 			const axios = (await import('axios')).default;
@@ -110,7 +124,7 @@ export async function executeRequest(
 				method: payload.method,
 				url: requestUrl,
 				headers: payload.headers,
-				data: payload.body,
+				data: payload.payload,
 				validateStatus: () => true // Resolve on any status code
 			});
 			

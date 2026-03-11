@@ -21,8 +21,7 @@
 	// import ScriptTab from './tabs/ScriptTab.svelte';
 	import SettingsTab from './tabs/SettingsTab.svelte';
 	import ReplayBody from './tabs/ReplayBody.svelte';
-	import { createTabActions } from './tabs/tabActions';
-	import type { ExecuteReplayResponse, Replay } from '$lib/types/Replay';
+	import type { ExecuteReplayResponse } from '$lib/types/Replay';
 	import type { Tab } from './types';
 
 	export let tabs: Tab[] = [];
