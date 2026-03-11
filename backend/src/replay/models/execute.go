@@ -6,7 +6,7 @@ type ExecuteReplayRequest struct {
 	Method   string            `json:"method" binding:"required"`   // HTTP method or operation type
 	URL      string            `json:"url" binding:"required"`      // Target URL
 	Headers  map[string]string `json:"headers"`                     // Request headers
-	Body     string            `json:"body"`                        // Request body/payload
+	Payload  string            `json:"payload"`                     // Request body/payload/content
 	Query    map[string]string `json:"query"`                       // Query parameters
 	Metadata map[string]string `json:"metadata"`                    // Additional protocol-specific metadata
 }
