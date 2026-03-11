@@ -2,8 +2,12 @@ package services
 
 import (
 	"beo-echo/backend/src/database"
+	"beo-echo/backend/src/database/repositories"
 	"context"
+	"errors"
 	"fmt"
+
+	"gorm.io/gorm"
 )
 
 // UpdateFolder updates an existing replay folder
@@ -13,61 +17,49 @@ func (s *ReplayService) UpdateFolder(ctx context.Context, projectID string, fold
 		return nil, fmt.Errorf("project not found")
 	}
 
-	// Verify the folder exists and belongs to the project
-	folders, err := s.repo.FindFoldersByProjectID(ctx, projectID)
+	// Fetch target folder directly by ID from DB
+	targetFolder, err := s.repo.FindFolderByID(ctx, projectID, folderID)
 	if err != nil {
-		return nil, fmt.Errorf("failed to fetch folders: %w", err)
-	}
-
-	var targetFolder *database.ReplayFolder
-	for i := range folders {
-		if folders[i].ID == folderID {
-			targetFolder = &folders[i]
-			break
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, fmt.Errorf("folder not found")
 		}
+		return nil, fmt.Errorf("failed to fetch folder: %w", err)
 	}
 
-	if targetFolder == nil {
-		return nil, fmt.Errorf("folder not found")
-	}
-
-	// Verify the new parent folder exists and is valid (not a child of itself)
+	// If a new ParentID is requested, validate it
 	if req.ParentID != nil {
-		// Parent can't be itself
 		if *req.ParentID == folderID {
 			return nil, fmt.Errorf("invalid parent folder")
 		}
 
-		// Verify parent exists
-		var parentExists bool
-		for _, f := range folders {
-			if f.ID == *req.ParentID {
-				parentExists = true
-				break
-			}
+		// Fetch all folders for circular-reference check (lightweight projection)
+		folders, err := s.repo.FindFoldersByProjectID(ctx, projectID)
+		if err != nil {
+			return nil, fmt.Errorf("failed to fetch folders: %w", err)
 		}
-		if !parentExists {
+
+		// Build lookup map
+		folderMap := make(map[string]repositories.ReplayFolderListRow, len(folders))
+		for _, f := range folders {
+			folderMap[f.ID] = f
+		}
+
+		// Verify parent exists
+		if _, exists := folderMap[*req.ParentID]; !exists {
 			return nil, fmt.Errorf("parent folder not found")
 		}
 
-		// Check for circular reference by ensuring the new parent isn't a child of this folder
-		// A simple way to check is to traverse up from the new parent
+		// Check for circular reference
 		currentWalkID := *req.ParentID
 		for currentWalkID != "" {
-			var currentParentID *string
-			for _, f := range folders {
-				if f.ID == currentWalkID {
-					currentParentID = f.ParentID
-					break
-				}
-			}
-			if currentParentID == nil || *currentParentID == "" {
+			f, ok := folderMap[currentWalkID]
+			if !ok || f.ParentID == nil || *f.ParentID == "" {
 				break
 			}
-			if *currentParentID == folderID {
+			if *f.ParentID == folderID {
 				return nil, fmt.Errorf("circular folder reference detected")
 			}
-			currentWalkID = *currentParentID
+			currentWalkID = *f.ParentID
 		}
 	}
 
@@ -75,7 +67,6 @@ func (s *ReplayService) UpdateFolder(ctx context.Context, projectID string, fold
 	if req.Name != nil {
 		targetFolder.Name = *req.Name
 	}
-	
 	if req.Doc != nil {
 		targetFolder.Doc = *req.Doc
 	}

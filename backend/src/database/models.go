@@ -349,6 +349,14 @@ type Replay struct {
 	Headers string `gorm:"type:text" json:"headers"` // Headers as JSON string (key-value pairs)
 	Payload string `gorm:"type:text" json:"payload"` // Request payload/body
 
+	// History & Response Details
+	ParentID       *string `gorm:"type:string;index" json:"parent_id"` // Optional parent replay ID (for saved responses/checkpoints)
+	IsResponse     bool    `gorm:"default:false" json:"is_response"` // Whether this Replay is a response
+	ResponseStatus int     `json:"response_status"`                  // HTTP status code, or equivalent (0 if NA)
+	ResponseMeta   string  `gorm:"type:text" json:"response_meta"`   // JSON string for protocol specific response meta (headers, trailers, etc)
+	ResponseBody   string  `gorm:"type:text" json:"response_body"`   // Raw string/JSON. NOTE: Loaded on-demand in UI
+	LatencyMS      int     `json:"latency_ms"`                       // Execution time
+
 	CreatedAt time.Time `gorm:"autoCreateTime" json:"created_at"` // Timestamp of creation
 	UpdatedAt time.Time `gorm:"autoUpdateTime" json:"updated_at"` // Timestamp of last update
 }

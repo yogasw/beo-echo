@@ -22,11 +22,6 @@ func (s *replayHandler) DeleteReplayHandler(c *gin.Context) {
 		return
 	}
 
-	log.Info().
-		Str("project_id", projectID).
-		Str("replay_id", replayID).
-		Msg("handling delete replay request")
-
 	// First verify the replay belongs to the project
 	replay, err := s.service.GetReplay(c.Request.Context(), replayID)
 	if err != nil {
@@ -59,11 +54,6 @@ func (s *replayHandler) DeleteReplayHandler(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
-
-	log.Info().
-		Str("project_id", projectID).
-		Str("replay_id", replayID).
-		Msg("successfully deleted replay")
 
 	c.JSON(http.StatusOK, gin.H{
 		"message": "Replay deleted successfully",

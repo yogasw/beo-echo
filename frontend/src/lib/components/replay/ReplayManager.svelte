@@ -467,16 +467,47 @@
 		}
 	}
 
-	function handleEditReplay(event: CustomEvent) {
-		const replay = event.detail;
+	async function handleEditReplay(event: CustomEvent) {
+		const listItem = event.detail; // ReplayListItem (minimal) or folder
 
-		selectedReplay.set(replay);
+		selectedReplay.set(listItem);
 		activeView = 'editor';
-		
+
+		// For replay items, fetch the full data first
+		let fullReplay = listItem;
+		if (listItem.itemType !== 'folder') {
+			try {
+				if ($selectedWorkspace && $selectedProject) {
+					const res = await replayApi.getReplay($selectedWorkspace.id, $selectedProject.id, listItem.id);
+					fullReplay = { ...res.replay, itemType: 'request' };
+					selectedReplay.set(fullReplay);
+				}
+			} catch (e: any) {
+				toast.error(e.message || 'Failed to load replay details');
+				return;
+			}
+		} else {
+			// Fetch full folder details (includes doc)
+			try {
+				if ($selectedWorkspace && $selectedProject) {
+					const res = await replayApi.getFolder($selectedWorkspace.id, $selectedProject.id, listItem.id);
+					fullReplay = { ...res.folder, itemType: 'folder' };
+					selectedReplay.set(fullReplay);
+				}
+			} catch (e: any) {
+				toast.error(e.message || 'Failed to load folder details');
+				return;
+			}
+		}
+
 		// Check if this replay is already open in a tab
-		const existingTab = editorTabs.find(tab => tab.id === replay.id);
+		const existingTab = editorTabs.find(tab => tab.id === fullReplay.id);
 		
 		if (existingTab) {
+			// Refresh tab with newly fetched full data
+			existingTab.replay = fullReplay.itemType !== 'folder' ? fullReplay : existingTab.replay;
+			editorTabs = [...editorTabs]; // trigger reactivity
+
 			// Switch to existing tab
 			editorActiveTabId = existingTab.id;
 			editorActiveTabContent = {
@@ -489,15 +520,15 @@
 		} else {
 			// Create new tab for this replay with full content
 			const newTab: Tab = {
-				id: replay.id || `tab-${Date.now()}`,
+				id: fullReplay.id || `tab-${Date.now()}`,
 				isUnsaved: false,
-				itemType: replay.itemType === 'folder' ? 'folder' : 'request',
-				folder: replay.itemType === 'folder' ? replay : undefined,
-				replay: replay.itemType !== 'folder' ? replay : undefined,
+				itemType: fullReplay.itemType === 'folder' ? 'folder' : 'request',
+				folder: fullReplay.itemType === 'folder' ? fullReplay : undefined,
+				replay: fullReplay.itemType !== 'folder' ? fullReplay : undefined,
 				content: {
 					...createDefaultTabContent(),
-					method: replay.method || 'GET',
-					url: replay.url || '',
+					method: fullReplay.method || 'GET',
+					url: fullReplay.url || '',
 				}
 			};
 			

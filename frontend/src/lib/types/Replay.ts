@@ -27,19 +27,41 @@ export interface ReplayPayload {
 	bodyType?: ReplayMetadata['bodyType'];
 }
 
+// Full Replay model — returned by GET /replays/:id
 export interface Replay {
 	id: string
 	name: string
-	doc: string       // User-defined documentation
+	doc: string
 	project_id: string
 	folder_id: any
+	parent_id?: string
 	protocol: string
 	method: string
 	url: string
-	config: string    // JSON string — parse with JSON.parse()
-	metadata: string  // JSON string — parse with JSON.parse() → ReplayMetadata
-	headers: string   // JSON string — parse with JSON.parse() → Record<string, string>
-	payload: string   // raw body content string
+	config: string    // JSON string
+	metadata: string  // JSON string → ReplayMetadata
+	headers: string   // JSON string → Record<string, string>
+	payload: string
+
+	// Response snapshot fields (only present when is_response = true)
+	is_response?: boolean
+	response_status?: number
+	response_meta?: string
+	response_body?: string
+	latency_ms?: number
+	created_at: string
+	updated_at: string
+}
+
+// Lightweight item — returned by GET /replays (list). Heavy fields excluded.
+export interface ReplayListItem {
+	id: string
+	name: string
+	project_id: string
+	folder_id: string | null | undefined
+	parent_id: string | null
+	is_response: boolean
+	method: string
 	created_at: string
 	updated_at: string
 }
@@ -108,10 +130,10 @@ export interface ReplayFolder {
 }
 
 export interface ListReplaysResponse {
-	replays: Replay[];
+	replays: ReplayListItem[];
 	folders: ReplayFolder[];
-	replayCount: number;
-	folderCount: number;
+	replay_count: number;
+	folder_count: number;
 }
 
 export interface ListReplayLogsResponse {

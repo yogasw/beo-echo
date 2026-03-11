@@ -98,6 +98,19 @@ func (s *ReplayService) UpdateReplay(ctx context.Context, replayID string, req U
 		replay.Config = string(configJSON)
 	}
 
+	if req.ResponseStatus != nil {
+		replay.ResponseStatus = *req.ResponseStatus
+	}
+	if req.ResponseMeta != nil {
+		replay.ResponseMeta = *req.ResponseMeta
+	}
+	if req.ResponseBody != nil {
+		replay.ResponseBody = *req.ResponseBody
+	}
+	if req.LatencyMS != nil {
+		replay.LatencyMS = *req.LatencyMS
+	}
+
 	// Update in database
 	err = s.repo.Update(ctx, replay)
 	if err != nil {
