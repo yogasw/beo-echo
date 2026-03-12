@@ -1,5 +1,6 @@
-
 # Beo Echo
+
+<a href="https://www.producthunt.com/products/beo-echo?embed=true&utm_source=badge-featured&utm_medium=badge&utm_campaign=badge-beo-echo" target="_blank" rel="noopener noreferrer"><img alt="Beo Echo - Mock, Proxy & Replay HTTP APIs in One Tool | Product Hunt" width="250" height="54" src="https://api.producthunt.com/widgets/embed-image/v1/featured.svg?post_id=1096329&theme=light&t=1773309645119" /></a>
 
 Beo Echo is a powerful API mocking service with a robust Golang backend and sleek Svelte frontend. It serves as a comprehensive control panel for creating, managing, and monitoring mock APIs and request forwarding, similar to popular tools like Beeceptor and Mockoon.
 
