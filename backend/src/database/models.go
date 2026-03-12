@@ -305,6 +305,28 @@ func (uw *UserWorkspace) BeforeCreate(tx *gorm.DB) error {
 	return nil
 }
 
+// UserPinnedProject records that a specific user has pinned a project.
+// Pin state is per-user: different users in the same workspace can have different pins.
+// WorkspaceID is stored for fast filtering and cascading deletes.
+type UserPinnedProject struct {
+	ID          string    `gorm:"type:string;primaryKey" json:"id"`
+	UserID      string    `gorm:"type:string;index;not null" json:"user_id"`                       // The user who pinned
+	ProjectID   string    `gorm:"type:string;index;not null" json:"project_id"`                    // The pinned project
+	WorkspaceID string    `gorm:"type:string;index;not null" json:"workspace_id"`                  // For fast per-workspace queries
+	CreatedAt   time.Time `gorm:"autoCreateTime" json:"created_at"`
+
+	// Cascade: when a Project or Workspace is deleted, remove pin records automatically
+	Project   Project   `gorm:"foreignKey:ProjectID;constraint:OnDelete:CASCADE"`
+	Workspace Workspace `gorm:"foreignKey:WorkspaceID;constraint:OnDelete:CASCADE"`
+}
+
+func (upp *UserPinnedProject) BeforeCreate(tx *gorm.DB) error {
+	if upp.ID == "" {
+		upp.ID = uuid.New().String()
+	}
+	return nil
+}
+
 // SSOConfig stores global SSO (OAuth) settings for each provider.
 // Used to configure OAuth for Google, GitHub, etc.
 // Only one record per provider is allowed.

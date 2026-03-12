@@ -4,6 +4,8 @@
 		getProjects,
 		addProject,
 		updateProjectStatus,
+		pinProject,
+		unpinProject,
 		type Project,
 		getProjectDetail
 	} from '$lib/api/BeoApi';
@@ -52,9 +54,14 @@
 		selectedProject: Project;
 	}>();
 
-	$: filteredConfigurations = $projects.filter((project) =>
-		project.name.toLowerCase().includes(searchTerm.toLowerCase())
-	);
+	// Sort: pinned projects always float to the top
+	$: filteredConfigurations = $projects
+		.filter((project) => project.name.toLowerCase().includes(searchTerm.toLowerCase()))
+		.sort((a, b) => {
+			if (a.is_pinned && !b.is_pinned) return -1;
+			if (!a.is_pinned && b.is_pinned) return 1;
+			return 0;
+		});
 
 
 	// For Add Project modal
@@ -392,6 +399,25 @@
 		}
 	}
 
+	async function handleTogglePin(event: MouseEvent, project: Project) {
+		event.stopPropagation();
+		try {
+			if (project.is_pinned) {
+				await unpinProject(project.id);
+				projects.update((list) =>
+					list.map((p) => (p.id === project.id ? { ...p, is_pinned: false } : p))
+				);
+			} else {
+				await pinProject(project.id);
+				projects.update((list) =>
+					list.map((p) => (p.id === project.id ? { ...p, is_pinned: true } : p))
+				);
+			}
+		} catch (err) {
+			toast.error('Failed to update pin');
+		}
+	}
+
 	async function handleUpdateStatus(project: Project, newStatus: string) {
 		if (updatingStatus === project.id) return; // Prevent double clicks
 		if (!$currentWorkspace) {
@@ -659,12 +685,24 @@
 						id="project-{project.id}"
 						role="button"
 						tabindex="0"
-						class={ThemeUtils.themeBgSecondary(`p-4 rounded cursor-pointer transition-colors 
+						class={ThemeUtils.themeBgSecondary(`group relative p-4 rounded cursor-pointer transition-colors overflow-visible
 					${$selectedProject?.id === project.id ? 'border-2 border-blue-500' : 'theme-border border'}
 					${$selectedProject?.id !== project.id ? ThemeUtils.themeHover('') : ''}`)}
 						onclick={() => handleConfigClick(project)}
 						onkeydown={(e) => e.key === 'Enter' && handleConfigClick(project)}
 					>
+						<!-- Pin button: top-right inside card, visible on hover or when already pinned -->
+				<button
+					onclick={(e) => handleTogglePin(e, project)}
+					class="absolute top-1 right-0.5 z-10 p-0.5 transition-all duration-150
+						{project.is_pinned
+							? 'opacity-100 text-yellow-400'
+							: 'opacity-0 group-hover:opacity-100 text-gray-400 hover:text-yellow-400'}"
+					title={project.is_pinned ? 'Unpin project' : 'Pin project'}
+					aria-label={project.is_pinned ? 'Unpin project' : 'Pin project'}
+				>
+					<i class="fas fa-thumbtack text-xs"></i>
+				</button>
 						<div class="flex justify-between items-start mb-2">
 							<h2 class="text-sm font-bold flex items-center theme-text-primary">
 								{#if $selectedProject?.id === project.id}
