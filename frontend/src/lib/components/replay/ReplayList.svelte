@@ -35,6 +35,8 @@
 	let draggedItem: any | null = $state(null);
 	let dragOverItemId: string | null = $state(null);
 	let dragOverPosition: 'top' | 'bottom' | 'inside' | 'root' | null = $state(null);
+	let dragOverDepth: number = $state(0);
+	let dragTargetFolderId: string | null = $state(null);
 	let dragCounter = $state(0);
 
 	let contextMenu = $state<{ isOpen: boolean; x: number; y: number; item: any | null }>({
@@ -329,7 +331,6 @@
 		
 		// Determine position for visual feedback
 		const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
-		const y = e.clientY - rect.top;
 		
 		dragOverItemId = targetItem.id;
 		
@@ -351,12 +352,35 @@
 			return;
 		}
 
-		if (targetItem.itemType === 'folder') {
-			// Droppable inside folder
-			dragOverPosition = 'inside';
-		} else {
-			dragOverPosition = 'inside';
+		// Calculate desired drop depth based on mouse X position (24px approx per depth level)
+		const offsetX = e.clientX - rect.left - 32; // Offset for icons/padding
+		const maxDepth = targetItem.itemType === 'folder' ? targetItem.depth + 1 : targetItem.depth;
+		dragOverDepth = Math.max(0, Math.min(maxDepth, Math.max(0, Math.floor(offsetX / 24))));
+
+		// Determine target folder based on computed depth
+		let folderLookup: Record<number, string | null> = { 0: null };
+		let currentFolderIdStr = targetItem.itemType === 'folder' ? targetItem.parent_id : targetItem.folder_id;
+		
+		let folderPath = [];
+		let currentF = $replayFolders.find(f => f.id === currentFolderIdStr);
+		while (currentF) {
+			folderPath.push(currentF.id);
+			currentF = $replayFolders.find(f => f.id === currentF?.parent_id);
 		}
+		folderPath.reverse();
+		
+		folderPath.forEach((fid, index) => {
+			folderLookup[index + 1] = fid;
+		});
+
+		// If targetItem is a folder and depth matches max (child), folder_id is targetItem.id
+		if (targetItem.itemType === 'folder' && dragOverDepth === maxDepth) {
+			folderLookup[maxDepth] = targetItem.id;
+		}
+
+		dragTargetFolderId = folderLookup[dragOverDepth] ?? null;
+
+		dragOverPosition = 'inside';
 
 		// Prevent folder dropping into itself
 		if (draggedItem.itemType === 'folder' && draggedItem.id === targetItem.id) {
@@ -388,6 +412,8 @@
 		draggedItem = null;
 		dragOverItemId = null;
 		dragOverPosition = null;
+		dragTargetFolderId = null;
+		dragOverDepth = 0;
 		dragCounter = 0;
 	}
 
@@ -427,8 +453,7 @@
 
 		if (targetItem.is_response) return;
 
-		// If dropped on a folder, target is the folder. If dropped on a replay, target is the replay's folder.
-		const targetId = targetItem.itemType === 'folder' ? targetItem.id : targetItem.folder_id || targetItem.parent_id;
+		const targetId = dragTargetFolderId;
 		
 		// Prevent dropping folder into itself
 		if (itemType === 'folder' && itemId === targetId) return;
@@ -681,7 +706,7 @@
 							ondragleave={(e) => handleDragLeave(e, item)}
 							ondragend={(e) => handleDragEnd(e)}
 							ondrop={(e) => handleDrop(e, item)}
-							class="group flex transition-all cursor-pointer {draggedItem?.id === item.id ? 'opacity-30' : ''} {dragOverItemId === item.id ? (draggedItem?.is_response || item.itemType === 'folder' ? 'bg-[#ff6600]/10 ring-1 ring-inset ring-[#ff6600] z-10 rounded-sm border-t-2 border-t-transparent' : 'border-t-2 border-t-[#ff6600]') : 'border-t-2 border-t-transparent'} {$selectedReplay?.id ===
+							class="group flex transition-all cursor-pointer {draggedItem?.id === item.id ? 'opacity-30' : ''} {dragOverItemId === item.id && (draggedItem?.is_response || (item.itemType === 'folder' && dragOverDepth === item.depth + 1)) ? 'bg-[#ff6600]/10 ring-1 ring-inset ring-[#ff6600] z-10 rounded-sm' : ''} {$selectedReplay?.id ===
 							item.id && dragOverItemId !== item.id
 								? 'bg-blue-500/10 border-l-[3px] border-l-[#ff6600]'
 								: 'border-l-[3px] border-l-transparent hover:bg-gray-500/10'} {contextMenu.isOpen && contextMenu.item?.id === item.id ? 'bg-gray-500/10 relative z-40' : 'relative'} px-2"
@@ -692,6 +717,10 @@
 							tabindex="0"
 							onkeydown={(e) => e.key === 'Enter' && handleSelectReplay(item)}
 						>
+							<!-- Drop Indicator Line for Reordering / Depth target -->
+							{#if dragOverItemId === item.id && !(draggedItem?.is_response || (item.itemType === 'folder' && dragOverDepth === item.depth + 1))}
+								<div class="absolute top-0 right-0 h-[2px] bg-[#ff6600] z-50 pointer-events-none" style="left: {dragOverDepth * 1.5 + 0.5}rem;"></div>
+							{/if}
 							{#if item.depth > 0}
 								<!-- Vertical guide line -->
 								{#each Array(item.depth) as _, i}
