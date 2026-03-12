@@ -327,6 +327,42 @@
 	<section
 		class="bg-gradient-to-b from-blue-50 to-white dark:from-gray-800 dark:to-gray-900 py-12 pt-24"
 	>
+		<!-- Product Hunt Banner -->
+		<div class="flex justify-center px-4 mb-6">
+			<a
+				href="https://www.producthunt.com/products/beo-echo?embed=true&utm_source=badge-featured&utm_medium=badge&utm_campaign=badge-beo-echo"
+				target="_blank"
+				rel="noopener noreferrer"
+				class="inline-flex items-center gap-3 px-5 py-2.5 rounded-full bg-white/80 dark:bg-gray-700/80 backdrop-blur-sm border border-gray-200 dark:border-gray-600 shadow-sm hover:shadow-md hover:border-[#ff6154]/40 dark:hover:border-[#ff6154]/40 transition-all duration-300 group"
+				title="Check out Beo Echo on Product Hunt"
+				aria-label="Beo Echo on Product Hunt"
+			>
+				<span class="relative flex h-2.5 w-2.5 flex-shrink-0">
+					<span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#ff6154] opacity-75"></span>
+					<span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-[#ff6154]"></span>
+				</span>
+				<span
+					class="text-sm font-medium text-gray-600 dark:text-gray-300 group-hover:text-gray-900 dark:group-hover:text-white transition-colors"
+				>
+					We're live on <span class="font-bold text-[#ff6154]">Product Hunt</span> — show us some love!
+				</span>
+				<img
+					alt="Beo Echo on Product Hunt"
+					width="175"
+					height="38"
+					src="https://api.producthunt.com/widgets/embed-image/v1/featured.svg?post_id=1096329&theme=light&t=1773309645119"
+					class="flex-shrink-0 dark:hidden"
+				/>
+				<img
+					alt="Beo Echo on Product Hunt"
+					width="175"
+					height="38"
+					src="https://api.producthunt.com/widgets/embed-image/v1/featured.svg?post_id=1096329&theme=dark&t=1773309645119"
+					class="flex-shrink-0 hidden dark:block"
+				/>
+			</a>
+		</div>
+
 		<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
 			<div class="text-center">
 				<h1 class="text-3xl md:text-5xl font-bold text-gray-900 dark:text-white mb-4">
@@ -346,7 +382,7 @@
 				<div class="flex flex-col sm:flex-row gap-3 justify-center items-center mb-8">
 					<button
 						on:click={() => {
-							scrollToComponentById("docker-command");
+							scrollToComponentById('docker-command');
 						}}
 						class="bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 dark:from-blue-600 dark:to-purple-700 dark:hover:from-blue-700 dark:hover:to-purple-800 text-white py-3 px-6 rounded-lg text-base font-medium transition-all duration-300 shadow-lg hover:shadow-xl transform hover:-translate-y-1 flex items-center"
 						title="Deploy instantly with Docker - One command to run!"
@@ -863,8 +899,6 @@
 			</div>
 		</div>
 	</section>
-
-
 </main>
 
 <!-- Workspace Selection Modal -->
