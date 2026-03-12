@@ -54,6 +54,7 @@ export type Project = {
 	url: string;
 	alias: string;
 	workspace_id: string;
+	is_pinned?: boolean; // Computed per-user: true if this project is pinned by the current user
 }
 
 export type RequestLog = {
@@ -290,6 +291,23 @@ export const deleteProject = async (projectId: string): Promise<any> => {
 	const response = await apiClient.delete(`/workspaces/${workspaceId}/projects/${projectId}`);
 	return response.data;
 };
+
+/**
+ * Pin a project for the current user (idempotent).
+ */
+export const pinProject = async (projectId: string): Promise<void> => {
+	const workspaceId = getCurrentWorkspaceId();
+	await apiClient.post(`/workspaces/${workspaceId}/projects/${projectId}/pin`);
+};
+
+/**
+ * Remove pin from a project for the current user.
+ */
+export const unpinProject = async (projectId: string): Promise<void> => {
+	const workspaceId = getCurrentWorkspaceId();
+	await apiClient.post(`/workspaces/${workspaceId}/projects/${projectId}/unpin`);
+};
+
 export const deleteEndpoint = async (projectId: string, endpointId: string): Promise<any> => {
 	let workspaceId = getCurrentWorkspaceId();
 	const response = await apiClient.delete(`/workspaces/${workspaceId}/projects/${projectId}/endpoints/${endpointId}`);
