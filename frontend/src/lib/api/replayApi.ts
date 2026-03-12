@@ -1,6 +1,7 @@
 import { apiClient } from './apiClient';
 import type { 
-	Replay, 
+	Replay,
+	ReplayListItem,
 	CreateReplayRequest,
 	UpdateReplayRequest, 
 	ListReplaysResponse, 
@@ -43,6 +44,20 @@ export class ReplayApi {
 		const response = await apiClient.post(
 			`/workspaces/${workspaceId}/projects/${projectId}/replays/folder`,
 			folderData
+		);
+		return response.data;
+	}
+
+	/**
+	 * Get a specific folder with full details (including doc)
+	 */
+	static async getFolder(
+		workspaceId: string,
+		projectId: string,
+		folderId: string
+	): Promise<{ folder: import('$lib/types/Replay').ReplayFolder }> {
+		const response = await apiClient.get(
+			`/workspaces/${workspaceId}/projects/${projectId}/replays/folder/${folderId}`
 		);
 		return response.data;
 	}

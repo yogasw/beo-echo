@@ -1,15 +1,15 @@
 
 import { writable, derived } from 'svelte/store';
-import type { Replay, ReplayLog, ExecuteReplayResponse } from '$lib/types/Replay';
+import type { Replay, ReplayListItem, ReplayLog, ExecuteReplayResponse } from '$lib/types/Replay';
 
-// Main replay list store
-export const replays = writable<Replay[]>([]);
+// Main replay list store — lightweight items from list API
+export const replays = writable<ReplayListItem[]>([]);
 
 // Replay folders
 export const replayFolders = writable<import('$lib/types/Replay').ReplayFolder[]>([]);
 
 // Combined type for UI
-export type ReplayItem = (import('$lib/types/Replay').Replay & { itemType: 'replay' }) | (import('$lib/types/Replay').ReplayFolder & { itemType: 'folder' });
+export type ReplayItem = (ReplayListItem & { itemType: 'replay' }) | (import('$lib/types/Replay').ReplayFolder & { itemType: 'folder' });
 
 // Currently selected replay
 export const selectedReplay = writable<Replay | null>(null);
@@ -62,16 +62,11 @@ export const filteredReplays = derived(
 		];
 
 		return combined.filter(item => {
-			// Search by name or URL
+			// Search by name only (url not available in list items)
 			const matchesSearch = !$filter.searchTerm || 
-				item.name?.toLowerCase().includes($filter.searchTerm?.toLowerCase()) ||
-				(item.itemType === 'replay' && item.url?.toLowerCase().includes($filter.searchTerm?.toLowerCase()));
-			
-			// Filter by protocol (only applies to replays)
-			const matchesProtocol = !$filter.protocol || 
-				(item.itemType === 'replay' ? item.protocol === $filter.protocol : true);
+				item.name?.toLowerCase().includes($filter.searchTerm?.toLowerCase());
 
-			return matchesSearch && matchesProtocol;
+			return matchesSearch;
 		});
 	}
 );
@@ -115,13 +110,13 @@ export const replayActions = {
 		}));
 	},
 
-	// Add a new replay to the list
-	addReplay: (replay: Replay) => {
+	// Add a new replay to the list (after create, list is refreshed — this is for optimistic updates)
+	addReplay: (replay: ReplayListItem) => {
 		replays.update(list => [...list, replay]);
 	},
 
-	// Update an existing replay
-	updateReplay: (updatedReplay: Replay) => {
+	// Update an existing replay in the list
+	updateReplay: (updatedReplay: ReplayListItem) => {
 		replays.update(list => 
 			list.map(replay => 
 				replay.id === updatedReplay.id ? updatedReplay : replay
@@ -157,6 +152,12 @@ export const replayActions = {
 		} else if (itemType === 'folder') {
 			replayFolders.update(list => list.map(f => f.id === itemId ? { ...f, parent_id: targetParentId } : f));
 		}
+	},
+
+	// Move a response to a new parent config
+	moveResponse: (itemId: string, newParentId: string | null) => {
+		const targetParentId = newParentId === null ? undefined : newParentId;
+		replays.update(list => list.map(r => r.id === itemId ? { ...r, parent_id: targetParentId } : r));
 	},
 
 	// Set execution state

@@ -35,6 +35,8 @@
 	let draggedItem: any | null = $state(null);
 	let dragOverItemId: string | null = $state(null);
 	let dragOverPosition: 'top' | 'bottom' | 'inside' | 'root' | null = $state(null);
+	let dragOverDepth: number = $state(0);
+	let dragTargetFolderId: string | null = $state(null);
 	let dragCounter = $state(0);
 
 	let contextMenu = $state<{ isOpen: boolean; x: number; y: number; item: any | null }>({
@@ -101,7 +103,8 @@
 		const items = sortedReplays;
 		const result: any[] = [];
 		const folders = items.filter(i => i.itemType === 'folder');
-		const replaysList = items.filter(i => i.itemType === 'replay');
+		const requestsList = items.filter(i => i.itemType === 'replay' && !i.is_response);
+		const responsesList = items.filter(i => i.itemType === 'replay' && i.is_response);
 
 		// Defend against circular references
 		const processedFolderIds = new Set<string>();
@@ -134,8 +137,8 @@
 			}
 
 			// Add replays
-			const childReplays = replaysList.filter(r => {
-				const rFid = r.folder_id ? String(r.folder_id).trim() : null;
+			const childReplays = requestsList.filter(r => {
+				const rFid = (r as any).folder_id ? String((r as any).folder_id).trim() : null;
 				// If parentId is null (we are currently at root), also include orphaned replays whose folder no longer exists
 				if (parentId === null) {
 					return rFid === null || !knownFolderIds.has(rFid);
@@ -144,7 +147,15 @@
 			});
 			for (const replay of childReplays) {
 				if (isVisible) {
-					result.push({ ...replay, depth, isVisible });
+					const childResponses = responsesList.filter(resp => resp.parent_id === replay.id);
+					result.push({ ...replay, depth, isVisible, hasChildren: childResponses.length > 0 });
+					
+					const isReplayExpanded = !collapsedFolders.has(replay.id);
+					for (const resp of childResponses) {
+						if (isReplayExpanded) {
+							result.push({ ...resp, depth: depth + 1, isVisible });
+						}
+					}
 				}
 			}
 		}
@@ -320,18 +331,56 @@
 		
 		// Determine position for visual feedback
 		const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
-		const y = e.clientY - rect.top;
 		
 		dragOverItemId = targetItem.id;
 		
-		if (targetItem.itemType === 'folder') {
-			// Droppable inside folder
-			dragOverPosition = 'inside';
-		} else {
-			// If dropping on a replay, determine if it's top or bottom (for reordering, which isn't fully implemented backend yet, so just fallback to same folder)
-			// For now, if we drop on a replay, we just move it to that replay's folder
-			dragOverPosition = 'inside';
+		if (draggedItem.is_response) {
+			// Responses can only be dropped ON a parent replay item.
+			if (targetItem.itemType === 'replay' && !targetItem.is_response) {
+				dragOverPosition = 'inside';
+				if (e.dataTransfer) e.dataTransfer.dropEffect = 'move';
+			} else {
+				dragOverItemId = null;
+				dragOverPosition = null;
+			}
+			return;
 		}
+
+		if (targetItem.is_response) {
+			dragOverItemId = null;
+			dragOverPosition = null;
+			return;
+		}
+
+		// Calculate desired drop depth based on mouse X position (24px approx per depth level)
+		const offsetX = e.clientX - rect.left - 32; // Offset for icons/padding
+		const maxDepth = targetItem.itemType === 'folder' ? targetItem.depth + 1 : targetItem.depth;
+		dragOverDepth = Math.max(0, Math.min(maxDepth, Math.max(0, Math.floor(offsetX / 24))));
+
+		// Determine target folder based on computed depth
+		let folderLookup: Record<number, string | null> = { 0: null };
+		let currentFolderIdStr = targetItem.itemType === 'folder' ? targetItem.parent_id : targetItem.folder_id;
+		
+		let folderPath = [];
+		let currentF = $replayFolders.find(f => f.id === currentFolderIdStr);
+		while (currentF) {
+			folderPath.push(currentF.id);
+			currentF = $replayFolders.find(f => f.id === currentF?.parent_id);
+		}
+		folderPath.reverse();
+		
+		folderPath.forEach((fid, index) => {
+			folderLookup[index + 1] = fid;
+		});
+
+		// If targetItem is a folder and depth matches max (child), folder_id is targetItem.id
+		if (targetItem.itemType === 'folder' && dragOverDepth === maxDepth) {
+			folderLookup[maxDepth] = targetItem.id;
+		}
+
+		dragTargetFolderId = folderLookup[dragOverDepth] ?? null;
+
+		dragOverPosition = 'inside';
 
 		// Prevent folder dropping into itself
 		if (draggedItem.itemType === 'folder' && draggedItem.id === targetItem.id) {
@@ -363,6 +412,8 @@
 		draggedItem = null;
 		dragOverItemId = null;
 		dragOverPosition = null;
+		dragTargetFolderId = null;
+		dragOverDepth = 0;
 		dragCounter = 0;
 	}
 
@@ -377,8 +428,32 @@
 		
 		const itemId = draggedItem.id;
 		const itemType = draggedItem.itemType;
-		// If dropped on a folder, target is the folder. If dropped on a replay, target is the replay's folder.
-		const targetId = targetItem.itemType === 'folder' ? targetItem.id : targetItem.folder_id || targetItem.parent_id;
+
+		if (draggedItem.is_response) {
+			if (targetItem.itemType !== 'replay' || targetItem.is_response) return;
+			const targetId = targetItem.id;
+			
+			if (!$selectedWorkspace || !$selectedProject) return;
+
+			// Optimistic UI update
+			replayActions.moveResponse(itemId, targetId);
+
+			try {
+				await replayApi.updateReplay($selectedWorkspace.id, $selectedProject.id, itemId, {
+					parent_id: targetId,
+					update_parent_id: true
+				});
+			} catch (error: any) {
+				toast.error(`Failed to move response: ${error.message || 'Unknown error'}`);
+				dispatch('refresh'); // Refresh on error to restore state
+			}
+			draggedItem = null;
+			return;
+		}
+
+		if (targetItem.is_response) return;
+
+		const targetId = dragTargetFolderId;
 		
 		// Prevent dropping folder into itself
 		if (itemType === 'folder' && itemId === targetId) return;
@@ -407,10 +482,9 @@
 		
 		draggedItem = null;
 	}
-
 	function handleRootDragOver(e: DragEvent) {
 		e.preventDefault();
-		if (draggedItem) {
+		if (draggedItem && !draggedItem.is_response) {
 			dragOverPosition = 'root';
 			if (e.dataTransfer) e.dataTransfer.dropEffect = 'move';
 		}
@@ -429,11 +503,15 @@
 		}
 	}
 
+
 	async function handleRootDrop(e: DragEvent) {
 		e.preventDefault();
 		dragOverPosition = null;
 		
-		if (!draggedItem) return;
+		if (!draggedItem || draggedItem.is_response) {
+			draggedItem = null;
+			return;
+		}
 		
 		const itemId = draggedItem.id;
 		const itemType = draggedItem.itemType;
@@ -575,19 +653,12 @@
 			</div>
 		</div>
 
-		<!-- Content Area -->
 		<div class="flex-1 overflow-auto"
 			 role="group"
 			 ondragover={handleRootDragOver}
 			 ondragleave={handleRootDragLeave}
 			 ondrop={handleRootDrop}
 		>
-			{#if dragOverPosition === 'root'}
-				<div class="bg-blue-500/10 border-2 border-dashed border-blue-500 rounded-lg m-2 p-4 flex items-center justify-center pointer-events-none">
-					<span class="text-blue-500 font-medium">Move to Top Level</span>
-				</div>
-			{/if}
-
 			{#if $filteredReplays.length === 0}
 				<div class="flex items-center justify-center h-full">
 					<div class="text-center theme-text-muted">
@@ -635,7 +706,7 @@
 							ondragleave={(e) => handleDragLeave(e, item)}
 							ondragend={(e) => handleDragEnd(e)}
 							ondrop={(e) => handleDrop(e, item)}
-							class="group flex transition-all cursor-pointer {draggedItem?.id === item.id ? 'opacity-30' : ''} {dragOverItemId === item.id ? (item.itemType === 'folder' ? 'bg-[#ff6600]/10 ring-1 ring-inset ring-[#ff6600] z-10' : 'border-t-2 border-t-[#ff6600]') : 'border-t-2 border-t-transparent'} {$selectedReplay?.id ===
+							class="group flex transition-all cursor-pointer {draggedItem?.id === item.id ? 'opacity-30' : ''} {dragOverItemId === item.id && (draggedItem?.is_response || (item.itemType === 'folder' && dragOverDepth === item.depth + 1)) ? 'bg-[#ff6600]/10 ring-1 ring-inset ring-[#ff6600] z-10 rounded-sm' : ''} {$selectedReplay?.id ===
 							item.id && dragOverItemId !== item.id
 								? 'bg-blue-500/10 border-l-[3px] border-l-[#ff6600]'
 								: 'border-l-[3px] border-l-transparent hover:bg-gray-500/10'} {contextMenu.isOpen && contextMenu.item?.id === item.id ? 'bg-gray-500/10 relative z-40' : 'relative'} px-2"
@@ -646,6 +717,10 @@
 							tabindex="0"
 							onkeydown={(e) => e.key === 'Enter' && handleSelectReplay(item)}
 						>
+							<!-- Drop Indicator Line for Reordering / Depth target -->
+							{#if dragOverItemId === item.id && !(draggedItem?.is_response || (item.itemType === 'folder' && dragOverDepth === item.depth + 1))}
+								<div class="absolute top-0 right-0 h-[2px] bg-[#ff6600] z-50 pointer-events-none" style="left: {dragOverDepth * 1.5 + 0.5}rem;"></div>
+							{/if}
 							{#if item.depth > 0}
 								<!-- Vertical guide line -->
 								{#each Array(item.depth) as _, i}
@@ -656,7 +731,7 @@
 							<div class="flex items-center w-full h-[32px] gap-2 {draggedItem ? 'pointer-events-none' : ''}">
 								<!-- Icon column -->
 								<div class="w-[45px] flex-shrink-0 flex items-center justify-end gap-2">
-									{#if item.itemType === 'folder'}
+									{#if item.itemType === 'folder' || item.hasChildren}
 										<button 
 											onclick={(e) => toggleFolderCollapse(e, item.id)}
 											class="w-4 h-4 flex items-center justify-center theme-text-muted hover:theme-text-primary transition-colors rounded hover:bg-gray-500/10"
@@ -664,7 +739,14 @@
 										>
 											<i class="fas fa-chevron-{collapsedFolders.has(item.id) ? 'right' : 'down'} text-[10px]"></i>
 										</button>
+									{:else}
+										<div class="w-4 h-4"></div>
+									{/if}
+
+									{#if item.itemType === 'folder'}
 										<i class="far fa-folder theme-text-muted text-sm"></i>
+									{:else if item.is_response}
+										<i class="fas fa-history theme-secondary-text text-sm bg-orange-500/10 text-orange-500 p-1 rounded"></i>
 									{:else}
 										<HttpMethodBadge method={item.method} size="folder-size" />
 									{/if}

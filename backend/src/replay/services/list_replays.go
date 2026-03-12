@@ -11,10 +11,6 @@ import (
 func (s *ReplayService) ListReplays(ctx context.Context, projectID string) (*ListReplaysResponse, error) {
 	log := zerolog.Ctx(ctx)
 
-	log.Info().
-		Str("project_id", projectID).
-		Msg("listing replays for project")
-
 	// Validate project exists
 	_, err := s.repo.FindProjectByID(ctx, projectID)
 	if err != nil {

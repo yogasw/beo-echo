@@ -69,6 +69,8 @@ func (s *ReplayService) CreateReplay(ctx context.Context, projectID string, req 
 		Name:      name,
 		ProjectID: projectID,
 		FolderID:  req.FolderID,
+		ParentID:  req.ParentID,
+		IsResponse: req.IsResponse,
 		Protocol:  database.ReplayProtocol(strings.ToLower(req.Protocol)),
 		Method:    strings.ToUpper(req.Method),
 		Url:       req.Url,
@@ -76,6 +78,19 @@ func (s *ReplayService) CreateReplay(ctx context.Context, projectID string, req 
 		Payload:   req.Payload,
 		Metadata:  string(metadataJSON),
 		Config:    string(configJSON),
+	}
+
+	if req.ResponseStatus != nil {
+		replay.ResponseStatus = *req.ResponseStatus
+	}
+	if req.ResponseMeta != nil {
+		replay.ResponseMeta = *req.ResponseMeta
+	}
+	if req.ResponseBody != nil {
+		replay.ResponseBody = *req.ResponseBody
+	}
+	if req.LatencyMS != nil {
+		replay.LatencyMS = *req.LatencyMS
 	}
 
 	err = s.repo.Create(ctx, replay)

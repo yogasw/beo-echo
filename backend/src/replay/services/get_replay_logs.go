@@ -13,16 +13,6 @@ import (
 func (s *ReplayService) GetReplayLogs(ctx context.Context, projectID string, replayID *string) ([]database.RequestLog, error) {
 	log := zerolog.Ctx(ctx)
 
-	log.Info().
-		Str("project_id", projectID).
-		Str("replay_id", func() string {
-			if replayID != nil {
-				return *replayID
-			}
-			return "all"
-		}()).
-		Msg("getting replay execution logs")
-
 	// Validate project exists
 	_, err := s.repo.FindProjectByID(ctx, projectID)
 	if err != nil {
@@ -41,11 +31,6 @@ func (s *ReplayService) GetReplayLogs(ctx context.Context, projectID string, rep
 			Msg("failed to get replay logs")
 		return nil, fmt.Errorf("failed to get replay logs: %w", err)
 	}
-
-	log.Info().
-		Str("project_id", projectID).
-		Int("count", len(logs)).
-		Msg("successfully retrieved replay logs")
 
 	return logs, nil
 }

@@ -25,16 +25,6 @@ func (s *replayHandler) GetReplayLogsHandler(c *gin.Context) {
 		replayID = &replayIDParam
 	}
 
-	log.Info().
-		Str("project_id", projectID).
-		Str("replay_id", func() string {
-			if replayID != nil {
-				return *replayID
-			}
-			return "all"
-		}()).
-		Msg("handling get replay logs request")
-
 	logs, err := s.service.GetReplayLogs(c.Request.Context(), projectID, replayID)
 	if err != nil {
 		log.Error().
@@ -44,11 +34,6 @@ func (s *replayHandler) GetReplayLogsHandler(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
-
-	log.Info().
-		Str("project_id", projectID).
-		Int("count", len(logs)).
-		Msg("successfully retrieved replay logs")
 
 	c.JSON(http.StatusOK, gin.H{
 		"logs":  logs,
