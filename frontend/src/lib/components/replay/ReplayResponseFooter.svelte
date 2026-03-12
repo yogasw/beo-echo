@@ -154,12 +154,22 @@
 	<div class="flex items-center justify-between p-3 border-b border-gray-200 dark:border-gray-700">
 		<div class="flex items-center space-x-3">
 			<span class="text-sm font-semibold text-gray-800 dark:text-white">Response</span>
+			
+			<button
+				onclick={() => dispatch('saveResponse')}
+				title="Save response as example/checkpoint"
+				aria-label="Save response"
+				class="ml-2 p-2 rounded bg-transparent hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-600 dark:text-orange-400 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+			>
+				<i class="fas fa-save text-base" aria-hidden="true"></i>
+			</button>
+
 			<!-- Move History button to the left, icon-only, next to Response label -->
 			<button
 				onclick={showHistory}
 				title="View request history"
 				aria-label="View request history"
-				class="ml-2 p-2 rounded bg-transparent hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+				class="p-2 rounded bg-transparent hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
 			>
 				<i class="fas fa-history text-base" aria-hidden="true"></i>
 			</button>

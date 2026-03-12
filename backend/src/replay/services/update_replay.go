@@ -40,6 +40,28 @@ func (s *ReplayService) UpdateReplay(ctx context.Context, replayID string, req U
 		replay.FolderID = req.FolderID
 	}
 
+	if req.UpdateParentID {
+		if req.ParentID != nil {
+			parentReplay, err := s.repo.FindByID(ctx, *req.ParentID)
+			if err != nil {
+				return nil, fmt.Errorf("invalid parent_id: %w", err)
+			}
+			if parentReplay.IsResponse {
+				return nil, fmt.Errorf("parent_id cannot be a response")
+			}
+		}
+		replay.ParentID = req.ParentID
+	} else if req.ParentID != nil {
+		parentReplay, err := s.repo.FindByID(ctx, *req.ParentID)
+		if err != nil {
+			return nil, fmt.Errorf("invalid parent_id: %w", err)
+		}
+		if parentReplay.IsResponse {
+			return nil, fmt.Errorf("parent_id cannot be a response")
+		}
+		replay.ParentID = req.ParentID
+	}
+
 	if req.Protocol != nil {
 		protocol := database.ReplayProtocol(strings.ToLower(*req.Protocol))
 		if protocol != database.ReplayProtocolHTTP {
@@ -96,6 +118,19 @@ func (s *ReplayService) UpdateReplay(ctx context.Context, replayID string, req U
 			return nil, fmt.Errorf("invalid config format: %w", err)
 		}
 		replay.Config = string(configJSON)
+	}
+
+	if req.ResponseStatus != nil {
+		replay.ResponseStatus = *req.ResponseStatus
+	}
+	if req.ResponseMeta != nil {
+		replay.ResponseMeta = *req.ResponseMeta
+	}
+	if req.ResponseBody != nil {
+		replay.ResponseBody = *req.ResponseBody
+	}
+	if req.LatencyMS != nil {
+		replay.LatencyMS = *req.LatencyMS
 	}
 
 	// Update in database

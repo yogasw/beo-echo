@@ -30,13 +30,6 @@ func (s *replayHandler) CreateReplayHandler(c *gin.Context) {
 		return
 	}
 
-	log.Info().
-		Str("project_id", projectID).
-		Str("name", req.Name).
-		Str("protocol", req.Protocol).
-		Str("method", req.Method).
-		Msg("handling create replay request")
-
 	replay, err := s.service.CreateReplay(c.Request.Context(), projectID, req)
 	if err != nil {
 		log.Error().
@@ -47,12 +40,6 @@ func (s *replayHandler) CreateReplayHandler(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
-
-	log.Info().
-		Str("replay_id", replay.ID).
-		Str("project_id", projectID).
-		Str("name", req.Name).
-		Msg("successfully created replay")
 
 	c.JSON(http.StatusCreated, gin.H{
 		"replay":  replay,

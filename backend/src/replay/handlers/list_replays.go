@@ -18,10 +18,6 @@ func (s *replayHandler) ListReplaysHandler(c *gin.Context) {
 		return
 	}
 
-	log.Info().
-		Str("project_id", projectID).
-		Msg("handling list replays request")
-
 	result, err := s.service.ListReplays(c.Request.Context(), projectID)
 	if err != nil {
 		log.Error().

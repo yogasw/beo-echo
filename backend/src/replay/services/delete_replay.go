@@ -11,10 +11,6 @@ import (
 func (s *ReplayService) DeleteReplay(ctx context.Context, replayID string) error {
 	log := zerolog.Ctx(ctx)
 
-	log.Info().
-		Str("replay_id", replayID).
-		Msg("deleting replay")
-
 	// Verify replay exists
 	_, err := s.repo.FindByID(ctx, replayID)
 	if err != nil {
@@ -33,10 +29,6 @@ func (s *ReplayService) DeleteReplay(ctx context.Context, replayID string) error
 			Msg("failed to delete replay")
 		return fmt.Errorf("failed to delete replay: %w", err)
 	}
-
-	log.Info().
-		Str("replay_id", replayID).
-		Msg("successfully deleted replay")
 
 	return nil
 }

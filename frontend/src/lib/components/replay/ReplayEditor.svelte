@@ -407,6 +407,90 @@
 		// Add logic to cancel the request if needed
 	}
 
+	async function handleSaveResponse() {
+		if (!executionResult || !activeTab || !$selectedWorkspace || !$selectedProject) return;
+
+		try {
+			// Use parent replay name automatically
+			const defaultName = activeTab.replay?.name ? `${activeTab.replay.name} (Response)` : "Saved Response";
+			const name = defaultName;
+
+			replayActions.setLoading('save', true);
+
+			const payload: any = {
+				name: name,
+				protocol: activeTab.replay?.protocol || 'http',
+				method: activeTab.content?.method || 'GET',
+				url: activeTab.content?.url || '',
+				headers: [],
+				payload: activeTab.content?.body?.content || '',
+				config: {
+					auth: activeTab.content?.auth || { type: 'none', config: {} },
+					settings: activeTab.content?.settings || {}
+				},
+				is_response: true,
+				parent_id: activeTab.id, // Current request is the parent
+				response_status: executionResult.status_code,
+				latency_ms: executionResult.latency_ms,
+				response_body: executionResult.response_body,
+				response_meta: JSON.stringify(executionResult.response_headers || {})
+			};
+
+			const validParams = (activeTab.content?.params || []).filter((p: any) => p.key);
+			let metaObj: any = {};
+			try {
+				if (activeTab.replay?.metadata) {
+					metaObj = typeof activeTab.replay.metadata === 'string' 
+						? JSON.parse(activeTab.replay.metadata) 
+						: { ...(activeTab.replay.metadata as any) };
+				}
+			} catch(e) {
+				console.warn('Failed to parse metadata when saving', e);
+			}
+
+			if (validParams.length > 0) {
+				metaObj.params = validParams;
+			}
+			metaObj.bodyType = activeTab.content?.body?.type || 'none';
+			payload.metadata = metaObj;
+
+			if (activeTab.content?.headers) {
+				payload.headers = activeTab.content.headers
+					.filter((h: any) => h.enabled && h.key)
+					.map((h: any) => ({
+						key: h.key,
+						value: h.value || '',
+						description: h.description || ''
+					}));
+			}
+
+			const res = await replayApi.createReplay(
+				$selectedWorkspace.id,
+				$selectedProject.id,
+				payload
+			);
+
+			const newItem = {
+				id: res.replay.id,
+				name: res.replay.name,
+				project_id: res.replay.project_id,
+				folder_id: res.replay.folder_id,
+				parent_id: res.replay.parent_id || null,
+				is_response: res.replay.is_response || false,
+				method: res.replay.method,
+				created_at: res.replay.created_at,
+				updated_at: res.replay.updated_at
+			};
+			replayActions.addReplay(newItem);
+			toast.success('Response saved as example!');
+
+		} catch (err: any) {
+			toast.error(err.message || 'Failed to save response');
+		} finally {
+			replayActions.setLoading('save', false);
+		}
+	}
+
 
 	let isEditingTitle = false;
 	let editTitleValue = '';
@@ -731,6 +815,7 @@
 			{executionResult}
 			on:toggleExpand={handleFooterToggleExpand}
 			on:showHistory={handleFooterShowHistory}
+			on:saveResponse={handleSaveResponse}
 		/>
 	{/if}
 </div>
