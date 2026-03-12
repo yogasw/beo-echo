@@ -103,6 +103,8 @@ type UpdateReplayRequest struct {
 	Doc            *string         `json:"doc"`
 	FolderID       *string         `json:"folder_id"`
 	UpdateFolderID bool            `json:"update_folder_id"`
+	ParentID       *string         `json:"parent_id"`
+	UpdateParentID bool            `json:"update_parent_id"`
 	Protocol       *string         `json:"protocol"`
 	Method         *string         `json:"method"`
 	Url            *string         `json:"url"`

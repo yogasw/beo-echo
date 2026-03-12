@@ -506,6 +506,25 @@
 		if (existingTab) {
 			// Refresh tab with newly fetched full data
 			existingTab.replay = fullReplay.itemType !== 'folder' ? fullReplay : existingTab.replay;
+			
+			if (fullReplay.itemType !== 'folder' && fullReplay.is_response) {
+				let headers = {};
+				try {
+					headers = fullReplay.response_meta ? JSON.parse(fullReplay.response_meta) : {};
+				} catch (e) {}
+				existingTab.executionResult = {
+					replay_id: fullReplay.id,
+					log_id: '',
+					status_code: fullReplay.response_status || 200,
+					status_text: '',
+					latency_ms: fullReplay.latency_ms || 0,
+					response_body: fullReplay.response_body || '',
+					response_headers: headers,
+					size: fullReplay.response_body?.length || 0,
+					error: null
+				};
+			}
+			
 			editorTabs = [...editorTabs]; // trigger reactivity
 
 			// Switch to existing tab
@@ -531,6 +550,24 @@
 					url: fullReplay.url || '',
 				}
 			};
+
+			if (fullReplay.itemType !== 'folder' && fullReplay.is_response) {
+				let headers = {};
+				try {
+					headers = fullReplay.response_meta ? JSON.parse(fullReplay.response_meta) : {};
+				} catch (e) {}
+				newTab.executionResult = {
+					replay_id: fullReplay.id,
+					log_id: '',
+					status_code: fullReplay.response_status || 200,
+					status_text: '',
+					latency_ms: fullReplay.latency_ms || 0,
+					response_body: fullReplay.response_body || '',
+					response_headers: headers,
+					size: fullReplay.response_body?.length || 0,
+					error: null
+				};
+			}
 			
 			const activeTabIndex = editorTabs.findIndex(t => t.id === editorActiveTabId);
 			const activeTab = activeTabIndex !== -1 ? editorTabs[activeTabIndex] : null;

@@ -154,6 +154,12 @@ export const replayActions = {
 		}
 	},
 
+	// Move a response to a new parent config
+	moveResponse: (itemId: string, newParentId: string | null) => {
+		const targetParentId = newParentId === null ? undefined : newParentId;
+		replays.update(list => list.map(r => r.id === itemId ? { ...r, parent_id: targetParentId } : r));
+	},
+
 	// Set execution state
 	setExecuting: (isExecuting: boolean) => {
 		replayExecution.update(state => ({

@@ -91,6 +91,8 @@ export interface UpdateReplayRequest {
 	body?: string;
 	folder_id?: string | null;
 	update_folder_id?: boolean;
+	parent_id?: string | null;
+	update_parent_id?: boolean;
 	metadata?: ReplayMetadata;
 	config?: ReplayConfig;
 }
