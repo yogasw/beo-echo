@@ -120,6 +120,7 @@ func CheckAndHandle() error {
 		&UserIdentity{},
 		&Workspace{},
 		&UserWorkspace{},
+		&UserPinnedProject{},
 		&SSOConfig{},
 		&ReplayFolder{},
 		&Action{},

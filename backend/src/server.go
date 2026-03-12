@@ -230,6 +230,10 @@ func SetupRouter() *gin.Engine {
 			projectRoutes := workspaceRoutes.Group("/projects/:projectId")
 			projectRoutes.Use(middlewares.WorkspaceProjectAccessMiddleware())
 			{
+				// Per-user pin / unpin a project (no project-level middleware needed)
+				projectRoutes.POST("/pin", project.PinProjectHandler)
+				projectRoutes.POST("/unpin", project.UnpinProjectHandler)
+
 				// Project CRUD
 				projectRoutes.GET("", project.GetProjectHandler)
 				projectRoutes.PUT("", project.UpdateProjectHandler)
