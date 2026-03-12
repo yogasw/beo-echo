@@ -16,13 +16,6 @@ import (
 func (s *ReplayService) ExecuteReplay(ctx context.Context, projectID string, req models.ExecuteReplayRequest) (*models.ExecuteReplayResponse, error) {
 	log := zerolog.Ctx(ctx)
 
-	log.Info().
-		Str("project_id", projectID).
-		Str("protocol", req.Protocol).
-		Str("method", req.Method).
-		Str("url", req.URL).
-		Msg("executing replay request")
-
 	// Validate project exists
 	_, err := s.repo.FindProjectByID(ctx, projectID)
 	if err != nil {
@@ -46,15 +39,6 @@ func (s *ReplayService) ExecuteReplay(ctx context.Context, projectID string, req
 	resp, err := executor.Execute(ctx, projectID, req)
 	if err != nil {
 		return nil, err
-	}
-
-	if resp.Error == "" {
-		log.Info().
-			Str("replay_id", resp.ReplayID).
-			Str("project_id", projectID).
-			Int("status_code", resp.StatusCode).
-			Int("latency_ms", resp.LatencyMS).
-			Msg("successfully executed replay request")
 	}
 
 	return resp, nil

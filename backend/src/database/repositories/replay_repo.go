@@ -19,36 +19,69 @@ func NewReplayRepository(db *gorm.DB) *replayRepository {
 	return &replayRepository{db: db}
 }
 
-// FindByProjectID finds all replays for a specific project
-func (r *replayRepository) FindByProjectID(ctx context.Context, projectID string) ([]database.Replay, error) {
-	var replays []database.Replay
-
-	err := r.db.WithContext(ctx).
-		Where("project_id = ?", projectID).
-		Order("created_at DESC").
-		Find(&replays).Error
-
-	if err != nil {
-		return nil, err
-	}
-
-	return replays, nil
+// ReplayListRow is a minimal projection used by FindByProjectID.
+// GORM maps field names to column names automatically — add fields here when you
+// need more data in the list view without touching the query string.
+type ReplayListRow struct {
+	ID         string  `json:"id"`
+	Name       string  `json:"name"`
+	ProjectID  string  `json:"project_id"`
+	FolderID   *string `json:"folder_id"`
+	ParentID   *string `json:"parent_id"`
+	IsResponse bool    `json:"is_response"`
+	Method     string  `json:"method"`
+	CreatedAt  string  `json:"created_at"`
+	UpdatedAt  string  `json:"updated_at"`
 }
 
-// FindFoldersByProjectID finds all replay folders for a specific project
-func (r *replayRepository) FindFoldersByProjectID(ctx context.Context, projectID string) ([]database.ReplayFolder, error) {
-	var folders []database.ReplayFolder
+// FindByProjectID finds all replays for a specific project.
+// Returns only the fields defined in ReplayListRow — no payload, headers, body, etc.
+// Full data is loaded on demand via FindByID.
+func (r *replayRepository) FindByProjectID(ctx context.Context, projectID string) ([]ReplayListRow, error) {
+	var rows []ReplayListRow
 
 	err := r.db.WithContext(ctx).
+		Model(&database.Replay{}).
 		Where("project_id = ?", projectID).
-		Order("name ASC").
-		Find(&folders).Error
+		Order("created_at DESC").
+		Scan(&rows).Error
 
 	if err != nil {
 		return nil, err
 	}
 
-	return folders, nil
+	return rows, nil
+}
+
+// ReplayFolderListRow is a minimal projection used by FindFoldersByProjectID.
+// Add fields here when you need more folder data in the list view — GORM auto-selects
+// matching columns without changing the query string.
+type ReplayFolderListRow struct {
+	ID        string  `json:"id"`
+	Name      string  `json:"name"`
+	ProjectID string  `json:"project_id"`
+	ParentID  *string `json:"parent_id"`
+	CreatedAt string  `json:"created_at"`
+	UpdatedAt string  `json:"updated_at"`
+}
+
+// FindFoldersByProjectID finds all replay folders for a specific project.
+// Returns only the fields defined in ReplayFolderListRow — doc and nested relations are excluded.
+// Full folder data (including doc) is loaded on demand via a dedicated get endpoint.
+func (r *replayRepository) FindFoldersByProjectID(ctx context.Context, projectID string) ([]ReplayFolderListRow, error) {
+	var rows []ReplayFolderListRow
+
+	err := r.db.WithContext(ctx).
+		Model(&database.ReplayFolder{}).
+		Where("project_id = ?", projectID).
+		Order("name ASC").
+		Scan(&rows).Error
+
+	if err != nil {
+		return nil, err
+	}
+
+	return rows, nil
 }
 
 // FindByID finds a replay by its ID
@@ -67,6 +100,22 @@ func (r *replayRepository) FindByID(ctx context.Context, id string) (*database.R
 	}
 
 	return &replay, nil
+}
+
+// FindFolderByID finds a single replay folder by ID scoped to a project.
+// Returns the full database.ReplayFolder model (for updates, not list views).
+func (r *replayRepository) FindFolderByID(ctx context.Context, projectID string, folderID string) (*database.ReplayFolder, error) {
+	var folder database.ReplayFolder
+
+	err := r.db.WithContext(ctx).
+		Where("id = ? AND project_id = ?", folderID, projectID).
+		First(&folder).Error
+
+	if err != nil {
+		return nil, err
+	}
+
+	return &folder, nil
 }
 
 // Create creates a new replay
@@ -135,21 +184,26 @@ func (r *replayRepository) Update(ctx context.Context, replay *database.Replay) 
 	return r.db.WithContext(ctx).Save(replay).Error
 }
 
-// Delete deletes a replay by ID
+// Delete deletes a replay by ID, and any children (histories)
 func (r *replayRepository) Delete(ctx context.Context, id string) error {
-	result := r.db.WithContext(ctx).
-		Where("id = ?", id).
-		Delete(&database.Replay{})
+	return r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		// Delete any children checking this replay as a parent first
+		if err := tx.Where("parent_id = ?", id).Delete(&database.Replay{}).Error; err != nil {
+			return err
+		}
 
-	if result.Error != nil {
-		return result.Error
-	}
+		result := tx.Where("id = ?", id).Delete(&database.Replay{})
 
-	if result.RowsAffected == 0 {
-		return errors.New("replay not found")
-	}
+		if result.Error != nil {
+			return result.Error
+		}
 
-	return nil
+		if result.RowsAffected == 0 {
+			return errors.New("replay not found")
+		}
+
+		return nil
+	})
 }
 
 // CreateRequestLog creates a new request log entry

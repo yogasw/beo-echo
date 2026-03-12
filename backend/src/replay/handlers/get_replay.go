@@ -22,11 +22,6 @@ func (s *replayHandler) GetReplayHandler(c *gin.Context) {
 		return
 	}
 
-	log.Info().
-		Str("project_id", projectID).
-		Str("replay_id", replayID).
-		Msg("handling get replay request")
-
 	replay, err := s.service.GetReplay(c.Request.Context(), replayID)
 	if err != nil {
 		log.Error().
@@ -48,12 +43,6 @@ func (s *replayHandler) GetReplayHandler(c *gin.Context) {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Replay not found in the specified project"})
 		return
 	}
-
-	log.Info().
-		Str("project_id", projectID).
-		Str("replay_id", replayID).
-		Str("name", replay.Name).
-		Msg("successfully retrieved replay")
 
 	c.JSON(http.StatusOK, gin.H{
 		"replay": replay,

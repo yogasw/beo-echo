@@ -40,17 +40,6 @@
 							Modes
 						</a>
 					</li>
-					<li>
-						<a 
-							href="/#pricing" 
-							class="text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition-colors" 
-							title="View pricing plans" 
-							aria-label="View pricing plans"
-						>
-							Pricing
-						</a>
-					</li>
-					
 				</ul>
 			</div>
 

@@ -85,14 +85,6 @@
 					>
 						Modes
 					</a>
-					<a
-						href="/#pricing"
-						class="text-sm font-medium text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
-						title="View pricing plans"
-						aria-label="View pricing plans"
-					>
-						Pricing
-					</a>
 				</nav>
 			</div>
 
@@ -220,18 +212,6 @@
 						<i class="fas fa-cogs mr-3"></i>
 						Modes
 					</a>
-					<a
-						href="/#pricing"
-						class="block w-full text-left px-3 py-2 text-base font-medium text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
-						title="View pricing plans"
-						aria-label="View pricing plans"
-						role="menuitem"
-						on:click={closeMobileMenu}
-					>
-						<i class="fas fa-dollar-sign mr-3"></i>
-						Pricing
-					</a>
-
 					{#if !$isAuthenticated}
 						<!-- Authentication Links for Mobile -->
 						<div class="border-t border-gray-200 dark:border-gray-700 pt-3 mt-3">

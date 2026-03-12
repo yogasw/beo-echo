@@ -13,10 +13,6 @@ import (
 func (s *ReplayService) GetReplay(ctx context.Context, replayID string) (*database.Replay, error) {
 	log := zerolog.Ctx(ctx)
 
-	log.Info().
-		Str("replay_id", replayID).
-		Msg("getting replay details")
-
 	replay, err := s.repo.FindByID(ctx, replayID)
 	if err != nil {
 		log.Error().
@@ -25,11 +21,6 @@ func (s *ReplayService) GetReplay(ctx context.Context, replayID string) (*databa
 			Msg("replay not found")
 		return nil, fmt.Errorf("replay not found: %w", err)
 	}
-
-	log.Info().
-		Str("replay_id", replayID).
-		Str("name", replay.Name).
-		Msg("successfully retrieved replay")
 
 	return replay, nil
 }
