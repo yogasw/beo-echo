@@ -80,6 +80,7 @@ export function isValidMethod(value: any): boolean {
 }
 
 export function isValidHeaders(value: any): boolean {
+	console.log("value",value)
 	if (!value || typeof value !== 'object') return false;
 	if (Array.isArray(value)) {
 		if (value.length === 0) return false;
@@ -88,7 +89,14 @@ export function isValidHeaders(value: any): boolean {
 	}
 	const values = Object.values(value);
 	if (values.length === 0) return false;
-	const hasComplexValue = values.some(v => v !== null && typeof v === 'object');
+	const hasComplexValue = values.some(v => {
+		if (v === null) return false;
+		if (Array.isArray(v)) {
+			// Check if array items are complex objects
+			return v.some(item => item !== null && typeof item === 'object');
+		}
+		return typeof v === 'object';
+	});
 	if (hasComplexValue) return false;
 	return true;
 }
