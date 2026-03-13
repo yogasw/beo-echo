@@ -219,7 +219,7 @@ export const DEFAULT_MAPPINGS = {
 	url: ['url', 'path', 'endpoint', 'request.url'],
 	method: ['method', 'type', 'request.method'],
 	headers: ['headers', 'request.headers', 'head'],
-	body: ['body', 'data', 'payload', 'request.body']
+	body: ['body', 'data', 'payload', 'request.body', 'req_body']
 };
 
 export function importFromJson(
