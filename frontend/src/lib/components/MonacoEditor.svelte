@@ -14,7 +14,8 @@
 
 	export let value: string = '{}';
 	export let language: string = 'json';
-	export let theme: string = 'vs-dark';
+
+	export let readOnly: boolean = false;
 
 	let container: HTMLDivElement;
 	let editor: monacoType.editor.IStandaloneCodeEditor | null = null;
@@ -42,6 +43,11 @@
 		monaco.editor.setTheme(editorTheme);
 	}
 
+	// Update readOnly dynamically
+	$: if (editor) {
+		editor.updateOptions({ readOnly });
+	}
+
 	onMount(async () => {
 		const m = await import('monaco-editor');
 		monaco = m;
@@ -53,6 +59,7 @@
 			value,
 			language,
 			theme: editorTheme,
+			readOnly,
 			automaticLayout: true,
 			fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace',
 			fontSize: 14,

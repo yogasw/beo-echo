@@ -269,11 +269,13 @@
 				</div>
 
 				<!-- Response content -->
-				<div class="p-4 bg-gray-50 dark:bg-gray-900 flex-grow overflow-auto">
+				<div class="bg-gray-50 dark:bg-gray-900 flex-grow flex flex-col overflow-hidden w-full relative">
 					{#if activeSection === 'response'}
 						<ResponseBodyTab {executionResult} />
 					{:else if activeSection === 'headers'}
-						<ResponseHeadersTab {executionResult} />
+						<div class="p-4 overflow-auto h-full w-full">
+							<ResponseHeadersTab {executionResult} />
+						</div>
 					{/if}
 				</div>
 			</div>
