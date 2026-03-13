@@ -13,6 +13,9 @@ export interface ImportConfig {
 	method: string;
 	headers: string;
 	body: string;
+	response_body?: string;
+	response_status?: string;
+	latency_ms?: string;
 }
 
 export interface ImportResult {
@@ -20,6 +23,9 @@ export interface ImportResult {
 	method?: string;
 	headers?: Header[];
 	body?: string;
+	response_body?: string;
+	response_status?: number;
+	latency_ms?: number;
 	metadata?: ReplayMetadata;
 	config: ImportConfig;
 	availableKeys: string[];
@@ -217,7 +223,10 @@ function tryParseStructuredHttpLog(data: any): ImportResult | null {
 		body,
 		metadata: { bodyType: inferBodyType(body) },
 		config: { url: 'host+path', method: 'method', headers: 'user_agent', body: 'body' },
-		availableKeys: extractKeyPaths(data)
+		availableKeys: extractKeyPaths(data),
+		response_body: data.response_body ? (typeof data.response_body === 'object' ? JSON.stringify(data.response_body, null, 2) : String(data.response_body)) : undefined,
+		response_status: data.response_status ? Number(data.response_status) : undefined,
+		latency_ms: data.latency_ms ? Number(data.latency_ms) : undefined
 	};
 }
 
@@ -227,7 +236,10 @@ export const DEFAULT_MAPPINGS = {
 	url: ['url', 'path', 'endpoint', 'request.url'],
 	method: ['method', 'type', 'request.method'],
 	headers: ['headers', 'request.headers', 'head'],
-	body: ['body', 'data', 'payload', 'request.body', 'req_body']
+	body: ['body', 'data', 'payload', 'request.body', 'req_body'],
+	response_body: ['response_body', 'response.body', 'res_body', 'response'],
+	response_status: ['response_status', 'status', 'status_code', 'statusCode', 'response.status'],
+	latency_ms: ['latency_ms', 'latency', 'duration', 'duration_ms', 'time']
 };
 
 export function importFromJson(
@@ -263,6 +275,9 @@ export function importFromJson(
 		if (!result.config.method) result.config.method = findMethodMatch(data, availableKeys, defaultMappings.method);
 		if (!result.config.headers) result.config.headers = findHeadersMatch(data, availableKeys, defaultMappings.headers);
 		if (!result.config.body) result.config.body = findBestMatch(availableKeys, defaultMappings.body);
+		if (!result.config.response_body) result.config.response_body = findBestMatch(availableKeys, defaultMappings.response_body);
+		if (!result.config.response_status) result.config.response_status = findBestMatch(availableKeys, defaultMappings.response_status);
+		if (!result.config.latency_ms && defaultMappings.latency_ms) result.config.latency_ms = findBestMatch(availableKeys, defaultMappings.latency_ms);
 
 		if (result.config.url) {
 			const val = resolveValue(data, result.config.url);
@@ -300,6 +315,26 @@ export function importFromJson(
 					result.headers = Object.entries(val).map(([k, v]) => ({ key: k, value: String(v) }));
 				}
 			}
+		}
+
+		if (result.config.response_body) {
+			const val = getNestedValue(data, result.config.response_body);
+			if (val) {
+				result.response_body = typeof val === 'object' ? JSON.stringify(val, null, 2) : String(val);
+			} else {
+				const tplVal = resolveValue(data, result.config.response_body);
+				if (tplVal) result.response_body = String(tplVal);
+			}
+		}
+
+		if (result.config.response_status) {
+			const val = getNestedValue(data, result.config.response_status);
+			if (val !== undefined && val !== null) result.response_status = Number(val);
+		}
+
+		if (result.config.latency_ms) {
+			const val = getNestedValue(data, result.config.latency_ms);
+			if (val !== undefined && val !== null) result.latency_ms = Number(val);
 		}
 
 		// Auto-append User-Agent header if found in root
@@ -344,6 +379,7 @@ function toReplay(result: ImportResult): Partial<Replay> {
 		result.headers.forEach(h => (headersObj[h.key] = h.value));
 	}
 	const bodyType: BodyTypeHttp = result.metadata?.bodyType ?? inferBodyType(result.body);
+	const isResponse = !!(result.response_body || result.response_status);
 	return {
 		name: 'Imported Request',
 		url: result.url || '',
@@ -351,7 +387,11 @@ function toReplay(result: ImportResult): Partial<Replay> {
 		headers: JSON.stringify(headersObj),
 		payload: result.body || '',
 		config: JSON.stringify({ auth: { type: 'none', config: {} }, settings: {} }),
-		metadata: JSON.stringify({ params: [], bodyType })
+		metadata: JSON.stringify({ params: [], bodyType }),
+		response_body: result.response_body,
+		response_status: result.response_status,
+		latency_ms: result.latency_ms,
+		is_response: isResponse
 	};
 }
 
