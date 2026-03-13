@@ -6,6 +6,10 @@
 
 	let format = $state('json'); // 'json', 'xml', 'html', 'javascript', 'plaintext'
 	let isPreview = $state(false);
+	let wordWrap = $state<'on' | 'off'>('on');
+	let filterQuery = $state('');
+	let copied = $state(false);
+	let editorRef: any = $state();
 
 	// Try to auto-detect content type when executionResult changes
 	$effect(() => {
@@ -29,13 +33,30 @@
 		}
 	});
 
+	function extractJsonPath(obj: any, path: string) {
+		if (!path || !path.trim()) return obj;
+		let current = obj;
+		const parts = path.split(/[.\[\]'"]+/).filter(Boolean);
+		if (parts.length > 0 && parts[0] === '$') {
+			parts.shift();
+		}
+		for (const part of parts) {
+			if (current === undefined || current === null) return undefined;
+			current = current[part];
+		}
+		return current;
+	}
+
 	let formattedBody = $derived.by(() => {
 		if (!executionResult?.response_body) return '';
 		
 		const body = executionResult.response_body;
 		if (format === 'json') {
 			try {
-				const ob = typeof body === 'string' ? JSON.parse(body) : body;
+				let ob = typeof body === 'string' ? JSON.parse(body) : body;
+				if (filterQuery && !isPreview) {
+					ob = extractJsonPath(ob, filterQuery);
+				}
 				return JSON.stringify(ob, null, 2);
 			} catch(e) {
 				return typeof body === 'string' ? body : JSON.stringify(body, null, 2);
@@ -91,6 +112,58 @@
 				<i class="fas fa-play text-xs {isPreview ? 'text-orange-500 text-opacity-80' : ''}"></i>
 				<span>Preview</span>
 			</button>
+
+			<div class="ml-auto flex items-center gap-1">
+				<!-- JSON Filter (only if JSON mode) -->
+				{#if format === 'json' && !isPreview}
+					<div class="w-48 relative flex items-center mr-1">
+						<i class="fas fa-filter absolute left-2.5 text-gray-400 text-xs text-opacity-70"></i>
+						<input
+							type="text"
+							placeholder="Filter (e.g. $.data[0])"
+							bind:value={filterQuery}
+							class="w-full pl-7 pr-2 py-1 text-xs bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded focus:outline-none focus:border-orange-500 dark:focus:border-orange-500 text-gray-800 dark:text-gray-200 placeholder-gray-400 dark:placeholder-gray-500"
+						/>
+					</div>
+				{/if}
+
+				<div class="h-4 w-px bg-gray-300 dark:bg-gray-600 mx-1"></div>
+
+				<!-- Wrap Button -->
+				<button
+					title="Toggle Word Wrap"
+					onclick={() => {
+						wordWrap = wordWrap === 'on' ? 'off' : 'on';
+					}}
+					class="flex items-center justify-center w-7 h-7 rounded transition-colors {wordWrap === 'on' ? 'bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200' : 'bg-transparent text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-800'}"
+				>
+					<i class="fas fa-align-left text-xs"></i>
+				</button>
+
+				<!-- Find Button -->
+				<button
+					title="Find (Cmd/Ctrl+F)"
+					onclick={() => {
+						editorRef?.triggerFind();
+					}}
+					class="flex items-center justify-center w-7 h-7 rounded transition-colors bg-transparent text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-800"
+				>
+					<i class="fas fa-search text-xs"></i>
+				</button>
+
+				<!-- Copy Button -->
+				<button
+					title="Copy to clipboard"
+					onclick={() => {
+						navigator.clipboard.writeText(formattedBody);
+						copied = true;
+						setTimeout(() => copied = false, 2000);
+					}}
+					class="flex items-center justify-center w-7 h-7 rounded transition-colors {copied ? 'text-green-600 dark:text-green-400' : 'bg-transparent text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-800'}"
+				>
+					<i class="fas {copied ? 'fa-check' : 'fa-copy'} text-xs"></i>
+				</button>
+			</div>
 		</div>
 
 		<!-- Content Area -->
@@ -104,9 +177,11 @@
 				></iframe>
 			{:else}
 				<MonacoEditor
+					bind:this={editorRef}
 					value={formattedBody}
 					language={format}
 					readOnly={true}
+					{wordWrap}
 				/>
 			{/if}
 		</div>

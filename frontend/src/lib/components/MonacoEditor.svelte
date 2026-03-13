@@ -16,6 +16,7 @@
 	export let language: string = 'json';
 
 	export let readOnly: boolean = false;
+	export let wordWrap: 'on' | 'off' = 'on';
 
 	let container: HTMLDivElement;
 	let editor: monacoType.editor.IStandaloneCodeEditor | null = null;
@@ -43,9 +44,9 @@
 		monaco.editor.setTheme(editorTheme);
 	}
 
-	// Update readOnly dynamically
+	// Update readOnly & wordWrap dynamically
 	$: if (editor) {
-		editor.updateOptions({ readOnly });
+		editor.updateOptions({ readOnly, wordWrap });
 	}
 
 	onMount(async () => {
@@ -67,8 +68,8 @@
 				enabled: false
 			},
 			scrollBeyondLastLine: false,
-			fixedOverflowWidgets: true,
-			wordWrap: 'on',
+			fixedOverflowWidgets: false,
+			wordWrap,
 			padding: { top: 8, bottom: 8 },
 			scrollbar: {
 				verticalScrollbarSize: 8,
@@ -114,6 +115,13 @@
 
 	export function format(): void {
 		editor?.getAction('editor.action.formatDocument')?.run();
+	}
+
+	export function triggerFind(): void {
+		if (editor) {
+			editor.focus();
+			editor.getAction('actions.find')?.run();
+		}
 	}
 
 	export function setLanguage(lang: string): void {
