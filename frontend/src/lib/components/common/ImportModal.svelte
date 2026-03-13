@@ -38,14 +38,12 @@
 		}
 	}
 
-	// Trigger processing on paste
-	function handlePaste(e: ClipboardEvent) {
-		// Wait a tick for value to bind, or grab from event
-		setTimeout(() => {
-			if (importText.trim()) {
-				processImport(importText);
-			}
-		}, 10);
+	function handleGlobalPaste(e: ClipboardEvent) {
+		if (!isOpen) return;
+		const pastedText = e.clipboardData?.getData('text');
+		if (pastedText && pastedText.trim()) {
+			processImport(pastedText);
+		}
 	}
 
 	function handleEnter(e: KeyboardEvent) {
@@ -92,7 +90,7 @@
 	}
 </script>
 
-<svelte:window onkeydown={handleKeydown} />
+<svelte:window onkeydown={handleKeydown} onpaste={handleGlobalPaste} />
 
 {#if isOpen}
 	<div 
@@ -130,7 +128,6 @@
 					<input 
 						type="text"
 						bind:value={importText}
-						onpaste={handlePaste}
 						onkeydown={handleEnter}
 						placeholder="Paste cURL, Raw text or URL..."
 						class="w-full bg-transparent px-4 py-3 theme-text-primary text-sm focus:outline-none"
