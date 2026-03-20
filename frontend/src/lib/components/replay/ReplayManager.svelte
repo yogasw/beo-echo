@@ -369,6 +369,20 @@
 					};
 				}
 			}
+
+			if (importedReplay.response_body !== undefined || importedReplay.response_status !== undefined) {
+				newTab.executionResult = {
+					replay_id: newTab.id,
+					log_id: '',
+					status_code: importedReplay.response_status || 200,
+					status_text: '',
+					latency_ms: importedReplay.latency_ms || 0,
+					response_body: importedReplay.response_body || '',
+					response_headers: {},
+					size: importedReplay.response_body?.length || 0,
+					error: null
+				};
+			}
 		}
 		
 		// Automatically save if imported into collection
@@ -384,6 +398,11 @@
 				config: { auth: { type: 'none', config: {} }, settings: {} },
 				payload: newTab.content?.body?.content || ''
 			};
+
+			if (detail.importedData.response_body !== undefined) payload.response_body = detail.importedData.response_body;
+			if (detail.importedData.response_status !== undefined) payload.response_status = detail.importedData.response_status;
+			if (detail.importedData.is_response !== undefined) payload.is_response = detail.importedData.is_response;
+			if (detail.importedData.latency_ms !== undefined) payload.latency_ms = detail.importedData.latency_ms;
 
 			if (detail.parentReplay.id) {
 				payload.folder_id = detail.parentReplay.id;
