@@ -2,6 +2,8 @@
 	import { replayLoading } from '$lib/stores/replay';
 	import type { ExecuteReplayResponse } from '$lib/types/Replay';
 	import { createEventDispatcher, onMount } from 'svelte';
+	import ResponseBodyTab from './tabs/ResponseBodyTab.svelte';
+	import ResponseHeadersTab from './tabs/ResponseHeadersTab.svelte';
 
 	const dispatch = createEventDispatcher();
 
@@ -267,130 +269,13 @@
 				</div>
 
 				<!-- Response content -->
-				<div class="p-4 bg-gray-50 dark:bg-gray-900 flex-grow overflow-auto">
+				<div class="bg-gray-50 dark:bg-gray-900 flex-grow flex flex-col overflow-hidden w-full relative">
 					{#if activeSection === 'response'}
-						{#if executionResult.error}
-							<div
-								class="p-4 bg-red-100 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-md text-red-800 dark:text-red-300 mb-4"
-							>
-								<h3 class="font-semibold">Error</h3>
-								<p>{executionResult.error}</p>
-							</div>
-						{:else if executionResult.response_body}
-							<div>
-								{executionResult.response_body}
-							</div>
-						{:else}
-							<div
-								class="p-4 bg-gray-100 dark:bg-gray-700 rounded-md text-center text-gray-600 dark:text-gray-300"
-							>
-								No response body
-							</div>
-						{/if}
+						<ResponseBodyTab {executionResult} />
 					{:else if activeSection === 'headers'}
-						{#if executionResult.response_headers && Object.keys(executionResult.response_headers).length > 0}
-							<div class="border border-gray-200 dark:border-gray-700 rounded-md overflow-hidden">
-								<table class="w-full">
-									<thead class="bg-gray-100 dark:bg-gray-700">
-										<tr>
-											<th
-												class="py-2 px-4 text-left text-gray-800 dark:text-white text-sm font-medium"
-												>Name</th
-											>
-											<th
-												class="py-2 px-4 text-left text-gray-800 dark:text-white text-sm font-medium"
-												>Value</th
-											>
-										</tr>
-									</thead>
-									<tbody>
-										{#each Object.entries(executionResult.response_headers || {}) as [name, value], i}
-											<tr
-												class={i % 2 === 0
-													? 'bg-white dark:bg-gray-800'
-													: 'bg-gray-50 dark:bg-gray-900'}
-											>
-												<td class="py-2 px-4 text-gray-600 dark:text-gray-300 text-sm font-mono"
-													>{name}</td
-												>
-												<td class="py-2 px-4 text-gray-600 dark:text-gray-300 text-sm font-mono"
-													>{value}</td
-												>
-											</tr>
-										{/each}
-									</tbody>
-								</table>
-							</div>
-						{:else}
-							<div
-								class="p-4 bg-gray-100 dark:bg-gray-700 rounded-md text-center text-gray-600 dark:text-gray-300"
-							>
-								No headers received
-							</div>
-						{/if}
-						<!-- this feature under development
-						{:else if activeSection === 'cookies'}
-						{#if executionResult.cookies && executionResult.cookies.length > 0}
-							<div class="border border-gray-200 dark:border-gray-700 rounded-md overflow-hidden">
-								<table class="w-full">
-									<thead class="bg-gray-100 dark:bg-gray-700">
-										<tr>
-											<th
-												class="py-2 px-4 text-left text-gray-800 dark:text-white text-sm font-medium"
-												>Name</th
-											>
-											<th
-												class="py-2 px-4 text-left text-gray-800 dark:text-white text-sm font-medium"
-												>Value</th
-											>
-											<th
-												class="py-2 px-4 text-left text-gray-800 dark:text-white text-sm font-medium"
-												>Domain</th
-											>
-											<th
-												class="py-2 px-4 text-left text-gray-800 dark:text-white text-sm font-medium"
-												>Path</th
-											>
-											<th
-												class="py-2 px-4 text-left text-gray-800 dark:text-white text-sm font-medium"
-												>Expires</th
-											>
-										</tr>
-									</thead>
-									<tbody>
-										{#each executionResult.cookies || [] as cookie, i}
-											<tr
-												class={i % 2 === 0
-													? 'bg-white dark:bg-gray-800'
-													: 'bg-gray-50 dark:bg-gray-900'}
-											>
-												<td class="py-2 px-4 text-gray-600 dark:text-gray-300 text-sm"
-													>{cookie.name}</td
-												>
-												<td class="py-2 px-4 text-gray-600 dark:text-gray-300 text-sm font-mono"
-													>{cookie.value}</td
-												>
-												<td class="py-2 px-4 text-gray-600 dark:text-gray-300 text-sm"
-													>{cookie.domain || '-'}</td
-												>
-												<td class="py-2 px-4 text-gray-600 dark:text-gray-300 text-sm"
-													>{cookie.path || '/'}</td
-												>
-												<td class="py-2 px-4 text-gray-600 dark:text-gray-300 text-sm"
-													>{cookie.expires || '-'}</td
-												>
-											</tr>
-										{/each}
-									</tbody>
-								</table>
-							</div>
-						{:else}
-							<div
-								class="p-4 bg-gray-100 dark:bg-gray-700 rounded-md text-center text-gray-600 dark:text-gray-300"
-							>
-								No cookies received
-							</div>
-						{/if} -->
+						<div class="p-4 overflow-auto h-full w-full">
+							<ResponseHeadersTab {executionResult} />
+						</div>
 					{/if}
 				</div>
 			</div>

@@ -78,6 +78,11 @@ export interface CreateReplayRequest {
 	folder_id?: string
 	metadata?: ReplayMetadata
 	config?: ReplayConfig
+	is_response?: boolean
+	response_status?: number
+	response_body?: string
+	latency_ms?: number
+	response_meta?: string
 }
 
 export interface UpdateReplayRequest {

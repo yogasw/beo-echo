@@ -14,7 +14,9 @@
 
 	export let value: string = '{}';
 	export let language: string = 'json';
-	export let theme: string = 'vs-dark';
+
+	export let readOnly: boolean = false;
+	export let wordWrap: 'on' | 'off' = 'on';
 
 	let container: HTMLDivElement;
 	let editor: monacoType.editor.IStandaloneCodeEditor | null = null;
@@ -42,6 +44,11 @@
 		monaco.editor.setTheme(editorTheme);
 	}
 
+	// Update readOnly & wordWrap dynamically
+	$: if (editor) {
+		editor.updateOptions({ readOnly, wordWrap });
+	}
+
 	onMount(async () => {
 		const m = await import('monaco-editor');
 		monaco = m;
@@ -53,6 +60,7 @@
 			value,
 			language,
 			theme: editorTheme,
+			readOnly,
 			automaticLayout: true,
 			fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace',
 			fontSize: 14,
@@ -60,8 +68,8 @@
 				enabled: false
 			},
 			scrollBeyondLastLine: false,
-			fixedOverflowWidgets: true,
-			wordWrap: 'on',
+			fixedOverflowWidgets: false,
+			wordWrap,
 			padding: { top: 8, bottom: 8 },
 			scrollbar: {
 				verticalScrollbarSize: 8,
@@ -107,6 +115,13 @@
 
 	export function format(): void {
 		editor?.getAction('editor.action.formatDocument')?.run();
+	}
+
+	export function triggerFind(): void {
+		if (editor) {
+			editor.focus();
+			editor.getAction('actions.find')?.run();
+		}
 	}
 
 	export function setLanguage(lang: string): void {
