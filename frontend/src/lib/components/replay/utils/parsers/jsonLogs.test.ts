@@ -123,4 +123,37 @@ describe('Generic JSON fallback', () => {
 		const json = JSON.stringify({ data: 'test' });
 		expect(() => jsonParser.parse(json)).toThrowError('Could not find a valid URL in the JSON mapping.');
 	});
+
+	it('should parse headers correctly when they are arrays of strings', () => {
+	const payload = {
+		"level": "info",
+		"request_id": "9f4c1e8a7b2d4c6e8f1a0b3d5c7e9f10",
+		"method": "POST",
+		"url": "https://api.example-service.com",
+		"body": "{\"worker_id\":45291,\"limit\":3,\"task_id\":908172}",
+		"headers": {
+			"Accept": ["application/json"],
+			"Content-Type": ["application/json"],
+			"X-Client-Id": ["client-7f9a3c"],
+			"X-Auth-Token": ["******"]
+		},
+		"status_code": 200,
+		"response_body": "{\"result\":{\"status\":\"ok\"}}",
+		"latency": "187.341221ms",
+		"time": "2026-03-13T13:02:10Z",
+		"message": "outbound request"
+	};
+
+	const result = jsonParser.parse(JSON.stringify(payload));
+	
+	expect(result.importType).toBe('json');
+	expect(result.parsed.url).toBe('https://api.example-service.com');
+	expect(result.parsed.method).toBe('POST');
+	
+	const headers = JSON.parse(result.parsed.headers || '{}');
+	expect(headers['Accept']).toBe('application/json');
+	expect(headers['Content-Type']).toBe('application/json');
+	expect(headers['X-Client-Id']).toBe('client-7f9a3c');
+	expect(headers['X-Auth-Token']).toBe('******');
+});
 });
