@@ -125,6 +125,8 @@ func CheckAndHandle() error {
 		&ReplayFolder{},
 		&Action{},
 		&ActionFilter{},
+		&UserApiToken{},
+		&OAuthAuthRequest{},
 	); err != nil {
 		return errors.New("Failed to migrate database schema: " + err.Error())
 	}
