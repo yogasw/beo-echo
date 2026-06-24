@@ -73,6 +73,14 @@
 			icon: 'fas fa-users',
 			color: 'text-indigo-400',
 			bgColor: 'bg-indigo-400/20'
+		},
+		{
+			title: 'MCP Server',
+			description:
+				'Drive your mocks, routes, logs, replays, and workspaces from AI clients like Claude and Cursor over the Model Context Protocol.',
+			icon: 'fas fa-plug',
+			color: 'text-teal-400',
+			bgColor: 'bg-teal-400/20'
 		}
 	];
 

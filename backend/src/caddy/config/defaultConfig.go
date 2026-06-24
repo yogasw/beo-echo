@@ -24,9 +24,9 @@ const CADDY_DEFAULT_CONFIG = `{
 		file_server
 	}
 
-	# Define routes for frontend - root, /home, and /login paths
+	# Define routes for frontend - root, /home, /login, and OAuth consent paths
 	@frontend {
-		path / /home /login
+		path / /home /login /oauth/consent
 	}
 
 	# Handle frontend routes - serve the SvelteKit static files

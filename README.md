@@ -93,6 +93,53 @@ Choose your preferred visual experience:
 - Light mode
 - Consistent design across all components
 
+### MCP Integration
+Drive Beo Echo from AI clients (Claude, Cursor, VS Code, Claude Code) over the
+[Model Context Protocol](https://modelcontextprotocol.io):
+- A single streamable HTTP endpoint at `/mcp`
+- Tools across all areas — projects, routes/endpoints, logs, replays, actions, config, workspaces
+- Authenticated with a Personal Access Token generated in **Profile → MCP**
+
+---
+
+## 🤖 MCP (Model Context Protocol)
+
+Beo Echo exposes its API to AI clients over MCP so you can manage mocks, inspect
+logs, run replays, and more by chatting with an assistant.
+
+### Endpoint
+
+The MCP endpoint is served on the same host as the app:
+
+```
+https://<your-beo-echo-host>/mcp
+```
+
+Every `/mcp` request — including the MCP discovery handshake — requires a bearer
+token. Generate one in the web app under **Profile → MCP → Access Tokens**; it is
+shown once.
+
+### Connect a client
+
+Add the endpoint and your token to the client's MCP config:
+
+```json
+{
+  "mcpServers": {
+    "beo-echo": {
+      "url": "https://<your-beo-echo-host>/mcp",
+      "headers": { "Authorization": "Bearer beo_pat_YOUR_TOKEN" }
+    }
+  }
+}
+```
+
+Then ask the assistant to, e.g., *"list my Beo Echo projects"* or *"add a 200
+mock for GET /users to project X"*.
+
+See [backend/src/mcp/README.md](backend/src/mcp/README.md) for the full tool list
+and details.
+
 ---
 
 ## 🖼️ UI Screenshots
