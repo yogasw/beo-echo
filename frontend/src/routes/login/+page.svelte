@@ -68,7 +68,9 @@
 				if (browser) {
 					// New auth system
 					await auth.login(email, password);
-					await goto('/home', { replaceState: true });
+					// Honor a returnUrl (e.g. the OAuth consent page) if present.
+					const returnUrl = new URLSearchParams(window.location.search).get('returnUrl');
+					await goto(returnUrl || '/home', { replaceState: true });
 					// window.location.reload();
 				}
 			} else {
@@ -89,7 +91,8 @@
 	// Check for OAuth response on page load
 	onMount(() => {
 		if ($isAuthenticated) {
-			goto('/home', { replaceState: true });
+			const returnUrl = new URLSearchParams(window.location.search).get('returnUrl');
+			goto(returnUrl || '/home', { replaceState: true });
 			return;
 		}
 

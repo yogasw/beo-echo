@@ -5,10 +5,17 @@
 	import BeoEchoLoader from '$lib/components/common/BeoEchoLoader.svelte';
 	import { selectedProject } from '$lib/stores/selectedConfig';
 	import { projects } from '$lib/stores/configurations';
+	import { activeTab } from '$lib/stores/activeTab';
 	import UnSelectedProject from './UnSelectedProject.svelte';
 
 	let loading = $state(true);
 	let error = $state('');
+
+	// Tabs that don't require a selected project (account settings, instance &
+	// workspace settings). For these, ContentArea must render even when no
+	// project is selected — otherwise the welcome screen swallows the click.
+	const projectIndependentTabs = ['settings', 'instance-settings', 'workspace-settings'];
+	let showWelcome = $derived(!$selectedProject && !projectIndependentTabs.includes($activeTab));
 
 	onMount(async () => {
 		console.log('onMount: home');
@@ -42,10 +49,10 @@
 	</div>
 {:else if error}
 	<div class="text-red-500 text-center p-4">{error}</div>
-{:else if !$selectedProject}
-	<!-- Home Page - Only shown when no project is selected -->
+{:else if showWelcome}
+	<!-- Home Page - shown when no project is selected and the active tab needs one -->
 	 <UnSelectedProject />
 {:else}
-	<!-- Show ContentArea when a project is selected -->
+	<!-- Show ContentArea when a project is selected, or for project-independent tabs -->
 	<ContentArea />
 {/if}

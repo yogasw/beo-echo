@@ -36,6 +36,7 @@ import (
 	aiModule "beo-echo/backend/src/ai"
 	authHandler "beo-echo/backend/src/auth/handler"
 	handlerLogs "beo-echo/backend/src/logs/handlers"
+	mcpModule "beo-echo/backend/src/mcp"
 	replayHandler "beo-echo/backend/src/replay/handlers"
 	replayServices "beo-echo/backend/src/replay/services"
 	systemConfigHandler "beo-echo/backend/src/systemConfigs/handler"
@@ -122,6 +123,9 @@ func SetupRouter() *gin.Engine {
 	googleOAuthHandler := authHandler.NewGoogleOAuthHandler(googleOAuthService)
 	oauthConfigHandler := authHandler.NewOAuthConfigHandler(database.DB)
 
+	// Personal Access Token (PAT) handler — used by the MCP server / CLIs
+	patHandler := authHandler.NewPATHandler(database.DB)
+
 	// Initialize Auth service with user repository
 	authHandler.InitAuthService(database.DB, userRepo)
 
@@ -146,6 +150,9 @@ func SetupRouter() *gin.Engine {
 	actionService := actions.NewActionService(actionRepo, actionModules)
 	actionHandler := actions.NewActionHandler(actionService)
 
+	// MCP OAuth authorization server (for OAuth-aware clients like Claude.ai)
+	mcpOAuthHandler := authHandler.NewMCPOAuthHandler(database.DB)
+
 	// Authentication routes
 	router.POST("/api/auth/login", authHandler.LoginHandler)
 	router.POST("/api/auth/refresh", authHandler.RefreshTokenHandler)
@@ -154,6 +161,16 @@ func SetupRouter() *gin.Engine {
 	// Public OAuth routes
 	router.GET("/api/oauth/google/login", googleOAuthHandler.InitiateLogin)
 	router.GET("/api/oauth/google/callback", googleOAuthHandler.HandleCallback)
+
+	// MCP OAuth: discovery metadata (well-known) + authorization-code endpoints.
+	// These are public; user identity is established by the SPA at consent time.
+	router.GET("/.well-known/oauth-authorization-server", mcpOAuthHandler.AuthorizationServerMetadata)
+	router.GET("/.well-known/oauth-protected-resource", mcpOAuthHandler.ProtectedResourceMetadata)
+	router.POST("/api/oauth/mcp/register", mcpOAuthHandler.Register)
+	router.GET("/api/oauth/mcp/authorize", mcpOAuthHandler.Authorize)
+	router.POST("/api/oauth/mcp/token", mcpOAuthHandler.Token)
+	// Consent approval requires the user to be logged in (JWT from the SPA).
+	router.POST("/api/oauth/mcp/approve", middlewares.JWTAuthMiddleware(), mcpOAuthHandler.Approve)
 
 	// Protected API routes group
 	apiGroup := router.Group("/api")
@@ -182,6 +199,11 @@ func SetupRouter() *gin.Engine {
 		apiGroup.GET("/auth/me", userHandler.GetCurrentUser)
 		apiGroup.PATCH("/users/profile", userHandler.UpdateProfile)
 		apiGroup.POST("/users/change-password", userHandler.UpdatePassword)
+
+		// Personal Access Tokens (profile) — power the MCP server / CLIs
+		apiGroup.POST("/users/me/tokens", patHandler.CreateToken)
+		apiGroup.GET("/users/me/tokens", patHandler.ListTokens)
+		apiGroup.DELETE("/users/me/tokens/:tokenId", patHandler.RevokeToken)
 
 		// AI generation routes (accessible to all authenticated users)
 		apiGroup.POST("/ai/generate", aiHandler.GenerateHandler)
@@ -309,6 +331,22 @@ func SetupRouter() *gin.Engine {
 			}
 		}
 	}
+
+	// Mount the MCP server at /mcp. Its tools dispatch in-process to this same
+	// router, so every call passes through the API's auth and permission
+	// middleware — no network round-trip, no host/port to configure.
+	//
+	// A bearer token (PAT or JWT) is REQUIRED on every /mcp request, including
+	// the MCP discovery handshake (initialize / tools-list): the gate below
+	// rejects unauthenticated requests with 401 before they reach the MCP
+	// handler. This makes the endpoint PAT-only — OAuth-aware clients that rely
+	// on unauthenticated discovery are intentionally not supported here.
+	mcpServer := mcpModule.NewServer(router)
+	mcpHandler := mcpServer.HTTPHandler()
+	mcpGroup := router.Group("/mcp")
+	mcpGroup.Use(middlewares.MCPAuthGate())
+	mcpGroup.Any("", gin.WrapH(mcpHandler))
+	mcpGroup.Any("/*rest", gin.WrapH(mcpHandler))
 
 	// Register the catch-all handler for mock API endpoints
 	// We need to avoid conflict with the /api path, so we'll create a separate group

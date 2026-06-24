@@ -1,14 +1,35 @@
 <script lang="ts">
 	import { fade } from 'svelte/transition';
+	import { onMount } from 'svelte';
+	import { tick } from 'svelte';
 	import * as ThemeUtils from '$lib/utils/themeUtils';
 	import UserProfile from '$lib/components/settings/UserProfile.svelte';
 	import PasswordChange from '$lib/components/settings/PasswordChange.svelte';
-	
+	import McpSettings from '$lib/components/settings/McpSettings.svelte';
+	import { settingsSection } from '$lib/stores/activeTab';
+
 	// State for each section's visibility
 	let sectionsVisible = {
 		profile: true,    // Profile open by default
-		password: false
+		password: false,
+		mcp: false
 	};
+
+	// Allow other parts of the app (e.g. the profile dropdown) to deep-link to a
+	// specific section by setting the settingsSection store.
+	$: if ($settingsSection) {
+		const target = $settingsSection;
+		sectionsVisible = {
+			profile: target === 'profile',
+			password: target === 'password',
+			mcp: target === 'mcp'
+		};
+		// Consume the signal and scroll the section into view.
+		settingsSection.set(null);
+		tick().then(() => {
+			document.getElementById(`settings-section-${target}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+		});
+	}
 </script>
 
 <div class="w-full theme-bg-primary p-4">
@@ -41,7 +62,7 @@
 	<!-- Settings Sections -->
 	<div class="space-y-5">
 		<!-- 1. Profile Settings -->
-		<div class={ThemeUtils.card('overflow-hidden')}>
+		<div id="settings-section-profile" class={ThemeUtils.card('overflow-hidden')}>
 			<div 
 				class="flex justify-between items-center p-3 hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer bg-gray-100 dark:bg-gray-750"
 				on:click={() => sectionsVisible.profile = !sectionsVisible.profile}
@@ -66,7 +87,7 @@
 		</div>
 
 		<!-- 2. Password Settings -->
-		<div class={ThemeUtils.card('overflow-hidden')}>
+		<div id="settings-section-password" class={ThemeUtils.card('overflow-hidden')}>
 			<div 
 				class="flex justify-between items-center p-3 hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer bg-gray-100 dark:bg-gray-750"
 				on:click={() => sectionsVisible.password = !sectionsVisible.password}
@@ -89,6 +110,31 @@
 				</div>
 			{/if}
 		</div>
-		
+
+		<!-- 3. MCP Settings -->
+		<div id="settings-section-mcp" class={ThemeUtils.card('overflow-hidden')}>
+			<div
+				class="flex justify-between items-center p-3 hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer bg-gray-100 dark:bg-gray-750"
+				on:click={() => sectionsVisible.mcp = !sectionsVisible.mcp}
+				on:keydown={(e) => e.key === 'Enter' && (sectionsVisible.mcp = !sectionsVisible.mcp)}
+				tabindex="0"
+				role="button"
+			>
+				<div class="flex items-center">
+					<div class="bg-green-500/20 p-1.5 rounded mr-2">
+						<i class="fas fa-plug text-green-400"></i>
+					</div>
+					<h3 class="font-medium theme-text-primary">MCP &amp; Access Tokens</h3>
+				</div>
+				<i class="fas {sectionsVisible.mcp ? 'fa-chevron-up' : 'fa-chevron-down'} theme-text-muted"></i>
+			</div>
+
+			{#if sectionsVisible.mcp}
+				<div transition:fade={{ duration: 150 }} class="border-t theme-border p-4">
+					<McpSettings />
+				</div>
+			{/if}
+		</div>
+
 	</div>
 </div>
