@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"beo-echo/backend/src/auth"
+	"beo-echo/backend/src/auth/pat"
 	"beo-echo/backend/src/database"
 
 	"github.com/gin-gonic/gin"
@@ -41,6 +42,27 @@ func JWTAuthMiddleware() gin.HandlerFunc {
 
 		// Extract the token
 		tokenString := parts[1]
+
+		// Personal Access Tokens (used by the MCP server / CLIs) carry a fixed
+		// prefix and are resolved against the database rather than verified as
+		// JWTs. They share the same downstream context shape.
+		if pat.IsPAT(tokenString) {
+			user, err := pat.NewService(database.DB).Authenticate(c.Request.Context(), tokenString)
+			if err != nil {
+				c.JSON(http.StatusUnauthorized, gin.H{
+					"success": false,
+					"message": "Invalid or expired token",
+				})
+				c.Abort()
+				return
+			}
+
+			c.Set("userID", user.ID)
+			c.Set("name", user.Name)
+			c.Set("isOwner", user.IsOwner)
+			c.Next()
+			return
+		}
 
 		// Validate the token
 		claims, err := auth.ValidateToken(tokenString)

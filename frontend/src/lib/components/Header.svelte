@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { activeTab } from '$lib/stores/activeTab';
+	import { activeTab, settingsSection } from '$lib/stores/activeTab';
 	import { theme, toggleTheme } from '$lib/stores/theme';
 	import { logStatus } from '$lib/stores/logStatus';
 	import SaveButton from './SaveButton.svelte';
@@ -62,6 +62,13 @@
 
 	// Navigate to settings tab
 	function openSettings() {
+		$activeTab = 'settings';
+		profileMenuOpen = false;
+	}
+
+	// Navigate to settings and open the MCP section directly
+	function openMcp() {
+		$settingsSection = 'mcp';
 		$activeTab = 'settings';
 		profileMenuOpen = false;
 	}
@@ -314,6 +321,15 @@
 						>
 							<i class="fas fa-cog mr-2 text-blue-400"></i>
 							<span>Settings</span>
+						</button>
+						<button
+							class="w-full text-left p-3 rounded-md flex items-center theme-text-primary hover:theme-bg-secondary transition-colors"
+							on:click={openMcp}
+							title="MCP & access tokens"
+							aria-label="Open MCP settings"
+						>
+							<i class="fas fa-plug mr-2 text-green-400"></i>
+							<span>MCP</span>
 						</button>
 						<button
 							class="w-full text-left p-3 rounded-md flex items-center theme-text-primary hover:theme-bg-secondary transition-colors"
