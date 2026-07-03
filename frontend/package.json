@@ -9,6 +9,7 @@
     "build": "vite build",
     "build:desktop": "VITE_DESKTOP_MODE=true vite build",
     "build:landing-page": "VITE_LANDING_MODE=true vite build",
+    "build:static": "VITE_STATIC_MODE=true VITE_LANDING_MODE=true vite build",
     "preview": "vite preview",
     "prepare": "svelte-kit sync || echo ''",
     "check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",

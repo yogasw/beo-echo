@@ -5,6 +5,12 @@ import { vitePreprocess } from '@sveltejs/vite-plugin-svelte';
 // Check build modes
 const isDesktopMode = process.env.VITE_DESKTOP_MODE === 'true';
 const isLandingMode = process.env.VITE_LANDING_MODE === 'true';
+const isStaticMode = process.env.VITE_STATIC_MODE === 'true';
+// Both landing and static builds are prerendered SSG with no SPA fallback.
+const isSSG = isLandingMode || isStaticMode;
+// Base path for GitHub Pages project sites (e.g. "/beo-echo"). Empty for root
+// (custom domain / user or org page). Set via the BASE_PATH env in CI.
+const basePath = process.env.BASE_PATH ?? '';
 
 /** @type {import('@sveltejs/kit').Config} */
 const config = {
@@ -20,19 +26,23 @@ const config = {
 		// adapter-auto only supports some environments, see https://svelte.dev/docs/kit/adapter-auto for a list.
 		// If your environment is not supported, or you settled on a specific environment, switch out the adapter.
 		// See https://svelte.dev/docs/kit/adapters for more information about adapters.
+		paths: {
+			base: basePath
+		},
+
 		adapter: adapter({
 			// default options are shown. On some platforms
 			// these options are set automatically — see below
 			pages: isDesktopMode ? '../desktop/frontend' : 'build',
 			assets: isDesktopMode ? '../desktop/frontend' : 'build',
-			fallback: isLandingMode ? null : 'index.html', // No fallback for SSG landing, fallback for SPA
+			fallback: isSSG ? (isStaticMode ? '404.html' : null) : 'index.html', // static: 404 fallback; landing SSG: none; SPA: index.html
 			precompress: false,
 			strict: false
 		}),
-		
+
 		// Configure prerendering for landing page SSG
 		prerender: {
-			entries: isLandingMode ? ['/', '/login', '*'] : [], // Always prerender root and login in landing mode
+			entries: isSSG ? ['/', '/guide', '/login', '*'] : [], // Prerender landing + guide (+ login for BE landing) for SSG builds
 			handleHttpError: 'warn',
 			handleMissingId: 'warn',
 			handleEntryGeneratorMismatch: 'warn',
