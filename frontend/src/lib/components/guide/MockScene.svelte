@@ -3,18 +3,22 @@
 	  phase 0 · not ready  → every call is mocked (backend still building)
 	  phase 1 · partial    → some endpoints now forwarded to the real API
 	  phase 2 · ready       → all calls forwarded to the real API
-	QA/user keeps testing throughout — never blocked.
-	Pure SVG + CSS, phase driven by a small timer, reduced-motion friendly.
+	Flow: User → FE / Service → Beo Echo → Backend. QA/user keeps testing
+	throughout — never blocked. Pure SVG + CSS, phase driven by a small timer,
+	reduced-motion friendly.
 -->
 <script lang="ts">
 	import { onMount } from 'svelte';
 
 	let phase = 0; // 0 not ready · 1 partial · 2 ready
 
+	// Advance one phase per full packet round-trip so the badge/state always
+	// matches where the animated packet is. Must equal the .pkt animation
+	// duration (6s) below.
 	onMount(() => {
 		const t = setInterval(() => {
 			phase = (phase + 1) % 3;
-		}, 3400);
+		}, 6000);
 		return () => clearInterval(t);
 	});
 
@@ -31,22 +35,26 @@
 
 <div class="scene">
 	<svg
-		viewBox="0 0 760 276"
+		viewBox="0 0 940 276"
 		role="img"
-		aria-label="Simulated rollout: QA keeps testing on mocks while the backend goes from not ready to partial to fully forwarded to the real API"
+		aria-label="Simulated rollout: user drives the FE which calls Beo Echo; QA keeps testing on mocks while the backend goes from not ready to partial to fully forwarded to the real API"
 	>
 		<!-- ───── phase badge ───── -->
-		<rect x="288" y="6" width="184" height="28" rx="14" fill={info.color} fill-opacity="0.14" stroke={info.color} stroke-width="1.5" />
-		<text x="380" y="24" class="badge-txt" fill={info.color}>{info.badge}</text>
-		<text x="380" y="50" class="tiny muted" text-anchor="middle">{info.note}</text>
+		<rect x="378" y="6" width="184" height="28" rx="14" fill={info.color} fill-opacity="0.14" stroke={info.color} stroke-width="1.5" />
+		<text x="470" y="24" class="badge-txt" fill={info.color}>{info.badge}</text>
+		<text x="470" y="50" class="tiny muted" text-anchor="middle">{info.note}</text>
 
 		<!-- ───── connectors ───── -->
-		<line x1="150" y1="118" x2="344" y2="118" class="rail" />
-		<line x1="344" y1="142" x2="150" y2="142" class="rail" />
+		<!-- user → fe (short link) -->
+		<line x1="150" y1="130" x2="196" y2="130" class="rail" />
+		<!-- fe ↔ beo (request / response lanes) -->
+		<line x1="300" y1="118" x2="494" y2="118" class="rail" />
+		<line x1="494" y1="142" x2="300" y2="142" class="rail" />
+		<!-- beo → backend (state changes with phase) -->
 		<line
-			x1="440"
+			x1="590"
 			y1="130"
-			x2="566"
+			x2="716"
 			y2="130"
 			class="rail"
 			class:pending={phase === 0}
@@ -54,57 +62,67 @@
 			class:live={phase === 2}
 		/>
 
-		<!-- user ↔ beo packets (always on: QA keeps testing) -->
-		<circle class="pkt req" cx="150" cy="118" r="6" />
-		<circle class="pkt res" cx="344" cy="142" r="6" />
-		<text x="247" y="108" class="lane-tag req-tag">request</text>
-		<text x="247" y="160" class="lane-tag res-tag">response</text>
+		<!-- user ↔ fe packets: request out, response back (always on) -->
+		<circle class="pkt uf" cx="150" cy="126" r="5" />
+		<circle class="pkt fu" cx="196" cy="134" r="5" />
+		<!-- fe ↔ beo packets: request out, response back (always on) -->
+		<circle class="pkt req" cx="300" cy="118" r="6" />
+		<circle class="pkt res" cx="494" cy="142" r="6" />
+		<text x="397" y="108" class="lane-tag req-tag">request</text>
+		<text x="397" y="160" class="lane-tag res-tag">response</text>
 
 		<!-- beo ↔ backend packet (only once endpoints go live) -->
 		{#if phase >= 1}
-			<circle class="pkt bk" class:live={phase === 2} cx="440" cy="130" r="5.5" />
+			<circle class="pkt bk" class:live={phase === 2} cx="590" cy="130" r="5.5" />
 		{/if}
 
 		<!-- state marker on the beo→backend link -->
 		{#if phase === 0}
-			<text x="503" y="122" class="mark">🚧</text>
+			<text x="653" y="122" class="mark">🚧</text>
 		{:else if phase === 2}
-			<text x="503" y="124" class="mark check">✓</text>
+			<text x="653" y="124" class="mark check">✓</text>
 		{/if}
 
-		<!-- ───── 1. USER / QA ───── -->
+		<!-- ───── 1. USER ───── -->
 		<g class="bob">
-			<circle cx="90" cy="84" r="15" class="skin" />
-			<rect x="64" y="102" width="52" height="34" rx="17" class="user-body" />
-			<rect x="60" y="132" width="60" height="34" rx="3" class="laptop-screen" />
-			<rect x="70" y="140" width="40" height="4" rx="2" class="code-accent" />
-			<rect x="70" y="148" width="28" height="4" rx="2" class="code-dim" />
-			<circle cx="112" cy="138" r="2.5" class="online" />
-			<path d="M52 166 L128 166 L136 176 L44 176 Z" class="laptop-base" />
+			<circle cx="90" cy="92" r="16" class="skin" />
+			<path d="M62 138 a28 24 0 0 1 56 0 Z" class="user-body" />
 		</g>
-		<text x="90" y="202" class="label">You / QA</text>
-		<text x="90" y="218" class="tiny muted" text-anchor="middle">keep testing, unblocked</text>
+		<text x="90" y="202" class="label">User</text>
+		<text x="90" y="218" class="tiny muted" text-anchor="middle">clicks around, unblocked</text>
 
-		<!-- ───── 2. BEO ECHO ───── -->
-		<rect x="346" y="80" width="92" height="86" rx="14" class="card" />
-		<path d="M396 98 L378 128 L390 128 L384 152 L406 120 L393 120 Z" class="bolt" />
-		<rect x="360" y="140" width="64" height="7" rx="3" class="mock-row" />
-		<rect x="360" y="151" width="46" height="7" rx="3" class="mock-row" />
-		<text x="392" y="202" class="label">Beo Echo</text>
-		<text x="392" y="218" class="tiny muted" text-anchor="middle">routes every call</text>
+		<!-- ───── 2. FE / SERVICE ───── -->
+		<g class="bob">
+			<rect x="200" y="96" width="96" height="60" rx="6" class="laptop-screen" />
+			<rect x="210" y="106" width="52" height="6" rx="2" class="code-accent" />
+			<rect x="210" y="118" width="70" height="6" rx="2" class="code-dim" />
+			<rect x="210" y="130" width="40" height="6" rx="2" class="code-dim" />
+			<circle cx="286" cy="147" r="3" class="online" />
+			<path d="M192 156 L304 156 L314 168 L182 168 Z" class="laptop-base" />
+		</g>
+		<text x="248" y="202" class="label">Your app</text>
+		<text x="248" y="218" class="tiny muted" text-anchor="middle">FE / service / client</text>
 
-		<!-- ───── 3. BACKEND ───── -->
-		<rect x="566" y="74" width="118" height="74" rx="7" class="monitor" />
-		<rect x="574" y="84" width="52" height="7" rx="2" class="code-ln l1" />
-		<rect x="574" y="96" width="86" height="7" rx="2" class="code-ln l2" />
-		<rect x="574" y="108" width="38" height="7" rx="2" class="code-ln l3" />
-		<rect x="574" y="120" width="70" height="7" rx="2" class="code-ln l4" />
-		<rect x="648" y="120" width="6" height="7" class="caret" />
-		<rect x="619" y="148" width="12" height="10" class="stand" />
-		<rect x="600" y="158" width="50" height="6" rx="3" class="stand" />
+		<!-- ───── 3. BEO ECHO ───── -->
+		<rect x="496" y="80" width="92" height="86" rx="14" class="card" />
+		<path d="M546 98 L528 128 L540 128 L534 152 L556 120 L543 120 Z" class="bolt" />
+		<rect x="510" y="140" width="64" height="7" rx="3" class="mock-row" />
+		<rect x="510" y="151" width="46" height="7" rx="3" class="mock-row" />
+		<text x="542" y="202" class="label">Beo Echo</text>
+		<text x="542" y="218" class="tiny muted" text-anchor="middle">routes every call</text>
+
+		<!-- ───── 4. BACKEND ───── -->
+		<rect x="716" y="74" width="118" height="74" rx="7" class="monitor" />
+		<rect x="724" y="84" width="52" height="7" rx="2" class="code-ln l1" />
+		<rect x="724" y="96" width="86" height="7" rx="2" class="code-ln l2" />
+		<rect x="724" y="108" width="38" height="7" rx="2" class="code-ln l3" />
+		<rect x="724" y="120" width="70" height="7" rx="2" class="code-ln l4" />
+		<rect x="798" y="120" width="6" height="7" class="caret" />
+		<rect x="769" y="148" width="12" height="10" class="stand" />
+		<rect x="750" y="158" width="50" height="6" rx="3" class="stand" />
 
 		<!-- work-in-progress gear (fades out once ready) -->
-		<g class="gear" class:done={phase === 2} transform="translate(672,80)">
+		<g class="gear" class:done={phase === 2} transform="translate(822,80)">
 			<circle r="9" class="gear-body" />
 			<circle r="3.5" class="gear-hole" />
 			<g class="gear-teeth">
@@ -116,17 +134,17 @@
 		</g>
 
 		<g class="bob slow">
-			<circle cx="700" cy="164" r="13" class="skin" />
-			<path d="M686 164 a14 14 0 0 1 28 0 Z" class="hardhat" />
-			<rect x="683" y="163" width="34" height="4" rx="2" class="hardhat" />
+			<circle cx="850" cy="164" r="13" class="skin" />
+			<path d="M836 164 a14 14 0 0 1 28 0 Z" class="hardhat" />
+			<rect x="833" y="163" width="34" height="4" rx="2" class="hardhat" />
 		</g>
-		<text x="625" y="202" class="label">Backend</text>
-		<text x="625" y="218" class="tiny muted" text-anchor="middle">{backendNote}</text>
+		<text x="775" y="202" class="label">Backend</text>
+		<text x="775" y="218" class="tiny muted" text-anchor="middle">{backendNote}</text>
 
 		<!-- rollout progress bar -->
-		<rect x="586" y="232" width="80" height="7" rx="3.5" class="bar-track" />
+		<rect x="736" y="232" width="80" height="7" rx="3.5" class="bar-track" />
 		<rect
-			x="586"
+			x="736"
 			y="232"
 			width="80"
 			height="7"
@@ -135,7 +153,7 @@
 			style="transform: scaleX({barScale});"
 			fill={info.color}
 		/>
-		<text x="626" y="256" class="tiny muted" text-anchor="middle">{barCaption}</text>
+		<text x="776" y="256" class="tiny muted" text-anchor="middle">{barCaption}</text>
 	</svg>
 </div>
 
@@ -153,7 +171,7 @@
 		--screen: #0f172a;
 		--screen-brd: #334155;
 		width: 100%;
-		max-width: 720px;
+		max-width: 780px;
 		margin: 0 auto;
 	}
 	:global(.dark) .scene {
@@ -325,9 +343,17 @@
 	}
 
 	.pkt {
-		animation-duration: 3.2s;
-		animation-timing-function: ease-in-out;
+		animation-duration: 6s;
+		animation-timing-function: linear;
 		animation-iteration-count: infinite;
+	}
+	.pkt.uf {
+		fill: var(--accent);
+		animation-name: ufMove;
+	}
+	.pkt.fu {
+		fill: var(--green);
+		animation-name: fuMove;
 	}
 	.pkt.req {
 		fill: var(--accent);
@@ -339,7 +365,7 @@
 	}
 	.pkt.bk {
 		fill: var(--accent);
-		animation: bkMove 2.4s ease-in-out infinite;
+		animation: bkMove 6s linear infinite;
 	}
 	.pkt.bk.live {
 		fill: var(--green);
@@ -364,19 +390,68 @@
 		animation-play-state: paused;
 	}
 
-	@keyframes reqMove {
+	/* Relay across 3.2s: request hops user→fe→beo, then response hops back
+	   beo→fe→user, so the frame is forwarded and returned end-to-end. */
+	/* One frame relayed end-to-end across a single 3.2s cycle, hop by hop:
+	   user→fe→beo→backend, then backend→beo→fe→user. All lanes share the same
+	   duration so the packet is continuous, never overlapping or racing. */
+	/* 1 · user → fe (request) — 0–14% */
+	@keyframes ufMove {
 		0% {
 			transform: translateX(0);
 			opacity: 0;
 		}
-		10% {
+		3% {
 			opacity: 1;
 		}
-		42% {
+		14% {
+			transform: translateX(46px);
+			opacity: 1;
+		}
+		18% {
+			transform: translateX(46px);
+			opacity: 0;
+		}
+		100% {
+			transform: translateX(46px);
+			opacity: 0;
+		}
+	}
+	/* 6 · fe → user (response) — 81–96% */
+	@keyframes fuMove {
+		0%,
+		81% {
+			transform: translateX(0);
+			opacity: 0;
+		}
+		84% {
+			opacity: 1;
+		}
+		96% {
+			transform: translateX(-46px);
+			opacity: 1;
+		}
+		100% {
+			transform: translateX(-46px);
+			opacity: 0;
+		}
+	}
+	/* 2 · fe → beo (request) — 14–32% */
+	@keyframes reqMove {
+		0%,
+		14% {
+			transform: translateX(0);
+			opacity: 0;
+		}
+		17% {
+			opacity: 1;
+		}
+		32% {
 			transform: translateX(194px);
 			opacity: 1;
 		}
-		50% {
+		36% {
+			transform: translateX(194px);
 			opacity: 0;
 		}
 		100% {
@@ -384,18 +459,23 @@
 			opacity: 0;
 		}
 	}
+	/* 5 · beo → fe (response) — 63–81% */
 	@keyframes resMove {
 		0%,
-		48% {
+		63% {
 			transform: translateX(0);
 			opacity: 0;
 		}
-		54% {
+		66% {
 			opacity: 1;
 		}
-		90% {
+		81% {
 			transform: translateX(-194px);
 			opacity: 1;
+		}
+		85% {
+			transform: translateX(-194px);
+			opacity: 0;
 		}
 		100% {
 			transform: translateX(-194px);
@@ -403,24 +483,32 @@
 		}
 	}
 	@keyframes bkMove {
-		0% {
+		0%,
+		32% {
 			transform: translateX(0);
 			opacity: 0;
 		}
-		12% {
+		35% {
 			opacity: 1;
 		}
-		45% {
+		47% {
 			transform: translateX(126px);
+			opacity: 1;
 		}
-		55% {
+		51% {
 			transform: translateX(126px);
+			opacity: 1;
 		}
-		88% {
+		63% {
 			transform: translateX(0);
 			opacity: 1;
 		}
+		67% {
+			transform: translateX(0);
+			opacity: 0;
+		}
 		100% {
+			transform: translateX(0);
 			opacity: 0;
 		}
 	}
@@ -471,7 +559,8 @@
 		.caret {
 			animation: none;
 		}
-		.pkt.res {
+		.pkt.res,
+		.pkt.fu {
 			opacity: 1;
 		}
 		.code-ln {
