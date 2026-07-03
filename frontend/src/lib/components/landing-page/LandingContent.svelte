@@ -911,7 +911,7 @@
 
 			<div class="text-center mt-10">
 				<a
-					href="/guide"
+					href="{base}/guide"
 					class="inline-flex items-center gap-2 bg-gray-900 dark:bg-white text-white dark:text-gray-900 hover:opacity-90 px-6 py-3 rounded-lg text-sm font-semibold transition-opacity"
 					title="Read the full concept & usage guide"
 					aria-label="Read the full concept and usage guide"
