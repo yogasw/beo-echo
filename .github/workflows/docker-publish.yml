@@ -261,6 +261,16 @@ jobs:
           branch: changelog/update-${{ steps.read_version.outputs.version }}
           base: main
 
+  deploy-pages:
+    name: Deploy docs to GitHub Pages
+    needs: release-docker-image
+    if: success()
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    uses: ./.github/workflows/deploy-pages.yml
+
   auto-merge-pr:
     name: Auto Merge PR
     needs: release-docker-image

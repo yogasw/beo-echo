@@ -27,7 +27,12 @@ const config = {
 		// If your environment is not supported, or you settled on a specific environment, switch out the adapter.
 		// See https://svelte.dev/docs/kit/adapters for more information about adapters.
 		paths: {
-			base: basePath
+			base: basePath,
+			// SSG on GitHub Pages: use absolute, base-prefixed asset URLs so they
+			// resolve correctly whether the page is served at /beo-echo or
+			// /beo-echo/ (relative './asset' breaks on the no-trailing-slash URL).
+			// Desktop keeps relative paths for file:// loading.
+			relative: isDesktopMode
 		},
 
 		adapter: adapter({

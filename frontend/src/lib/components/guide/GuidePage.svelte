@@ -54,7 +54,7 @@
 	// a matched mock is answered at Beo Echo and stops there (mock + proxy-match)
 	const stopsAtBeo = (id: string) => id === 'mock' || id === 'proxy';
 	function wire2Class(id: string): string {
-		if (id === 'mock') return 'cut';
+		if (id === 'mock' || id === 'disabled') return 'cut';
 		if (id === 'proxy') return 'cond';
 		return '';
 	}
@@ -228,24 +228,35 @@
 							<div class="flow {mode.id} {isOff(mode.id) ? 'off' : ''}" aria-hidden="true">
 								<div class="fnodes">
 									<div class="fnode">
-										<i class="fas fa-laptop-code"></i><span>Client</span>
+										<i class="fas fa-user"></i><span>User</span>
+									</div>
+									<div class="fnode">
+										<i class="fas fa-laptop-code"></i><span>Your app</span>
 									</div>
 									<div class="fnode beo">
 										<i class="fas fa-bolt"></i><span>Beo Echo</span>
 									</div>
-									<div class="fnode {isCut(mode.id) ? 'dim' : ''}">
+									<div class="fnode {isCut(mode.id) || isOff(mode.id) ? 'dim' : ''}">
 										<i class="fas fa-database"></i><span>Real API</span>
 									</div>
 								</div>
 
 								<div class="rails">
+									<span class="rail rail0"></span>
 									<span class="rail rail1"></span>
 									<span class="rail rail2 {wire2Class(mode.id)}"></span>
-									{#if isCut(mode.id)}<i class="fas fa-xmark cut-x" title="never forwarded"></i>{/if}
+									{#if isCut(mode.id) || isOff(mode.id)}<i class="fas fa-xmark cut-x" title="never forwarded"></i>{/if}
 								</div>
 
-								{#if !isOff(mode.id)}
-									<div class="layer">
+								<div class="layer">
+									<!-- FE processes the call on the way in (same in every mode) -->
+									<span class="fe-proc"><i class="fas fa-gear"></i> processing…</span>
+									{#if isOff(mode.id)}
+										<!-- disabled: request still arrives from the user but the
+										     project serves nothing, so it dies at Beo Echo -->
+										<span class="chip chip-dead"><i class="fas fa-cube"></i></span>
+										<span class="verdict v-dead"><i class="fas fa-ban"></i> no response</span>
+									{:else}
 										{#if stopsAtBeo(mode.id)}
 											<span class="chip chip-match"><i class="fas fa-cube"></i></span>
 											<span class="verdict v-match"><i class="fas fa-check"></i> match</span>
@@ -256,8 +267,8 @@
 												{#if isCond(mode.id)}no match <i class="fas fa-arrow-right"></i>{:else}forward all <i class="fas fa-arrow-right"></i>{/if}
 											</span>
 										{/if}
-									</div>
-								{/if}
+									{/if}
+								</div>
 							</div>
 							{#if isCond(mode.id)}
 								<p class="text-[11px] text-gray-400 dark:text-gray-500 mt-3 text-center">
@@ -530,27 +541,40 @@
 		position: relative;
 		height: 92px;
 	}
-	.flow.off {
-		opacity: 0.4;
-		filter: grayscale(1);
-	}
+	/* disabled: the user and their app are still live (they keep sending); only
+	   the path beyond Beo Echo is dead — handled by the dimmed Real API + rail. */
 	.fnodes {
 		position: absolute;
 		top: 16px;
 		left: 0;
 		right: 0;
-		display: flex;
-		justify-content: space-between;
+		height: 44px;
 	}
+	/* Absolutely centred at 8 / 36 / 64 / 92% so the rails and the animated
+	   chip (which use the same percentages) line up exactly. */
 	.fnode {
+		position: absolute;
+		transform: translateX(-50%);
 		display: flex;
 		flex-direction: column;
 		align-items: center;
 		gap: 5px;
-		width: 60px;
+		width: 70px;
 		font-size: 11px;
 		color: #64748b;
 		z-index: 1;
+	}
+	.fnode:nth-child(1) {
+		left: 8%;
+	}
+	.fnode:nth-child(2) {
+		left: 36%;
+	}
+	.fnode:nth-child(3) {
+		left: 64%;
+	}
+	.fnode:nth-child(4) {
+		left: 92%;
 	}
 	:global(.dark) .fnode {
 		color: #94a3b8;
@@ -583,13 +607,17 @@
 	:global(.dark) .rail {
 		background: #475569;
 	}
+	.rail0 {
+		left: 11%;
+		width: 22%;
+	}
 	.rail1 {
-		left: 9%;
-		width: 40%;
+		left: 39%;
+		width: 22%;
 	}
 	.rail2 {
-		left: 51%;
-		width: 40%;
+		left: 67%;
+		width: 22%;
 	}
 	.rail2.cut {
 		background: repeating-linear-gradient(90deg, #cbd5e1 0 5px, transparent 5px 10px);
@@ -607,7 +635,7 @@
 	.cut-x {
 		position: absolute;
 		top: -9px;
-		left: 71%;
+		left: 78%;
 		transform: translateX(-50%);
 		font-size: 12px;
 		color: #ef4444;
@@ -639,6 +667,34 @@
 	.chip-fwd {
 		animation: chipFwd 4.2s ease-in-out infinite;
 	}
+	/* disabled: chip arrives from the user but dies at Beo Echo (no response) */
+	.chip-dead {
+		animation: chipDead 4.2s ease-in-out infinite;
+	}
+	/* "processing…" tag that blips at FE while the request transits it */
+	.fe-proc {
+		position: absolute;
+		top: 0;
+		left: 36%;
+		transform: translateX(-50%);
+		font-size: 8.5px;
+		font-weight: 700;
+		white-space: nowrap;
+		color: #2563eb;
+		opacity: 0;
+		animation: feProc 4.2s ease-in-out infinite;
+	}
+	:global(.dark) .fe-proc {
+		color: #60a5fa;
+	}
+	.fe-proc :global(i) {
+		font-size: 8px;
+		animation: spin 1.4s linear infinite;
+	}
+	/* disabled: request dies at Beo, nothing comes back — only the inbound blip */
+	.flow.disabled .fe-proc {
+		animation-name: feProcIn;
+	}
 	/* forwarder: no match check — the request passes straight through */
 	.flow.forwarder .chip-fwd {
 		animation-name: chipThrough;
@@ -653,7 +709,7 @@
 	.verdict {
 		position: absolute;
 		top: 0;
-		left: 50%;
+		left: 64%;
 		transform: translateX(-50%);
 		font-size: 9px;
 		font-weight: 700;
@@ -673,44 +729,17 @@
 	:global(.dark) .v-fwd {
 		color: #a78bfa;
 	}
-
-	@keyframes chipMatch {
-		0% {
-			left: 8%;
-			opacity: 0;
-			background: #3b82f6;
-		}
-		7% {
-			opacity: 1;
-		}
-		30% {
-			left: 47%;
-			background: #3b82f6;
-		}
-		42% {
-			left: 47%;
-			background: #22c55e;
-		}
-		52% {
-			left: 47%;
-			background: #22c55e;
-		}
-		80% {
-			left: 8%;
-			opacity: 1;
-			background: #22c55e;
-		}
-		88% {
-			left: 8%;
-			opacity: 0;
-		}
-		100% {
-			left: 8%;
-			opacity: 0;
-		}
+	.v-dead {
+		color: #94a3b8;
 	}
-	/* proxy no-match: in → decide → out to Real API → data returns to client */
-	@keyframes chipFwd {
+	:global(.dark) .v-dead {
+		color: #94a3b8;
+	}
+
+	/* Shared inbound phase (identical in every mode): user 8% → fe 36% → beo 64%
+	   over 0–40%. What happens after 40% is what differs between modes. */
+	/* mock: answered at Beo, sent straight back — never reaches Real API */
+	@keyframes chipMatch {
 		0% {
 			left: 8%;
 			opacity: 0;
@@ -719,25 +748,34 @@
 		6% {
 			opacity: 1;
 		}
-		22% {
-			left: 47%;
+		18% {
+			left: 36%;
 			background: #3b82f6;
 		}
-		32% {
-			left: 47%;
-			background: #8b5cf6;
+		40% {
+			left: 64%;
+			background: #3b82f6;
 		}
-		50% {
-			left: 86%;
-			background: #8b5cf6;
+		48% {
+			left: 64%;
+			background: #22c55e;
 		}
-		58% {
-			left: 86%;
+		56% {
+			left: 64%;
+			background: #22c55e;
+		}
+		68% {
+			left: 36%;
+			background: #22c55e;
+		}
+		73% {
+			left: 36%;
+			background: #22c55e;
 		}
 		86% {
 			left: 8%;
 			opacity: 1;
-			background: #8b5cf6;
+			background: #22c55e;
 		}
 		94% {
 			left: 8%;
@@ -748,7 +786,60 @@
 			opacity: 0;
 		}
 	}
+	/* proxy no-match: in → decide → out to Real API → data returns to client */
+	/* proxy no-match: same inbound to Beo, then forwarded on to Real API */
+	@keyframes chipFwd {
+		0% {
+			left: 8%;
+			opacity: 0;
+			background: #3b82f6;
+		}
+		6% {
+			opacity: 1;
+		}
+		18% {
+			left: 36%;
+			background: #3b82f6;
+		}
+		40% {
+			left: 64%;
+			background: #3b82f6;
+		}
+		48% {
+			left: 64%;
+			background: #8b5cf6;
+		}
+		62% {
+			left: 92%;
+			background: #8b5cf6;
+		}
+		70% {
+			left: 92%;
+		}
+		82% {
+			left: 36%;
+			background: #8b5cf6;
+		}
+		86% {
+			left: 36%;
+			background: #8b5cf6;
+		}
+		96% {
+			left: 8%;
+			opacity: 1;
+			background: #8b5cf6;
+		}
+		99% {
+			left: 8%;
+			opacity: 0;
+		}
+		100% {
+			left: 8%;
+			opacity: 0;
+		}
+	}
 	/* forwarder: straight through to Real API, data returns to client — no match check */
+	/* forwarder: same inbound to Beo, then straight through to Real API (no decide) */
 	@keyframes chipThrough {
 		0% {
 			left: 8%;
@@ -758,28 +849,141 @@
 		6% {
 			opacity: 1;
 		}
-		30% {
+		18% {
+			left: 36%;
 			background: #3b82f6;
 		}
-		48% {
-			left: 86%;
+		40% {
+			left: 64%;
+			background: #3b82f6;
+		}
+		62% {
+			left: 92%;
 			background: #8b5cf6;
 		}
-		56% {
-			left: 86%;
+		70% {
+			left: 92%;
 		}
-		90% {
+		82% {
+			left: 36%;
+			background: #8b5cf6;
+		}
+		86% {
+			left: 36%;
+			background: #8b5cf6;
+		}
+		96% {
 			left: 8%;
 			opacity: 1;
 			background: #8b5cf6;
 		}
-		96% {
+		99% {
 			left: 8%;
 			opacity: 0;
 		}
 		100% {
 			left: 8%;
 			opacity: 0;
+		}
+	}
+	/* disabled: same inbound to Beo, then the request dies there (no response) */
+	@keyframes chipDead {
+		0% {
+			left: 8%;
+			opacity: 0;
+			background: #3b82f6;
+		}
+		6% {
+			opacity: 1;
+		}
+		18% {
+			left: 36%;
+			background: #3b82f6;
+		}
+		40% {
+			left: 64%;
+			background: #3b82f6;
+		}
+		52% {
+			left: 64%;
+			background: #94a3b8;
+		}
+		72% {
+			left: 64%;
+			opacity: 1;
+			background: #94a3b8;
+		}
+		82% {
+			left: 64%;
+			opacity: 0;
+		}
+		100% {
+			left: 64%;
+			opacity: 0;
+		}
+	}
+	/* Two blips: once as the request reaches FE (~18%), once as the response
+	   passes back through FE (~72%) — the app processes both directions. */
+	@keyframes feProc {
+		0%,
+		10% {
+			opacity: 0;
+			transform: translate(-50%, 3px);
+		}
+		18% {
+			opacity: 1;
+			transform: translate(-50%, 0);
+		}
+		30% {
+			opacity: 1;
+			transform: translate(-50%, 0);
+		}
+		38% {
+			opacity: 0;
+			transform: translate(-50%, -2px);
+		}
+		64% {
+			opacity: 0;
+			transform: translate(-50%, 3px);
+		}
+		72% {
+			opacity: 1;
+			transform: translate(-50%, 0);
+		}
+		82% {
+			opacity: 1;
+			transform: translate(-50%, 0);
+		}
+		90%,
+		100% {
+			opacity: 0;
+			transform: translate(-50%, -2px);
+		}
+	}
+	/* inbound blip only (used by disabled, where nothing comes back) */
+	@keyframes feProcIn {
+		0%,
+		10% {
+			opacity: 0;
+			transform: translate(-50%, 3px);
+		}
+		18% {
+			opacity: 1;
+			transform: translate(-50%, 0);
+		}
+		30% {
+			opacity: 1;
+			transform: translate(-50%, 0);
+		}
+		38%,
+		100% {
+			opacity: 0;
+			transform: translate(-50%, -2px);
+		}
+	}
+	@keyframes spin {
+		to {
+			transform: rotate(360deg);
 		}
 	}
 	@keyframes verdictPop {

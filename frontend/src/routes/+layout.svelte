@@ -21,15 +21,17 @@
 	import BackendStatus from '$lib/components/desktop/BackendStatus.svelte';
 	import { isDesktopMode } from '$lib/utils/desktopConfig';
 	import { zoomLevel } from '$lib/stores/zoom';
+	import { STATIC_MODE } from '$lib/config/appMode';
 
 	let searchTerm = '';
 	let activeTab = 'routes';
 	let panelWidth: number = 18; // Panel width in rem units (w-72 = 18rem)
 	let projectListComponent: ProjectList;
 
-	// Check authentication from localStorage
-	$: isLoginPage = $page.url.pathname === '/login';
-	$: isLandingPage = $page.url.pathname === '/';
+	// Match on the route id (route-relative) rather than the pathname, so it is
+	// unaffected by a GitHub Pages base path (e.g. /beo-echo/login).
+	$: isLoginPage = $page.route.id === '/login';
+	$: isLandingPage = $page.route.id === '/';
 
 	async function fetchConfigs(workspaceId: string) {
 		try {
@@ -78,7 +80,13 @@
 
 	onMount(async () => {
 		console.log('onMount: layout');
-		
+
+		// Pure static builds have no backend — never call the API or redirect to
+		// login. Just render the page (only the landing/guide routes exist).
+		if (STATIC_MODE) {
+			return;
+		}
+
 		// Skip authentication checks for landing page
 		if (isLandingPage) {
 			// If user is authenticated, still initialize workspaces for the landing page
@@ -160,7 +168,7 @@
 	}
 </script>
 
-{#if isLoginPage || isLandingPage || !$isAuthenticated}
+{#if STATIC_MODE || isLoginPage || isLandingPage || !$isAuthenticated}
 	<div style="zoom: {$zoomLevel}; min-height: calc(100vh / {$zoomLevel}); display: flex; flex-direction: column;">
 		<slot />
 	</div>
