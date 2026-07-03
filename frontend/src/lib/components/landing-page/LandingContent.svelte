@@ -1,7 +1,9 @@
 <script lang="ts">
 	import { isAuthenticated } from '$lib/stores/auth';
+	import { base } from '$app/paths';
 	import { goto } from '$app/navigation';
 	import { toast } from '$lib/stores/toast';
+	import { STATIC_MODE } from '$lib/config/appMode';
 	import RecentProjects from '$lib/components/common/RecentProjects.svelte';
 	import ProjectSearchResults from '$lib/components/common/ProjectSearchResults.svelte';
 	import WorkspaceSelectionModal from '$lib/components/common/WorkspaceSelectionModal.svelte';
@@ -400,7 +402,7 @@
 						🚀 Deploy in Seconds
 					</button>
 
-					{#if !authenticated}
+					{#if !authenticated && !STATIC_MODE}
 						<button
 							on:click={handleLogin}
 							class="bg-white dark:bg-gray-800 border-2 border-gray-200 dark:border-gray-600 hover:border-blue-500 dark:hover:border-blue-400 text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 py-3 px-6 rounded-lg text-base font-medium transition-all duration-300 flex items-center shadow-md hover:shadow-lg"
@@ -410,6 +412,17 @@
 							<i class="fas fa-cloud mr-2"></i>
 							Try Cloud Version
 						</button>
+					{/if}
+					{#if STATIC_MODE}
+						<a
+							href="{base}/guide"
+							class="bg-white dark:bg-gray-800 border-2 border-gray-200 dark:border-gray-600 hover:border-blue-500 dark:hover:border-blue-400 text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 py-3 px-6 rounded-lg text-base font-medium transition-all duration-300 flex items-center shadow-md hover:shadow-lg"
+							title="Read the concept & usage guide"
+							aria-label="Read the concept and usage guide"
+						>
+							<i class="fas fa-book-open mr-2"></i>
+							Read the Guide
+						</a>
 					{/if}
 				</div>
 
@@ -770,6 +783,143 @@
 						Create Mock Server
 					</button>
 				</div>
+			</div>
+		</div>
+	</section>
+
+	<!-- How To Use Section -->
+	<section id="how-to-use" class="py-16">
+		<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+			<div class="text-center mb-12">
+				<h2 class="text-3xl font-bold text-gray-900 dark:text-white mb-4">
+					<i class="fas fa-book-open text-blue-600 mr-2"></i>
+					How to Use Beo Echo
+				</h2>
+				<p class="text-lg text-gray-600 dark:text-gray-400 max-w-3xl mx-auto">
+					Two ways to work: click through the dashboard, or drive everything from an AI client over
+					MCP.
+				</p>
+			</div>
+
+			<div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+				<!-- Dashboard walkthrough -->
+				<div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-8">
+					<h3 class="text-xl font-semibold text-gray-900 dark:text-white mb-6 flex items-center">
+						<i class="fas fa-mouse-pointer text-indigo-600 dark:text-indigo-400 mr-2"></i>
+						In the dashboard
+					</h3>
+					<ol class="space-y-5">
+						<li class="flex gap-4">
+							<span class="flex-none w-8 h-8 rounded-lg bg-indigo-100 dark:bg-indigo-500/20 text-indigo-600 dark:text-indigo-300 font-bold flex items-center justify-center">1</span>
+							<div>
+								<h4 class="font-semibold text-gray-900 dark:text-white">Create a project</h4>
+								<p class="text-sm text-gray-600 dark:text-gray-300">
+									Pick an alias and a mode — <span class="font-medium">Mock</span>,
+									<span class="font-medium">Proxy</span>, or <span class="font-medium">Forwarder</span>.
+									Your server goes live instantly.
+								</p>
+							</div>
+						</li>
+						<li class="flex gap-4">
+							<span class="flex-none w-8 h-8 rounded-lg bg-indigo-100 dark:bg-indigo-500/20 text-indigo-600 dark:text-indigo-300 font-bold flex items-center justify-center">2</span>
+							<div>
+								<h4 class="font-semibold text-gray-900 dark:text-white">Add a route</h4>
+								<p class="text-sm text-gray-600 dark:text-gray-300">
+									Define a method and path. Path params work too, e.g.
+									<code class="font-mono text-xs bg-gray-100 dark:bg-gray-700 px-1.5 py-0.5 rounded">/users/:id</code>.
+								</p>
+								<div class="flex flex-wrap gap-1.5 mt-2">
+									<span class="text-[11px] font-mono font-bold text-white bg-green-600 px-2 py-0.5 rounded">GET</span>
+									<span class="text-[11px] font-mono font-bold text-white bg-blue-600 px-2 py-0.5 rounded">POST</span>
+									<span class="text-[11px] font-mono font-bold text-white bg-yellow-600 px-2 py-0.5 rounded">PUT</span>
+									<span class="text-[11px] font-mono font-bold text-white bg-red-600 px-2 py-0.5 rounded">DELETE</span>
+								</div>
+							</div>
+						</li>
+						<li class="flex gap-4">
+							<span class="flex-none w-8 h-8 rounded-lg bg-indigo-100 dark:bg-indigo-500/20 text-indigo-600 dark:text-indigo-300 font-bold flex items-center justify-center">3</span>
+							<div>
+								<h4 class="font-semibold text-gray-900 dark:text-white">Set the response</h4>
+								<p class="text-sm text-gray-600 dark:text-gray-300">
+									Status code, JSON body, and headers. Mark one as fallback, or add rules to
+									respond conditionally on headers, query, or body.
+								</p>
+							</div>
+						</li>
+						<li class="flex gap-4">
+							<span class="flex-none w-8 h-8 rounded-lg bg-indigo-100 dark:bg-indigo-500/20 text-indigo-600 dark:text-indigo-300 font-bold flex items-center justify-center">4</span>
+							<div>
+								<h4 class="font-semibold text-gray-900 dark:text-white">Inspect &amp; replay</h4>
+								<p class="text-sm text-gray-600 dark:text-gray-300">
+									Watch every request in <span class="font-medium">Logs</span> — method, headers,
+									body, status, latency — and re-fire any call from <span class="font-medium">Replay</span>.
+								</p>
+							</div>
+						</li>
+					</ol>
+				</div>
+
+				<!-- MCP walkthrough -->
+				<div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-8">
+					<h3 class="text-xl font-semibold text-gray-900 dark:text-white mb-6 flex items-center">
+						<i class="fas fa-plug text-teal-600 dark:text-teal-400 mr-2"></i>
+						With AI (MCP)
+					</h3>
+					<p class="text-sm text-gray-600 dark:text-gray-300 mb-4">
+						Connect Claude Code once, then manage mocks by chatting. Grab your endpoint under
+						<span class="font-medium">Profile → MCP</span>.
+					</p>
+
+					<div class="space-y-3">
+						<div>
+							<span class="block text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1">1. Add the server</span>
+							<div class="bg-gray-800 dark:bg-gray-900 rounded-lg px-4 py-3 overflow-x-auto border border-gray-700 dark:border-gray-600">
+								<code class="font-mono text-xs text-green-400 dark:text-green-300 block whitespace-nowrap">
+									<span class="text-gray-500">$</span> claude mcp add --transport http beo-echo &lt;endpoint&gt;/mcp
+								</code>
+							</div>
+						</div>
+						<div>
+							<span class="block text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1">2. Log in (OAuth)</span>
+							<div class="bg-gray-800 dark:bg-gray-900 rounded-lg px-4 py-3 overflow-x-auto border border-gray-700 dark:border-gray-600">
+								<code class="font-mono text-xs text-green-400 dark:text-green-300 block whitespace-nowrap">
+									<span class="text-gray-500">$</span> claude mcp login beo-echo
+								</code>
+							</div>
+							<p class="text-xs text-gray-500 dark:text-gray-400 mt-1">
+								Approve in the browser — that's it.
+							</p>
+						</div>
+					</div>
+
+					<div class="mt-5 pt-5 border-t border-gray-200 dark:border-gray-700">
+						<span class="block text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-2">Then just ask</span>
+						<ul class="space-y-2 text-sm text-gray-600 dark:text-gray-300">
+							<li class="flex items-start gap-2">
+								<i class="fas fa-angle-right text-teal-500 mt-1"></i> "List my projects and scan project X."
+							</li>
+							<li class="flex items-start gap-2">
+								<i class="fas fa-angle-right text-teal-500 mt-1"></i> "Add a mock POST /users returning 201."
+							</li>
+							<li class="flex items-start gap-2">
+								<i class="fas fa-angle-right text-teal-500 mt-1"></i> "Show the last logs and replay that call."
+							</li>
+						</ul>
+					</div>
+				</div>
+			</div>
+
+			<div class="text-center mt-10">
+				<a
+					href="/guide"
+					class="inline-flex items-center gap-2 bg-gray-900 dark:bg-white text-white dark:text-gray-900 hover:opacity-90 px-6 py-3 rounded-lg text-sm font-semibold transition-opacity"
+					title="Read the full concept & usage guide"
+					aria-label="Read the full concept and usage guide"
+				>
+					<i class="fas fa-book-open"></i>
+					Read the full guide — concepts, modes &amp; workflows
+					<i class="fas fa-arrow-right"></i>
+				</a>
 			</div>
 		</div>
 	</section>

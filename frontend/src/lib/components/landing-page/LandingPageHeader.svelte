@@ -1,8 +1,10 @@
 <script lang="ts">
 	import { createEventDispatcher } from 'svelte';
+	import { base } from '$app/paths';
 	import { theme, toggleTheme } from '$lib/stores/theme';
 	import { isAuthenticated, auth } from '$lib/stores/auth';
 	import { goto } from '$app/navigation';
+	import { STATIC_MODE } from '$lib/config/appMode';
 
 	const dispatch = createEventDispatcher();
 
@@ -56,7 +58,7 @@
 					<div class="flex-shrink-0 flex items-center">
 						<!-- Clickable Logo -->
 						<a
-							href="/"
+							href="{base}/"
 							class="flex items-center hover:opacity-80 transition-opacity no-underline hover:no-underline"
 							title="Go to home page"
 							aria-label="Go to Beo Echo home page"
@@ -70,20 +72,28 @@
 				<!-- Navigation Links -->
 				<nav class="hidden md:flex items-center space-x-6">
 					<a
-						href="/#features"
+						href="{base}/#concepts"
 						class="text-sm font-medium text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
-						title="View features"
-						aria-label="View features"
+						title="Core concepts"
+						aria-label="Core concepts"
 					>
-						Features
+						Concepts
 					</a>
 					<a
-						href="/#modes"
+						href="{base}/#modes"
 						class="text-sm font-medium text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
 						title="View operating modes"
 						aria-label="View operating modes"
 					>
 						Modes
+					</a>
+					<a
+						href="{base}/#install"
+						class="text-sm font-medium text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+						title="Connect to Claude (MCP)"
+						aria-label="Connect to Claude over MCP"
+					>
+						Connect
 					</a>
 				</nav>
 			</div>
@@ -100,13 +110,46 @@
 					aria-label="Star Beo Echo on GitHub"
 				>
 					<img
-						src="https://img.shields.io/github/stars/yogasw/beo-echo?style=social"
+						src="https://img.shields.io/github/stars/yogasw/beo-echo"
 						alt="GitHub stars"
 						class="h-5"
 					/>
 				</a>
 
-				{#if $isAuthenticated && showUserMenu}
+				<!-- Product Hunt badge (vote count) - Hidden on mobile -->
+				<a
+					href="https://www.producthunt.com/products/beo-echo?embed=true&utm_source=badge-featured&utm_medium=badge&utm_campaign=badge-beo-echo"
+					target="_blank"
+					rel="noopener noreferrer"
+					class="hidden lg:block"
+					title="Beo Echo on Product Hunt"
+					aria-label="Beo Echo on Product Hunt"
+				>
+					<img
+						src="https://api.producthunt.com/widgets/embed-image/v1/featured.svg?post_id=1096329&theme=light&t=1773309645119"
+						alt="Beo Echo on Product Hunt"
+						class="h-8 dark:hidden"
+					/>
+					<img
+						src="https://api.producthunt.com/widgets/embed-image/v1/featured.svg?post_id=1096329&theme=dark&t=1773309645119"
+						alt="Beo Echo on Product Hunt"
+						class="h-8 hidden dark:block"
+					/>
+				</a>
+
+				{#if STATIC_MODE}
+					<!-- Static docs build: no backend, point to the guide instead -->
+					<a
+						href="{base}/guide"
+						class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center"
+						title="Read the guide"
+						aria-label="Read the Beo Echo guide"
+					>
+						<i class="fas fa-book-open mr-2"></i>
+						<span class="hidden sm:inline">Read the Guide</span>
+						<span class="sm:hidden">Guide</span>
+					</a>
+				{:else if $isAuthenticated && showUserMenu}
 					<!-- User Menu -->
 					<div class="flex items-center">
 						<button
@@ -124,7 +167,7 @@
 					<!-- Login/Signup Buttons for non-authenticated users -->
 					<div class="hidden md:flex items-center space-x-2">
 						<a
-							href="/login"
+							href="{base}/login"
 							class="px-4 py-2 text-sm font-medium text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-all duration-200"
 							title="Sign in to your account"
 							aria-label="Sign in to your account"
@@ -191,18 +234,18 @@
 				<div class="px-2 pt-2 pb-3 space-y-1">
 					<!-- Navigation Links -->
 					<a
-						href="/#features"
+						href="{base}/#concepts"
 						class="block w-full text-left px-3 py-2 text-base font-medium text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
-						title="View features"
-						aria-label="View features"
+						title="Core concepts"
+						aria-label="Core concepts"
 						role="menuitem"
 						on:click={closeMobileMenu}
 					>
-						<i class="fas fa-star mr-3"></i>
-						Features
+						<i class="fas fa-layer-group mr-3"></i>
+						Concepts
 					</a>
 					<a
-						href="/#modes"
+						href="{base}/#modes"
 						class="block w-full text-left px-3 py-2 text-base font-medium text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
 						title="View operating modes"
 						aria-label="View operating modes"
@@ -212,11 +255,22 @@
 						<i class="fas fa-cogs mr-3"></i>
 						Modes
 					</a>
-					{#if !$isAuthenticated}
+					<a
+						href="{base}/#install"
+						class="block w-full text-left px-3 py-2 text-base font-medium text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+						title="Connect to Claude (MCP)"
+						aria-label="Connect to Claude over MCP"
+						role="menuitem"
+						on:click={closeMobileMenu}
+					>
+						<i class="fas fa-plug mr-3"></i>
+						Connect
+					</a>
+					{#if !STATIC_MODE && !$isAuthenticated}
 						<!-- Authentication Links for Mobile -->
 						<div class="border-t border-gray-200 dark:border-gray-700 pt-3 mt-3">
 							<a
-								href="/login"
+								href="{base}/login"
 								class="block w-full text-left px-3 py-2 text-base font-medium text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
 								title="Sign in to your account"
 								aria-label="Sign in to your account"

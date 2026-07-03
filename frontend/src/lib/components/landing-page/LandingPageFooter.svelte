@@ -1,84 +1,109 @@
+<script lang="ts">
+	import { base } from '$app/paths';
+
+	const year = new Date().getFullYear();
+
+	const explore = [
+		{ label: 'Concepts', href: `${base}/#concepts` },
+		{ label: 'Operating modes', href: `${base}/#modes` },
+		{ label: 'Connect to Claude (MCP)', href: `${base}/#install` },
+		{ label: 'Deploy with Docker', href: `${base}/#deploy` }
+	];
+
+	const resources = [
+		{ label: 'GitHub repository', href: 'https://github.com/yogasw/beo-echo' },
+		{ label: 'Report an issue', href: 'https://github.com/yogasw/beo-echo/issues' },
+		{ label: 'Product Hunt', href: 'https://www.producthunt.com/products/beo-echo' }
+	];
+</script>
+
 <!-- Footer -->
-<footer class="bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-white py-12 border-t border-gray-200 dark:border-gray-700">
-	<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-		<div class="grid grid-cols-1 md:grid-cols-4 gap-8">
+<footer class="bg-gray-50 dark:bg-gray-900 border-t border-gray-200 dark:border-gray-800">
+	<div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-14">
+		<div class="grid grid-cols-1 md:grid-cols-12 gap-10">
 			<!-- Brand -->
-			<div class="col-span-1 md:col-span-2">
-				<div class="flex items-center mb-4">
-					<i class="fas fa-exchange-alt text-blue-500 dark:text-blue-400 text-2xl mr-3"></i>
-					<h3 class="text-xl font-bold text-gray-900 dark:text-white">Beo Echo</h3>
+			<div class="md:col-span-6">
+				<div class="flex items-center gap-2.5 mb-3">
+					<span class="w-9 h-9 rounded-lg bg-blue-600 text-white flex items-center justify-center">
+						<i class="fas fa-bolt"></i>
+					</span>
+					<span class="text-lg font-bold text-gray-900 dark:text-white">Beo Echo</span>
 				</div>
-				<p class="text-gray-600 dark:text-gray-300 mb-4">
-					Transform API development and integration with this all-in-one toolset.
+				<p class="text-sm text-gray-600 dark:text-gray-400 max-w-sm leading-relaxed">
+					Mock, proxy &amp; replay any HTTP API — self-hosted, and drivable from Claude over MCP.
 				</p>
-				<p class="text-sm text-gray-500 dark:text-gray-400">
-					© 2024 Beo Echo. Built with ❤️ for developers.
-				</p>
+				<div class="flex items-center gap-3 mt-5">
+					<a
+						href="https://github.com/yogasw/beo-echo"
+						target="_blank"
+						rel="noopener noreferrer"
+						class="w-9 h-9 rounded-lg border border-gray-200 dark:border-gray-700 flex items-center justify-center text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 hover:border-blue-400 transition-colors"
+						title="GitHub"
+						aria-label="Beo Echo on GitHub"
+					>
+						<i class="fab fa-github"></i>
+					</a>
+					<a
+						href="https://www.producthunt.com/products/beo-echo"
+						target="_blank"
+						rel="noopener noreferrer"
+						class="w-9 h-9 rounded-lg border border-gray-200 dark:border-gray-700 flex items-center justify-center text-gray-600 dark:text-gray-300 hover:text-[#ff6154] hover:border-[#ff6154]/50 transition-colors"
+						title="Product Hunt"
+						aria-label="Beo Echo on Product Hunt"
+					>
+						<i class="fab fa-product-hunt"></i>
+					</a>
+				</div>
 			</div>
 
-			<!-- Links -->
-			<div>
-				<h4 class="font-semibold mb-4 text-gray-900 dark:text-white">Product</h4>
-				<ul class="space-y-2 text-sm">
-					<li>
-						<a 
-							href="/#features" 
-							class="text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition-colors" 
-							title="View features" 
-							aria-label="View features"
-						>
-							Features
-						</a>
-					</li>
-					<li>
-						<a 
-							href="/#modes" 
-							class="text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition-colors" 
-							title="View operating modes" 
-							aria-label="View operating modes"
-						>
-							Modes
-						</a>
-					</li>
+			<!-- Explore -->
+			<div class="md:col-span-3">
+				<h4 class="text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-4">
+					Explore
+				</h4>
+				<ul class="space-y-2.5 text-sm">
+					{#each explore as link}
+						<li>
+							<a
+								href={link.href}
+								class="text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+							>
+								{link.label}
+							</a>
+						</li>
+					{/each}
 				</ul>
 			</div>
 
-			<div>
-				<h4 class="font-semibold mb-4 text-gray-900 dark:text-white">Support</h4>
-				<ul class="space-y-2 text-sm">
-					
-					<li>
-						<a 
-							href="emailto:ariokidev@gmail.com" 
-							class="text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition-colors" 
-							title="Contact support" 
-							aria-label="Contact support"
-						>
-							Contact
-						</a>
-					</li>
-					<li>
-						<a 
-							href="https://github.com/yogasw/beo-echo/issues" 
-							class="text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition-colors" 
-							title="Community support" 
-							aria-label="Community support"
-						>
-							Report an issue
-						</a>
-					</li>
-
-					<li>
-						<a 
-							href="https://github.com/yogasw/beo-echo" 
-							class="text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition-colors" 
-							title="Documentation" 
-							aria-label="Documentation"
-						>
-							Github Repository 
-						</a>
+			<!-- Resources -->
+			<div class="md:col-span-3">
+				<h4 class="text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-4">
+					Resources
+				</h4>
+				<ul class="space-y-2.5 text-sm">
+					{#each resources as link}
+						<li>
+							<a
+								href={link.href}
+								target="_blank"
+								rel="noopener noreferrer"
+								class="text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+							>
+								{link.label}
+							</a>
+						</li>
+					{/each}
 				</ul>
 			</div>
+		</div>
+
+		<div
+			class="mt-12 pt-6 border-t border-gray-200 dark:border-gray-800 flex flex-col sm:flex-row items-center justify-between gap-3"
+		>
+			<p class="text-xs text-gray-500 dark:text-gray-400">
+				© {year} Beo Echo · MIT Licensed
+			</p>
+			<p class="text-xs text-gray-400 dark:text-gray-500">Built with ❤️ for developers</p>
 		</div>
 	</div>
 </footer>
