@@ -5,14 +5,9 @@ name: Deploy docs to GitHub Pages
 # hidden by the VITE_STATIC_MODE build flag.
 
 on:
-  # Publish docs when a release is cut (PR main → release merged),
-  # matching the docker-publish flow.
-  push:
-    branches: [release]
-    paths:
-      - 'frontend/**'
-      - 'VERSION'
-      - '.github/workflows/deploy-pages.yml'
+  # Called by docker-publish.yml after a release finishes, so Pages redeploys on
+  # every release. Also runnable manually from the Actions tab.
+  workflow_call:
   workflow_dispatch:
 
 permissions:
