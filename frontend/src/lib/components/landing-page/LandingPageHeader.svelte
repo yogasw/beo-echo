@@ -63,7 +63,7 @@
 							title="Go to home page"
 							aria-label="Go to Beo Echo home page"
 						>
-							<img src="/favicon.svg" alt="Beo Echo" class="w-8 h-8 mr-3" />
+							<img src="{base}/favicon.svg" alt="Beo Echo" class="w-8 h-8 mr-3" />
 							<h1 class="text-xl font-bold text-gray-800 dark:text-white">Beo Echo</h1>
 						</a>
 					</div>
@@ -138,17 +138,7 @@
 				</a>
 
 				{#if STATIC_MODE}
-					<!-- Static docs build: no backend, point to the guide instead -->
-					<a
-						href="{base}/guide"
-						class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center"
-						title="Read the guide"
-						aria-label="Read the Beo Echo guide"
-					>
-						<i class="fas fa-book-open mr-2"></i>
-						<span class="hidden sm:inline">Read the Guide</span>
-						<span class="sm:hidden">Guide</span>
-					</a>
+					<!-- Static docs build: no backend, so no login/dashboard CTA. -->
 				{:else if $isAuthenticated && showUserMenu}
 					<!-- User Menu -->
 					<div class="flex items-center">
