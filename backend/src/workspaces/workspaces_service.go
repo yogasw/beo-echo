@@ -4,6 +4,7 @@ import (
 	"beo-echo/backend/src/database"
 	systemConfig "beo-echo/backend/src/systemConfigs"
 	"context"
+	"errors"
 	"fmt"
 	"strings"
 	"time"
@@ -36,6 +37,7 @@ type WorkspaceRepository interface {
 	CheckWorkspaceRole(ctx context.Context, userID string, workspaceID string) (*database.UserWorkspace, error)
 	IsUserWorkspaceAdmin(ctx context.Context, userID string, workspaceID string) (bool, error)
 	GetAllWorkspaces(ctx context.Context) ([]database.Workspace, error)
+	UpdateWorkspace(ctx context.Context, workspaceID string, name string) (*database.Workspace, error)
 	// New methods for invitation
 	GetUserByEmail(ctx context.Context, email string) (*database.User, error)
 	AddUserToWorkspace(ctx context.Context, workspaceID string, userID string, role string) error
@@ -105,6 +107,30 @@ func (s *WorkspaceService) IsUserWorkspaceAdmin(ctx context.Context, userID stri
 
 func (s *WorkspaceService) GetAllWorkspaces(ctx context.Context) ([]database.Workspace, error) {
 	return s.repo.GetAllWorkspaces(ctx)
+}
+
+// maxWorkspaceNameLength bounds the workspace name so a rename cannot store an
+// unbounded string.
+const maxWorkspaceNameLength = 100
+
+// ErrWorkspaceNameRequired is returned when a rename carries a blank name.
+var ErrWorkspaceNameRequired = errors.New("workspace name cannot be empty")
+
+// ErrWorkspaceNameTooLong is returned when a rename exceeds maxWorkspaceNameLength.
+var ErrWorkspaceNameTooLong = fmt.Errorf("workspace name cannot be longer than %d characters", maxWorkspaceNameLength)
+
+// UpdateWorkspace renames a workspace. The caller is expected to already be a
+// workspace admin or a system owner.
+func (s *WorkspaceService) UpdateWorkspace(ctx context.Context, workspaceID string, name string) (*database.Workspace, error) {
+	name = strings.TrimSpace(name)
+	if name == "" {
+		return nil, ErrWorkspaceNameRequired
+	}
+	if len([]rune(name)) > maxWorkspaceNameLength {
+		return nil, ErrWorkspaceNameTooLong
+	}
+
+	return s.repo.UpdateWorkspace(ctx, workspaceID, name)
 }
 
 // GetWorkspaceMembers retrieves all members of a workspace with their details
