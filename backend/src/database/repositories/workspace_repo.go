@@ -257,3 +257,18 @@ func (r *workspaceRepository) CheckProjectAliasExists(ctx context.Context, alias
 	}
 	return count > 0, nil
 }
+
+// UpdateWorkspace renames a workspace and returns the stored row.
+// Returns gorm.ErrRecordNotFound when no workspace carries that ID.
+func (r *workspaceRepository) UpdateWorkspace(ctx context.Context, workspaceID string, name string) (*database.Workspace, error) {
+	var workspace database.Workspace
+	if err := r.db.WithContext(ctx).Where("id = ?", workspaceID).First(&workspace).Error; err != nil {
+		return nil, err
+	}
+
+	if err := r.db.WithContext(ctx).Model(&workspace).Update("name", name).Error; err != nil {
+		return nil, err
+	}
+
+	return &workspace, nil
+}
