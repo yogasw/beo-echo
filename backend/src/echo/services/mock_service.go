@@ -213,6 +213,27 @@ func (s *MockService) handleForwarderMode(ctx context.Context, project *database
 	return executeProxyRequest(ctx, project.ActiveProxy.URL, method, path, req.URL.RawQuery, req)
 }
 
+// skippedForwardHeaders lists the request headers that must NOT be passed on to
+// the proxy/forwarder target. They all describe the hop between the client and
+// beo-echo itself, so repeating them to the target states something that is not
+// true of the connection beo-echo is about to open.
+//
+// X-Forwarded-Proto is the one that bites: beo-echo is fronted by a Caddy that
+// listens on plain :80, so every request reaches the backend with
+// X-Forwarded-Proto: http even when the client spoke HTTPS. A target that
+// enforces TLS reads that header, decides the request was plain HTTP, and
+// answers 301 to the very same URL — forever.
+var skippedForwardHeaders = map[string]bool{
+	"Referer":            true,
+	"Forwarded":          true,
+	"X-Forwarded-Proto":  true,
+	"X-Forwarded-Scheme": true,
+	"X-Forwarded-Host":   true,
+	"X-Forwarded-Port":   true,
+	"X-Real-Ip":          true,
+	"Cdn-Loop":           true,
+}
+
 // executeProxyRequest is a common helper function to forward requests to a target URL
 // with proper header and body copying. This centralizes the forwarding logic for both
 // proxy and forwarder modes.
@@ -236,6 +257,14 @@ func executeProxyRequest(ctx context.Context, targetURLString, method, pathStr, 
 			TLSClientConfig: &tls.Config{
 				InsecureSkipVerify: true, // Disable SSL verification
 			},
+		},
+		// Never follow redirects: a forwarder must hand the 3xx back to its
+		// caller and let the caller decide. Go's default policy would follow
+		// up to 10 of them and then fail the whole request with
+		// "stopped after 10 redirects", which turns a target's redirect into
+		// a 502 here and hides the real response.
+		CheckRedirect: func(req *http.Request, via []*http.Request) error {
+			return http.ErrUseLastResponse
 		},
 	}
 
@@ -267,12 +296,14 @@ func executeProxyRequest(ctx context.Context, targetURLString, method, pathStr, 
 		return createErrorResponse(http.StatusBadGateway, fmt.Sprintf("Failed to create request: %s", err.Error())), nil
 	}
 
-	// Copy all headers
+	// Copy all headers except the ones that only describe the hop the client
+	// made to reach beo-echo (see skippedForwardHeaders).
 	for key, values := range req.Header {
+		if skippedForwardHeaders[http.CanonicalHeaderKey(key)] {
+			continue
+		}
 		for _, value := range values {
-			if key != "Referer" {
-				newReq.Header.Add(key, value)
-			}
+			newReq.Header.Add(key, value)
 		}
 	}
 

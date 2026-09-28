@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"errors"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -89,6 +90,60 @@ func (h *WorkspaceHandler) CreateWorkspace(c *gin.Context) {
 	c.JSON(http.StatusCreated, gin.H{
 		"success": true,
 		"message": "Workspace created successfully",
+		"data":    workspace,
+	})
+}
+
+// UpdateWorkspace renames an existing workspace.
+// Access is already limited to workspace admins and system owners by
+// OwnerOrWorkspaceAdminMiddleware.
+func (h *WorkspaceHandler) UpdateWorkspace(c *gin.Context) {
+	workspaceID := c.Param("workspaceID")
+	if workspaceID == "" {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"success": false,
+			"message": "Workspace ID is required",
+		})
+		return
+	}
+
+	var request struct {
+		Name string `json:"name" binding:"required"`
+	}
+
+	if err := c.ShouldBindJSON(&request); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"success": false,
+			"message": "Invalid request: " + err.Error(),
+		})
+		return
+	}
+
+	workspace, err := h.service.UpdateWorkspace(c.Request.Context(), workspaceID, request.Name)
+	if err != nil {
+		switch {
+		case errors.Is(err, gorm.ErrRecordNotFound):
+			c.JSON(http.StatusNotFound, gin.H{
+				"success": false,
+				"message": "Workspace not found",
+			})
+		case errors.Is(err, workspaces.ErrWorkspaceNameRequired), errors.Is(err, workspaces.ErrWorkspaceNameTooLong):
+			c.JSON(http.StatusBadRequest, gin.H{
+				"success": false,
+				"message": err.Error(),
+			})
+		default:
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"success": false,
+				"message": "Failed to update workspace: " + err.Error(),
+			})
+		}
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"success": true,
+		"message": "Workspace updated successfully",
 		"data":    workspace,
 	})
 }
