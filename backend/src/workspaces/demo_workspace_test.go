@@ -169,6 +169,17 @@ func (r *testWorkspaceRepo) GetAllWorkspaces(ctx context.Context) ([]database.Wo
 	return workspaces, err
 }
 
+func (r *testWorkspaceRepo) UpdateWorkspace(ctx context.Context, workspaceID string, name string) (*database.Workspace, error) {
+	var workspace database.Workspace
+	if err := r.db.Where("id = ?", workspaceID).First(&workspace).Error; err != nil {
+		return nil, err
+	}
+	if err := r.db.Model(&workspace).Update("name", name).Error; err != nil {
+		return nil, err
+	}
+	return &workspace, nil
+}
+
 func TestCreateDemoWorkspace(t *testing.T) {
 	// Setup test database
 	database.SetupTestEnvironment(t)
