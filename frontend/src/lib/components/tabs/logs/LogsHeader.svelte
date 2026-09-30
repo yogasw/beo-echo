@@ -2,10 +2,13 @@
 	import type { Project } from '$lib/api/BeoApi';
 	import * as ThemeUtils from '$lib/utils/themeUtils';
 	import { reconnectLogStream, refreshLogs, clearProjectLogs } from '$lib/services/logsService';
+	import { SEARCH_SYNTAX_HELP } from '$lib/utils/logSearch';
 
 	export let selectedProject: Project;
 	export let logsConnectionStatus: any;
 	export let searchTerm: string = '';
+
+	let showSearchHelp = false;
 
 </script>
 
@@ -98,15 +101,56 @@
 		</div>
 	</div>
 
-	<div class="relative mb-6">
-		<div class="absolute inset-y-0 start-0 flex items-center ps-3 pointer-events-none">
-			<i class="fas fa-search theme-text-muted"></i>
+	<div class="mb-6">
+		<div class="relative">
+			<div class="absolute inset-y-0 start-0 flex items-center ps-3 pointer-events-none">
+				<i class="fas fa-search theme-text-muted"></i>
+			</div>
+			<label for="logs-search" class="sr-only">Search request logs</label>
+			<input
+				id="logs-search"
+				type="text"
+				bind:value={searchTerm}
+				placeholder="Search URL, query, headers, body... (e.g. 'WRMKCU33NF', 'body:abc', 'header:content-type')"
+				class={ThemeUtils.inputField('p-3 ps-10 pe-12 text-sm rounded-lg')}
+				aria-describedby="logs-search-help"
+			/>
+			<button
+				type="button"
+				class="absolute inset-y-0 end-0 flex items-center pe-3 theme-text-muted hover:text-blue-500"
+				on:click={() => (showSearchHelp = !showSearchHelp)}
+				title={showSearchHelp ? 'Hide search syntax' : 'Show search syntax'}
+				aria-label={showSearchHelp ? 'Hide search syntax' : 'Show search syntax'}
+				aria-pressed={showSearchHelp}
+				aria-controls="logs-search-help"
+			>
+				<i class="fas fa-question-circle"></i>
+			</button>
 		</div>
-		<input
-			type="text"
-			bind:value={searchTerm}
-			placeholder="Search by keywords separated by spaces (e.g. 'GET users')..."
-			class={ThemeUtils.inputField('p-3 ps-10 text-sm rounded-lg')}
-		/>
+
+		<div
+			id="logs-search-help"
+			class="mt-2 rounded-lg border theme-border theme-bg-secondary p-3 text-xs {showSearchHelp
+				? ''
+				: 'hidden'}"
+		>
+			<p class="theme-text-secondary mb-2">
+				Terms separated by spaces must all match. Matches are highlighted in
+				<mark class="bg-yellow-300 text-gray-900 dark:bg-yellow-400 rounded-sm px-0.5">yellow</mark>
+				and the log shows where it was found.
+			</p>
+			<table class="w-full">
+				<tbody>
+					{#each SEARCH_SYNTAX_HELP as row}
+						<tr>
+							<td class="py-0.5 pe-4 font-mono theme-text-primary whitespace-nowrap align-top">
+								{row.example}
+							</td>
+							<td class="py-0.5 theme-text-muted">{row.description}</td>
+						</tr>
+					{/each}
+				</tbody>
+			</table>
+		</div>
 	</div>
 </div>
