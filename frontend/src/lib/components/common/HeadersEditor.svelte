@@ -2,12 +2,14 @@
 	import * as ThemeUtils from '$lib/utils/themeUtils';
 	import { createEventDispatcher, onMount, onDestroy } from 'svelte';
 	import { tick } from 'svelte';
+	import HighlightText from './HighlightText.svelte';
 	
 	export let headers: string;
 	export let editable: boolean = true;
 	export const title: string = 'Headers'; // Changed to const since it's not used internally
 	export let maxContentHeight: string = ''; // Optional explicit height
 	export let onSave: ((headers: string) => void) | undefined = undefined; // Callback when headers are saved
+	export let highlightTerms: string[] = []; // Lowercased search terms to mark in view mode
 	
 	const dispatch = createEventDispatcher<{
 		change: string;
@@ -286,10 +288,10 @@
 							{#each localHeaders as header, index}
 								<tr class="{index % 2 === 0 ? 'bg-white dark:bg-gray-800' : 'bg-gray-50/50 dark:bg-gray-750'}">
 									<td class="px-4 py-2 align-top w-1/2" style="min-width: 150px">
-										<span class="font-medium whitespace-nowrap text-blue-600 dark:text-blue-400 text-xs">{header.key}</span>
+										<span class="font-medium whitespace-nowrap text-blue-600 dark:text-blue-400 text-xs"><HighlightText text={header.key} terms={highlightTerms} /></span>
 									</td>
 									<td class="px-4 py-2 align-top" style="min-width: 200px">
-										<div class="break-all whitespace-pre-wrap text-xs {ThemeUtils.themeTextSecondary()}" style="max-width: 100%; overflow-x: auto">{header.value}</div>
+										<div class="break-all whitespace-pre-wrap text-xs {ThemeUtils.themeTextSecondary()}" style="max-width: 100%; overflow-x: auto"><HighlightText text={String(header.value)} terms={highlightTerms} /></div>
 									</td>
 								</tr>
 							{/each}

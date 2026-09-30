@@ -16,6 +16,7 @@
 	import { selectedProject as currentProject } from '$lib/stores/selectedConfig';
 	import { toast } from '$lib/stores/toast';
 	import BeoEchoLoader from '../common/BeoEchoLoader.svelte';
+	import { isResponseOnlyMatch, matchLog, parseSearch, type LogField } from '$lib/utils/logSearch';
 
 	export let selectedProject: Project;
 
@@ -35,7 +36,10 @@
 	function toggleLogExpansion(logId: string) {
 		expandedLogs[logId] = !expandedLogs[logId];
 		if (expandedLogs[logId] && !activeTabs[logId]) {
-			activeTabs[logId] = lastActiveTab; // Use the last active tab instead of hardcoded 'request'
+			// Open straight on the response when that is the only place the search hit
+			activeTabs[logId] = isResponseOnlyMatch(matchFields[logId] || [])
+				? 'response'
+				: lastActiveTab; // Use the last active tab instead of hardcoded 'request'
 		}
 		expandedLogs = expandedLogs; // Force Svelte reactivity update
 		activeTabs = activeTabs; // Force Svelte reactivity update
@@ -98,29 +102,22 @@
 		}
 	}
 
-	// Function to check if all search terms are present in a log
-	function matchesAllSearchTerms(log: RequestLog, searchTerms: string[]): boolean {
-		if (searchTerms.length === 0) return true;
-
-		// Combine all searchable fields into one string for easier searching
-		const searchableText = [
-			log.path.toLowerCase(),
-			log.method.toLowerCase(),
-			log.request_body.toLowerCase(),
-			log.response_body.toLowerCase()
-		].join(' ');
-
-		// Check if all search terms are present in the searchable text
-		return searchTerms.every((term) => searchableText.includes(term));
+	// Parse the search box (see SEARCH_SYNTAX_HELP) and keep where each log matched,
+	// so the list can show "match in" chips and highlight the hit.
+	$: search = parseSearch(searchTerm);
+	let filteredLogs: RequestLog[] = [];
+	let matchFields: Record<string, LogField[]> = {};
+	$: {
+		const nextFields: Record<string, LogField[]> = {};
+		filteredLogs = search.terms.length
+			? $logs.filter((log) => {
+					const result = matchLog(log, search);
+					if (result.matched) nextFields[log.id] = result.fields;
+					return result.matched;
+				})
+			: $logs;
+		matchFields = nextFields;
 	}
-
-	$: searchTerms = searchTerm
-		.toLowerCase()
-		.split(' ')
-		.filter((term) => term.trim() !== '');
-	$: filteredLogs = searchTerm
-		? $logs.filter((log) => matchesAllSearchTerms(log, searchTerms))
-		: $logs;
 
 	// Update auto-scroll setting in store when changed
 	$: {
@@ -353,7 +350,7 @@
 				Retry
 			</button>
 		</div>
-	{:else if filteredLogs.length === 0 && searchTerm}
+	{:else if filteredLogs.length === 0 && search.terms.length}
 		<SearchNoResults {searchTerm} />
 	{:else}
 		<LogsList
@@ -370,6 +367,8 @@
 			{bookmarkLog}
 			{createMockFromLog}
 			{replayLog}
+			search={search.terms.length ? search : null}
+			{matchFields}
 		/>
 	{/if}
 

@@ -3,6 +3,7 @@
 	import type { Project, RequestLog } from '$lib/api/BeoApi';
 	import * as ThemeUtils from '$lib/utils/themeUtils';
 	import LogItem from './LogItem.svelte';
+	import type { LogField, ParsedSearch } from '$lib/utils/logSearch';
 
 	export let filteredLogs: RequestLog[] = [];
 	export let expandedLogs: Record<string, boolean> = {};
@@ -17,6 +18,8 @@
 	export let bookmarkLog: (log: RequestLog) => Promise<void>;
 	export let createMockFromLog: (log: RequestLog) => void;
 	export let replayLog: (log: RequestLog) => void;
+	export let search: ParsedSearch | null = null;
+	export let matchFields: Record<string, LogField[]> = {};
 </script>
 
 {#if filteredLogs.length === 0}
@@ -108,6 +111,8 @@
 				{bookmarkLog}
 				{createMockFromLog}
 				{replayLog}
+				{search}
+				matchFields={matchFields[log.id] || []}
 			/>
 		{/each}
 	</div>

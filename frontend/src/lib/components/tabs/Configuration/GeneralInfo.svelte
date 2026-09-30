@@ -2,6 +2,7 @@
 	import { fade } from 'svelte/transition';
 	import * as ThemeUtils from '$lib/utils/themeUtils';
 	import { updateProject, type Project } from '$lib/api/BeoApi';
+	import { applyProjectUpdate } from '$lib/stores/configurations';
 
 	export let project: Project;
 	export let showNotification: (message: string, type?: 'success' | 'error') => void;
@@ -42,8 +43,9 @@
 			
 			const updatedProject = await updateProject(project.id, updateData);
 			
-			// Update local project with new values
+			// Update local project with new values and sync the shared stores
 			project = updatedProject;
+			applyProjectUpdate(updatedProject);
 			
 			// Show success notification
 			showNotification(`${key.charAt(0).toUpperCase() + key.slice(1)} updated successfully!`, 'success');

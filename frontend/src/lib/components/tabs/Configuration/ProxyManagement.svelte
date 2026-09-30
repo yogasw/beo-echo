@@ -11,6 +11,7 @@
 		type ProxyTarget 
 	} from '$lib/api/BeoApi';
 	import { onMount } from 'svelte';
+	import { applyProjectUpdate } from '$lib/stores/configurations';
 
 	export let project: Project;
 	export let showNotification: (message: string, type?: 'success' | 'error') => void;
@@ -136,8 +137,9 @@
 				active_proxy_id: proxyId 
 			});
 			
-			// Update the local project object to reflect changes
+			// Update the local project object and sync the shared stores
 			project = updatedProject;
+			applyProjectUpdate(updatedProject);
 			
 			showNotification('Proxy target set as active successfully!', 'success');
 		} catch (error) {
