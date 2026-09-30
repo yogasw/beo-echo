@@ -5,6 +5,13 @@
 	import LogRequestContent from './LogRequestContent.svelte';
 	import LogResponseContent from './LogResponseContent.svelte';
 	import HttpMethodBadge from '$lib/components/common/HttpMethodBadge.svelte';
+	import HighlightText from '$lib/components/common/HighlightText.svelte';
+	import {
+		LOG_FIELD_LABELS,
+		highlightTermsFor,
+		type LogField,
+		type ParsedSearch
+	} from '$lib/utils/logSearch';
 
 	export let log: RequestLog;
 	export let isExpanded: boolean = false;
@@ -18,6 +25,8 @@
 	export let bookmarkLog: (log: RequestLog) => Promise<void>;
 	export let createMockFromLog: (log: RequestLog) => void;
 	export let replayLog: (log: RequestLog) => void;
+	export let search: ParsedSearch | null = null;
+	export let matchFields: LogField[] = [];
 	
 	// Function to export request to cURL command
 	function exportToCurl(log: RequestLog) {
@@ -88,7 +97,7 @@
 
 				<!-- Path with truncation -->
 				<span class="font-mono text-sm theme-text-primary truncate max-w-sm">
-					{log.path}
+					<HighlightText text={log.path} terms={highlightTermsFor(search, 'path')} />
 				</span>
 
 				<!-- Status code -->
@@ -119,7 +128,20 @@
 						{log.execution_mode === 'proxy' ? 'Proxy' : 'Forwarder'}
 					</span>
 				{/if}
-				
+
+				<!-- Where the search terms were found -->
+				{#if matchFields.length > 0}
+					<span class="flex items-center gap-1" title="Search matched in these parts of the log">
+						<i class="fas fa-search text-xs text-yellow-500" aria-hidden="true"></i>
+						{#each matchFields as field}
+							<span
+								class="px-1.5 py-0.5 text-xs rounded bg-yellow-300 text-gray-900 dark:bg-yellow-400"
+							>
+								{LOG_FIELD_LABELS[field]}
+							</span>
+						{/each}
+					</span>
+				{/if}
 			</div>
 
 			<div class="flex items-center space-x-3">
@@ -211,9 +233,9 @@
 
 			<!-- Request content -->
 			{#if activeTab === 'request'}
-				<LogRequestContent {log} {copyToClipboard} {parseJson} />
+				<LogRequestContent {log} {copyToClipboard} {parseJson} {search} />
 			{:else}
-				<LogResponseContent {log} {copyToClipboard} {parseJson} />
+				<LogResponseContent {log} {copyToClipboard} {parseJson} {search} />
 			{/if}
 		</div>
 	{/if}
