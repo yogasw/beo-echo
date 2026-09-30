@@ -3,10 +3,13 @@
 	import * as ThemeUtils from '$lib/utils/themeUtils';
 	import HeadersTab from '../../common/HeadersEditor.svelte';
 	import StatusCodeBadge from '$lib/components/common/StatusCodeBadge.svelte';
+	import HighlightText from '$lib/components/common/HighlightText.svelte';
+	import { highlightTermsFor, type ParsedSearch } from '$lib/utils/logSearch';
 
 	export let log: RequestLog;
 	export let copyToClipboard: (text: string, label: string) => Promise<void>;
 	export let parseJson: (jsonString: string) => any;
+	export let search: ParsedSearch | null = null;
 	let hideHeader: boolean = false;
 </script>
 
@@ -70,7 +73,12 @@
 			</div>
 		</div>
 		{#if !hideHeader}
-			<HeadersTab headers={log.response_headers} editable={false} title="Response Headers" />
+			<HeadersTab
+				headers={log.response_headers}
+				editable={false}
+				title="Response Headers"
+				highlightTerms={highlightTermsFor(search, 'response_headers')}
+			/>
 		{/if}
 	</div>
 
@@ -99,17 +107,19 @@
 				<div class="flex items-center">
 					<i class="fas fa-exclamation-triangle text-yellow-500 dark:text-yellow-400 mr-2"></i>
 					<span class="text-sm theme-text-primary">
-						{parseJson(log.response_body)?.message || 'Error'}
+						<HighlightText
+							text={parseJson(log.response_body)?.message || 'Error'}
+							terms={highlightTermsFor(search, 'response_body')}
+						/>
 					</span>
 				</div>
 			</div>
 		{:else}
 			<pre
-				class="bg-gray-300/50 dark:bg-gray-700 p-3 rounded-md text-xs theme-text-secondary font-mono overflow-auto max-h-64">{JSON.stringify(
-					parseJson(log.response_body),
-					null,
-					2
-				)}</pre>
+				class="bg-gray-300/50 dark:bg-gray-700 p-3 rounded-md text-xs theme-text-secondary font-mono overflow-auto max-h-64"><HighlightText
+					text={JSON.stringify(parseJson(log.response_body), null, 2)}
+					terms={highlightTermsFor(search, 'response_body')}
+				/></pre>
 		{/if}
 	</div>
 </div>
