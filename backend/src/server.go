@@ -166,6 +166,8 @@ func SetupRouter() *gin.Engine {
 	// These are public; user identity is established by the SPA at consent time.
 	router.GET("/.well-known/oauth-authorization-server", mcpOAuthHandler.AuthorizationServerMetadata)
 	router.GET("/.well-known/oauth-protected-resource", mcpOAuthHandler.ProtectedResourceMetadata)
+	// Path-suffixed form (RFC 9728) for the /mcp resource; newer MCP clients try it first.
+	router.GET("/.well-known/oauth-protected-resource/mcp", mcpOAuthHandler.ProtectedResourceMetadata)
 	router.POST("/api/oauth/mcp/register", mcpOAuthHandler.Register)
 	router.GET("/api/oauth/mcp/authorize", mcpOAuthHandler.Authorize)
 	router.POST("/api/oauth/mcp/token", mcpOAuthHandler.Token)
