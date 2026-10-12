@@ -7,6 +7,7 @@ import (
 
 	"beo-echo/backend/src/database"
 	"beo-echo/backend/src/echo/handler"
+	systemConfig "beo-echo/backend/src/systemConfigs"
 )
 
 // GetProjectHandler retrieves a project by name
@@ -34,11 +35,7 @@ func GetProjectHandler(c *gin.Context) {
 		Where("id = ?", id).
 		First(&project)
 
-	scheme := c.Request.Header.Get("X-Forwarded-Scheme")
-	if scheme == "" {
-		scheme = "http"
-	}
-	project.URL = handler.GetProjectURL(scheme, c.Request.Host, project)
+	project.URL = handler.GetProjectURL(systemConfig.PublicBaseURL(c), project)
 
 	if result.Error != nil {
 		c.JSON(http.StatusNotFound, gin.H{

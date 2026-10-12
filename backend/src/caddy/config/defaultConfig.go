@@ -4,6 +4,14 @@ const CADDY_DEFAULT_CONFIG = `{
 	# Global Caddy settings
 	admin off
 	auto_https off
+
+	# Caddy listens on plain HTTP behind a TLS-terminating proxy (Cloudflare,
+	# Traefik, a tunnel). Trusting it keeps the visitor's X-Forwarded-Proto /
+	# X-Forwarded-Host instead of overwriting them with "http", so the backend
+	# builds https URLs for https visitors.
+	servers {
+		trusted_proxies static private_ranges {$TRUSTED_PROXIES}
+	}
 }
 
 :{$PORT:80} {

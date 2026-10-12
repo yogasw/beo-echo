@@ -10,6 +10,7 @@ import (
 
 	"beo-echo/backend/src/auth/pat"
 	"beo-echo/backend/src/database"
+	systemConfig "beo-echo/backend/src/systemConfigs"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
@@ -42,24 +43,6 @@ func NewMCPOAuthHandler(db *gorm.DB) *MCPOAuthHandler {
 	}
 }
 
-// baseURL reconstructs the externally reachable base URL of this server from the
-// request, honoring reverse-proxy headers (X-Forwarded-Proto / X-Forwarded-Host).
-func baseURL(c *gin.Context) string {
-	scheme := c.GetHeader("X-Forwarded-Proto")
-	if scheme == "" {
-		if c.Request.TLS != nil {
-			scheme = "https"
-		} else {
-			scheme = "http"
-		}
-	}
-	host := c.GetHeader("X-Forwarded-Host")
-	if host == "" {
-		host = c.Request.Host
-	}
-	return scheme + "://" + host
-}
-
 const (
 	authRequestTTL = 10 * time.Minute
 	// oauthTokenTTL is how long an OAuth-issued access token lives. 0 would mean
@@ -72,7 +55,7 @@ const (
 // AuthorizationServerMetadata serves /.well-known/oauth-authorization-server
 // (RFC 8414). MCP clients fetch this to learn the authorize/token endpoints.
 func (h *MCPOAuthHandler) AuthorizationServerMetadata(c *gin.Context) {
-	base := baseURL(c)
+	base := systemConfig.PublicBaseURL(c)
 	c.JSON(http.StatusOK, gin.H{
 		"issuer":                                base,
 		"authorization_endpoint":                base + "/api/oauth/mcp/authorize",
@@ -89,7 +72,7 @@ func (h *MCPOAuthHandler) AuthorizationServerMetadata(c *gin.Context) {
 // ProtectedResourceMetadata serves /.well-known/oauth-protected-resource
 // (MCP authorization spec) pointing clients at the authorization server.
 func (h *MCPOAuthHandler) ProtectedResourceMetadata(c *gin.Context) {
-	base := baseURL(c)
+	base := systemConfig.PublicBaseURL(c)
 	c.JSON(http.StatusOK, gin.H{
 		"resource":              base + "/mcp",
 		"authorization_servers": []string{base},
@@ -167,7 +150,7 @@ func (h *MCPOAuthHandler) Authorize(c *gin.Context) {
 	// Send the browser to the SPA consent page on the same origin the request
 	// came in on. The SPA reads its stored JWT, shows what is being authorized,
 	// and calls /approve.
-	consent := baseURL(c) + "/oauth/consent?request_id=" + url.QueryEscape(req.ID)
+	consent := systemConfig.PublicBaseURL(c) + "/oauth/consent?request_id=" + url.QueryEscape(req.ID)
 	c.Redirect(http.StatusFound, consent)
 }
 
