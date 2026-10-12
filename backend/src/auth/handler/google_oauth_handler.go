@@ -10,6 +10,7 @@ import (
 	"github.com/gin-gonic/gin"
 
 	"beo-echo/backend/src/auth/services"
+	systemConfig "beo-echo/backend/src/systemConfigs"
 )
 
 type GoogleOAuthHandler struct {
@@ -126,12 +127,8 @@ func (h *GoogleOAuthHandler) InitiateLogin(c *gin.Context) {
 		return
 	}
 
-	// Get scheme and host for backend callback URL
-	scheme := "http"
-	if c.Request.TLS != nil || c.Request.Header.Get("X-Forwarded-Scheme") == "https" || strings.Contains(c.Request.Header.Get("Referer"), "https") {
-		scheme = "https"
-	}
-	backendBaseURL := fmt.Sprintf("%s://%s", scheme, c.Request.Host)
+	// Backend callback URL
+	backendBaseURL := systemConfig.PublicBaseURL(c)
 	backendCallbackURI := fmt.Sprintf("%s/api/oauth/google/callback", backendBaseURL)
 
 	// Check if OAuth is configured

@@ -8,6 +8,7 @@ import (
 
 	"beo-echo/backend/src/database"
 	"beo-echo/backend/src/echo/handler"
+	systemConfig "beo-echo/backend/src/systemConfigs"
 )
 
 // ListProjectsHandler lists projects accessible to the authenticated user
@@ -100,10 +101,7 @@ func ListProjectsHandler(c *gin.Context) {
 		return
 	}
 
-	scheme := c.Request.Header.Get("X-Forwarded-Scheme")
-	if scheme == "" {
-		scheme = "http"
-	}
+	baseURL := systemConfig.PublicBaseURL(c)
 
 	// Build a set of pinned project IDs for the current user in this workspace
 	var pinnedRows []database.UserPinnedProject
@@ -117,7 +115,7 @@ func ListProjectsHandler(c *gin.Context) {
 	items := make([]ProjectListItem, 0, len(projects))
 	for i := range projects {
 		p := &projects[i]
-		p.URL = handler.GetProjectURL(scheme, c.Request.Host, *p)
+		p.URL = handler.GetProjectURL(baseURL, *p)
 		items = append(items, ProjectListItem{
 			ID:            p.ID,
 			Name:          p.Name,

@@ -43,11 +43,11 @@ func EnsureMockService() {
 	}
 }
 
-// GetProjectURL returns the URL for accessing a project's API
-// It handles different URL formats based on PROXY_MODE configuration
-func GetProjectURL(scheme, host string, project database.Project) string {
+// GetProjectURL returns the URL for accessing a project's API under baseURL
+// (see systemConfig.PublicBaseURL)
+func GetProjectURL(baseURL string, project database.Project) string {
 	// Direct access mode
-	return scheme + "://" + host + "/" + project.Alias
+	return baseURL + "/" + project.Alias
 }
 
 // add validation for project alias

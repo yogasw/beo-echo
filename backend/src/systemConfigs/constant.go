@@ -5,6 +5,7 @@ const (
 	// Custom Subdomain configuration
 	CUSTOM_SUBDOMAIN_ENABLED = "CUSTOM_SUBDOMAIN_ENABLED" // Controls whether custom subdomains are enabled
 	CUSTOM_SUBDOMAIN_DOMAIN  = "CUSTOM_SUBDOMAIN_DOMAIN"  // Base domain for custom subdomains (e.g., "beo-echo.com")
+	PUBLIC_BASE_URL          = "PUBLIC_BASE_URL"          // Public base URL (e.g., "https://beo-echo.com"); empty = taken from the request
 
 	// Feature flags
 	FEATURE_SHOW_PASSWORD_REQUIREMENTS = "FEATURE_SHOW_PASSWORD_REQUIREMENTS"
@@ -50,6 +51,12 @@ var DefaultConfigSettings = map[SystemConfigKey]ConfigSetting{
 		Type:        TypeString,
 		Value:       "*.beo-echo.com",
 		Description: "Base domain for custom subdomains - required restart service to apply",
+		Category:    "Domains",
+	},
+	PUBLIC_BASE_URL: {
+		Type:        TypeString,
+		Value:       "",
+		Description: "Public base URL of this server (e.g. https://beo-echo.com), used for project URLs and MCP OAuth metadata. Leave empty to use the URL the request was opened with",
 		Category:    "Domains",
 	},
 

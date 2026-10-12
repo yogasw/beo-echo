@@ -168,15 +168,8 @@ func CreateProjectWithWorkspaceHandler(c *gin.Context) {
 		return
 	}
 
-	// combine X-Forwarded-Scheme and host
-
-	scheme := c.Request.Header.Get("X-Forwarded-Scheme")
-	if scheme == "" {
-		scheme = "http"
-	}
-
 	// Add project URL
-	project.URL = handler.GetProjectURL(scheme, c.Request.Host, project)
+	project.URL = handler.GetProjectURL(systemConfig.PublicBaseURL(c), project)
 
 	c.JSON(http.StatusCreated, gin.H{
 		"success": true,
