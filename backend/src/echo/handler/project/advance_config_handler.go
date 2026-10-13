@@ -63,8 +63,28 @@ func GetProjectAdvanceConfigHandler(c *gin.Context) {
 	})
 }
 
+// mergeConfig merges src into dst. Nested objects are merged key by key (so {"cors":{"maxAge":600}}
+// keeps cors.mode), a null removes the key, and any other value (including arrays) replaces it.
+func mergeConfig(dst, src map[string]interface{}) {
+	for key, value := range src {
+		if value == nil {
+			delete(dst, key)
+			continue
+		}
+		srcMap, srcIsMap := value.(map[string]interface{})
+		dstMap, dstIsMap := dst[key].(map[string]interface{})
+		if srcIsMap && dstIsMap {
+			mergeConfig(dstMap, srcMap)
+			continue
+		}
+		dst[key] = value
+	}
+}
+
 /*
-UpdateProjectAdvanceConfigHandler updates the advance configuration for a project
+UpdateProjectAdvanceConfigHandler updates the advance configuration for a project.
+The config is deep-merged into the stored one: nested objects are merged key by key, a key sent
+as null is removed, arrays and scalars replace the stored value.
 
 Sample curl:
 
@@ -78,9 +98,7 @@ Sample curl:
 	      "burst_size": 10
 	    },
 	    "cors": {
-	      "enabled": true,
-	      "allowed_origins": ["https://example.com"],
-	      "allowed_methods": ["GET", "POST"]
+	      "mode": "reflect"
 	    }
 	  }'
 */
@@ -107,8 +125,8 @@ func UpdateProjectAdvanceConfigHandler(c *gin.Context) {
 		return
 	}
 
-	// Parse request body as raw JSON
-	var configData interface{}
+	// Parse request body as a JSON object
+	var configData map[string]interface{}
 	if err := c.ShouldBindJSON(&configData); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"error":   true,
@@ -116,6 +134,15 @@ func UpdateProjectAdvanceConfigHandler(c *gin.Context) {
 		})
 		return
 	}
+
+	// Merge into the stored config: keys that are absent stay untouched, so setting delayMs
+	// does not wipe cors (and the other way around). A key set to null removes it.
+	merged := map[string]interface{}{}
+	if project.AdvanceConfig != "" {
+		_ = json.Unmarshal([]byte(project.AdvanceConfig), &merged)
+	}
+	mergeConfig(merged, configData)
+	configData = merged
 
 	// Convert back to JSON string for storage and validation
 	configJSON, err := json.Marshal(configData)

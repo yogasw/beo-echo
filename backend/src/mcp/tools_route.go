@@ -66,13 +66,25 @@ func (s *Server) registerEndpointTools() {
 			return jsonResult(out)
 		})
 
+	addTool(s, "route_reset_counter",
+		"Reset the round_robin / sequence counter of an endpoint so the next request is served from the first response again. Counters also reset automatically when the endpoint's responses, response_mode or advance_config change.",
+		func(ctx context.Context, req *mcp.CallToolRequest, in epIn) (*mcp.CallToolResult, any, error) {
+			token := tokenFromRequest(req)
+			var out raw
+			if err := s.client.Post(ctx, token, endpointPath(in.WorkspaceID, in.ProjectID, in.EndpointID)+"/reset-counter", nil, &out); err != nil {
+				r, _, e, _ := handleErr(err)
+				return r, nil, e
+			}
+			return jsonResult(out)
+		})
+
 	type createEpIn struct {
 		WorkspaceID   string `json:"workspace_id" jsonschema:"the workspace id"`
 		ProjectID     string `json:"project_id" jsonschema:"the project id"`
 		Method        string `json:"method" jsonschema:"HTTP method: GET, POST, PUT, DELETE, PATCH, etc."`
 		Path          string `json:"path" jsonschema:"endpoint path, e.g. /users/:id"`
 		Enabled       *bool  `json:"enabled,omitempty" jsonschema:"whether the endpoint is enabled (default true)"`
-		ResponseMode  string `json:"response_mode,omitempty" jsonschema:"how responses are picked: static, random, or round_robin"`
+		ResponseMode  string `json:"response_mode,omitempty" jsonschema:"how responses are picked: static, random, round_robin, or sequence (in priority order, then keeps serving the last one; set advance_config {\"sequence\":{\"onEnd\":\"loop\"}} to start over)"`
 		Documentation string `json:"documentation,omitempty" jsonschema:"optional documentation"`
 	}
 	addTool(s, "route_create_endpoint",
@@ -104,9 +116,9 @@ func (s *Server) registerEndpointTools() {
 		Method        *string `json:"method,omitempty" jsonschema:"new HTTP method"`
 		Path          *string `json:"path,omitempty" jsonschema:"new path"`
 		Enabled       *bool   `json:"enabled,omitempty" jsonschema:"enable/disable the endpoint"`
-		ResponseMode  *string `json:"response_mode,omitempty" jsonschema:"static, random, or round_robin"`
+		ResponseMode  *string `json:"response_mode,omitempty" jsonschema:"static, random, round_robin, or sequence"`
 		Documentation *string `json:"documentation,omitempty" jsonschema:"new documentation for the endpoint"`
-		AdvanceConfig *string `json:"advance_config,omitempty" jsonschema:"endpoint advanced config as a JSON string"`
+		AdvanceConfig *string `json:"advance_config,omitempty" jsonschema:"endpoint advanced config as a JSON string, e.g. {\"delayMs\":200,\"sequence\":{\"onEnd\":\"stay_last\"}}"`
 		UseProxy      *bool   `json:"use_proxy,omitempty" jsonschema:"forward this endpoint to a proxy target"`
 		ProxyTargetID *string `json:"proxy_target_id,omitempty" jsonschema:"proxy target id when use_proxy is true"`
 	}
@@ -194,6 +206,7 @@ func (s *Server) registerResponseTools() {
 		IsFallback  *bool  `json:"is_fallback,omitempty" jsonschema:"use this when no other response matches"`
 		RulesLogic  string `json:"rules_logic,omitempty" jsonschema:"how rules combine: and / or"`
 		Stream      *bool  `json:"stream,omitempty" jsonschema:"stream the response body instead of sending it at once"`
+		Templated   *bool  `json:"templated,omitempty" jsonschema:"render body as a Handlebars template: {{queryParam 'x'}}, {{header 'X-Name'}}, {{#repeat (queryParam 'n') comma=true}}...{{@index}}...{{/repeat}}"`
 	}
 	addTool(s, "route_create_response",
 		"Create a new response for an endpoint.",
@@ -226,6 +239,9 @@ func (s *Server) registerResponseTools() {
 			}
 			if in.Stream != nil {
 				body["stream"] = *in.Stream
+			}
+			if in.Templated != nil {
+				body["templated"] = *in.Templated
 			}
 			var out raw
 			if err := s.client.Post(ctx, token, responsesBase(in.WorkspaceID, in.ProjectID, in.EndpointID), body, &out); err != nil {
@@ -268,6 +284,7 @@ func (s *Server) registerResponseTools() {
 		IsFallback  *bool   `json:"is_fallback,omitempty" jsonschema:"mark as fallback"`
 		RulesLogic  *string `json:"rules_logic,omitempty" jsonschema:"and / or"`
 		Stream      *bool   `json:"stream,omitempty" jsonschema:"stream the response body instead of sending it at once"`
+		Templated   *bool   `json:"templated,omitempty" jsonschema:"render body as a Handlebars template (queryParam, header, repeat)"`
 	}
 	addTool(s, "route_update_response",
 		"Update a response. Only provided fields are changed.",
@@ -303,6 +320,9 @@ func (s *Server) registerResponseTools() {
 			}
 			if in.Stream != nil {
 				body["stream"] = *in.Stream
+			}
+			if in.Templated != nil {
+				body["templated"] = *in.Templated
 			}
 			var out raw
 			if err := s.client.Put(ctx, token, responsePath(in.WorkspaceID, in.ProjectID, in.EndpointID, in.ResponseID), body, &out); err != nil {

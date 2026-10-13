@@ -18,6 +18,34 @@
 	let isLoadingAdvanceConfig = false;
 	let advanceConfig: any = null;
 	
+	// CORS configuration (how the project's mock routes answer preflight requests)
+	type CorsMode = 'static' | 'reflect' | 'custom';
+	let corsMode: CorsMode = 'static';
+	let corsAllowHeaders = '';
+
+	async function saveCors() {
+		if (!project?.id) return;
+		try {
+			if (corsMode === 'static') {
+				// Static is the default: drop the setting instead of storing it
+				await updateProjectAdvanceConfig(project.id, { cors: null });
+			} else {
+				const cors: Record<string, any> = { mode: corsMode };
+				if (corsMode === 'custom') {
+					cors.allowHeaders = corsAllowHeaders
+						.split(',')
+						.map((h) => h.trim())
+						.filter((h) => h !== '');
+				}
+				await updateProjectAdvanceConfig(project.id, { cors });
+			}
+			await loadAdvanceConfig();
+		} catch (error) {
+			console.error('Failed to update CORS configuration:', error);
+			toast.error(error);
+		}
+	}
+
 	// Function to toggle section expansion
 	function toggleSection() {
 		isExpanded = !isExpanded;
@@ -40,6 +68,11 @@
 			} else {
 				delayMs = 0;
 			}
+
+			// Extract CORS configuration
+			const cors = advanceConfig?.advance_config?.cors;
+			corsMode = (cors?.mode as CorsMode) || 'static';
+			corsAllowHeaders = (cors?.allowHeaders || []).join(', ');
 		} catch (error) {
 			console.error('Failed to load advance config:', error);
 			// Ignore error for now, config might not exist yet
@@ -181,6 +214,39 @@
 						</div>
 					</div>
 				</div>
+			</div>
+
+			<div class="bg-gray-50 dark:bg-gray-900/50 rounded-lg p-4 border theme-border mt-4">
+				<label for="cors-mode" class="text-sm font-medium theme-text-secondary block mb-1">CORS preflight headers</label>
+				<p id="cors-mode-help" class="text-xs theme-text-muted mb-3">
+					Which headers browsers may send to this project's mock routes (<code>Access-Control-Allow-Headers</code>).
+					Reflect allows whatever the browser asks for, e.g. <code>X-Api-Key</code>.
+				</p>
+				<select
+					id="cors-mode"
+					class={ThemeUtils.inputField()}
+					bind:value={corsMode}
+					on:change={saveCors}
+					aria-describedby="cors-mode-help"
+					title="CORS preflight mode for this project"
+				>
+					<option value="static">Static - Origin, Content-Length, Content-Type, Authorization, X-Requested-With, Accept</option>
+					<option value="reflect">Reflect - allow the headers the browser requests</option>
+					<option value="custom">Custom - my own list</option>
+				</select>
+				{#if corsMode === 'custom'}
+					<label for="cors-allow-headers" class="text-sm font-medium theme-text-secondary block mt-3 mb-1">Allowed headers</label>
+					<input
+						type="text"
+						id="cors-allow-headers"
+						class={ThemeUtils.inputField()}
+						bind:value={corsAllowHeaders}
+						on:change={saveCors}
+						placeholder="X-Api-Key, X-Trace-Id"
+						title="Comma-separated header names"
+						aria-label="Allowed headers, comma separated"
+					/>
+				{/if}
 			</div>
 		</div>
 	{/if}

@@ -5,7 +5,8 @@
 		deleteResponse,
 		duplicateResponse,
 		updateResponse,
-		reorderResponses
+		reorderResponses,
+		resetEndpointCounter
 	} from '$lib/api/BeoApi';
 	import { updateEndpoint } from '$lib/stores/saveButton';
 	import { toast } from '$lib/stores/toast';
@@ -126,7 +127,7 @@
 
 	// Handle response mode change
 	const handleResponseModeChange = async (
-		mode: 'static' | 'random' | 'round_robin'
+		mode: 'static' | 'random' | 'round_robin' | 'sequence'
 	): Promise<void> => {
 		if (!selectedEndpoint) {
 			toast.error('No endpoint selected');
@@ -134,6 +135,46 @@
 		}
 		selectedEndpoint = updateEndpoint('response_mode', mode, selectedEndpoint);
 	};
+
+	// What a "sequence" endpoint serves after its last response: keep the last one, or start over
+	type SequenceOnEnd = 'stay_last' | 'loop';
+
+	function parseAdvanceConfig(raw: string | undefined): Record<string, any> {
+		try {
+			return raw ? JSON.parse(raw) : {};
+		} catch {
+			return {};
+		}
+	}
+
+	$: sequenceOnEnd = (parseAdvanceConfig(selectedEndpoint?.advance_config).sequence?.onEnd ||
+		'stay_last') as SequenceOnEnd;
+
+	function handleSequenceOnEndChange(event: Event): void {
+		if (!selectedEndpoint) {
+			toast.error('No endpoint selected');
+			return;
+		}
+		const onEnd = (event.currentTarget as HTMLSelectElement).value as SequenceOnEnd;
+		const config = parseAdvanceConfig(selectedEndpoint.advance_config);
+		config.sequence = { ...(config.sequence || {}), onEnd };
+		selectedEndpoint = updateEndpoint('advance_config', JSON.stringify(config), selectedEndpoint);
+	}
+
+	// Reset the round robin / sequence counter so the next request gets the first response again
+	async function handleResetCounter(): Promise<void> {
+		if (!selectedEndpoint) {
+			toast.error('No endpoint selected');
+			return;
+		}
+		try {
+			await resetEndpointCounter(selectedEndpoint.project_id, selectedEndpoint.id);
+			toast.success('Counter reset: the next request gets the first response');
+		} catch (error) {
+			console.error('Failed to reset counter:', error);
+			toast.error('Failed to reset counter');
+		}
+	}
 
 	$: {
 		if (selectedResponse && selectedEndpoint?.responses) {
@@ -519,6 +560,43 @@
 		>
 			<i class="fas fa-sync-alt text-xs"></i>
 		</button>
+		<button
+			class="p-2 rounded-md text-sm transition-all duration-200 {selectedEndpoint?.response_mode ===
+			'sequence'
+				? 'bg-orange-600 text-white shadow-md'
+				: 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600 hover:text-gray-800 dark:hover:text-white border border-gray-300 dark:border-gray-600'}"
+			title="Sequence Mode - Serve responses in order (e.g. fail first, then succeed)"
+			aria-label="Sequence response mode"
+			aria-pressed={selectedEndpoint?.response_mode === 'sequence'}
+			on:click={() => handleResponseModeChange('sequence')}
+			disabled={!selectedEndpoint}
+		>
+			<i class="fas fa-list-ol text-xs"></i>
+		</button>
+		{#if selectedEndpoint?.response_mode === 'sequence'}
+			<label for="sequence-on-end" class="sr-only">After the last response</label>
+			<select
+				id="sequence-on-end"
+				class="p-2 rounded-md text-xs bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600"
+				value={sequenceOnEnd}
+				on:change={handleSequenceOnEndChange}
+				title="What to serve after the last response"
+				aria-label="After the last response"
+			>
+				<option value="stay_last">Keep last</option>
+				<option value="loop">Loop</option>
+			</select>
+		{/if}
+		{#if selectedEndpoint?.response_mode === 'sequence' || selectedEndpoint?.response_mode === 'round_robin'}
+			<button
+				class="p-2 rounded-md text-sm transition-all duration-200 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600 border border-gray-300 dark:border-gray-600"
+				title="Reset counter - the next request gets the first response again"
+				aria-label="Reset response counter"
+				on:click={handleResetCounter}
+			>
+				<i class="fas fa-undo text-xs"></i>
+			</button>
+		{/if}
 	</div>
 </div>
 

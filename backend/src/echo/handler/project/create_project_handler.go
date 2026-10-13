@@ -74,6 +74,11 @@ func CreateProjectHandler(c *gin.Context) {
 		project.Mode = database.ModeMock
 	}
 
+	// New projects answer CORS preflights in reflect mode unless a config was provided
+	if project.AdvanceConfig == "" {
+		project.AdvanceConfig = database.DefaultProjectAdvanceConfig()
+	}
+
 	// Validate advance config JSON format if provided
 	if project.AdvanceConfig != "" {
 		_, err := database.ParseProjectAdvanceConfig(project.AdvanceConfig)

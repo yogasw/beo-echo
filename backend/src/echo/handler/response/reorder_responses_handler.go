@@ -9,6 +9,7 @@ import (
 	"beo-echo/backend/src/database"
 	"beo-echo/backend/src/database/repositories"
 	"beo-echo/backend/src/echo/handler"
+	"beo-echo/backend/src/echo/services"
 )
 
 // ReorderResponsesRequest represents the request body for reordering responses
@@ -110,6 +111,8 @@ func ReorderResponsesHandler(c *gin.Context) {
 		return
 	}
 
+	services.ResetEndpointCounter(endpointID)
+
 	// Convert to JSON response format
 	var jsonResponses []map[string]interface{}
 	for _, response := range responses {
@@ -122,6 +125,7 @@ func ReorderResponsesHandler(c *gin.Context) {
 			"priority":    response.Priority,
 			"delay_ms":    response.DelayMS,
 			"stream":      response.Stream,
+			"templated":   response.Templated,
 			"enabled":     response.Enabled,
 			"note":        response.Note,
 			"created_at":  response.CreatedAt,
