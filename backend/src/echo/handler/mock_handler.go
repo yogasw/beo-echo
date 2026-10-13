@@ -39,6 +39,13 @@ func MockRequestHandler(c *gin.Context) {
 		}
 	}
 
+	// Preflight is answered with the project's own CORS config (see cors.go)
+	if IsMockPreflight(c.Request) {
+		project, _ := mockService.Repo.FindProjectByAlias(projectAlias)
+		HandleMockPreflight(c, project)
+		return
+	}
+
 	// Get path from route parameter if available, otherwise use URL path
 	path := c.Param("path")
 	if path == "" {

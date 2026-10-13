@@ -7,6 +7,7 @@ import (
 
 	"beo-echo/backend/src/database"
 	"beo-echo/backend/src/echo/handler"
+	"beo-echo/backend/src/echo/services"
 )
 
 /*
@@ -89,6 +90,8 @@ func CreateResponseHandler(c *gin.Context) {
 		})
 		return
 	}
+
+	services.ResetEndpointCounter(endpointIDStr)
 
 	c.JSON(http.StatusCreated, gin.H{
 		"success": true,
