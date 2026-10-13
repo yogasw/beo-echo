@@ -83,7 +83,8 @@ func TestCreateProjectHandler(t *testing.T) {
 			assert.Equal(t, projectAlias, projectData["alias"])
 			assert.Equal(t, "mock", projectData["mode"])
 			assert.Equal(t, workspace.ID, projectData["workspace_id"])
-			assert.Equal(t, "", projectData["advance_config"]) // Should be empty by default
+			// New projects answer CORS preflights in reflect mode by default
+			assert.JSONEq(t, `{"cors":{"mode":"reflect"}}`, projectData["advance_config"].(string))
 		} else {
 			t.Fatalf("Expected success response, got error: %s", response["message"])
 		}

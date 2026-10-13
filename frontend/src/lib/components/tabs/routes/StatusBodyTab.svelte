@@ -9,6 +9,19 @@
 	export let statusCode: number;
 	export let onStatusCodeChange: (val: number) => void;
 	export let onSaveButtonClick: (body: string) => void;
+	export let responseId: string = '';
+	export let templated: boolean = false;
+	export let onTemplatedChange: (val: boolean) => void = () => {};
+
+	// The saved value only reaches the prop after "Save", so keep the checkbox state locally
+	// and re-sync it when another response is selected.
+	let templatedChecked = templated;
+	$: responseId, (templatedChecked = templated);
+
+	function handleTemplatedToggle(event: Event) {
+		templatedChecked = (event.currentTarget as HTMLInputElement).checked;
+		onTemplatedChange(templatedChecked);
+	}
 
 	let editorRef: InstanceType<typeof MonacoEditor>;
 	let isFullScreen = false;
@@ -71,6 +84,24 @@
 				onStatusCodeChange(+input.value);
 			}}
 		/>
+	</div>
+
+	<div class="flex flex-wrap items-center gap-x-3 gap-y-1">
+		<label for="templated" class="flex items-center text-sm {ThemeUtils.themeTextPrimary()} cursor-pointer">
+			<input
+				id="templated"
+				type="checkbox"
+				class="mr-2"
+				checked={templatedChecked}
+				on:change={handleTemplatedToggle}
+				aria-describedby="templated-help"
+				title="Render the body as a template before sending it"
+			/>
+			Templated body
+		</label>
+		<span id="templated-help" class="text-xs {ThemeUtils.themeTextMuted()}">
+			{`{{queryParam 'x'}}`}, {`{{header 'X-Name'}}`}, {`{{#repeat (queryParam 'n') comma=true}}…{{@index}}…{{/repeat}}`}
+		</span>
 	</div>
 
 	<div class="relative flex-grow w-full">

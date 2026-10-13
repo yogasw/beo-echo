@@ -105,6 +105,7 @@ export type Response = {
 	enabled: boolean;
 	note: string;
 	is_fallback: boolean;
+	templated?: boolean; // Render body as a Handlebars template ({{queryParam 'x'}}, {{header 'X'}}, {{#repeat n}})
 	rules: Rule[] | null;
 	rules_logic: 'and' | 'or';
 	created_at: Date;
@@ -319,6 +320,15 @@ export const deleteResponse = async (projectId: string, endpointId: string, resp
 	return response.data;
 }
 
+/**
+ * Reset the round_robin / sequence counter of an endpoint so the next request is served
+ * from the first response again.
+ */
+export const resetEndpointCounter = async (projectId: string, endpointId: string): Promise<void> => {
+	let workspaceId = getCurrentWorkspaceId();
+	await apiClient.post(`/workspaces/${workspaceId}/projects/${projectId}/endpoints/${endpointId}/reset-counter`);
+};
+
 export const duplicateResponse = async (projectId: string, endpointId: string, responseId: string): Promise<Response> => {
 	const workspaceId = getCurrentWorkspaceId();
 	const response = await apiClient.post(`/workspaces/${workspaceId}/projects/${projectId}/endpoints/${endpointId}/responses/${responseId}/duplicate`);
@@ -458,6 +468,8 @@ export const updateEndpoint = async (projectId: string, endpointId: string, data
 	documentation?: string;
 	use_proxy?: boolean;
 	proxy_target_id?: string | null;
+	response_mode?: string;
+	advance_config?: string;
 }): Promise<Endpoint> => {
 	let workspaceId = getCurrentWorkspaceId();
 	const response = await apiClient.put(`/workspaces/${workspaceId}/projects/${projectId}/endpoints/${endpointId}`, data);
@@ -473,6 +485,7 @@ export const updateResponse = async (projectId: string, endpointId: string, resp
 	stream?: boolean;
 	enabled?: boolean;
 	is_fallback?: boolean;
+	templated?: boolean;
 	rules_logic?: 'and' | 'or';
 }): Promise<Response> => {
 	let workspaceId = getCurrentWorkspaceId();

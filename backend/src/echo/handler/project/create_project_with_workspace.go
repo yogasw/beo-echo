@@ -140,6 +140,11 @@ func CreateProjectWithWorkspaceHandler(c *gin.Context) {
 	// Set the workspace ID
 	project.WorkspaceID = workspaceID
 
+	// New projects answer CORS preflights in reflect mode unless a config was provided
+	if project.AdvanceConfig == "" {
+		project.AdvanceConfig = database.DefaultProjectAdvanceConfig()
+	}
+
 	// Check if alias is already used
 	var existingProject database.Project
 	result := database.GetDB().Where("alias = ? AND id != ?", project.Alias, project.ID).First(&existingProject)

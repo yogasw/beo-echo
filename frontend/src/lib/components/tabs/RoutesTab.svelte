@@ -422,6 +422,18 @@
 											}
 										}}
 										headers={selectedResponse?.headers || ''}
+										responseId={selectedResponse?.id || ''}
+										templated={selectedResponse?.templated || false}
+										onTemplatedChange={(val) => {
+											if (selectedResponse) {
+												selectedResponse = updateResponse(
+													'templated',
+													val,
+													selectedEndpoint,
+													selectedResponse
+												);
+											}
+										}}
 									/>
 								{:else if activeContentTab === 'Headers'}
 									<HeadersEditor
