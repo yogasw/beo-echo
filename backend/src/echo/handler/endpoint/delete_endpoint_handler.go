@@ -7,6 +7,7 @@ import (
 
 	"beo-echo/backend/src/database"
 	"beo-echo/backend/src/echo/handler"
+	"beo-echo/backend/src/echo/services"
 )
 
 // DeleteEndpointHandler removes an endpoint
@@ -55,6 +56,8 @@ func DeleteEndpointHandler(c *gin.Context) {
 		})
 		return
 	}
+
+	services.ResetEndpointCounter(endpoint.ID)
 
 	c.JSON(http.StatusOK, gin.H{
 		"success": true,

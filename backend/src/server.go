@@ -75,15 +75,17 @@ func SetupRouter() *gin.Engine {
 		// )
 	})
 
-	// Configure CORS
-	router.Use(cors.New(cors.Config{
+	// Configure CORS. Preflights aimed at mock routes skip this middleware: the mock
+	// handler answers them with the project's own CORS config (per-project mode).
+	corsMiddleware := cors.New(cors.Config{
 		AllowOrigins:     []string{lib.CORS_ORIGIN},
-		AllowMethods:     []string{"GET", "POST", "PUT", "PATCH", "DELETE", "HEAD", "OPTIONS"},
-		AllowHeaders:     []string{"Origin", "Content-Length", "Content-Type", "Authorization", "X-Requested-With", "Accept"},
+		AllowMethods:     handler.StaticAllowMethods,
+		AllowHeaders:     handler.StaticAllowHeaders,
 		ExposeHeaders:    []string{"Content-Range", "X-Content-Range"},
 		AllowCredentials: false, // No need for credentials since we use localStorage
 		// MaxAge:           12 * time.Hour,
-	}))
+	})
+	router.Use(handler.SkipMockPreflight(corsMiddleware))
 
 	// Rate limiting middleware - DISABLED for now due to stability issues
 	// TODO: Re-enable once rate limiting middleware is stable
@@ -276,6 +278,7 @@ func SetupRouter() *gin.Engine {
 				projectRoutes.GET("/endpoints/:id", endpoint.GetEndpointHandler)
 				projectRoutes.PUT("/endpoints/:id", endpoint.UpdateEndpointHandler)
 				projectRoutes.DELETE("/endpoints/:id", endpoint.DeleteEndpointHandler)
+				projectRoutes.POST("/endpoints/:id/reset-counter", endpoint.ResetCounterHandler)
 
 				// Response management
 				projectRoutes.GET("/endpoints/:id/responses", response.ListResponsesHandler)
