@@ -3,6 +3,9 @@ package modules
 import (
 	"beo-echo/backend/src/database"
 	"bytes"
+	"compress/flate"
+	"compress/gzip"
+	"compress/zlib"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -12,6 +15,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/andybalholm/brotli"
 	"github.com/dop251/goja"
 )
 
@@ -91,7 +95,11 @@ func (m *ModulesAction) ExecuteRunJavascriptAction(action *database.Action, req 
 	}
 
 	if result.Response != nil && resp != nil {
-		if err := applyJSResponseToHTTP(result.Response, resp); err != nil {
+		originalBody := ""
+		if ctx.Response != nil {
+			originalBody = ctx.Response.Body
+		}
+		if err := applyJSResponseToHTTP(result.Response, resp, originalBody); err != nil {
 			return fmt.Errorf("failed to apply response modifications: %w", err)
 		}
 	}
@@ -251,10 +259,18 @@ func convertHTTPResponseToJS(resp *http.Response) (*JavascriptResponse, error) {
 			return nil, err
 		}
 		resp.Body.Close()
-		jsResp.Body = string(bodyBytes)
 
-		// Restore body for further use
+		// Restore the original (possibly compressed) bytes for further use
 		resp.Body = io.NopCloser(bytes.NewBuffer(bodyBytes))
+
+		// The script sees readable text: a gzip/deflate/br body is decoded first. Binary bytes
+		// cannot survive the trip through a JavaScript string, so handing them over raw would
+		// corrupt the body as soon as the script result is applied.
+		if decoded, ok := decodeContentEncoding(resp.Header.Get("Content-Encoding"), bodyBytes); ok {
+			jsResp.Body = string(decoded)
+		} else {
+			jsResp.Body = string(bodyBytes)
+		}
 	}
 
 	return jsResp, nil
@@ -290,8 +306,44 @@ func applyJSRequestToHTTP(jsReq *JavascriptRequest, req *http.Request) error {
 	return nil
 }
 
-// applyJSResponseToHTTP applies JavaScript modifications back to http.Response
-func applyJSResponseToHTTP(jsResp *JavascriptResponse, resp *http.Response) error {
+// decodeContentEncoding decodes a gzip, deflate or br body. ok is false when the encoding is
+// empty, unsupported (or stacked) or the bytes do not decode, in which case the caller keeps the raw bytes.
+func decodeContentEncoding(encoding string, body []byte) (decoded []byte, ok bool) {
+	var reader io.Reader
+	switch strings.ToLower(strings.TrimSpace(encoding)) {
+	case "gzip", "x-gzip":
+		gz, err := gzip.NewReader(bytes.NewReader(body))
+		if err != nil {
+			return nil, false
+		}
+		defer gz.Close()
+		reader = gz
+	case "deflate":
+		zr, err := zlib.NewReader(bytes.NewReader(body))
+		if err != nil {
+			reader = flate.NewReader(bytes.NewReader(body)) // raw deflate without the zlib wrapper
+		} else {
+			defer zr.Close()
+			reader = zr
+		}
+	case "br":
+		reader = brotli.NewReader(bytes.NewReader(body))
+	default:
+		return nil, false
+	}
+
+	out, err := io.ReadAll(reader)
+	if err != nil {
+		return nil, false
+	}
+	return out, true
+}
+
+// applyJSResponseToHTTP applies JavaScript modifications back to http.Response.
+// originalBody is the body the script was given; the response body is only replaced when the script
+// changed it, so a script that just reads the response leaves the original bytes (including a
+// compressed body) untouched.
+func applyJSResponseToHTTP(jsResp *JavascriptResponse, resp *http.Response, originalBody string) error {
 	// Update status code
 	if jsResp.StatusCode > 0 {
 		resp.StatusCode = jsResp.StatusCode
@@ -304,12 +356,14 @@ func applyJSResponseToHTTP(jsResp *JavascriptResponse, resp *http.Response) erro
 		}
 	}
 
-	// Update body
-	if jsResp.Body != "" {
+	// Update body, only when the script changed it
+	if jsResp.Body != "" && jsResp.Body != originalBody {
 		bodyBytes := []byte(jsResp.Body)
 		resp.Body = io.NopCloser(bytes.NewBuffer(bodyBytes))
 		resp.ContentLength = int64(len(bodyBytes))
 		resp.Header.Set("Content-Length", strconv.Itoa(len(bodyBytes)))
+		// The new body is plain text, so the old Content-Encoding no longer describes it
+		resp.Header.Del("Content-Encoding")
 	}
 
 	return nil
