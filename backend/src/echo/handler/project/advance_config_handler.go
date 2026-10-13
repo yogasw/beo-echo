@@ -64,7 +64,8 @@ func GetProjectAdvanceConfigHandler(c *gin.Context) {
 }
 
 /*
-UpdateProjectAdvanceConfigHandler updates the advance configuration for a project
+UpdateProjectAdvanceConfigHandler updates the advance configuration for a project.
+Top-level keys are merged into the stored config; send a key as null to remove it.
 
 Sample curl:
 
@@ -78,9 +79,7 @@ Sample curl:
 	      "burst_size": 10
 	    },
 	    "cors": {
-	      "enabled": true,
-	      "allowed_origins": ["https://example.com"],
-	      "allowed_methods": ["GET", "POST"]
+	      "mode": "reflect"
 	    }
 	  }'
 */
@@ -107,8 +106,8 @@ func UpdateProjectAdvanceConfigHandler(c *gin.Context) {
 		return
 	}
 
-	// Parse request body as raw JSON
-	var configData interface{}
+	// Parse request body as a JSON object
+	var configData map[string]interface{}
 	if err := c.ShouldBindJSON(&configData); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"error":   true,
@@ -116,6 +115,21 @@ func UpdateProjectAdvanceConfigHandler(c *gin.Context) {
 		})
 		return
 	}
+
+	// Merge into the stored config: keys that are absent stay untouched, so setting delayMs
+	// does not wipe cors (and the other way around). A key set to null removes it.
+	merged := map[string]interface{}{}
+	if project.AdvanceConfig != "" {
+		_ = json.Unmarshal([]byte(project.AdvanceConfig), &merged)
+	}
+	for key, value := range configData {
+		if value == nil {
+			delete(merged, key)
+			continue
+		}
+		merged[key] = value
+	}
+	configData = merged
 
 	// Convert back to JSON string for storage and validation
 	configJSON, err := json.Marshal(configData)

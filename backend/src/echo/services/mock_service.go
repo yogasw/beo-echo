@@ -120,7 +120,7 @@ func (s *MockService) handleMockMode(ctx context.Context, project *database.Proj
 	}
 
 	// Select response based on ResponseMode
-	response, ruleErr := selectResponseWithEndpoint(endpoint.ID, responses, endpoint.ResponseMode, req)
+	response, ruleErr := selectResponse(endpoint.ID, responses, endpoint.ResponseMode, sequenceOnEnd(endpoint), req)
 	if ruleErr != nil {
 		// Rule mismatch explicitly
 		return createErrorResponse(http.StatusBadRequest, ruleErr.Error()), nil, database.ModeMock, false
@@ -135,7 +135,7 @@ func (s *MockService) handleMockMode(ctx context.Context, project *database.Proj
 	s.applyDelay(project, endpoint, response)
 
 	// Create and return HTTP response with match indicator
-	resp, err := createMockResponse(*response)
+	resp, err := buildMockResponse(*response, req)
 	return resp, err, database.ModeMock, true
 }
 
@@ -159,7 +159,7 @@ func (s *MockService) handleProxyMode(ctx context.Context, project *database.Pro
 		responses, err := s.Repo.FindResponsesByEndpointID(endpoint.ID)
 		if err == nil && len(responses) > 0 {
 			// Select response based on ResponseMode
-			response, ruleErr := selectResponseWithEndpoint(endpoint.ID, responses, endpoint.ResponseMode, req)
+			response, ruleErr := selectResponse(endpoint.ID, responses, endpoint.ResponseMode, sequenceOnEnd(endpoint), req)
 			if ruleErr != nil {
 				// We don't proxy if it explicitly hit an endpoint but rules mismatched: we fail fast
 				return createErrorResponse(http.StatusBadRequest, ruleErr.Error()), false, nil
@@ -170,7 +170,7 @@ func (s *MockService) handleProxyMode(ctx context.Context, project *database.Pro
 				s.applyDelay(project, endpoint, response)
 
 				// Create and return HTTP response from mock
-				resp, err := createMockResponse(*response)
+				resp, err := buildMockResponse(*response, req)
 				if err == nil {
 					// Add header to indicate response was mocked
 					resp.Header.Set("beo-echo-response-type", "mock")
@@ -337,6 +337,23 @@ func executeProxyRequest(ctx context.Context, targetURLString, method, pathStr, 
 
 // selectResponseWithEndpoint selects a response based on mode and rules with endpoint ID for round-robin
 func selectResponseWithEndpoint(endpointID string, responses []database.MockResponse, mode string, req *http.Request) (*database.MockResponse, error) {
+	return selectResponse(endpointID, responses, mode, "", req)
+}
+
+// sequenceOnEnd reads the "sequence" options from the endpoint's advance config.
+func sequenceOnEnd(endpoint *database.MockEndpoint) database.SequenceOnEnd {
+	if endpoint == nil || endpoint.AdvanceConfig == "" {
+		return ""
+	}
+	cfg, err := database.ParseEndpointAdvanceConfig(endpoint.AdvanceConfig)
+	if err != nil || cfg.Sequence == nil {
+		return ""
+	}
+	return cfg.Sequence.OnEnd
+}
+
+// selectResponse selects a response based on mode and rules; seqOnEnd only matters for the sequence mode
+func selectResponse(endpointID string, responses []database.MockResponse, mode string, seqOnEnd database.SequenceOnEnd, req *http.Request) (*database.MockResponse, error) {
 	// Filter responses by rules first
 	validResponses := filterResponsesByRules(responses, req)
 
@@ -387,6 +404,9 @@ func selectResponseWithEndpoint(endpointID string, responses []database.MockResp
 	case "round_robin":
 		// Use the actual endpoint ID for round-robin selection
 		response := getNextRoundRobinResponse(endpointID, validResponses)
+		return &response, nil
+	case "sequence":
+		response := getNextSequenceResponse(endpointID, validResponses, seqOnEnd)
 		return &response, nil
 	default:
 		// Default to random

@@ -8,6 +8,7 @@ import (
 
 	"beo-echo/backend/src/database"
 	"beo-echo/backend/src/echo/handler"
+	"beo-echo/backend/src/echo/services"
 )
 
 // DuplicateResponseHandler duplicates an existing response with all its rules
@@ -95,6 +96,7 @@ func DuplicateResponseHandler(c *gin.Context) {
 		Priority:   originalResponse.Priority,
 		DelayMS:    originalResponse.DelayMS,
 		Stream:     originalResponse.Stream,
+		Templated:  originalResponse.Templated,
 		Note:       originalResponse.Note + " (Copy)", // Add "(Copy)" to distinguish
 		Enabled:    originalResponse.Enabled,
 		// Don't copy Rules here - we'll handle them separately
@@ -156,6 +158,8 @@ func DuplicateResponseHandler(c *gin.Context) {
 		Preload("Rules").
 		Where("id = ?", duplicatedResponse.ID).
 		First(&responseWithRules)
+
+	services.ResetEndpointCounter(endpoint.ID)
 
 	c.JSON(http.StatusCreated, gin.H{
 		"success": true,

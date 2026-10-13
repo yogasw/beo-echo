@@ -9,6 +9,7 @@ import (
 
 	"beo-echo/backend/src/database"
 	"beo-echo/backend/src/echo/handler"
+	"beo-echo/backend/src/echo/services"
 )
 
 /*
@@ -78,6 +79,9 @@ func UpdateEndpointHandler(c *gin.Context) {
 		return
 	}
 
+	previousMode := existingEndpoint.ResponseMode
+	previousAdvanceConfig := existingEndpoint.AdvanceConfig
+
 	// Apply updates
 	if updateData.Method != "" {
 		existingEndpoint.Method = strings.ToUpper(updateData.Method)
@@ -120,6 +124,13 @@ func UpdateEndpointHandler(c *gin.Context) {
 				})
 				return
 			}
+			if _, err := database.ParseEndpointAdvanceConfig(advanceConfig); err != nil {
+				c.JSON(http.StatusBadRequest, gin.H{
+					"error":   true,
+					"message": err.Error(),
+				})
+				return
+			}
 		}
 		// Update with the new value (could be empty string)
 		existingEndpoint.AdvanceConfig = advanceConfig
@@ -159,6 +170,11 @@ func UpdateEndpointHandler(c *gin.Context) {
 			"message": "Failed to update endpoint: " + result.Error.Error(),
 		})
 		return
+	}
+
+	// A new mode or sequence option makes the old counter position meaningless
+	if existingEndpoint.ResponseMode != previousMode || existingEndpoint.AdvanceConfig != previousAdvanceConfig {
+		services.ResetEndpointCounter(existingEndpoint.ID)
 	}
 
 	c.JSON(http.StatusOK, gin.H{

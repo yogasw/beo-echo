@@ -9,6 +9,7 @@ import (
 
 	"beo-echo/backend/src/database"
 	"beo-echo/backend/src/echo/handler"
+	"beo-echo/backend/src/echo/services"
 )
 
 /*
@@ -92,6 +93,7 @@ func UpdateResponseHandler(c *gin.Context) {
 		Note       *string `json:"note"`
 		IsFallback *bool   `json:"is_fallback"`
 		RulesLogic *string `json:"rules_logic"`
+		Templated  *bool   `json:"templated"`
 	}
 
 	if err := c.ShouldBindJSON(&updateData); err != nil {
@@ -157,6 +159,10 @@ func UpdateResponseHandler(c *gin.Context) {
 		existingResponse.RulesLogic = *updateData.RulesLogic
 	}
 
+	if updateData.Templated != nil {
+		existingResponse.Templated = *updateData.Templated
+	}
+
 	// Save updates
 	result = database.GetDB().Save(&existingResponse)
 	if result.Error != nil {
@@ -182,6 +188,8 @@ func UpdateResponseHandler(c *gin.Context) {
 		}
 
 	}
+
+	services.ResetEndpointCounter(endpoint.ID)
 
 	// Reload response with rules
 	database.GetDB().

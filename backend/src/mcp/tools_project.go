@@ -134,7 +134,7 @@ func (s *Server) registerProjectTools() {
 		})
 
 	addTool(s, "project_get_advance_config",
-		"Get a project's advanced config (e.g. global response delay).",
+		"Get a project's advanced config (global response delay, CORS mode).",
 		func(ctx context.Context, req *mcp.CallToolRequest, in projIn) (*mcp.CallToolResult, any, error) {
 			token := tokenFromRequest(req)
 			var out raw
@@ -145,16 +145,45 @@ func (s *Server) registerProjectTools() {
 			return jsonResult(out)
 		})
 
+	type corsIn struct {
+		Mode         string   `json:"mode,omitempty" jsonschema:"static (fixed header list), reflect (echo Access-Control-Request-Headers), or custom (use allow_headers)"`
+		AllowHeaders []string `json:"allow_headers,omitempty" jsonschema:"Access-Control-Allow-Headers list, used when mode is custom"`
+		AllowOrigins []string `json:"allow_origins,omitempty" jsonschema:"allowed origins (default: server-wide CORS_ORIGIN, normally *)"`
+		MaxAge       *int     `json:"max_age,omitempty" jsonschema:"Access-Control-Max-Age in seconds (0-86400)"`
+	}
 	type advConfigIn struct {
-		WorkspaceID string `json:"workspace_id" jsonschema:"the workspace id"`
-		ProjectID   string `json:"project_id" jsonschema:"the project id"`
-		DelayMs     int    `json:"delay_ms" jsonschema:"global response delay in milliseconds (0-120000)"`
+		WorkspaceID string  `json:"workspace_id" jsonschema:"the workspace id"`
+		ProjectID   string  `json:"project_id" jsonschema:"the project id"`
+		DelayMs     *int    `json:"delay_ms,omitempty" jsonschema:"global response delay in milliseconds (0-120000); omit to keep the current value"`
+		Cors        *corsIn `json:"cors,omitempty" jsonschema:"CORS preflight behaviour of the project's mock routes; omit to keep the current value"`
+		ClearCors   bool    `json:"clear_cors,omitempty" jsonschema:"remove the cors setting (back to the static default)"`
 	}
 	addTool(s, "project_update_advance_config",
-		"Update a project's advanced config (sets the global response delay in ms).",
+		"Update a project's advanced config: global response delay (delay_ms) and CORS (cors). Only provided settings change; the rest of the config is kept.",
 		func(ctx context.Context, req *mcp.CallToolRequest, in advConfigIn) (*mcp.CallToolResult, any, error) {
 			token := tokenFromRequest(req)
-			body := map[string]any{"delayMs": in.DelayMs}
+			body := map[string]any{}
+			if in.DelayMs != nil {
+				body["delayMs"] = *in.DelayMs
+			}
+			if in.ClearCors {
+				body["cors"] = nil
+			} else if in.Cors != nil {
+				cors := map[string]any{}
+				if in.Cors.Mode != "" {
+					cors["mode"] = in.Cors.Mode
+				}
+				if len(in.Cors.AllowHeaders) > 0 {
+					cors["allowHeaders"] = in.Cors.AllowHeaders
+				}
+				if len(in.Cors.AllowOrigins) > 0 {
+					cors["allowOrigins"] = in.Cors.AllowOrigins
+				}
+				if in.Cors.MaxAge != nil {
+					cors["maxAge"] = *in.Cors.MaxAge
+				}
+				body["cors"] = cors
+			}
 			var out raw
 			if err := s.client.Put(ctx, token, projectPath(in.WorkspaceID, in.ProjectID)+"/advance-config", body, &out); err != nil {
 				r, _, e, _ := handleErr(err)

@@ -94,7 +94,7 @@ type MockEndpoint struct {
 	Method        string         `json:"method"`                                // GET, POST, PUT, DELETE, etc
 	Path          string         `json:"path"`                                  // Example: "/users/:id"
 	Enabled       bool           `json:"enabled" gorm:"default:true"`           // Whether endpoint is active or not
-	ResponseMode  string         `json:"response_mode" gorm:"default:'random'"` // "static", "random", "round_robin"
+	ResponseMode  string         `json:"response_mode" gorm:"default:'random'"` // "static", "random", "round_robin", "sequence"
 	Documentation string         `gorm:"type:text" json:"documentation"`        // Documentation URL or text
 	AdvanceConfig string         `gorm:"type:text" json:"advance_config"`       // Advanced configuration (e.g. timeout) as JSON string
 	Responses     []MockResponse `gorm:"foreignKey:EndpointID;constraint:OnDelete:CASCADE;" json:"responses"`
@@ -127,6 +127,7 @@ type MockResponse struct {
 	Note       string     `gorm:"type:text" json:"note"`                       // Optional note for the response
 	Enabled    bool       `json:"enabled" gorm:"default:true"`                 // Whether enabled or not
 	IsFallback bool       `json:"is_fallback" gorm:"default:false"`            // Whether this is a fallback response
+	Templated  bool       `json:"templated" gorm:"default:false"`              // Render Body as a Handlebars template before sending
 	RulesLogic string     `gorm:"type:string;default:'or'" json:"rules_logic"` // "and" or "or" for multiple rules
 	Rules      []MockRule `gorm:"foreignKey:ResponseID;constraint:OnDelete:CASCADE" json:"rules"`
 	CreatedAt  time.Time  `gorm:"autoCreateTime" json:"created_at"`

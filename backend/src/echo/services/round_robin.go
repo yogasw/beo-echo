@@ -6,14 +6,14 @@ import (
 	"time"
 )
 
-// endpointState holds round-robin state for each endpoint
-// NOTE: This version is intentionally not thread-safe — acceptable for mock/testing use where race conditions are tolerable.
+// endpointState holds the counter shared by the round_robin and sequence modes of an endpoint.
 type endpointState struct {
+	mu        sync.Mutex
 	lastIndex int   // index of the last response served
 	lastUsed  int64 // Unix timestamp of last usage
 }
 
-// Global state map for round-robin selection per endpoint
+// Global state map for round-robin/sequence selection per endpoint
 var endpointStates sync.Map
 
 // State timeout for lazy cleanup (1 hour)
@@ -34,6 +34,29 @@ func getNextRoundRobinResponse(endpointID string, responses []database.MockRespo
 	// Sort by priority (higher priority first)
 	sortByPriority(sortedResponses)
 
+	return sortedResponses[advanceEndpointCounter(endpointID, len(sortedResponses), database.SequenceLoop)]
+}
+
+// getNextSequenceResponse serves responses in priority order. When the last one was served,
+// onEnd decides whether to start over (loop) or keep serving the last one (stay_last, default).
+func getNextSequenceResponse(endpointID string, responses []database.MockResponse, onEnd database.SequenceOnEnd) database.MockResponse {
+	if len(responses) == 0 {
+		return database.MockResponse{}
+	}
+
+	if onEnd == "" {
+		onEnd = database.SequenceStayLast
+	}
+
+	sortedResponses := make([]database.MockResponse, len(responses))
+	copy(sortedResponses, responses)
+	sortByPriority(sortedResponses)
+
+	return sortedResponses[advanceEndpointCounter(endpointID, len(sortedResponses), onEnd)]
+}
+
+// advanceEndpointCounter moves the endpoint counter one step and returns the index to serve.
+func advanceEndpointCounter(endpointID string, size int, onEnd database.SequenceOnEnd) int {
 	now := time.Now().Unix()
 
 	// Load or initialize endpoint state
@@ -43,23 +66,29 @@ func getNextRoundRobinResponse(endpointID string, responses []database.MockRespo
 	})
 	state := val.(*endpointState)
 
-	// Update last used time
+	state.mu.Lock()
 	state.lastUsed = now
-
-	// Get next index (round-robin)
 	nextIndex := state.lastIndex + 1
-	if nextIndex >= len(sortedResponses) {
-		nextIndex = 0 // Wrap around
+	if nextIndex >= size {
+		if onEnd == database.SequenceStayLast {
+			nextIndex = size - 1
+		} else {
+			nextIndex = 0 // Wrap around
+		}
 	}
-
-	// Update state with the new index
 	state.lastIndex = nextIndex
+	state.mu.Unlock()
 
 	// cleanup stale endpoints
 	cleanupStaleEndpoints()
 
-	// Return the selected response from sorted array
-	return sortedResponses[nextIndex]
+	return nextIndex
+}
+
+// ResetEndpointCounter forgets the round_robin/sequence position of an endpoint so the
+// next request is served from the first response again.
+func ResetEndpointCounter(endpointID string) {
+	endpointStates.Delete(endpointID)
 }
 
 // cleanupStaleEndpoints removes entries from endpointStates that haven't been used within stateTimeout
@@ -67,7 +96,10 @@ func cleanupStaleEndpoints() {
 	now := time.Now().Unix()
 	endpointStates.Range(func(key, value any) bool {
 		state := value.(*endpointState)
-		if now-state.lastUsed > stateTimeout {
+		state.mu.Lock()
+		stale := now-state.lastUsed > stateTimeout
+		state.mu.Unlock()
+		if stale {
 			endpointStates.Delete(key)
 		}
 		return true
