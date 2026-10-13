@@ -232,6 +232,19 @@ var skippedForwardHeaders = map[string]bool{
 	"X-Forwarded-Port":   true,
 	"X-Real-Ip":          true,
 	"Cdn-Loop":           true,
+	"True-Client-Ip":     true,
+}
+
+// isSkippedForwardHeader reports whether a request header must not be forwarded to the target:
+// the fixed list above plus every Cloudflare "CF-*" header (CF-Connecting-IP, CF-Ray,
+// CF-IPCountry, CF-Visitor, ...).
+//
+// They matter when the target is itself behind Cloudflare: a request that arrives with
+// CF-Connecting-IP is treated as a double proxy and rejected with error 1000, while the very
+// same request without it succeeds.
+func isSkippedForwardHeader(name string) bool {
+	canonical := http.CanonicalHeaderKey(name)
+	return skippedForwardHeaders[canonical] || strings.HasPrefix(canonical, "Cf-")
 }
 
 // executeProxyRequest is a common helper function to forward requests to a target URL
@@ -297,9 +310,9 @@ func executeProxyRequest(ctx context.Context, targetURLString, method, pathStr, 
 	}
 
 	// Copy all headers except the ones that only describe the hop the client
-	// made to reach beo-echo (see skippedForwardHeaders).
+	// made to reach beo-echo (see skippedForwardHeaders / isSkippedForwardHeader).
 	for key, values := range req.Header {
-		if skippedForwardHeaders[http.CanonicalHeaderKey(key)] {
+		if isSkippedForwardHeader(key) {
 			continue
 		}
 		for _, value := range values {
