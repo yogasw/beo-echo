@@ -68,3 +68,25 @@ func TestUpdateProjectAdvanceConfig_InvalidCorsRejectedAndKeepsStored(t *testing
 	assert.Equal(t, http.StatusBadRequest, w.Code)
 	assert.JSONEq(t, `{"cors":{"mode":"reflect"}}`, storedAdvanceConfig(t, id))
 }
+
+func TestUpdateProjectAdvanceConfig_DeepMergesCors(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	setup, err := database.InitTestWorkspaceWithProject("adv-deep@example.com", "Adv Deep", "Adv Deep WS", "Adv Deep Project", generateUniqueAlias("adv-deep"))
+	require.NoError(t, err)
+	defer setup.Cleanup()
+	id := setup.Project.ID
+
+	require.Equal(t, http.StatusOK, putAdvanceConfig(t, id, `{"cors":{"mode":"custom","allowHeaders":["X-Api-Key"]}}`).Code)
+
+	// Only maxAge is sent: mode and allowHeaders must survive.
+	require.Equal(t, http.StatusOK, putAdvanceConfig(t, id, `{"cors":{"maxAge":600}}`).Code)
+	assert.JSONEq(t, `{"cors":{"mode":"custom","allowHeaders":["X-Api-Key"],"maxAge":600}}`, storedAdvanceConfig(t, id))
+
+	// Arrays are replaced, not appended.
+	require.Equal(t, http.StatusOK, putAdvanceConfig(t, id, `{"cors":{"allowHeaders":["X-Trace"]}}`).Code)
+	assert.JSONEq(t, `{"cors":{"mode":"custom","allowHeaders":["X-Trace"],"maxAge":600}}`, storedAdvanceConfig(t, id))
+
+	// A nested null removes just that key.
+	require.Equal(t, http.StatusOK, putAdvanceConfig(t, id, `{"cors":{"maxAge":null}}`).Code)
+	assert.JSONEq(t, `{"cors":{"mode":"custom","allowHeaders":["X-Trace"]}}`, storedAdvanceConfig(t, id))
+}

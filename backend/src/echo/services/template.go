@@ -30,7 +30,9 @@ func renderResponseBody(mockResp database.MockResponse, req *http.Request) (stri
 		return "", err
 	}
 
-	jsonOutput := isJSONContentType(mockResp.Headers)
+	jsonOutput := isJSONOutput(mockResp.Headers, mockResp.Body)
+	// One iteration budget for the whole render, so nested repeat blocks cannot multiply past the cap.
+	repeatBudget := maxTemplateRepeat
 	tpl.RegisterHelpers(map[string]interface{}{
 		// {{queryParam 'name'}} or {{queryParam 'name' default='x'}}
 		"queryParam": func(name string, options *raymond.Options) raymond.SafeString {
@@ -54,9 +56,10 @@ func renderResponseBody(mockResp database.MockResponse, req *http.Request) (stri
 		// {{#repeat n comma=true}}...{{@index}}...{{/repeat}}
 		"repeat": func(n interface{}, options *raymond.Options) raymond.SafeString {
 			count := toRepeatCount(n)
-			if count > maxTemplateRepeat {
-				count = maxTemplateRepeat
+			if count > repeatBudget {
+				count = repeatBudget
 			}
+			repeatBudget -= count
 			separator := ""
 			if comma, _ := options.HashProp("comma").(bool); comma {
 				separator = ","
@@ -148,26 +151,39 @@ func checkExpression(expr *ast.Expression) error {
 }
 
 // toRepeatCount converts a repeat helper argument ("500", 500, ...) into a non-negative count.
+// A number too large for int64 counts as "very many" (capped later), anything else that is not a
+// non-negative integer counts as zero.
 func toRepeatCount(v interface{}) int {
-	n, err := strconv.Atoi(strings.TrimSpace(fmt.Sprint(v)))
-	if err != nil || n < 0 {
+	raw := strings.TrimSpace(fmt.Sprint(v))
+	n, err := strconv.ParseInt(raw, 10, 64)
+	if err != nil {
+		if numErr, ok := err.(*strconv.NumError); ok && numErr.Err == strconv.ErrRange && !strings.HasPrefix(raw, "-") {
+			return maxTemplateRepeat
+		}
 		return 0
 	}
-	return n
+	if n < 0 {
+		return 0
+	}
+	if n > maxTemplateRepeat {
+		return maxTemplateRepeat
+	}
+	return int(n)
 }
 
-// isJSONContentType reports whether the response headers (JSON string) declare a JSON body.
-func isJSONContentType(headersJSON string) bool {
+// isJSONOutput reports whether the rendered body is JSON: the Content-Type header decides when
+// the response has one, otherwise a body that starts with { or [ is treated as JSON.
+func isJSONOutput(headersJSON, body string) bool {
 	var headers map[string]string
-	if err := json.Unmarshal([]byte(headersJSON), &headers); err != nil {
-		return false
-	}
-	for key, value := range headers {
-		if strings.EqualFold(key, "content-type") {
-			return strings.Contains(strings.ToLower(value), "json")
+	if err := json.Unmarshal([]byte(headersJSON), &headers); err == nil {
+		for key, value := range headers {
+			if strings.EqualFold(key, "content-type") {
+				return strings.Contains(strings.ToLower(value), "json")
+			}
 		}
 	}
-	return false
+	trimmed := strings.TrimSpace(body)
+	return strings.HasPrefix(trimmed, "{") || strings.HasPrefix(trimmed, "[")
 }
 
 // escapeForOutput makes a request value safe to embed inside a JSON string literal when the

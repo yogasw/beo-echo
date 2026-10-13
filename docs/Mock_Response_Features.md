@@ -23,9 +23,10 @@ curl -X PUT "$BASE/api/workspaces/$WS/projects/$PROJECT_ID/advance-config" \
   -d '{"cors":{"mode":"reflect"}}'
 ```
 
-`PUT .../advance-config` **merges** top-level keys: sending `{"delayMs":300}` keeps `cors`, and sending
-`{"cors":...}` keeps `delayMs`. Send a key as `null` to remove it. The MCP tool `project_update_advance_config`
-takes `delay_ms`, `cors` and `clear_cors` and behaves the same way.
+`PUT .../advance-config` **deep-merges** into the stored config: sending `{"delayMs":300}` keeps `cors`, sending
+`{"cors":{"maxAge":600}}` keeps `cors.mode`, and nested objects are merged key by key. A key sent as `null`
+(top level or nested) is removed; arrays and scalars replace the stored value. The MCP tool
+`project_update_advance_config` takes `delay_ms`, `cors` and `clear_cors` and behaves the same way.
 
 A response header set on a mock response still wins on the actual request, so a response with
 `"Access-Control-Allow-Origin": ""` removes the CORS header (useful to test a "no CORS" scenario).
@@ -53,8 +54,11 @@ GET /many?n=500
 => 500 items
 ```
 
-- `repeat` is capped at 10000 iterations. A missing, negative or non-numeric count renders nothing.
-- When the response `Content-Type` is JSON, `queryParam` / `header` values are JSON-escaped, so a value such as `a"b` cannot break the document.
+- `repeat` is capped at 10000 iterations **per render**: nested `repeat` blocks share that budget. A very large count
+  (even one that overflows) is capped; a missing, negative or non-numeric count renders nothing.
+- `queryParam` / `header` values are JSON-escaped when the output is JSON, so a value such as `a"b` cannot break the
+  document. The response `Content-Type` decides; without a `Content-Type` header, a body that starts with `{` or `[`
+  counts as JSON. For any other body the value is inserted as-is.
 - A syntax error or an unknown helper (for example a typo like `queryParms`) returns `500` with a message that starts with `template error`/`unknown template helper`, instead of an empty value.
 - Rendering happens before `Content-Encoding` compression (gzip/br).
 

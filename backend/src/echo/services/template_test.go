@@ -172,3 +172,46 @@ func TestTemplate_GzipAfterRender(t *testing.T) {
 func gzipReader(r io.Reader) (io.Reader, error) {
 	return gzip.NewReader(r)
 }
+
+func TestTemplate_JSONEscapeWithoutContentTypeHeader(t *testing.T) {
+	req := httptest.NewRequest(http.MethodGet, `/p/x?q=a%22b`, nil)
+	mock := database.MockResponse{Body: `{"v":"{{queryParam 'q'}}"}`, Headers: `{}`, Templated: true}
+
+	got, err := renderResponseBody(mock, req)
+	require.NoError(t, err)
+
+	var parsed map[string]string
+	require.NoError(t, json.Unmarshal([]byte(got), &parsed), "body that looks like JSON is escaped even without a Content-Type: %s", got)
+	assert.Equal(t, `a"b`, parsed["v"])
+}
+
+func TestTemplate_NoContentTypeAndPlainBodyIsRaw(t *testing.T) {
+	req := httptest.NewRequest(http.MethodGet, `/p/x?q=a%22b`, nil)
+	mock := database.MockResponse{Body: `hello {{queryParam 'q'}}`, Headers: `{}`, Templated: true}
+
+	got, err := renderResponseBody(mock, req)
+	require.NoError(t, err)
+	assert.Equal(t, `hello a"b`, got)
+}
+
+func TestTemplate_NestedRepeatSharesOneBudget(t *testing.T) {
+	body := `[{{#repeat 10000 comma=true}}{{#repeat 10000 comma=true}}1{{/repeat}}{{/repeat}}]`
+	req := httptest.NewRequest(http.MethodGet, "/p/x", nil)
+
+	got, err := renderResponseBody(templatedResponse(body), req)
+	require.NoError(t, err)
+
+	// The outer repeat spends the whole budget, so nothing is left for the inner ones.
+	assert.LessOrEqual(t, len(got), 2*maxTemplateRepeat+2, "output stays bounded instead of 10000 x 10000")
+}
+
+func TestTemplate_RepeatCountParsing(t *testing.T) {
+	assert.Equal(t, maxTemplateRepeat, toRepeatCount("99999999999999999999999"), "overflowing numbers count as very many")
+	assert.Equal(t, 0, toRepeatCount("-99999999999999999999999"))
+	assert.Equal(t, maxTemplateRepeat, toRepeatCount("500000"))
+	assert.Equal(t, 500, toRepeatCount(" 500 "))
+	assert.Equal(t, 7, toRepeatCount(7))
+	assert.Equal(t, 0, toRepeatCount("abc"))
+	assert.Equal(t, 0, toRepeatCount(""))
+	assert.Equal(t, 0, toRepeatCount("1.5"))
+}

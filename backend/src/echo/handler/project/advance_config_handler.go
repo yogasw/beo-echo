@@ -63,9 +63,28 @@ func GetProjectAdvanceConfigHandler(c *gin.Context) {
 	})
 }
 
+// mergeConfig merges src into dst. Nested objects are merged key by key (so {"cors":{"maxAge":600}}
+// keeps cors.mode), a null removes the key, and any other value (including arrays) replaces it.
+func mergeConfig(dst, src map[string]interface{}) {
+	for key, value := range src {
+		if value == nil {
+			delete(dst, key)
+			continue
+		}
+		srcMap, srcIsMap := value.(map[string]interface{})
+		dstMap, dstIsMap := dst[key].(map[string]interface{})
+		if srcIsMap && dstIsMap {
+			mergeConfig(dstMap, srcMap)
+			continue
+		}
+		dst[key] = value
+	}
+}
+
 /*
 UpdateProjectAdvanceConfigHandler updates the advance configuration for a project.
-Top-level keys are merged into the stored config; send a key as null to remove it.
+The config is deep-merged into the stored one: nested objects are merged key by key, a key sent
+as null is removed, arrays and scalars replace the stored value.
 
 Sample curl:
 
@@ -122,13 +141,7 @@ func UpdateProjectAdvanceConfigHandler(c *gin.Context) {
 	if project.AdvanceConfig != "" {
 		_ = json.Unmarshal([]byte(project.AdvanceConfig), &merged)
 	}
-	for key, value := range configData {
-		if value == nil {
-			delete(merged, key)
-			continue
-		}
-		merged[key] = value
-	}
+	mergeConfig(merged, configData)
 	configData = merged
 
 	// Convert back to JSON string for storage and validation
