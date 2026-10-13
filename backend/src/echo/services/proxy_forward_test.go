@@ -44,6 +44,55 @@ func TestExecuteProxyRequest_DropsForwardedHeaders(t *testing.T) {
 	assert.Equal(t, "203.0.113.7", got.Get("X-Forwarded-For"))
 }
 
+// TestExecuteProxyRequest_DropsCloudflareHeaders covers a target that is itself behind Cloudflare:
+// CF-Connecting-IP makes it answer error 1000 (double proxy), so every CF-* header,
+// True-Client-IP and CDN-Loop must be dropped while the caller's own headers survive.
+func TestExecuteProxyRequest_DropsCloudflareHeaders(t *testing.T) {
+	var got http.Header
+	target := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		got = r.Header.Clone()
+		w.WriteHeader(http.StatusOK)
+	}))
+	defer target.Close()
+
+	req := httptest.NewRequest(http.MethodGet, "http://beo-echo.local/ping", nil)
+	for k, v := range map[string]string{
+		"CF-Connecting-IP":   "203.0.113.7",
+		"cf-connecting-ipv6": "2001:db8::1",
+		"CF-Ray":             "8f1a2b3c4d5e6f70-SIN",
+		"CF-IPCountry":       "ID",
+		"CF-Visitor":         `{"scheme":"https"}`,
+		"CF-Worker":          "example.workers.dev",
+		"True-Client-IP":     "203.0.113.7",
+		"CDN-Loop":           "cloudflare; loops=1",
+		"X-Api-Key":          "secret",
+		"Cache-Control":      "no-cache", // starts with "C" but is not a CF-* header
+		"X-Forwarded-For":    "203.0.113.7",
+	} {
+		req.Header.Set(k, v)
+	}
+
+	resp, err := executeProxyRequest(context.Background(), target.URL, http.MethodGet, "/ping", "", req)
+
+	require.NoError(t, err)
+	assert.Equal(t, http.StatusOK, resp.StatusCode)
+	for _, h := range []string{"Cf-Connecting-Ip", "Cf-Connecting-Ipv6", "Cf-Ray", "Cf-Ipcountry", "Cf-Visitor", "Cf-Worker", "True-Client-Ip", "Cdn-Loop"} {
+		assert.Empty(t, got.Values(h), "%s must not be forwarded to the target", h)
+	}
+	assert.Equal(t, "secret", got.Get("X-Api-Key"))
+	assert.Equal(t, "no-cache", got.Get("Cache-Control"))
+	assert.Equal(t, "203.0.113.7", got.Get("X-Forwarded-For"), "X-Forwarded-For is left as-is")
+}
+
+func TestIsSkippedForwardHeader(t *testing.T) {
+	for _, h := range []string{"cf-connecting-ip", "CF-Ray", "Cf-Anything-New", "true-client-ip", "CDN-Loop", "X-Forwarded-Proto"} {
+		assert.True(t, isSkippedForwardHeader(h), h)
+	}
+	for _, h := range []string{"Cache-Control", "Content-Type", "X-Api-Key", "X-Cf-Custom", "Authorization"} {
+		assert.False(t, isSkippedForwardHeader(h), h)
+	}
+}
+
 // TestExecuteProxyRequest_DoesNotFollowRedirects covers the loop a TLS-enforcing
 // target used to cause: it answers 301 to the same URL, the client followed it
 // ten times and the whole request failed with "stopped after 10 redirects".
