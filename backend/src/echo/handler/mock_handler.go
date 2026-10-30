@@ -5,6 +5,8 @@ import (
 	"net/http"
 	"strings"
 
+	"beo-echo/backend/src/lib"
+
 	"github.com/gin-gonic/gin"
 )
 
@@ -39,17 +41,43 @@ func MockRequestHandler(c *gin.Context) {
 		}
 	}
 
+	// Get path from route parameter if available, otherwise use URL path
+	path := c.Param("path")
+	if path == "" {
+		path = "/"
+	}
+
+	serveProject(c, projectAlias, path)
+}
+
+// MirrorRequestHandler serves every request of a mirror instance
+// (MIRROR_PROJECT_ALIAS) from that one project, path kept as-is:
+// GET /assets/app.js → project path /assets/app.js
+func MirrorRequestHandler(c *gin.Context) {
+	EnsureMockService()
+	if mockService == nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error":   true,
+			"message": "Mock service is not available",
+		})
+		return
+	}
+
+	path := c.Param("path")
+	if path == "" {
+		path = "/"
+	}
+
+	serveProject(c, lib.MIRROR_PROJECT_ALIAS, path)
+}
+
+// serveProject runs the request through the project's mode and writes the response
+func serveProject(c *gin.Context, projectAlias, path string) {
 	// Preflight is answered with the project's own CORS config (see cors.go)
 	if IsMockPreflight(c.Request) {
 		project, _ := mockService.Repo.FindProjectByAlias(projectAlias)
 		HandleMockPreflight(c, project)
 		return
-	}
-
-	// Get path from route parameter if available, otherwise use URL path
-	path := c.Param("path")
-	if path == "" {
-		path = "/"
 	}
 
 	// Process the request with context
