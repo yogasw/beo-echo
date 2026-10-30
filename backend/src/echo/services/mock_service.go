@@ -21,6 +21,7 @@ import (
 	"beo-echo/backend/src/actions"
 	"beo-echo/backend/src/database"
 	"beo-echo/backend/src/echo/repositories"
+	"beo-echo/backend/src/lib"
 	systemConfig "beo-echo/backend/src/systemConfigs"
 )
 
@@ -60,7 +61,11 @@ func (s *MockService) HandleRequest(ctx context.Context, alias, method, reqPath 
 	// Extract the actual API endpoint path
 	// Path comes in like "/api/users" or "/users" - we need just the endpoint part
 	// First trim any project alias prefix if it exists
-	cleanPath := strings.TrimPrefix(reqPath, "/"+project.Alias)
+	// A mirror instance serves the project from the domain root: path is verbatim
+	cleanPath := reqPath
+	if project.Alias != lib.MIRROR_PROJECT_ALIAS {
+		cleanPath = trimAliasSegment(reqPath, project.Alias)
+	}
 
 	// Check project mode
 	switch project.Mode {
@@ -817,6 +822,16 @@ func createMockResponse(mockResp database.MockResponse) (*http.Response, error) 
 }
 
 // createErrorResponse creates a standard error response
+// trimAliasSegment drops a leading "/<alias>" only when it is a whole path
+// segment, so alias "app" leaves "/application/x" untouched.
+func trimAliasSegment(path, alias string) string {
+	prefix := "/" + alias
+	if path == prefix || strings.HasPrefix(path, prefix+"/") {
+		return path[len(prefix):]
+	}
+	return path
+}
+
 func createErrorResponse(statusCode int, message string) *http.Response {
 	respBody := map[string]interface{}{
 		"error":   true,
