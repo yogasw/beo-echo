@@ -34,6 +34,10 @@ The service supports two database backends:
    DATABASE_URL=postgresql://username:password@localhost:5432/dbname
    ```
 
+## Mirror Mode
+
+Set `MIRROR_PROJECT_ALIAS=<alias>` to turn the instance into a mirror of one project: every path, including `/`, is served by that project and the UI, `/api` and `/mcp` routes are not registered. Run it next to the main instance on the same PostgreSQL database. See [docs/Mirror_Mode.md](../docs/Mirror_Mode.md).
+
 ## Default URLs
 
 By default, the server runs on port 3600:

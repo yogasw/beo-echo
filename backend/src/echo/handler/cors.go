@@ -24,6 +24,10 @@ func IsMockPreflight(r *http.Request) bool {
 	if r.Method != http.MethodOptions || r.Header.Get("Origin") == "" || r.Header.Get("Access-Control-Request-Method") == "" {
 		return false
 	}
+	// On a mirror instance every path belongs to the project
+	if lib.MIRROR_PROJECT_ALIAS != "" {
+		return true
+	}
 	p := r.URL.Path
 	if p == "/" || p == "/api" || strings.HasPrefix(p, "/api/") || p == "/mcp" || strings.HasPrefix(p, "/mcp/") {
 		return false

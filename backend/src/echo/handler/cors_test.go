@@ -10,6 +10,7 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	"beo-echo/backend/src/database"
+	"beo-echo/backend/src/lib"
 )
 
 func preflightRequest(path, requestHeaders string) *http.Request {
@@ -166,4 +167,13 @@ func TestActualRequest_PerResponseAllowOriginOverrideStillWins(t *testing.T) {
 	req.Header.Set("Origin", "https://omnichannel.qiscus.com")
 	router.ServeHTTP(nocors, req)
 	assert.Equal(t, "", nocors.Header().Get("Access-Control-Allow-Origin"))
+}
+
+func TestIsMockPreflight_MirrorOwnsEveryPath(t *testing.T) {
+	lib.MIRROR_PROJECT_ALIAS = "web-app"
+	t.Cleanup(func() { lib.MIRROR_PROJECT_ALIAS = "" })
+
+	assert.True(t, IsMockPreflight(preflightRequest("/", "")))
+	assert.True(t, IsMockPreflight(preflightRequest("/api/v1/items", "")))
+	assert.True(t, IsMockPreflight(preflightRequest("/mcp", "")))
 }

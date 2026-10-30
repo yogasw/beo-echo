@@ -232,3 +232,11 @@ func TestMockService_applyDelay_EdgeCases(t *testing.T) {
 		assert.LessOrEqual(t, elapsed.Milliseconds(), int64(70))
 	})
 }
+
+func TestTrimAliasSegment(t *testing.T) {
+	assert.Equal(t, "/users", trimAliasSegment("/acme/users", "acme"))
+	assert.Equal(t, "", trimAliasSegment("/acme", "acme"))
+	assert.Equal(t, "/users", trimAliasSegment("/users", "acme"))
+	// prefix that is not a whole segment must stay
+	assert.Equal(t, "/application/x", trimAliasSegment("/application/x", "app"))
+}

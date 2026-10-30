@@ -87,6 +87,12 @@ func SetupRouter() *gin.Engine {
 	})
 	router.Use(handler.SkipMockPreflight(corsMiddleware))
 
+	// Mirror instance: the whole domain is one project, no UI/auth/API routes
+	if lib.MIRROR_PROJECT_ALIAS != "" {
+		router.Any("/*path", handler.MirrorRequestHandler)
+		return router
+	}
+
 	// Rate limiting middleware - DISABLED for now due to stability issues
 	// TODO: Re-enable once rate limiting middleware is stable
 	// router.Use(middlewares.RateLimitByIP())

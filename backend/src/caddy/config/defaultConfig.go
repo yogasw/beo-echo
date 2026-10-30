@@ -56,3 +56,29 @@ const CADDY_DEFAULT_CONFIG = `{
 	}
 }
 `
+
+// CADDY_MIRROR_CONFIG is used when MIRROR_PROJECT_ALIAS is set: no frontend,
+// every path goes to the backend, which serves it from the mirrored project.
+const CADDY_MIRROR_CONFIG = `{
+	admin off
+	auto_https off
+
+	servers {
+		trusted_proxies static private_ranges {$TRUSTED_PROXIES}
+	}
+}
+
+:{$PORT:80} {
+	log {
+		format console
+	}
+
+	handle {
+		reverse_proxy localhost:3600
+	}
+
+	handle_errors {
+		respond "{err.status_code} {err.status_text}"
+	}
+}
+`

@@ -45,6 +45,10 @@ var (
 	SERVER_PORT     = getEnvOrDefault("SERVER_PORT", "3600")
 	SERVER_HOSTNAME = getEnvOrDefault("SERVER_HOSTNAME", "127.0.0.1")
 	CORS_ORIGIN     = getEnvOrDefault("CORS_ORIGIN", "*")
+	// MIRROR_PROJECT_ALIAS turns this instance into a mirror of one project: every
+	// path on the domain is served by that project and the UI, login, /api and
+	// /mcp routes are not registered. Empty = normal instance.
+	MIRROR_PROJECT_ALIAS = getEnvOrDefault("MIRROR_PROJECT_ALIAS", "")
 )
 
 // Helper function to get environment variable with default value

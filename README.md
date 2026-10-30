@@ -204,6 +204,27 @@ When a valid PostgreSQL connection string is provided in the `DATABASE_URL` envi
 
 ---
 
+## 🪞 Mirror Mode
+
+Normally a project is reached under its alias: `https://beo.example.com/<alias>/...`. Some apps (SPAs, sites with absolute `/assets/...` links) only work from a domain root. Mirror mode runs a separate Beo Echo instance whose whole domain *is* one project.
+
+Run a second instance against the **same database** and add one variable:
+
+```bash
+DATABASE_URL=postgresql://... MIRROR_PROJECT_ALIAS=web-app ./beo-echo server
+```
+
+On that instance:
+
+- every path goes to project `web-app`, unchanged: `/` → `/`, `/assets/app.js` → `/assets/app.js`, `/api/v1/items` → `/api/v1/items`
+- the UI, login, `/api` and `/mcp` routes are not registered, and the generated Caddyfile sends every path to the backend (no frontend files)
+- the project keeps working as usual: mock, proxy and forwarder modes, responses, rules, CORS and actions (custom headers, body rewrites)
+- request logs land in the shared database, so they show up in the main instance's UI, where the project is still managed
+
+Leave `MIRROR_PROJECT_ALIAS` empty for a normal instance; the default Caddyfile is restored on the next start.
+
+---
+
 ## ⚠️ Disclaimer
 
 - This is an active development project
