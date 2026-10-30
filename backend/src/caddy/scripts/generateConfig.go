@@ -179,13 +179,29 @@ func InitCaddyConfig(ctx context.Context) error {
 	mainConfigPath := lib.CANDY_DIR + "/Caddyfile"
 
 	l := log.Ctx(ctx).With().Str("func", "InitCaddyConfig").Logger()
-	// check if main config file exists or not when not found create it
-	if _, err := os.Stat(mainConfigPath); os.IsNotExist(err) {
+	mirror := lib.MIRROR_PROJECT_ALIAS != ""
+	if mirror {
+		mainConfigStr = config.CADDY_MIRROR_CONFIG
+	}
+
+	// create the main config when missing, and switch it when the instance
+	// enters or leaves mirror mode
+	existing, err := os.ReadFile(mainConfigPath)
+	write := os.IsNotExist(err) ||
+		(mirror && string(existing) != config.CADDY_MIRROR_CONFIG) ||
+		(!mirror && string(existing) == config.CADDY_MIRROR_CONFIG)
+	if write {
 		if err := os.WriteFile(mainConfigPath, []byte(mainConfigStr), 0644); err != nil {
 			log.Ctx(ctx).Error().Err(err).Str("file", mainConfigPath).Msg("failed to create main config file")
 			return fmt.Errorf("failed to create main config file: %w", err)
 		}
-		log.Ctx(ctx).Info().Str("file", mainConfigPath).Msg("main config file created")
+		log.Ctx(ctx).Info().Str("file", mainConfigPath).Bool("mirror", mirror).Msg("main config file written")
+	}
+
+	// a mirror instance serves one project only: no custom subdomains
+	if mirror {
+		l.Info().Str("project", lib.MIRROR_PROJECT_ALIAS).Msg("mirror mode: custom subdomain skipped")
+		return nil
 	}
 
 	enable, err := systemConfig.GetSystemConfigWithType[bool](systemConfig.CUSTOM_SUBDOMAIN_ENABLED)
