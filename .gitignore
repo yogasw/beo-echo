@@ -68,3 +68,5 @@ desktop/frontend/
 configs
 tmp/*
 backend/tmp/*
+# Claude Code local settings (approved commands may hold credentials)
+.claude/settings.local.json
