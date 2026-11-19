@@ -253,6 +253,7 @@ jobs:
           rm -f commit_log.txt
 
       - name: Create Pull Request to update CHANGELOG.md
+        id: changelog_pr
         uses: peter-evans/create-pull-request@4e1beaa7521e8b457b572c090b25bd3db56bf1c5 # v5.0.3
         with:
           commit-message: "chore: update CHANGELOG.md for v${{ steps.read_version.outputs.version }}"
@@ -260,6 +261,30 @@ jobs:
           body: "This PR updates the changelog after release."
           branch: changelog/update-${{ steps.read_version.outputs.version }}
           base: main
+
+      # The changelog PR is opened by GITHUB_TOKEN, so nothing else merges it
+      # (the auto-merge job below only merges the main -> release PR).
+      - name: Merge CHANGELOG.md PR
+        if: steps.changelog_pr.outputs.pull-request-number != ''
+        uses: actions/github-script@v6
+        env:
+          PR_NUMBER: ${{ steps.changelog_pr.outputs.pull-request-number }}
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const pull_number = Number(process.env.PR_NUMBER);
+            try {
+              await github.rest.pulls.merge({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                pull_number,
+                merge_method: 'merge',
+              });
+              console.log(`Merged changelog PR #${pull_number}`);
+            } catch (error) {
+              // Keep the release going; the PR stays open for a manual merge.
+              core.warning(`Could not merge changelog PR #${pull_number}: ${error.message}`);
+            }
 
   deploy-pages:
     name: Deploy docs to GitHub Pages
