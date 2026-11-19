@@ -18,9 +18,20 @@ func NewActionRepository(db *gorm.DB) actions.ActionRepository {
 	return &actionRepository{db: db}
 }
 
-// CreateAction creates a new action in the database
+// CreateAction creates a new action in the database, stored disabled in the same
+// transaction when action.Enabled is false (see database.KeepDisabledOnCreate).
 func (r *actionRepository) CreateAction(ctx context.Context, action *database.Action) error {
-	return r.db.WithContext(ctx).Create(action).Error
+	enabled := action.Enabled
+	return r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		if err := tx.Create(action).Error; err != nil {
+			return err
+		}
+		if err := database.KeepDisabledOnCreate(tx, action, enabled); err != nil {
+			return err
+		}
+		action.Enabled = enabled
+		return nil
+	})
 }
 
 // GetActionByID retrieves an action by its ID with associated filters

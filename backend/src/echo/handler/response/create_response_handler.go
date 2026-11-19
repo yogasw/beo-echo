@@ -4,6 +4,8 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"github.com/gin-gonic/gin/binding"
+	"gorm.io/gorm"
 
 	"beo-echo/backend/src/database"
 	"beo-echo/backend/src/echo/handler"
@@ -63,15 +65,21 @@ func CreateResponseHandler(c *gin.Context) {
 		return
 	}
 
-	// Parse response data
+	// Parse response data. The body is bound a second time to tell an explicit
+	// "enabled": false apart from an omitted field, which defaults to enabled.
 	var response database.MockResponse
-	if err := c.ShouldBindJSON(&response); err != nil {
+	if err := c.ShouldBindBodyWith(&response, binding.JSON); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"error":   true,
 			"message": "Invalid request data: " + err.Error(),
 		})
 		return
 	}
+	var flags struct {
+		Enabled *bool `json:"enabled"`
+	}
+	_ = c.ShouldBindBodyWith(&flags, binding.JSON)
+	enabled := flags.Enabled == nil || *flags.Enabled
 
 	// Basic validation
 	if response.StatusCode == 0 {
@@ -81,12 +89,22 @@ func CreateResponseHandler(c *gin.Context) {
 	// Assign to endpoint
 	response.EndpointID = endpointIDStr
 
-	// Create response
-	result = database.GetDB().Create(&response)
-	if result.Error != nil {
+	// Create response. A response created disabled is stored disabled in the same
+	// transaction, so it never serves traffic before its rules are added.
+	err := database.GetDB().Transaction(func(tx *gorm.DB) error {
+		if err := tx.Create(&response).Error; err != nil {
+			return err
+		}
+		if err := database.KeepDisabledOnCreate(tx, &response, enabled); err != nil {
+			return err
+		}
+		response.Enabled = enabled
+		return nil
+	})
+	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error":   true,
-			"message": "Failed to create response: " + result.Error.Error(),
+			"message": "Failed to create response: " + err.Error(),
 		})
 		return
 	}
