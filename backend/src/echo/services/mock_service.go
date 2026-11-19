@@ -12,6 +12,7 @@ import (
 	"net/http"
 	"net/url"
 	"path"
+	"regexp"
 	"strings"
 	"time"
 
@@ -568,9 +569,22 @@ func matchRuleValue(operator, actual, expected string) bool {
 		return actual == expected
 	case "contains":
 		return strings.Contains(actual, expected)
+	case "regex":
+		return matchRegex(actual, expected)
 	default:
 		return actual == expected // Default to equals
 	}
+}
+
+// matchRegex reports whether actual matches the pattern anywhere, as Go's regexp
+// does; anchor the pattern with ^ and $ for a whole-value match. A pattern that
+// does not compile matches nothing rather than failing the request.
+func matchRegex(actual, pattern string) bool {
+	re, err := regexp.Compile(pattern)
+	if err != nil {
+		return false
+	}
+	return re.MatchString(actual)
 }
 
 // matchRuleValueTyped handles advanced type checks and schemas
@@ -588,6 +602,8 @@ func matchRuleValueTyped(operator string, actual interface{}, expected string) b
 		// convert actual to string for contains
 		strVal := interfaceToString(actual)
 		return strings.Contains(strVal, expected)
+	case "regex":
+		return matchRegex(interfaceToString(actual), expected)
 	default:
 		strVal := interfaceToString(actual)
 		return strVal == expected

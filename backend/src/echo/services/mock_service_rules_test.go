@@ -356,3 +356,89 @@ func createTestRequestWithBody(method, urlStr, bodyStr string) *http.Request {
 	req.Body = io.NopCloser(strings.NewReader(bodyStr))
 	return req
 }
+
+func TestMatchesRules_Regex(t *testing.T) {
+	tests := []struct {
+		name     string
+		response database.MockResponse
+		req      *http.Request
+		expected bool
+	}{
+		{
+			name: "anchored query regex matches one of the alternatives",
+			response: database.MockResponse{Rules: []database.MockRule{
+				{Type: "query", Key: "vehicle_no", Operator: "regex", Value: "^(B0000|BB0001|BB-1234)$"},
+			}},
+			req:      createTestRequest("GET", "/fleets", nil, map[string]string{"vehicle_no": "BB-1234"}),
+			expected: true,
+		},
+		{
+			name: "anchored query regex rejects a value outside the alternatives",
+			response: database.MockResponse{Rules: []database.MockRule{
+				{Type: "query", Key: "vehicle_no", Operator: "regex", Value: "^(B0000|BB0001|BB-1234)$"},
+			}},
+			req:      createTestRequest("GET", "/fleets", nil, map[string]string{"vehicle_no": "BB-12345"}),
+			expected: false,
+		},
+		{
+			name: "unanchored regex matches anywhere in the value",
+			response: database.MockResponse{Rules: []database.MockRule{
+				{Type: "query", Key: "nip", Operator: "regex", Value: `\d{8}`},
+			}},
+			req:      createTestRequest("GET", "/drivers", nil, map[string]string{"nip": "x00000001"}),
+			expected: true,
+		},
+		{
+			name: "regex that needs a value does not match a missing parameter",
+			response: database.MockResponse{Rules: []database.MockRule{
+				{Type: "query", Key: "vehicle_no", Operator: "regex", Value: ".+"},
+			}},
+			req:      createTestRequest("GET", "/fleets", nil, map[string]string{"nip": "00000001"}),
+			expected: false,
+		},
+		{
+			name: "header regex matches",
+			response: database.MockResponse{Rules: []database.MockRule{
+				{Type: "header", Key: "X-Mock-Scenario", Operator: "regex", Value: "^(full|partial)$"},
+			}},
+			req:      createTestRequest("GET", "/fare", map[string]string{"X-Mock-Scenario": "partial"}, nil),
+			expected: true,
+		},
+		{
+			name: "invalid pattern matches nothing instead of comparing literally",
+			response: database.MockResponse{Rules: []database.MockRule{
+				{Type: "query", Key: "q", Operator: "regex", Value: "(unclosed"},
+			}},
+			req:      createTestRequest("GET", "/x", nil, map[string]string{"q": "(unclosed"}),
+			expected: false,
+		},
+		{
+			name: "AND logic combines regex with another rule",
+			response: database.MockResponse{RulesLogic: "and", Rules: []database.MockRule{
+				{Type: "query", Key: "nip", Operator: "regex", Value: `^\d{8}$`},
+				{Type: "query", Key: "page", Operator: "equals", Value: "1"},
+			}},
+			req:      createTestRequest("GET", "/drivers", nil, map[string]string{"nip": "00000001", "page": "2"}),
+			expected: false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			assert.Equal(t, tt.expected, matchesRules(tt.response, tt.req))
+		})
+	}
+}
+
+func TestMatchesRules_BodyRegex(t *testing.T) {
+	jsonRule := database.MockResponse{Rules: []database.MockRule{
+		{Type: "body", Key: "user.id", Operator: "regex", Value: `^u-\d+$`},
+	}}
+	assert.True(t, matchesRules(jsonRule, createTestRequestWithBody("POST", "/x", `{"user":{"id":"u-42"}}`)))
+	assert.False(t, matchesRules(jsonRule, createTestRequestWithBody("POST", "/x", `{"user":{"id":"x-42"}}`)))
+
+	rawRule := database.MockResponse{Rules: []database.MockRule{
+		{Type: "body", Key: "", Operator: "regex", Value: `^hello\s+world$`},
+	}}
+	assert.True(t, matchesRules(rawRule, createTestRequestWithBody("POST", "/x", "hello   world")))
+}
