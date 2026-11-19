@@ -6,6 +6,8 @@ import (
 	"strings"
 
 	"github.com/gin-gonic/gin"
+	"github.com/gin-gonic/gin/binding"
+	"gorm.io/gorm"
 
 	"beo-echo/backend/src/database"
 	"beo-echo/backend/src/echo/handler"
@@ -50,7 +52,7 @@ func CreateEndpointHandler(c *gin.Context) {
 
 	// Parse endpoint data
 	var endpoint database.MockEndpoint
-	if err := c.ShouldBindJSON(&endpoint); err != nil {
+	if err := c.ShouldBindBodyWith(&endpoint, binding.JSON); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"error":   true,
 			"message": "Invalid request data: " + err.Error(),
@@ -145,12 +147,29 @@ func CreateEndpointHandler(c *gin.Context) {
 		return
 	}
 
-	// Create endpoint
-	result := database.GetDB().Create(&endpoint)
-	if result.Error != nil {
+	// An explicit "enabled": false has to be told apart from an omitted field,
+	// which defaults to enabled.
+	var flags struct {
+		Enabled *bool `json:"enabled"`
+	}
+	_ = c.ShouldBindBodyWith(&flags, binding.JSON)
+	enabled := flags.Enabled == nil || *flags.Enabled
+
+	// Create endpoint, stored disabled in the same transaction when asked to be.
+	err := database.GetDB().Transaction(func(tx *gorm.DB) error {
+		if err := tx.Create(&endpoint).Error; err != nil {
+			return err
+		}
+		if err := database.KeepDisabledOnCreate(tx, &endpoint, enabled); err != nil {
+			return err
+		}
+		endpoint.Enabled = enabled
+		return nil
+	})
+	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error":   true,
-			"message": "Failed to create endpoint: " + result.Error.Error(),
+			"message": "Failed to create endpoint: " + err.Error(),
 		})
 		return
 	}
