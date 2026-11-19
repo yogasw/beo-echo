@@ -160,6 +160,30 @@ func TestActionRepository_Integration(t *testing.T) {
 		assert.Error(t, err)
 	})
 
+	t.Run("CreateAction_KeepsDisabled", func(t *testing.T) {
+		action := &database.Action{
+			ProjectID:      setup.Project.ID,
+			Name:           "Created Disabled",
+			Type:           database.ActionTypeReplaceText,
+			ExecutionPoint: database.ExecutionPointAfterRequest,
+			Enabled:        false,
+			Config:         `{"target":"response_body","pattern":"a","replacement":"b","use_regex":false}`,
+		}
+		require.NoError(t, repo.CreateAction(ctx, action))
+		defer database.DB.Unscoped().Delete(&database.Action{}, "id = ?", action.ID)
+		assert.False(t, action.Enabled)
+
+		retrieved, err := repo.GetActionByID(ctx, action.ID)
+		require.NoError(t, err)
+		assert.False(t, retrieved.Enabled)
+
+		enabledActions, err := repo.GetEnabledActionsByProjectAndPoint(ctx, setup.Project.ID, database.ExecutionPointAfterRequest)
+		require.NoError(t, err)
+		for _, a := range enabledActions {
+			assert.NotEqual(t, action.ID, a.ID)
+		}
+	})
+
 	t.Run("GetEnabledActionsByProjectAndPoint_Success", func(t *testing.T) {
 		// Create enabled actions at different execution points
 		enabledAfter := &database.Action{
