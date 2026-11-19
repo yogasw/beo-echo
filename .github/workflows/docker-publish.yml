@@ -286,15 +286,30 @@ jobs:
               core.warning(`Could not merge changelog PR #${pull_number}: ${error.message}`);
             }
 
+  # Pages is deployed by dispatching deploy-pages.yml on main instead of calling
+  # it here: a run started by this pull_request event carries the PR ref, which
+  # the github-pages environment's branch policy rejects. A workflow_dispatch
+  # sent with GITHUB_TOKEN still starts a new run, on the ref we pass.
   deploy-pages:
     name: Deploy docs to GitHub Pages
     needs: release-docker-image
+    runs-on: ubuntu-latest
     if: success()
     permissions:
-      contents: read
-      pages: write
-      id-token: write
-    uses: ./.github/workflows/deploy-pages.yml
+      actions: write
+    steps:
+      - name: Dispatch Pages deploy on main
+        uses: actions/github-script@v6
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            await github.rest.actions.createWorkflowDispatch({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              workflow_id: 'deploy-pages.yml',
+              ref: 'main',
+            });
+            console.log('Dispatched deploy-pages.yml on main');
 
   auto-merge-pr:
     name: Auto Merge PR
