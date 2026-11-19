@@ -112,7 +112,7 @@ func DuplicateResponseHandler(c *gin.Context) {
 		return
 	}
 
-	// Create the duplicated response
+	// Create the duplicated response; a disabled original stays disabled in the copy.
 	if err := tx.Create(&duplicatedResponse).Error; err != nil {
 		tx.Rollback()
 		c.JSON(http.StatusInternalServerError, gin.H{
@@ -121,6 +121,15 @@ func DuplicateResponseHandler(c *gin.Context) {
 		})
 		return
 	}
+	if err := database.KeepDisabledOnCreate(tx, &duplicatedResponse, originalResponse.Enabled); err != nil {
+		tx.Rollback()
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error":   true,
+			"message": "Failed to create duplicated response: " + err.Error(),
+		})
+		return
+	}
+	duplicatedResponse.Enabled = originalResponse.Enabled
 
 	// Duplicate all rules from the original response
 	for _, originalRule := range originalResponse.Rules {

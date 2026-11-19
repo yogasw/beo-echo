@@ -2,6 +2,7 @@ package repositories
 
 import (
 	"fmt"
+	"regexp"
 
 	"beo-echo/backend/src/database"
 
@@ -63,6 +64,9 @@ func (r *ruleRepository) CreateRule(rule *database.MockRule) error {
 	default:
 		return fmt.Errorf("invalid operator: %s, must be equals, contains, regex, has_property, matches_type, or matches_schema", rule.Operator)
 	}
+	if err := validateRegexValue(rule); err != nil {
+		return err
+	}
 
 	// Create rule
 	return r.db.Create(rule).Error
@@ -77,7 +81,22 @@ func (r *ruleRepository) UpdateRule(rule *database.MockRule) error {
 	default:
 		return fmt.Errorf("invalid operator: %s, must be equals, contains, regex, has_property, matches_type, or matches_schema", rule.Operator)
 	}
+	if err := validateRegexValue(rule); err != nil {
+		return err
+	}
 	return r.db.Save(rule).Error
+}
+
+// validateRegexValue rejects a regex rule whose value does not compile, since
+// such a rule could never match a request.
+func validateRegexValue(rule *database.MockRule) error {
+	if rule.Operator != "regex" {
+		return nil
+	}
+	if _, err := regexp.Compile(rule.Value); err != nil {
+		return fmt.Errorf("invalid regex value: %v", err)
+	}
+	return nil
 }
 
 // DeleteRule deletes a rule by ID
